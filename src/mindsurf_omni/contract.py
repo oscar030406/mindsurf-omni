@@ -1,0 +1,209 @@
+"""The contract between this service and everything downstream of it.
+
+Written before the model exists, and frozen once published: the backend and
+the client are built against it in parallel, so a field that moves later costs
+two other teams a day each.
+
+Everything here is either an OpenAI request/response shape or a deliberate,
+documented extension. Speaking OpenAI's protocol is not deference -- it means
+the backend can point its existing client at us, and can point it back at a
+hosted provider the moment our model misbehaves. That fallback is worth more
+than any protocol we could design ourselves.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
+
+# Audio formats are fixed, not negotiated. SenseVoice takes 16 kHz, Mimi emits
+# 24 kHz, and a client that has to ask which is which will eventually guess.
+INPUT_SAMPLE_RATE = 16_000
+OUTPUT_SAMPLE_RATE = 24_000
+AUDIO_ENCODING = "pcm_s16le"
+
+SCHEMA_VERSION = 1
+
+
+# ---------------------------------------------------------------------------
+# POST /v1/chat/completions
+# ---------------------------------------------------------------------------
+
+
+class ChatMessage(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str
+
+
+class ChatCompletionRequest(BaseModel):
+    model: str = "mindsurf-omni"
+    messages: list[ChatMessage]
+    stream: bool = False
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    top_p: float = Field(default=0.9, gt=0.0, le=1.0)
+    max_tokens: int = Field(default=512, ge=1, le=4096)
+
+
+class ChatChoice(BaseModel):
+    index: int = 0
+    message: ChatMessage | None = None
+    delta: dict[str, Any] | None = None
+    finish_reason: str | None = None
+
+
+class ChatUsage(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
+class ChatCompletionResponse(BaseModel):
+    id: str
+    object: Literal["chat.completion", "chat.completion.chunk"] = "chat.completion"
+    created: int
+    model: str
+    choices: list[ChatChoice]
+    usage: ChatUsage | None = None
+
+
+# ---------------------------------------------------------------------------
+# POST /v1/audio/speech
+# ---------------------------------------------------------------------------
+
+
+class SpeechRequest(BaseModel):
+    model: str = "mindsurf-omni"
+    input: str
+    # An OpenAI client sends a voice name. Ours are reference-audio ids
+    # registered through /v1/voices, because voice control is in-context
+    # cloning rather than a fixed set of trained voices.
+    voice: str = "default"
+    response_format: Literal["wav", "pcm"] = "wav"
+    speed: float = Field(default=1.0, ge=0.5, le=2.0)
+    # Extension: emotion rides alongside rather than being smuggled into the
+    # text, so the spoken text and the delivery stay separable.
+    emotion: Literal["neutral", "happy", "care"] = "neutral"
+
+
+# ---------------------------------------------------------------------------
+# POST /v1/audio/transcriptions
+# ---------------------------------------------------------------------------
+
+
+class TranscriptionResponse(BaseModel):
+    text: str
+    # Extension: the language the encoder actually detected, so a caller can
+    # notice when Chinese audio was read as English before the answer is wrong.
+    language: str | None = None
+    duration_seconds: float | None = None
+
+
+# ---------------------------------------------------------------------------
+# GET /v1/models
+# ---------------------------------------------------------------------------
+
+
+class ComponentInfo(BaseModel):
+    name: str
+    parameters: int | None = None
+    sha256: str | None = None
+    frozen: bool = False
+
+
+class ModelInfo(BaseModel):
+    id: str
+    object: Literal["model"] = "model"
+    created: int
+    owned_by: str = "mindsurf"
+    # Which path is serving right now. The backend does not choose it, but it
+    # must be able to see it -- a quality report is meaningless without it.
+    path: Literal["native", "cascade"]
+    fallback_available: bool
+    components: list[ComponentInfo]
+    licence: str
+    commercial_use_permitted: bool
+
+
+class ModelList(BaseModel):
+    object: Literal["list"] = "list"
+    data: list[ModelInfo]
+
+
+# ---------------------------------------------------------------------------
+# WS /v1/realtime
+# ---------------------------------------------------------------------------
+#
+# Event names follow OpenAI's Realtime API so a client written against that
+# API needs no new vocabulary. Only the subset the product uses is
+# implemented; anything unrecognised is answered with an error frame rather
+# than ignored, because silent no-ops are how a client ends up waiting forever.
+
+CLIENT_EVENTS = {
+    "input_audio_buffer.append",  # {"audio": base64 PCM16 16 kHz mono}
+    "input_audio_buffer.commit",  # user stopped speaking; start responding
+    "input_audio_buffer.clear",
+    "response.cancel",  # barge-in: stop speaking now
+    "session.update",  # {"voice": ..., "emotion": ...}
+}
+
+SERVER_EVENTS = {
+    "session.created",
+    "input_audio_buffer.speech_started",
+    "input_audio_buffer.speech_stopped",
+    "conversation.item.input_audio_transcription.completed",
+    "response.created",
+    "response.text.delta",
+    "response.text.done",
+    "response.audio.delta",  # {"audio": base64 PCM16 24 kHz mono}
+    "response.audio.done",
+    "response.done",
+    "error",
+}
+
+
+class RealtimeEvent(BaseModel):
+    type: str
+    event_id: str | None = None
+    audio: str | None = None
+    delta: str | None = None
+    transcript: str | None = None
+    voice: str | None = None
+    emotion: str | None = None
+    error: dict[str, Any] | None = None
+
+
+# ---------------------------------------------------------------------------
+# Token and voice specification, served as data
+# ---------------------------------------------------------------------------
+#
+# The client needs these to build prompts and control delivery. Serving them
+# from the running model rather than a document means they cannot drift out of
+# step with the weights.
+
+
+class TokenSpec(BaseModel):
+    schema_version: int = SCHEMA_VERSION
+    text_vocab_size: int
+    audio_codebooks: int
+    audio_codebook_size: int
+    audio_frame_rate_hz: float
+    special_tokens: dict[str, int]
+    audio_special_tokens: dict[str, int]
+    input_sample_rate: int = INPUT_SAMPLE_RATE
+    output_sample_rate: int = OUTPUT_SAMPLE_RATE
+    audio_encoding: str = AUDIO_ENCODING
+
+
+class VoiceInfo(BaseModel):
+    id: str
+    description: str
+    # In-context cloning: a voice is a reference recording plus its speaker
+    # embedding, not a set of trained weights. Adding one costs no training.
+    reference_seconds: float | None = None
+    speaker_embedding_dim: int | None = None
+
+
+class VoiceList(BaseModel):
+    object: Literal["list"] = "list"
+    data: list[VoiceInfo]

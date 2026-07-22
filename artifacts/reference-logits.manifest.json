@@ -1,0 +1,192 @@
+{
+  "determinism": {
+    "device": "cpu",
+    "dtype": "float32",
+    "mode": "model.eval() under torch.inference_mode()",
+    "note": "Logits are computed in float32 on CPU. A port running in bfloat16 or on GPU will not match to 0.0; compare with a tolerance appropriate to its precision, or re-run this fixture under the same conditions.",
+    "torch": "2.11.0+cu128"
+  },
+  "input_ids": [
+    [
+      5640,
+      3660,
+      2131,
+      658,
+      294,
+      773,
+      3089,
+      1692,
+      6228,
+      3020,
+      953,
+      335,
+      136,
+      302,
+      773,
+      1483,
+      562,
+      800,
+      638,
+      294,
+      2271,
+      504,
+      5203,
+      3678
+    ],
+    [
+      750,
+      5658,
+      363,
+      2079,
+      113,
+      341,
+      2979,
+      1315,
+      457,
+      3385,
+      2141,
+      309,
+      3090,
+      125,
+      124,
+      1041,
+      106,
+      49,
+      691,
+      1637,
+      1366,
+      1847,
+      123,
+      599
+    ],
+    [
+      2092,
+      2063,
+      43,
+      100,
+      47,
+      363,
+      1647,
+      725,
+      1398,
+      299,
+      754,
+      363,
+      234,
+      234,
+      3838,
+      450,
+      2063,
+      43,
+      52,
+      47,
+      546,
+      44,
+      234,
+      1559
+    ],
+    [
+      80,
+      916,
+      86,
+      543,
+      105,
+      256,
+      1100,
+      1857,
+      1596,
+      51,
+      80,
+      256,
+      877,
+      4081,
+      2165,
+      119,
+      559,
+      301,
+      2038,
+      6292,
+      806,
+      1190,
+      53,
+      57
+    ]
+  ],
+  "probes": [
+    "今天天气真好，我们一起去公园散步吧。我们带上相机，记录下沿途的风景。",
+    "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.",
+    "def add(a, b):\n    return a + b\n\nresult = add(1, 2)\nprint(result)\n",
+    "MindSurf 预训练 80M 基座 pretrain checkpoint 2026，词表 6400，序列长度 384。"
+  ],
+  "purpose": "verify a port of TransformerLM reproduces the released weights bit-faithfully",
+  "schema_version": 1,
+  "seq_len": 24,
+  "tokenizer": {
+    "tokenizer.json": "71f32c68cf63a15355a8fc171b7594b3d41870fe0ddb54fc6aefa55f73a4a668",
+    "tokenizer_config.json": "d7cd6a60c9f191c4f9ffec69b2eb289ad2f960366724f328b681ae1e46e4c110"
+  },
+  "weights": {
+    "20260511": {
+      "argmax_last_position": [
+        4051,
+        341,
+        43,
+        256
+      ],
+      "first_row_first_8_logits": [
+        7.220367,
+        7.220757,
+        14.438961,
+        7.221031,
+        7.220728,
+        7.222599,
+        7.220745,
+        7.221228
+      ],
+      "logits_abs_max": 33.410606384277344,
+      "logits_file": "reference-logits-seed20260511.npz",
+      "logits_mean": -0.407294362783432,
+      "logits_sha256": "b0f4549f066012bfc2cf5708bcc25cb5f88ddd36cb0899b32d526c205d130345",
+      "logits_shape": [
+        4,
+        24,
+        6400
+      ],
+      "logits_sum": -250241.65625,
+      "loss_is_none": true,
+      "weights_file": "mindsurf-pretrain-80m-seed20260511.pt",
+      "weights_sha256": "579cf347ba66eab0cb8ee1d6afe90eefd3b5c7175968bc7114ea821c8868d3ec"
+    },
+    "20260721": {
+      "argmax_last_position": [
+        4051,
+        299,
+        43,
+        256
+      ],
+      "first_row_first_8_logits": [
+        -5.342001,
+        -5.34195,
+        5.241134,
+        -5.341873,
+        -5.34174,
+        -5.342182,
+        -5.342076,
+        -5.342583
+      ],
+      "logits_abs_max": 35.516143798828125,
+      "logits_file": "reference-logits-seed20260721.npz",
+      "logits_mean": -0.7873849868774414,
+      "logits_sha256": "9b26eb9de46fda2e76d9109e0e5cc0ac9721e0e966bf10e55d7d487319bf7b68",
+      "logits_shape": [
+        4,
+        24,
+        6400
+      ],
+      "logits_sum": -483769.34375,
+      "loss_is_none": true,
+      "weights_file": "mindsurf-pretrain-80m-seed20260721.pt",
+      "weights_sha256": "037e6543b42465d89a01bd56b7d8a67fdf65134b639c1e7a37534779ddf6f372"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "consumed_tokens": 2064384000,
+  "exported_at": "2026-07-22T02:13:23.254468+00:00",
+  "gate": {
+    "config": "/root/mindsurf-workspace/repo/configs/evaluation/pretrain_gate_v3.json",
+    "evaluation_sha256": "c6a83ab27601c9eb918aa7000873b47a1675a6720ca12efe9e93804be7b9ad23",
+    "reference": "artifacts/evaluation/reeval_shuf60k_seed20260721_80m.json",
+    "verdict_sha256": "1eaeddcd84abe37647212702767a9a8e65507282cee55186315b04a258f4c978"
+  },
+  "global_step": 168000,
+  "identity": {
+    "dataset_id": "gongjy/minimind_dataset",
+    "dataset_revision": "74aad49fa4443e7ed640d44bc4e9c7d1fe71ada5",
+    "seed": 20260721,
+    "training_view_sha256": "4222e9ca19e8e2e369beee41dd00594ee87eb8d9b946738c16854506f1da47a2"
+  },
+  "limitations": [
+    "Trained 168000 of the planned 172000 steps: the budget asked for 107 steps more than the pretokenized view holds, so the run died at the end of its single epoch. The step-168000 rolling checkpoint is intact, covers 97.7% of the epoch, and is past the WSD anneal start at step 137640.",
+    "The two seeds perturb initialization only. PackedBlockDataset reads in order and refuses shuffle_buffer, so both runs see identical data order; the corpus was globally shuffled before pretokenization and both seeds cover the same 97.7% of it. The two-seed spread is therefore a lower bound on the noise floor, not an estimate of it.",
+    "training_summary.json was derived from the checkpoint by scripts/summarize_checkpoint.py, not written by the run, which died before its final step."
+  ],
+  "name": "minimind_official_full_filtered_v1_budget172k_seed20260721_80m_step168000",
+  "parameter_count": 89864448,
+  "source_checkpoint_sha256": "284ca1f2033200038fc62dcc226b45174924cd39ccba48096238b287db3aeed3",
+  "source_git_head": "bf6a1619b332625cb014ef81beae41c9355dfcb4",
+  "terms": {
+    "attribution": {
+      "dataset": "gongjy/minimind_dataset",
+      "dataset_revision": "74aad49fa4443e7ed640d44bc4e9c7d1fe71ada5",
+      "dataset_source": "https://www.modelscope.cn/datasets/gongjy/minimind_dataset",
+      "reference_implementation": "https://github.com/jingyaogong/minimind"
+    },
+    "authorization": {
+      "attested_at": "2026-07-22",
+      "attested_by": "maintainer",
+      "evidence": "maintainer verbal attestation",
+      "granted_by": "gongjy (jingyaogong), author of MiniMind and of gongjy/minimind_dataset",
+      "scope": "non-commercial, study and research use only"
+    },
+    "downstream_obligations": [
+      "BY: cite gongjy/minimind_dataset at the revision above as the data source.",
+      "NC: no commercial use of these weights or anything derived from them.",
+      "The NC restriction transfers to every derivative, including fine-tunes."
+    ],
+    "license": "CC-BY-NC-4.0",
+    "license_inheritance": "The weights inherit the license of the data they were trained on. gongjy/minimind_dataset is CC-BY-NC-4.0 (confirmed independently from the ModelScope API and the dataset card front-matter). MIT is the license of the MiniMind *code* repository and does not apply to these weights.",
+    "license_status": "contribution_permitted_by_upstream_author",
+    "schema_version": 1
+  },
+  "weights_file": "mindsurf-pretrain-80m-seed20260721.pt",
+  "weights_sha256": "037e6543b42465d89a01bd56b7d8a67fdf65134b639c1e7a37534779ddf6f372"
+}
