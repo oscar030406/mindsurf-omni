@@ -1,0 +1,172 @@
+"""What the metrics promise, including when they refuse to judge."""
+
+from __future__ import annotations
+
+import pytest
+from mindsurf_omni.evaluation.metrics import (
+    assess,
+    bootstrap_noise_floor,
+    character_error_rate,
+    compare,
+    edit_distance,
+    normalise_for_cer,
+)
+
+
+def test_identical_text_scores_zero() -> None:
+    assert character_error_rate("今天天气真好", "今天天气真好") == 0.0
+
+
+def test_punctuation_and_case_do_not_count_as_errors() -> None:
+    """Otherwise the score measures the recogniser's punctuation habits."""
+    assert character_error_rate("今天天气真好。", "今天天气真好") == 0.0
+    assert character_error_rate("Hello, World!", "hello world") == 0.0
+
+
+def test_spacing_differences_do_not_count() -> None:
+    """Chinese output is unspaced and English is not; keeping spaces would
+    make the two scripts incomparable."""
+    assert character_error_rate("今天 天气 真好", "今天天气真好") == 0.0
+
+
+@pytest.mark.parametrize(
+    "reference,hypothesis,expected",
+    [
+        ("今天天气真好", "今天天气真差", 1 / 6),  # one substitution
+        ("今天天气真好", "今天天气真", 1 / 6),  # one deletion
+        ("今天天气真好", "今天天气真好啊", 1 / 6),  # one insertion
+    ],
+)
+def test_each_edit_type_costs_one(reference: str, hypothesis: str, expected: float) -> None:
+    assert character_error_rate(reference, hypothesis) == pytest.approx(expected)
+
+
+def test_a_model_that_rambles_scores_worse_than_one_that_stops() -> None:
+    """Clamping at 1.0 would hide runaway generation, which is a real failure.
+
+    The pretraining phase shipped an instrument that rewarded stopping early;
+    this one must not repeat it in the opposite direction.
+    """
+    rambling = character_error_rate("好的", "好的" + "然后呢" * 20)
+
+    assert rambling > 1.0
+
+
+def test_empty_reference_with_output_is_infinite_not_zero() -> None:
+    """Saying something when nothing was expected is not a perfect score."""
+    assert character_error_rate("", "") == 0.0
+    assert character_error_rate("", "意外的输出") == float("inf")
+
+
+def test_edit_distance_matches_known_values() -> None:
+    assert edit_distance("kitten", "sitting") == 3
+    assert edit_distance("", "abc") == 3
+    assert edit_distance("abc", "") == 3
+
+
+def test_normalisation_keeps_the_characters_a_listener_hears() -> None:
+    assert normalise_for_cer("Ｈｅｌｌｏ，世界！") == "hello世界"
+
+
+def test_noise_floor_shrinks_as_samples_grow() -> None:
+    """The reason a 192-question set could not resolve a 3pp effect."""
+    import random
+
+    rng = random.Random(0)
+    small = [rng.gauss(0.1, 0.05) for _ in range(20)]
+    large = [rng.gauss(0.1, 0.05) for _ in range(2000)]
+
+    assert bootstrap_noise_floor(small) > bootstrap_noise_floor(large) * 3
+
+
+def test_a_single_sample_admits_it_cannot_estimate_noise() -> None:
+    assert bootstrap_noise_floor([0.1]) == float("inf")
+
+
+def test_an_instrument_too_coarse_for_the_effect_is_refused() -> None:
+    """The multiple-choice failure, stated as arithmetic.
+
+    Resolution +/-7pp against an effect of 3pp is not a weak instrument; it is
+    the wrong one, and its direction is noise.
+    """
+    import random
+
+    rng = random.Random(1)
+    noisy = [rng.gauss(0.5, 0.35) for _ in range(200)]
+
+    measurement = assess("mcq.accuracy", noisy, effect_of_interest=0.03)
+
+    assert not measurement.gating_eligible
+    assert "effect of interest" in measurement.note
+
+
+def test_a_small_sample_is_refused_however_tight_it_looks() -> None:
+    """Ten probes flipping a verdict between 5 and 4 is a coin toss."""
+    measurement = assess("generation.degenerate", [0.0] * 10, effect_of_interest=0.5)
+
+    assert not measurement.gating_eligible
+    assert "below the 100 required" in measurement.note
+
+
+def test_a_sharp_instrument_on_enough_samples_may_judge() -> None:
+    import random
+
+    rng = random.Random(2)
+    tight = [rng.gauss(0.12, 0.02) for _ in range(500)]
+
+    measurement = assess("cer", tight, effect_of_interest=0.05)
+
+    assert measurement.gating_eligible
+    assert measurement.note == ""
+
+
+def test_no_samples_is_not_a_score_of_zero() -> None:
+    measurement = assess("cer", [], effect_of_interest=0.05)
+
+    assert not measurement.gating_eligible
+    assert measurement.sample_size == 0
+
+
+def test_a_difference_inside_the_noise_has_no_direction() -> None:
+    """The single rule that stops a project talking itself into a result."""
+    import random
+
+    rng = random.Random(3)
+    candidate = assess("cer", [rng.gauss(0.120, 0.02) for _ in range(500)], 0.05)
+    reference = assess("cer", [rng.gauss(0.121, 0.02) for _ in range(500)], 0.05, seed=1)
+
+    assert "indistinguishable" in compare("cer", candidate, reference)
+
+
+def test_a_real_improvement_is_reported_with_its_margin() -> None:
+    import random
+
+    rng = random.Random(4)
+    candidate = assess("cer", [rng.gauss(0.10, 0.02) for _ in range(500)], 0.05)
+    reference = assess("cer", [rng.gauss(0.18, 0.02) for _ in range(500)], 0.05, seed=1)
+
+    verdict = compare("cer", candidate, reference)
+
+    assert "improved" in verdict
+
+
+def test_direction_follows_whether_lower_is_better() -> None:
+    import random
+
+    rng = random.Random(5)
+    candidate = assess("utmos", [rng.gauss(4.0, 0.2) for _ in range(500)], 0.3)
+    reference = assess("utmos", [rng.gauss(3.0, 0.2) for _ in range(500)], 0.3, seed=1)
+
+    assert "improved" in compare("utmos", candidate, reference, lower_is_better=False)
+    assert "regressed" in compare("cer", candidate, reference, lower_is_better=True)
+
+
+def test_an_ineligible_instrument_reports_but_never_judges() -> None:
+    """It may appear in the report; it may not decide pass or fail."""
+    candidate = assess("mcq", [0.5] * 10, effect_of_interest=0.03)
+    reference = assess("mcq", [0.4] * 10, effect_of_interest=0.03, seed=1)
+
+    verdict = compare("mcq", candidate, reference)
+
+    assert "reported only" in verdict
+    assert "improved" not in verdict and "regressed" not in verdict
