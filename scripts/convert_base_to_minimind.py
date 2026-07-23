@@ -76,12 +76,40 @@ def build_config(module: Any, config_json: dict[str, Any]) -> Any:
     )
 
 
-def max_logit_difference(model: Any, fixture_path: Path) -> float:
+def compare_to_fixture(model: Any, fixture_path: Path) -> dict[str, Any]:
+    """Compare against the logits recorded when the base was released.
+
+    Reports more than a maximum, because a maximum alone cannot tell the two
+    failure modes apart:
+
+    * a wrong rename *concentrates* -- one projection goes wrong and the error
+      compounds through the stack, so a few positions are far worse than the
+      rest, and the argmax moves;
+    * float32 accumulating differently *smears* -- every position drifts by
+      roughly the same amount, near the epsilon of the logit scale, and the
+      argmax never moves.
+
+    The spread ratio and the argmax agreement are what separate them.
+    """
     fixture = np.load(fixture_path)
+    reference = fixture["logits"]
     input_ids = torch.tensor(fixture["input_ids"], dtype=torch.long)
     with torch.inference_mode():
-        logits = model(input_ids=input_ids).logits
-    return float(np.abs(logits.float().numpy() - fixture["logits"]).max())
+        logits = model(input_ids=input_ids).logits.float().numpy()
+
+    difference = np.abs(logits - reference)
+    scale = float(np.abs(reference).max())
+    per_position = difference.max(axis=-1).ravel()
+    median = float(np.percentile(per_position, 50))
+    return {
+        "max_absolute": float(difference.max()),
+        "relative_to_scale": float(difference.max()) / scale,
+        "float32_eps_at_scale": scale * float(np.finfo(np.float32).eps),
+        # Near 1 means the error is spread evenly; large means it is piled on a
+        # few positions, which is what a wrong mapping looks like.
+        "spread_ratio": float(np.percentile(per_position, 99)) / max(median, 1e-30),
+        "argmax_agrees": bool((logits.argmax(-1) == reference.argmax(-1)).all()),
+    }
 
 
 def main() -> None:
@@ -101,10 +129,23 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path, help="checkpoint to write")
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument(
-        "--tolerance",
+        "--eps-multiple",
         type=float,
-        default=0.0,
-        help="largest tolerated logit difference; the default demands equality",
+        default=16.0,
+        help=(
+            "tolerated logit difference, in multiples of float32 epsilon at the "
+            "logit scale; expressed this way rather than as an absolute number "
+            "so the bound stays meaningful if the model's logit range changes"
+        ),
+    )
+    parser.add_argument(
+        "--max-spread",
+        type=float,
+        default=5.0,
+        help=(
+            "largest tolerated p99/p50 ratio of per-position error; a wrong "
+            "mapping piles error on a few positions, arithmetic noise does not"
+        ),
     )
     args = parser.parse_args()
 
@@ -124,12 +165,24 @@ def main() -> None:
         raise SystemExit(f"parameter mismatch: missing={missing} unexpected={unexpected}")
     model.eval().float()
 
-    difference = max_logit_difference(model, args.fixture)
-    if difference > args.tolerance:
-        raise SystemExit(
-            f"conversion rejected: logits differ by {difference:.6e}, "
-            f"above the tolerated {args.tolerance:.6e}"
+    comparison = compare_to_fixture(model, args.fixture)
+    allowed = comparison["float32_eps_at_scale"] * args.eps_multiple
+    failures = []
+    if comparison["max_absolute"] > allowed:
+        failures.append(
+            f"logits differ by {comparison['max_absolute']:.3e}, above the tolerated "
+            f"{allowed:.3e} ({args.eps_multiple:g} x float32 eps at this logit scale)"
         )
+    if comparison["spread_ratio"] > args.max_spread:
+        failures.append(
+            f"error is concentrated rather than spread: p99/p50 ratio "
+            f"{comparison['spread_ratio']:.1f}, above {args.max_spread:g} -- this is what a "
+            f"wrong parameter mapping looks like, not arithmetic noise"
+        )
+    if not comparison["argmax_agrees"]:
+        failures.append("the model's predictions changed, so the conversion is not faithful")
+    if failures:
+        raise SystemExit("conversion rejected: " + "; ".join(failures))
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), args.output)
@@ -138,7 +191,7 @@ def main() -> None:
         json.dumps(
             {
                 "output": str(args.output),
-                "max_logit_difference": difference,
+                "equivalence": comparison,
                 "parameters": sum(p.numel() for p in model.parameters()),
                 "config": {
                     "hidden_size": config.hidden_size,
