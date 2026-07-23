@@ -59,6 +59,11 @@ jobs:
           python scripts/smoke_service.py --base http://localhost:8000
           docker rm -f omni
 
+      - name: Delivery check
+        # Catches the gaps a unit test cannot see: a document promising an
+        # endpoint nobody built, a licence conclusion the code contradicts.
+        run: python scripts/verify_delivery.py
+
       - name: Publication gate
         # Reads the exit code directly. Piping it into anything would report
         # the pipeline's status instead, and a failing gate would pass.
