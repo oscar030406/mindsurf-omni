@@ -241,3 +241,29 @@ def test_the_architecture_states_the_cost_of_row_group_shuffling() -> None:
 
     assert "不是全局洗牌" in architecture
     assert "偏斜" in architecture
+
+
+def test_the_example_client_only_uses_endpoints_that_exist() -> None:
+    """A copyable example that calls a missing route is worse than no example."""
+    example = (ROOT / "examples" / "minimal_client.py").read_text(encoding="utf-8")
+    app = (ROOT / "src" / "mindsurf_omni" / "service" / "app.py").read_text(encoding="utf-8")
+
+    called = set(re.findall(r'/v1/[a-z/-]+', example))
+    implemented = set(re.findall(r'@app\.(?:get|post|websocket)\("(/v1/[^"]+)"', app))
+
+    assert called <= implemented, f"the example calls: {sorted(called - implemented)}"
+
+
+def test_the_example_does_not_hardcode_the_sample_rate() -> None:
+    """Assuming it is how a client ends up playing 24 kHz audio at 16 kHz."""
+    example = (ROOT / "examples" / "minimal_client.py").read_text(encoding="utf-8")
+
+    assert "x-sample-rate" in example
+    assert "input_sample_rate" in example  # read from session.created too
+
+
+def test_the_example_checks_the_licence_before_using_the_output() -> None:
+    """It is the first thing a backend author should see."""
+    example = (ROOT / "examples" / "minimal_client.py").read_text(encoding="utf-8")
+
+    assert "commercial_use_permitted" in example

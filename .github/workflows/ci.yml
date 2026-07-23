@@ -27,8 +27,8 @@ jobs:
 
       - name: Lint
         run: |
-          ruff check src tests scripts
-          ruff format --check src tests scripts
+          ruff check src tests scripts examples
+          ruff format --check src tests scripts examples
 
       - name: Type check
         # Not blocking yet, but the count is printed rather than swallowed:

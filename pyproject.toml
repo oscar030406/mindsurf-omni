@@ -47,6 +47,7 @@ packages = ["src/mindsurf_omni"]
 
 [tool.ruff]
 line-length = 100
+src = ["src", "tests", "scripts", "examples"]
 target-version = "py311"
 
 [tool.ruff.lint]
