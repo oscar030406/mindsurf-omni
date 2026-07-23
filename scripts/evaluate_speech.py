@@ -29,6 +29,9 @@ from mindsurf_omni.evaluation.metrics import (  # noqa: E402
     character_error_rate,
     compare,
 )
+from mindsurf_omni.evaluation.text_regression import (  # noqa: E402
+    assess_text_regression,
+)
 
 
 @dataclass
@@ -134,6 +137,12 @@ def main() -> None:
     parser.add_argument("--reference", type=Path, help="the model being compared against")
     parser.add_argument("--output", type=Path)
     parser.add_argument(
+        "--strict-losses",
+        type=Path,
+        help="JSON list of strict holdout losses; without it the report cannot "
+        "say whether the audio training eroded the text ability",
+    )
+    parser.add_argument(
         "--cer-effect",
         type=float,
         default=0.05,
@@ -177,6 +186,29 @@ def main() -> None:
             )
             for key in sorted(set(candidate.measurements) & set(reference.measurements))
         }
+
+    if args.strict_losses:
+        losses = json.loads(args.strict_losses.read_text(encoding="utf-8"))
+        regression = assess_text_regression(losses)
+        lines.append("")
+        lines.append(f"文本能力: {regression}")
+        if regression.note:
+            lines.append(f"  {regression.note}")
+        payload["text_regression"] = {
+            "value": regression.value,
+            "baseline": regression.baseline,
+            "difference": regression.difference,
+            "threshold": regression.threshold,
+            "verdict": regression.verdict,
+            "note": regression.note,
+        }
+    else:
+        # Named rather than omitted: a report silent on this has not shown that
+        # the audio training left the language ability intact, it has not
+        # looked.
+        lines.append("")
+        lines.append("文本能力: 未测（未提供 --strict-losses）")
+        payload["text_regression"] = None
 
     print("\n".join(lines))
     if args.output:

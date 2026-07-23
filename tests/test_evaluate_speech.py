@@ -134,3 +134,41 @@ def test_the_probe_set_has_no_template_breeding() -> None:
                     break
                 shared += 1
             assert shared < 6, f"{first!r} and {second!r} share a {shared}-character prefix"
+
+
+def test_a_report_without_the_text_check_says_so_rather_than_omitting_it() -> None:
+    """Silence would read as "text ability intact" when it means "not looked at"."""
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path as _Path
+
+    with tempfile.TemporaryDirectory() as directory:
+        candidate = _Path(directory) / "samples.jsonl"
+        candidate.write_text(
+            "\n".join(
+                json.dumps({"prompt": "a", "reference_text": "b", "transcript": "b"})
+                for _ in range(120)
+            ),
+            encoding="utf-8",
+        )
+        output = _Path(directory) / "report.json"
+        root = _Path(__file__).resolve().parent.parent
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(root / "scripts" / "evaluate_speech.py"),
+                "--candidate",
+                str(candidate),
+                "--output",
+                str(output),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=root,
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "未测" in result.stdout
+        assert json.loads(output.read_text(encoding="utf-8"))["candidate"]
+        assert json.loads(output.read_text(encoding="utf-8"))["text_regression"] is None
