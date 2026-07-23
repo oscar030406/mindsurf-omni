@@ -41,6 +41,24 @@ jobs:
       - name: Test
         run: pytest -q
 
+      - name: Build the container
+        # The image is what actually ships. A Dockerfile that no longer builds
+        # would otherwise be discovered by whoever tries to deploy, which is
+        # the worst moment to find out.
+        run: docker build -t mindsurf-omni:ci .
+
+      - name: Smoke the running service
+        # Over a real socket rather than in process: serialisation, dropped
+        # headers and missing WebSocket frames all pass an in-process test.
+        run: |
+          docker run -d --name omni -p 8000:8000 mindsurf-omni:ci
+          for attempt in $(seq 1 30); do
+            curl -sf http://localhost:8000/v1/models >/dev/null && break
+            sleep 2
+          done
+          python scripts/smoke_service.py --base http://localhost:8000
+          docker rm -f omni
+
       - name: Publication gate
         # Reads the exit code directly. Piping it into anything would report
         # the pipeline's status instead, and a failing gate would pass.

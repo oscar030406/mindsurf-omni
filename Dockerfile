@@ -12,9 +12,14 @@ RUN apt-get update \
 WORKDIR /app
 
 # Dependencies before source, so a code change does not invalidate the layer
-# that takes minutes to build.
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir fastapi "uvicorn[standard]" pydantic numpy soundfile
+# that takes minutes to build. The runtime set comes from pyproject rather than
+# being repeated here -- a hand-written list drifts, and the drift only shows
+# up as an ImportError inside a running container.
+COPY pyproject.toml README.md ./
+RUN mkdir -p src/mindsurf_omni \
+    && touch src/mindsurf_omni/__init__.py \
+    && pip install --no-cache-dir . \
+    && rm -rf src
 
 COPY src/ ./src/
 COPY assets/tokenizer/ ./assets/tokenizer/

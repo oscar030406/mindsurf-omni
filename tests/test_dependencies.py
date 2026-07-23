@@ -105,3 +105,39 @@ def test_vendored_modules_are_imported_lazily() -> None:
             assert not (set(names) & VENDORED), (
                 f"{path.name} imports a vendored module at top level"
             )
+
+
+def test_the_container_installs_declared_dependencies_not_a_copied_list() -> None:
+    """A hand-written list in the Dockerfile drifts from pyproject silently.
+
+    The drift only shows up as an ImportError inside a running container,
+    which is the most expensive place to find it.
+    """
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    install_lines = [
+        line for line in dockerfile.splitlines() if "pip install" in line and "#" not in line
+    ]
+
+    assert install_lines, "the Dockerfile installs nothing"
+    for line in install_lines:
+        # Installing the project itself picks up whatever pyproject declares.
+        assert "pip install --no-cache-dir ." in line or "-r " in line, (
+            f"packages named by hand in the Dockerfile: {line.strip()}"
+        )
+
+
+def test_the_container_does_not_bake_in_the_weights() -> None:
+    """They are 359 MB, carry a non-commercial licence, and version separately."""
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "VOLUME" in dockerfile
+    for pattern in ("COPY release", "COPY out", "COPY weights", "ADD release"):
+        assert pattern not in dockerfile
+
+
+def test_the_container_runs_as_a_non_root_user() -> None:
+    """It reads weights and answers HTTP; it writes nothing else."""
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "USER omni" in dockerfile
+    assert dockerfile.index("USER omni") < dockerfile.index("CMD ")
