@@ -216,3 +216,26 @@ def test_the_factory_entrypoint_works_with_no_arguments() -> None:
     paths = {route.path for route in app.routes if hasattr(route, "path")}
 
     assert {"/v1/models", "/v1/realtime", "/v1/chat/completions"} <= paths
+
+
+def test_the_integration_guide_documents_exactly_what_exists() -> None:
+    """A guide that names a missing endpoint sends the backend to a 404.
+
+    Checked rather than trusted, because the guide and the routes are edited
+    at different times by different concerns.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    guide = (root / "docs" / "INTEGRATION.md").read_text(encoding="utf-8")
+    documented = set(re.findall(r"(?:POST|GET|WS) (/v1/[a-z/-]+)", guide))
+
+    implemented = {
+        route.path for route in create_app().routes if getattr(route, "path", "").startswith("/v1")
+    }
+
+    assert documented == implemented, (
+        f"documented but missing: {sorted(documented - implemented)}; "
+        f"implemented but undocumented: {sorted(implemented - documented)}"
+    )
