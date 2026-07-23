@@ -41,7 +41,7 @@ USER omni
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/models').read()"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"
 
 CMD ["uvicorn", "--factory", "mindsurf_omni.service.app:create_app", \
      "--host", "0.0.0.0", "--port", "8000"]

@@ -96,6 +96,24 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             ]
         )
 
+    @app.get("/health")
+    async def health(request: Request) -> Any:
+        """Whether this instance can serve, and which part cannot.
+
+        Answers 200 while degraded, because a service still able to reply over
+        the fallback should stay in rotation; 503 only when nothing can serve.
+        """
+        from fastapi.responses import JSONResponse
+
+        from mindsurf_omni.service.health import assess as assess_health
+
+        report = assess_health(
+            getattr(request.app.state, "engine", None),
+            getattr(request.app.state, "configuration_error", None),
+        )
+        code = status.HTTP_503_SERVICE_UNAVAILABLE if report.status == "unavailable" else 200
+        return JSONResponse(report.to_dict(), status_code=code)
+
     @app.get("/v1/licence")
     async def licence() -> dict[str, Any]:
         """The whole chain, including the parts nobody has read.
