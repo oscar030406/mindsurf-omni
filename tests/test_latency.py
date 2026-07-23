@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from mindsurf_omni.evaluation.latency import (
     STAGES,
     LatencyReport,
@@ -45,18 +46,16 @@ def test_an_unknown_stage_is_refused_rather_than_silently_added() -> None:
     """A typo would create a stage the report never aggregates."""
     timings = TurnTimings()
 
-    with pytest.raises(ValueError, match="unknown stage"):
-        with stage(timings, "encdoe"):
-            pass
+    with pytest.raises(ValueError, match="unknown stage"), stage(timings, "encdoe"):
+        pass
 
 
 def test_the_timer_records_even_when_the_stage_raises() -> None:
     """A stage that failed still consumed time, and hiding it distorts the total."""
     timings = TurnTimings()
 
-    with pytest.raises(RuntimeError):
-        with stage(timings, "synthesis"):
-            raise RuntimeError("synthesiser unavailable")
+    with pytest.raises(RuntimeError), stage(timings, "synthesis"):
+        raise RuntimeError("synthesiser unavailable")
 
     assert "synthesis" in timings.stages
 

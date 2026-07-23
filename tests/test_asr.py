@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from mindsurf_omni.service.asr import (
     SenseVoiceRecogniser,
     WhisperRecogniser,

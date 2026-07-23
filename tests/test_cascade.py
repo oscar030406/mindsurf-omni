@@ -12,6 +12,7 @@ import asyncio
 from collections.abc import AsyncIterator
 
 import pytest
+
 from mindsurf_omni.contract import TokenSpec
 from mindsurf_omni.service.cascade import CascadeEngine
 from mindsurf_omni.service.engine import GenerationSettings

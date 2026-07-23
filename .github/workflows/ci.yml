@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The publication gate audits commit messages over a range, so it
+          # needs more than the shallow clone actions/checkout takes by default.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e ".[dev]" fastapi "uvicorn[standard]" numpy soundfile
+
+      - name: Lint
+        run: |
+          ruff check src tests scripts
+          ruff format --check src tests scripts
+
+      - name: Type check
+        # Not blocking yet: 36 findings outstanding, mostly stale type: ignore
+        # comments and the untyped third-party surfaces (funasr, whisper,
+        # MiniMind-O's modules). Reported so the count is visible and can be
+        # driven down; flipped to blocking once it reaches zero, rather than
+        # merged red and ignored.
+        continue-on-error: true
+        run: mypy src tests scripts
+
+      - name: Test
+        run: pytest -q
+
+      - name: Publication gate
+        # Reads the exit code directly. Piping it into anything would report
+        # the pipeline's status instead, and a failing gate would pass.
+        run: python scripts/release_gate.py --range origin/main...HEAD

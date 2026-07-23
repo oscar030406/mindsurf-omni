@@ -97,7 +97,9 @@ def peak_normalise(pcm: bytes, target_peak: float = 0.95) -> bytes:
     return array.array("h", [int(sample * gain) for sample in samples]).tobytes()
 
 
-def trim_silence(pcm: bytes, threshold: float = 0.01, keep_ms: int = 50, rate: int = 24_000) -> bytes:
+def trim_silence(
+    pcm: bytes, threshold: float = 0.01, keep_ms: int = 50, rate: int = 24_000
+) -> bytes:
     """Drop leading and trailing near-silence, keeping a short margin.
 
     Generated clips often start and end with dead air. Concatenated across a

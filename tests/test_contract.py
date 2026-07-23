@@ -8,6 +8,7 @@ that changes later costs two other teams a day each.
 from __future__ import annotations
 
 import pytest
+
 from mindsurf_omni.contract import (
     AUDIO_ENCODING,
     INPUT_SAMPLE_RATE,

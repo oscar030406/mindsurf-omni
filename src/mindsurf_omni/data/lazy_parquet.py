@@ -133,10 +133,12 @@ def _single_row_copy(path: str) -> str:
 
     handle = pq.ParquetFile(path)
     first = next(handle.iter_batches(batch_size=1))
-    target = tempfile.NamedTemporaryFile(suffix=".parquet", delete=False)
-    target.close()
-    pq.write_table(pa.Table.from_batches([first]), target.name)
-    return target.name
+    # delete=False and closed immediately: pyarrow writes by path, and on
+    # Windows a file cannot be reopened while the handle is still held.
+    with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as target:
+        name = target.name
+    pq.write_table(pa.Table.from_batches([first]), name)
+    return name
 
 
 def patch_omni_dataset(cached_row_groups: int = 4) -> None:

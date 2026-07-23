@@ -173,9 +173,7 @@ def compare(
     threshold = resolvable_effect(combined)
 
     if abs(difference) <= threshold:
-        return (
-            f"{name}: indistinguishable ({difference:+.4f}, within ±{threshold:.4f})"
-        )
+        return f"{name}: indistinguishable ({difference:+.4f}, within ±{threshold:.4f})"
     improved = difference < 0 if lower_is_better else difference > 0
     verdict = "improved" if improved else "regressed"
     return f"{name}: {verdict} ({difference:+.4f} against ±{threshold:.4f})"

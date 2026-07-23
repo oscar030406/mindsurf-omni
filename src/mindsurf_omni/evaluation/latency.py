@@ -12,8 +12,8 @@ that you missed the budget; a breakdown tells you which stage to go fix.
 from __future__ import annotations
 
 import time
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from mindsurf_omni.evaluation.metrics import Measurement, assess
@@ -79,9 +79,7 @@ class LatencyReport:
         """Median per stage, so the largest term is visible at a glance."""
         medians = {}
         for name in STAGES:
-            values = sorted(
-                turn.stages[name] for turn in self.turns if name in turn.stages
-            )
+            values = sorted(turn.stages[name] for turn in self.turns if name in turn.stages)
             if values:
                 medians[name] = values[len(values) // 2]
         return medians

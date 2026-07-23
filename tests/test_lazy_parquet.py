@@ -12,6 +12,7 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+
 from mindsurf_omni.data.lazy_parquet import LazyParquetTable
 
 

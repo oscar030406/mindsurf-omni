@@ -146,7 +146,7 @@ def main() -> None:
     candidate = score("candidate", load(args.candidate), effects)
 
     lines = [f"候选 n={len(candidate.samples)}"]
-    for key, measurement in sorted(candidate.measurements.items()):
+    for _, measurement in sorted(candidate.measurements.items()):
         mark = "有门控资格" if measurement.gating_eligible else f"仅报告（{measurement.note}）"
         lines.append(f"  {measurement}  {mark}")
 
