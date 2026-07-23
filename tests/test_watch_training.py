@@ -152,3 +152,40 @@ def test_a_window_that_is_merely_sparse_for_everyone_still_compares(tmp_path: Pa
 
     assert [row["epoch"] for row in rows] == [1, 2]
     assert rows[1]["verdict"] == "improved"
+
+
+def test_windows_can_disagree_and_the_tool_does_not_hide_it(tmp_path: Path) -> None:
+    """A single window is not a conclusion about the epoch.
+
+    Measured on the real run: epoch 2 to 3 was indistinguishable at step
+    5000-8000 and improved at 15000-18000. Reading only the first would have
+    said training had plateaued, and it had not.
+
+    The spreads reproduce the measured noise floors, including the early
+    window's being four times the middle one's -- that width is why the early
+    window could not resolve the difference, and a tidy sequence would not
+    show it.
+    """
+    import random
+
+    rng = random.Random(0)
+    early = _synthetic(
+        {
+            2: [rng.gauss(4.3479, 0.19) for _ in range(61)],
+            3: [rng.gauss(4.4715, 0.46) for _ in range(61)],
+        }
+    )
+    rows_early = compare_epochs(parse(_write(tmp_path, early)), "audio", 5000, 8000)
+
+    late = _synthetic(
+        {
+            2: [rng.gauss(4.4151, 0.30) for _ in range(61)],
+            3: [rng.gauss(4.1462, 0.10) for _ in range(61)],
+        }
+    )
+    second = tmp_path / "second"
+    second.mkdir()
+    rows_late = compare_epochs(parse(_write(second, late)), "audio", 5000, 8000)
+
+    assert rows_early[1]["verdict"] == "indistinguishable"
+    assert rows_late[1]["verdict"] == "improved"
