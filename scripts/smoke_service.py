@@ -78,6 +78,31 @@ def check_models(client: httpx.Client, results: Results) -> str | None:
     return str(model.get("path"))
 
 
+def check_health(client: httpx.Client, results: Results) -> None:
+    """Readiness must name what is not ready, not just report a status."""
+    response = client.get("/health")
+    results.check(
+        "GET /health 有响应",
+        response.status_code in {200, 503},
+        str(response.status_code),
+    )
+    if response.status_code not in {200, 503}:
+        return
+    body = response.json()
+    results.check(
+        "健康报告含状态与未就绪清单",
+        "status" in body and "not_ready" in body,
+        f"keys={sorted(body)}",
+    )
+    # An empty report reading as healthy is the failure mode of every check
+    # that only pings the process.
+    results.check(
+        "空报告不算就绪",
+        not (body.get("status") == "ready" and not body.get("components")),
+        "报告为空却称 ready",
+    )
+
+
 def check_unconfigured(client: httpx.Client, results: Results) -> None:
     """With no engine, endpoints must refuse with a reason, not fake success."""
     for path in ("/v1/token-spec", "/v1/voices"):
@@ -198,6 +223,8 @@ def main() -> None:
         except httpx.ConnectError as error:
             print(f"连不上 {args.base}: {error}")
             raise SystemExit(2) from error
+
+        check_health(client, results)
 
         if path is None:
             check_unconfigured(client, results)
