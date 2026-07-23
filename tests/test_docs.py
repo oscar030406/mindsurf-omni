@@ -188,3 +188,34 @@ def test_the_a2a_script_survives_a_dropped_connection() -> None:
 
     assert "setsid" in script
     assert "PYTHONUNBUFFERED=1" in script  # or the log lags thousands of steps
+
+
+def test_the_plan_states_its_own_status_rather_than_reading_as_a_forecast() -> None:
+    """A plan written before the work, left unmarked, misdirects whoever reads it.
+
+    It is the largest document here and the one most likely to be opened first.
+    """
+    plan = (ROOT / "docs" / "ACTION_PLAN.md").read_text(encoding="utf-8")
+    banner = plan[: plan.index("本文件是")]
+
+    assert "状态" in banner
+    # The most important thing it must not let a reader assume.
+    assert "尚无任何真实数字" in banner or "没有的" in banner
+    # And it must point at where departures were recorded rather than hiding them.
+    assert "DECISIONS.md" in banner
+
+
+def test_no_document_claims_a_measured_result_that_does_not_exist() -> None:
+    """The pipeline can produce CER and MOS; nothing has run it on a real model.
+
+    A number quoted anywhere would be from a stub, and quoting a stub as a
+    result is the fabrication this project is built to avoid.
+    """
+    for doc in DOCS:
+        text = doc.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            # A CER figure would look like "CER 0.12" or "CER 为 12%".
+            if re.search(r"CER\s*[:：为=]?\s*\d+(\.\d+)?\s*%?", line):
+                assert any(
+                    marker in line for marker in ("±", "极限", "阈值", "分辨", "假设", "例")
+                ), f"{doc.name} quotes a CER without qualifying it: {line.strip()}"
