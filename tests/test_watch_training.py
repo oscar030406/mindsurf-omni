@@ -124,3 +124,31 @@ def test_the_first_epoch_gets_no_verdict_because_there_is_nothing_to_compare(
 
     assert len(rows) == 1
     assert "verdict" not in rows[0]
+
+
+def test_a_partly_filled_window_is_skipped_not_compared(tmp_path: Path) -> None:
+    """A quarter-filled window is biased, not merely noisy.
+
+    Its points are the *first* part of the window, and during annealing that
+    part differs systematically from the rest -- so its mean is wrong in a
+    direction, which a noise floor cannot express.
+    """
+    log = _synthetic({1: [5.0 + (i % 5) * 0.02 for i in range(60)]})
+    log += "\n" + _synthetic({2: [4.4 + (i % 5) * 0.02 for i in range(60)]})
+    # Epoch 3 has crossed only a quarter of the window.
+    log += "\n" + _synthetic({3: [4.2 + (i % 5) * 0.02 for i in range(15)]})
+
+    rows = compare_epochs(parse(_write(tmp_path, log)), "audio", 5000, 8000)
+
+    assert [row["epoch"] for row in rows] == [1, 2]
+
+
+def test_a_window_that_is_merely_sparse_for_everyone_still_compares(tmp_path: Path) -> None:
+    """Coverage is relative: a wide log interval is not a partial epoch."""
+    log = _synthetic({1: [5.0 + (i % 5) * 0.02 for i in range(12)]})
+    log += "\n" + _synthetic({2: [4.4 + (i % 5) * 0.02 for i in range(12)]})
+
+    rows = compare_epochs(parse(_write(tmp_path, log)), "audio", 5000, 8000)
+
+    assert [row["epoch"] for row in rows] == [1, 2]
+    assert rows[1]["verdict"] == "improved"

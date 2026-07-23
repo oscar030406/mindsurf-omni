@@ -67,20 +67,36 @@ def window(points: list[Point], epoch: int, low: int, high: int) -> list[Point]:
 
 
 def compare_epochs(
-    points: list[Point], metric: str, low: int, high: int, tolerance: float = 3.0
+    points: list[Point],
+    metric: str,
+    low: int,
+    high: int,
+    tolerance: float = 3.0,
+    minimum_coverage: float = 0.8,
 ) -> list[dict[str, object]]:
     """Aligned comparison across epochs, with a verdict per step.
 
-    Only epochs that actually reached this window are compared. An epoch still
-    short of it would otherwise contribute a truncated sample and a noise floor
-    computed from too few points.
+    An epoch is compared only once it has largely crossed the window. A
+    partially filled one is not merely a smaller sample -- it is the *first*
+    part of the window, which during annealing is systematically different
+    from the rest, so its mean is biased rather than noisy.
+
+    Coverage is measured against the fullest epoch rather than an absolute
+    count, because the number of logged points per window depends on the log
+    interval, which is a run-time choice.
     """
     results: list[dict[str, object]] = []
     previous: tuple[float, float] | None = None
 
-    for epoch in sorted({p.epoch for p in points}):
-        selected = window(points, epoch, low, high)
-        if len(selected) < 10:
+    windows = {
+        epoch: window(points, epoch, low, high) for epoch in sorted({p.epoch for p in points})
+    }
+    fullest = max((len(selected) for selected in windows.values()), default=0)
+    if fullest == 0:
+        return results
+
+    for epoch, selected in windows.items():
+        if len(selected) < max(10, int(fullest * minimum_coverage)):
             continue
         values = [getattr(p, metric) for p in selected]
         mean = statistics.fmean(values)
