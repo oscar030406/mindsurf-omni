@@ -43,9 +43,7 @@ class OmniModel(Protocol):
     satisfies it too.
     """
 
-    def stream_generate(
-        self, input_ids: Any, audio_inputs: Any | None, **kwargs: Any
-    ) -> Any: ...
+    def stream_generate(self, input_ids: Any, audio_inputs: Any | None, **kwargs: Any) -> Any: ...
 
 
 @dataclass(slots=True)

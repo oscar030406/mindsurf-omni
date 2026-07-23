@@ -6,6 +6,7 @@ import array
 import struct
 
 import pytest
+
 from mindsurf_omni.service.native import (
     DEFAULT_CHUNK_FRAMES,
     MIMI_FRAME_RATE_HZ,
