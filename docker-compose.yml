@@ -1,0 +1,15 @@
+services:
+  omni:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Weights live outside the image; point this at the release directory.
+      - ./release:/app/weights:ro
+    environment:
+      # native uses the Thinker-Talker path; cascade falls back to
+      # ASR + text + TTS. Unset, the service answers 503 with a reason
+      # rather than pretending to work.
+      MINDSURF_ENGINE: "${MINDSURF_ENGINE:-}"
+      MINDSURF_WEIGHTS: /app/weights
+    restart: unless-stopped

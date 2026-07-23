@@ -204,3 +204,14 @@ def test_token_spec_carries_what_a_client_needs_to_build_prompts(client: TestCli
     assert body["input_sample_rate"] == 16_000
     assert body["output_sample_rate"] == 24_000
     assert body["special_tokens"]["audio_start"] == 14
+
+
+def test_the_factory_entrypoint_works_with_no_arguments() -> None:
+    """The container runs `uvicorn --factory create_app`, which passes nothing.
+
+    A signature change that broke this would only show up at deploy time.
+    """
+    app = create_app()
+    paths = {route.path for route in app.routes if hasattr(route, "path")}
+
+    assert {"/v1/models", "/v1/realtime", "/v1/chat/completions"} <= paths
