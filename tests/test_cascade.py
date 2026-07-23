@@ -1,0 +1,109 @@
+"""The cascade's latency behaviour, tested without a model.
+
+Stubs stand in for the three components, with controlled delays. That is the
+point: what governs time-to-first-audio here is *when synthesis starts*, not
+how fast any model is, and stubs make that visible in a way real models would
+obscure.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import AsyncIterator
+
+import pytest
+from mindsurf_omni.contract import TokenSpec
+from mindsurf_omni.service.cascade import CascadeEngine
+from mindsurf_omni.service.engine import GenerationSettings
+
+SPEC = TokenSpec(
+    text_vocab_size=6400,
+    audio_codebooks=8,
+    audio_codebook_size=2048,
+    audio_frame_rate_hz=12.5,
+    special_tokens={"im_start": 1, "im_end": 2},
+    audio_special_tokens={"pad": 2049, "stop": 2050},
+)
+
+
+def _engine(reply: str, token_delay: float = 0.0, synth_delay: float = 0.0) -> CascadeEngine:
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "你好", "zh"
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        for character in reply:
+            if token_delay:
+                await asyncio.sleep(token_delay)
+            yield character
+
+    async def synthesise(text: str, settings: object) -> bytes:
+        if synth_delay:
+            await asyncio.sleep(synth_delay)
+        return text.encode("utf-8")  # stand-in for PCM
+
+    return CascadeEngine(transcribe, generate, synthesise, [], SPEC)  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_speech_starts_at_the_first_clause_not_the_end() -> None:
+    """The whole latency argument rests on this."""
+    engine = _engine("今天天气真好。我们出去走走吧。")
+
+    chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
+
+    assert [chunk.text for chunk in chunks if chunk.text] == [
+        "今天天气真好。",
+        "我们出去走走吧。",
+    ]
+    assert chunks[-1].is_final
+
+
+@pytest.mark.asyncio
+async def test_first_audio_arrives_long_before_the_reply_finishes() -> None:
+    """A 40-character reply must not cost 40 characters of latency."""
+    engine = _engine("今天天气真好。" + "很" * 60 + "。", token_delay=0.002)
+
+    first = None
+    async for chunk in engine.respond(b"", 16_000, GenerationSettings()):
+        first = chunk
+        break
+
+    assert first is not None and first.text == "今天天气真好。"
+    # Roughly the seven characters of the first clause, not the sixty-eight of
+    # the whole reply.
+    assert engine.last_timings.time_to_first_audio_ms < 60
+
+
+@pytest.mark.asyncio
+async def test_a_reply_with_no_sentence_end_is_still_spoken() -> None:
+    """Dropping the tail because it lacks punctuation would lose the answer."""
+    engine = _engine("好的")
+
+    chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
+
+    assert [chunk.text for chunk in chunks] == ["好的"]
+    assert chunks[-1].is_final
+
+
+@pytest.mark.asyncio
+async def test_timings_attribute_each_stage() -> None:
+    """A single total cannot tell you which stage to fix."""
+    engine = _engine("你好呀。", synth_delay=0.01)
+
+    async for _ in engine.respond(b"", 16_000, GenerationSettings()):
+        pass
+
+    timings = engine.last_timings
+    assert timings.first_clause_ms > 0
+    assert timings.first_synthesis_ms >= 10  # the delay we injected
+    assert timings.time_to_first_audio_ms >= timings.first_clause_ms
+
+
+@pytest.mark.asyncio
+async def test_an_empty_reply_produces_no_audio() -> None:
+    """Synthesising silence wastes a request and plays a click."""
+    engine = _engine("")
+
+    chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
+
+    assert chunks == []
