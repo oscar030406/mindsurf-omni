@@ -109,8 +109,7 @@ def test_an_epoch_that_has_not_reached_the_window_is_skipped(tmp_path: Path) -> 
     """A truncated sample would give a noise floor computed from too few points."""
     log = _synthetic({1: [5.0] * 60, 2: [4.4] * 60})
     log += "\n" + (
-        "Epoch:[3/6](100/31224), loss: 6.0, text: 1.6, "
-        "audio: 4.4, lr: 0.0004, epoch_time: 1.0min"
+        "Epoch:[3/6](100/31224), loss: 6.0, text: 1.6, audio: 4.4, lr: 0.0004, epoch_time: 1.0min"
     )
 
     rows = compare_epochs(parse(_write(tmp_path, log)), "audio", 5000, 8000)
