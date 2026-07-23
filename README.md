@@ -125,6 +125,7 @@ uv run mypy src tests scripts
 ## 5. 相关文档
 
 - **[交接](docs/HANDOVER.md)：接手先读这份**
+- [架构](docs/ARCHITECTURE.md)：数据怎么流，以及五个不显然的决定
 - [接入指南](docs/INTEGRATION.md)：后端与前端要的全部，不必读训练代码
 - [运行手册](docs/RUNBOOK.md)：出问题时按症状查，每条都写了怎么确认
 - [评测](docs/EVALUATION.md)：怎么测，以及测出来的东西能说什么、不能说什么

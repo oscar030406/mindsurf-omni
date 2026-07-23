@@ -219,3 +219,25 @@ def test_no_document_claims_a_measured_result_that_does_not_exist() -> None:
                 assert any(
                     marker in line for marker in ("±", "极限", "阈值", "分辨", "假设", "例")
                 ), f"{doc.name} quotes a CER without qualifying it: {line.strip()}"
+
+
+def test_the_architecture_lists_every_service_module() -> None:
+    """A module absent from the map is one nobody knows they can change safely."""
+    architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+
+    modules = {
+        path.name
+        for path in (ROOT / "src" / "mindsurf_omni" / "service").glob("*.py")
+        if path.name != "__init__.py"
+    }
+    missing = [name for name in modules if name not in architecture]
+
+    assert not missing, f"the architecture does not mention: {sorted(missing)}"
+
+
+def test_the_architecture_states_the_cost_of_row_group_shuffling() -> None:
+    """Stating only the benefit would make it look free, and it is not."""
+    architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+
+    assert "不是全局洗牌" in architecture
+    assert "偏斜" in architecture
