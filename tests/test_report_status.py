@@ -90,3 +90,35 @@ def test_training_summary_reports_more_than_one_window(tmp_path: Path) -> None:
 def test_a_missing_log_is_said_rather_than_skipped(tmp_path: Path) -> None:
     assert any("未提供" in line for line in training(None))
     assert any("未提供" in line or "没有" in line for line in training(tmp_path / "absent.log"))
+
+
+def test_a_missing_licence_record_is_reported_not_raised(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A status command that dies on a missing file surfaces nothing.
+
+    Found by running it from a directory where the record was absent: it
+    raised FileNotFoundError instead of saying the file was not there.
+    """
+    import scripts.report_status as report
+
+    monkeypatch.setattr(report, "ROOT", tmp_path)
+
+    lines = report.licence()
+
+    assert any("不在" in line for line in lines)
+
+
+def test_a_corrupt_licence_record_is_treated_as_unusable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A half-written record must not be read as permission."""
+    import scripts.report_status as report
+
+    (tmp_path / "configs" / "release").mkdir(parents=True)
+    (tmp_path / "configs" / "release" / "licence.json").write_text("{ not json", encoding="utf-8")
+    monkeypatch.setattr(report, "ROOT", tmp_path)
+
+    lines = report.licence()
+
+    assert any("无法解析" in line for line in lines)

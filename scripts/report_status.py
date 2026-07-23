@@ -40,7 +40,17 @@ def repository() -> list[str]:
 
 
 def licence() -> list[str]:
-    record = json.loads((ROOT / "configs" / "release" / "licence.json").read_text(encoding="utf-8"))
+    path = ROOT / "configs" / "release" / "licence.json"
+    if not path.is_file():
+        # Reported rather than raised. A status command that dies on a missing
+        # file tells you less than one that names the file, and this one exists
+        # precisely to surface absences.
+        return [f"许可记录不在 {path}——无法判断产出物能否使用"]
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        record["conclusion"], record["assets"]
+    except (json.JSONDecodeError, KeyError) as error:
+        return [f"许可记录无法解析（{type(error).__name__}）——按不可用处理"]
     unverified = [asset["name"] for asset in record["assets"] if not asset["verified"]]
     lines = [
         f"可商用: {record['conclusion']['commercial_use_permitted']}"
