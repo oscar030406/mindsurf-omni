@@ -126,6 +126,7 @@ uv run mypy src tests scripts
 
 - [接入指南](docs/INTEGRATION.md)：后端与前端要的全部，不必读训练代码
 - [运行手册](docs/RUNBOOK.md)：出问题时按症状查，每条都写了怎么确认
+- [评测](docs/EVALUATION.md)：怎么测，以及测出来的东西能说什么、不能说什么
 - [行动指南](docs/ACTION_PLAN.md)：七天计划、跳出上游框架的六处决定及其理由、风险与退路
 - [基座接入](docs/CONVERSION.md)：文本基座怎么变成 Thinker，以及等价性怎么验
 - [吞吐](docs/THROUGHPUT.md)：GPU 到底在不在等 CPU（实测推翻了直觉）

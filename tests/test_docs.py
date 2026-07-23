@@ -67,3 +67,29 @@ def test_the_runbook_covers_the_failures_that_have_actually_happened() -> None:
         "循环论证",  # scoring a model with its own component
     ]:
         assert symptom in runbook, f"the runbook does not cover {symptom!r}"
+
+
+def test_the_evaluation_guide_states_the_three_rules_it_enforces() -> None:
+    """Each is enforced in code; the guide must not omit one and imply choice."""
+    guide = (ROOT / "docs" / "EVALUATION.md").read_text(encoding="utf-8")
+
+    assert "循环论证" in guide  # the judge must be independent
+    assert "仅报告" in guide  # an instrument that cannot resolve may not judge
+    assert "无法区分" in guide  # a difference inside the noise has no direction
+
+
+def test_the_evaluation_guide_chains_scripts_that_exist_in_that_order() -> None:
+    """A guide whose steps do not chain sends the reader in a circle."""
+    guide = (ROOT / "docs" / "EVALUATION.md").read_text(encoding="utf-8")
+
+    for step in (
+        "generate_speech_samples.py",
+        "transcribe_samples.py",
+        "evaluate_speech.py",
+    ):
+        assert step in guide
+        assert (ROOT / "scripts" / step).is_file()
+
+    # The order matters: transcription consumes what generation writes.
+    assert guide.index("generate_speech_samples.py") < guide.index("transcribe_samples.py")
+    assert guide.index("transcribe_samples.py") < guide.index("evaluate_speech.py")
