@@ -24,6 +24,8 @@ dev = [
     # dependency belongs here rather than in the runtime set -- the container
     # serves requests and never reads a training file.
     "pyarrow>=15",
+    # The smoke test drives the running service over a real socket.
+    "websockets>=12",
 ]
 # Training and evaluation, which run on the host and never in the container.
 # torch alone is ~2.5 GB; shipping it to every server that only answers HTTP
