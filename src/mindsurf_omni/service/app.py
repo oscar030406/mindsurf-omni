@@ -96,6 +96,25 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             ]
         )
 
+    @app.get("/v1/licence")
+    async def licence() -> dict[str, Any]:
+        """The whole chain, including the parts nobody has read.
+
+        /v1/models states the conclusion; this is what it rests on. A caller
+        deciding whether they may ship something needs to see that four of the
+        six assets have unread terms, not just that the answer is no.
+        """
+        from pathlib import Path as _Path
+
+        record = _Path(__file__).resolve().parents[3] / "configs" / "release" / "licence.json"
+        if not record.is_file():
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND,
+                "the licence record is not in this image; it lives at "
+                "configs/release/licence.json in the repository",
+            )
+        return json.loads(record.read_text(encoding="utf-8"))  # type: ignore[no-any-return]
+
     @app.get("/v1/token-spec")
     async def token_spec(request: Request) -> dict[str, Any]:
         """Served from the running model so it cannot drift from the weights."""

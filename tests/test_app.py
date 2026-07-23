@@ -270,3 +270,21 @@ def test_an_engine_passed_in_wins_over_the_environment(
     client = TestClient(create_app(FakeEngine()))
 
     assert client.get("/v1/models").json()["data"][0]["path"] == "cascade"
+
+
+def test_the_licence_endpoint_serves_the_chain_behind_the_conclusion(
+    client: TestClient,
+) -> None:
+    """A caller deciding what they may ship needs the unread terms, not just "no"."""
+    body = client.get("/v1/licence").json()
+
+    assert body["conclusion"]["commercial_use_permitted"] is False
+    unverified = [asset for asset in body["assets"] if not asset["verified"]]
+    assert unverified, "if everything is verified, delete this assertion"
+    # Null, not false: nobody has read these.
+    assert all(asset["commercial_use"] is None for asset in unverified)
+
+
+def test_the_licence_endpoint_is_available_without_an_engine(bare: TestClient) -> None:
+    """It describes what the image carries, which does not depend on a model."""
+    assert bare.get("/v1/licence").status_code == 200

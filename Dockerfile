@@ -23,6 +23,8 @@ RUN mkdir -p src/mindsurf_omni \
 
 COPY src/ ./src/
 COPY assets/tokenizer/ ./assets/tokenizer/
+# The licence record is served at /v1/licence, so it ships with the image.
+COPY configs/release/ ./configs/release/
 
 ENV PYTHONPATH=/app/src \
     PYTHONUNBUFFERED=1
