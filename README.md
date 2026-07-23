@@ -124,6 +124,10 @@ uv run mypy src tests scripts
 
 ## 5. 相关文档
 
+- [接入指南](docs/INTEGRATION.md)：后端与前端要的全部，不必读训练代码
+- [运行手册](docs/RUNBOOK.md)：出问题时按症状查，每条都写了怎么确认
 - [行动指南](docs/ACTION_PLAN.md)：七天计划、跳出上游框架的六处决定及其理由、风险与退路
+- [基座接入](docs/CONVERSION.md)：文本基座怎么变成 Thinker，以及等价性怎么验
+- [吞吐](docs/THROUGHPUT.md)：GPU 到底在不在等 CPU（实测推翻了直觉）
 - [上游预训练仓库](https://github.com/io-wy/MindSurf/tree/pretrain)：基座怎么来的
 - [MiniMind-O](https://github.com/jingyaogong/minimind-o)：音频架构的上游（Apache-2.0）
