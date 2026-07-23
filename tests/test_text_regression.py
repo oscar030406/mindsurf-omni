@@ -77,3 +77,33 @@ def test_the_verdict_prints_both_sides_of_the_comparison() -> None:
 
     assert "1.7268" in text  # the baseline
     assert "regressed" in text
+
+
+def test_the_measurement_script_pins_what_makes_runs_comparable() -> None:
+    """A different sequence length yields a number that looks comparable and is not.
+
+    The baseline is 1.7268 at max_length 384. Measuring at another length and
+    comparing against it is the quiet way to invent a regression or hide one.
+    """
+    from pathlib import Path
+
+    script = (
+        Path(__file__).resolve().parent.parent / "scripts" / "measure_strict_loss.py"
+    ).read_text(encoding="utf-8")
+
+    assert "BASELINE_MAX_LENGTH = 384" in script
+    assert "不可比" in script  # warns when the length differs
+    # The holdout's digest is printed, so two runs can be told apart.
+    assert "sha256" in script
+
+
+def test_the_measurement_script_refuses_a_checkpoint_that_is_not_the_thinker() -> None:
+    """Loading the wrong file gives random weights and a plausible-looking loss."""
+    from pathlib import Path
+
+    script = (
+        Path(__file__).resolve().parent.parent / "scripts" / "measure_strict_loss.py"
+    ).read_text(encoding="utf-8")
+
+    assert "not the Thinker" in script
+    assert "loaded < 50" in script
