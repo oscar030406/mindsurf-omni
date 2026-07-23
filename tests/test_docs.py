@@ -121,3 +121,33 @@ def test_the_decisions_that_contradict_the_brief_give_their_evidence() -> None:
     assert "23.0" in text  # our actual ratio
     # The architecture decision rests on a measurement.
     assert "logit 差 0.0" in text
+
+
+def test_the_handover_states_that_no_quality_number_exists_yet() -> None:
+    """The most likely misreading of this repository is that it has results.
+
+    It has a pipeline that would produce them. Someone skimming the test count
+    and the CI badge could easily conclude otherwise.
+    """
+    text = (ROOT / "docs" / "HANDOVER.md").read_text(encoding="utf-8")
+
+    assert "没有任何质量数字" in text
+    assert "CER" in text
+
+
+def test_the_handover_names_the_trap_that_silently_ruins_a_run() -> None:
+    """Calling the upstream trainer directly loses the base without saying so."""
+    text = (ROOT / "docs" / "HANDOVER.md").read_text(encoding="utf-8")
+
+    assert "train_omni.py" in text
+    assert "113.13M" in text  # the wrong parameter count that signals it
+    assert "152.06M" in text  # the right one
+
+
+def test_the_handover_tells_the_reader_how_to_audit_the_work() -> None:
+    """A handover that only says "trust this" gives the reader nothing to check."""
+    text = (ROOT / "docs" / "HANDOVER.md").read_text(encoding="utf-8")
+
+    assert "仅报告" in text  # instruments without gating eligibility
+    assert "无法区分" in text  # differences inside the noise
+    assert "永远不会失败" in text  # checks that cannot fail
