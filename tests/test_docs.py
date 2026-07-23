@@ -151,3 +151,40 @@ def test_the_handover_tells_the_reader_how_to_audit_the_work() -> None:
     assert "仅报告" in text  # instruments without gating eligibility
     assert "无法区分" in text  # differences inside the noise
     assert "永远不会失败" in text  # checks that cannot fail
+
+
+def test_the_a2a_script_stages_the_projector_before_unfreezing() -> None:
+    """One-step training lets a badly-aligned projector drag the language weights.
+
+    The loss curve looks healthy while it happens, so the ordering is the only
+    thing preventing it.
+    """
+    script = (ROOT / "scripts" / "run_a2a.sh").read_text(encoding="utf-8")
+
+    # Match the invocations, not any occurrence of the names: the log file is
+    # called a2a_full.log and appears near the top.
+    projector = script.index('run "a2a_proj"')
+    unfrozen = script.index('run "a2a_full"')
+
+    assert projector < unfrozen
+    assert "--mode audio_proj" in script[projector:unfrozen]
+    assert "--mode" not in script[unfrozen:]  # the second stage trains everything
+    # The second stage uses a much smaller rate: the Thinker arrives trained,
+    # and a large step here unlearns it.
+    assert "--learning_rate 5e-4" in script[projector:unfrozen]
+    assert "--learning_rate 2e-5" in script[unfrozen:]
+
+
+def test_the_a2a_script_does_not_roll_a_failed_stage_into_the_next() -> None:
+    """The second stage would train from whatever the first left behind."""
+    script = (ROOT / "scripts" / "run_a2a.sh").read_text(encoding="utf-8")
+
+    assert 'exit "$status"' in script
+
+
+def test_the_a2a_script_survives_a_dropped_connection() -> None:
+    """This has already cost a run here."""
+    script = (ROOT / "scripts" / "run_a2a.sh").read_text(encoding="utf-8")
+
+    assert "setsid" in script
+    assert "PYTHONUNBUFFERED=1" in script  # or the log lags thousands of steps
