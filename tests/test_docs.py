@@ -93,3 +93,31 @@ def test_the_evaluation_guide_chains_scripts_that_exist_in_that_order() -> None:
     # The order matters: transcription consumes what generation writes.
     assert guide.index("generate_speech_samples.py") < guide.index("transcribe_samples.py")
     assert guide.index("transcribe_samples.py") < guide.index("evaluate_speech.py")
+
+
+def test_every_decision_says_what_would_overturn_it() -> None:
+    """A decision without a reversal condition is a decision nobody can revisit.
+
+    It reads as permanent, so the next person either follows it blindly or
+    ignores it entirely -- and neither is what the record is for.
+    """
+    text = (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8")
+
+    headings = [line for line in text.splitlines() if line.startswith("## ")]
+    reversals = text.count("什么情况下推翻")
+
+    assert len(headings) >= 5
+    assert reversals == len(headings), (
+        f"{len(headings)} decisions but {reversals} reversal conditions"
+    )
+
+
+def test_the_decisions_that_contradict_the_brief_give_their_evidence() -> None:
+    """Departing from the brief is fine; departing without a reason is not."""
+    text = (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8")
+
+    # The parameter-count decision rests on arithmetic that must be shown.
+    assert "20 tokens/参数" in text or "tokens/参数" in text
+    assert "23.0" in text  # our actual ratio
+    # The architecture decision rests on a measurement.
+    assert "logit 差 0.0" in text
