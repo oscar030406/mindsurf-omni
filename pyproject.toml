@@ -3,6 +3,8 @@ name = "mindsurf-omni"
 version = "0.1.0"
 description = "语音 AI 产品的算法侧：Thinker-Talker 原生音频 token 模型与 OpenAI 兼容推理服务"
 requires-python = ">=3.11"
+# What the service needs to answer a request. Kept minimal on purpose: this is
+# what goes into the container, and every entry there is something to patch.
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
@@ -12,7 +14,25 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.15", "mypy>=1.13", "httpx>=0.27"]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.15",
+    "mypy>=1.13",
+    "httpx>=0.27",
+    # The lazy parquet reader is tested without a GPU or a model, so its
+    # dependency belongs here rather than in the runtime set -- the container
+    # serves requests and never reads a training file.
+    "pyarrow>=15",
+]
+# Training and evaluation, which run on the host and never in the container.
+# torch alone is ~2.5 GB; shipping it to every server that only answers HTTP
+# would be a cost paid for nothing.
+train = ["torch>=2.6", "pyarrow>=15", "safetensors>=0.4"]
+evaluate = ["openai-whisper>=20231117"]
+# The cascade path's recogniser. Separate from the runtime set because the
+# native path does not need it, and funasr pulls in torch.
+asr = ["funasr>=1.3", "librosa>=0.10"]
 
 [build-system]
 requires = ["hatchling"]

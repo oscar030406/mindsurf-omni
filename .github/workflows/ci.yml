@@ -20,7 +20,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install
-        run: pip install -e ".[dev]" fastapi "uvicorn[standard]" numpy soundfile
+        # Only the declared sets. Installing anything extra here would hide
+        # exactly the fault this job exists to catch: code importing a package
+        # nobody declared.
+        run: pip install -e ".[dev]"
 
       - name: Lint
         run: |
@@ -28,13 +31,12 @@ jobs:
           ruff format --check src tests scripts
 
       - name: Type check
-        # Not blocking yet: 36 findings outstanding, mostly stale type: ignore
-        # comments and the untyped third-party surfaces (funasr, whisper,
-        # MiniMind-O's modules). Reported so the count is visible and can be
-        # driven down; flipped to blocking once it reaches zero, rather than
-        # merged red and ignored.
-        continue-on-error: true
-        run: mypy src tests scripts
+        # Not blocking yet, but the count is printed rather than swallowed:
+        # continue-on-error alone marks the step green, which hides the very
+        # number this is meant to expose. Blocking once it reaches zero.
+        run: |
+          mypy src tests scripts | tail -1 || true
+          echo "type findings are not blocking yet; see PROJECT_RULES section 10"
 
       - name: Test
         run: pytest -q
