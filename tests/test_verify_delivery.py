@@ -10,7 +10,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from scripts.verify_delivery import (
     Findings,
     check_documents_match_code,

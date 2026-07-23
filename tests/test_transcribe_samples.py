@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from scripts.transcribe_samples import (
     JudgeError,
     load_manifest,

@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 
 import httpx
-
 from scripts.measure_latency import measure, speech_like
 
 

@@ -248,7 +248,7 @@ def test_the_example_client_only_uses_endpoints_that_exist() -> None:
     example = (ROOT / "examples" / "minimal_client.py").read_text(encoding="utf-8")
     app = (ROOT / "src" / "mindsurf_omni" / "service" / "app.py").read_text(encoding="utf-8")
 
-    called = set(re.findall(r'/v1/[a-z/-]+', example))
+    called = set(re.findall(r"/v1/[a-z/-]+", example))
     implemented = set(re.findall(r'@app\.(?:get|post|websocket)\("(/v1/[^"]+)"', app))
 
     assert called <= implemented, f"the example calls: {sorted(called - implemented)}"
