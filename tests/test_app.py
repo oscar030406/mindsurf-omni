@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -242,7 +243,7 @@ def test_the_integration_guide_documents_exactly_what_exists() -> None:
 
 
 def test_a_configuration_error_reaches_the_caller_instead_of_crashing_startup(
-    tmp_path: Any, monkeypatch: Any
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A crash-looping container gives an operator no log and no health check.
 
@@ -259,7 +260,9 @@ def test_a_configuration_error_reaches_the_caller_instead_of_crashing_startup(
     assert "tokenizer=" in response.json()["detail"]
 
 
-def test_an_engine_passed_in_wins_over_the_environment(monkeypatch: Any) -> None:
+def test_an_engine_passed_in_wins_over_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Tests and embedders supply their own; the environment must not override."""
     monkeypatch.setenv("MINDSURF_ENGINE", "cascade")
     monkeypatch.setenv("MINDSURF_WEIGHTS", "/nowhere")
