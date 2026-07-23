@@ -288,3 +288,37 @@ def test_the_licence_endpoint_serves_the_chain_behind_the_conclusion(
 def test_the_licence_endpoint_is_available_without_an_engine(bare: TestClient) -> None:
     """It describes what the image carries, which does not depend on a model."""
     assert bare.get("/v1/licence").status_code == 200
+
+
+def test_a_turn_reports_the_context_state_so_forgetting_is_visible(
+    client: TestClient,
+) -> None:
+    """History that shortens silently reads as the model forgetting for no reason."""
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {
+                "type": "input_audio_buffer.append",
+                "audio": base64.b64encode(b"\x00" * 32000).decode(),
+            }
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+
+        events = [socket.receive_json() for _ in range(5)]
+
+    done = events[-1]
+    assert done["type"] == "response.done"
+    assert done["context"]["turns"] == 2  # the user's and the assistant's
+    assert "dropped_turns" in done["context"]
+
+
+def test_a_session_can_be_cleared_between_conversations(client: TestClient) -> None:
+    """Carrying one caller's history into the next is worse than losing it."""
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json({"type": "session.clear"})
+
+        event = socket.receive_json()
+
+    assert event["type"] == "session.created"
+    assert event["context"]["turns"] == 0

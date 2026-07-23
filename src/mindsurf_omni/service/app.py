@@ -227,6 +227,12 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         )
         buffer = bytearray()
         settings = GenerationSettings()
+        # History is trimmed as it grows: audio tokens exhaust a small model's
+        # context within a few turns, and the caller is told when turns were
+        # dropped rather than left to wonder why the model forgot.
+        from mindsurf_omni.service.session import Conversation, Turn
+
+        conversation = Conversation()
 
         try:
             while True:
@@ -240,6 +246,11 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                 elif kind == "session.update":
                     settings.voice = event.get("voice", settings.voice)
                     settings.emotion = event.get("emotion", settings.emotion)
+                elif kind == "session.clear":
+                    conversation.clear()
+                    await websocket.send_json(
+                        {"type": "session.created", "context": conversation.summary()}
+                    )
                 elif kind == "response.cancel":
                     # Barge-in. Generation is driven from this loop, so there is
                     # nothing running to interrupt between events; the buffer is
@@ -253,8 +264,11 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                         )
                         continue
                     await websocket.send_json({"type": "response.created"})
+                    spoken_seconds = len(buffer) / 2 / INPUT_SAMPLE_RATE
+                    reply = ""
                     async for chunk in engine.respond(bytes(buffer), INPUT_SAMPLE_RATE, settings):
                         if chunk.text:
+                            reply += chunk.text
                             await websocket.send_json(
                                 {"type": "response.text.delta", "delta": chunk.text}
                             )
@@ -266,8 +280,12 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                                 }
                             )
                     buffer.clear()
+                    conversation.append(Turn(role="user", text="", audio_seconds=spoken_seconds))
+                    conversation.append(Turn(role="assistant", text=reply))
                     await websocket.send_json({"type": "response.audio.done"})
-                    await websocket.send_json({"type": "response.done"})
+                    await websocket.send_json(
+                        {"type": "response.done", "context": conversation.summary()}
+                    )
                 else:
                     # Answered rather than ignored: a silent no-op leaves the
                     # client waiting for a reply that will never come.
