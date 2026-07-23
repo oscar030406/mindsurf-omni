@@ -239,3 +239,31 @@ def test_the_integration_guide_documents_exactly_what_exists() -> None:
         f"documented but missing: {sorted(documented - implemented)}; "
         f"implemented but undocumented: {sorted(implemented - documented)}"
     )
+
+
+def test_a_configuration_error_reaches_the_caller_instead_of_crashing_startup(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    """A crash-looping container gives an operator no log and no health check.
+
+    The error has to arrive as a 503 body, naming the missing file, so it can
+    be read from outside the container.
+    """
+    monkeypatch.setenv("MINDSURF_ENGINE", "cascade")
+    monkeypatch.setenv("MINDSURF_WEIGHTS", str(tmp_path / "absent"))
+
+    app = create_app()  # must not raise
+    response = TestClient(app).get("/v1/voices")
+
+    assert response.status_code == 503
+    assert "tokenizer=" in response.json()["detail"]
+
+
+def test_an_engine_passed_in_wins_over_the_environment(monkeypatch: Any) -> None:
+    """Tests and embedders supply their own; the environment must not override."""
+    monkeypatch.setenv("MINDSURF_ENGINE", "cascade")
+    monkeypatch.setenv("MINDSURF_WEIGHTS", "/nowhere")
+
+    client = TestClient(create_app(FakeEngine()))
+
+    assert client.get("/v1/models").json()["data"][0]["path"] == "cascade"

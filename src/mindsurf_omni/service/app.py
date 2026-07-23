@@ -42,13 +42,33 @@ UNAVAILABLE = (
 
 
 def create_app(engine: SpeechEngine | None = None) -> FastAPI:
+    """Build the app, taking the engine from the environment when not given.
+
+    The container runs this with no arguments, so the environment is what
+    decides. A configuration error here is reported by the endpoints rather
+    than raised at startup: a container that crash-loops gives an operator no
+    log to read and no health check to consult.
+    """
     app = FastAPI(title="MindSurf Omni", version="0.1.0")
+
+    if engine is None:
+        from mindsurf_omni.service.config import ConfigurationError, Settings
+        from mindsurf_omni.service.factory import build
+
+        try:
+            engine = build(Settings.from_environment())
+        except ConfigurationError as error:
+            app.state.configuration_error = str(error)
+
     app.state.engine = engine
 
     def require_engine(request: Request) -> SpeechEngine:
         configured: SpeechEngine | None = getattr(request.app.state, "engine", None)
         if configured is None:
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, UNAVAILABLE)
+            # A configuration error is more useful than the generic message:
+            # it names the variable or the file that was missing.
+            detail = getattr(request.app.state, "configuration_error", None) or UNAVAILABLE
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail)
         return configured
 
     @app.get("/v1/models", response_model=ModelList)
