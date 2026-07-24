@@ -76,6 +76,33 @@ def test_the_unwired_generator_reaches_the_caller_as_503(tmp_path: Path) -> None
     assert "text generator" in response.json()["detail"]
 
 
+def test_a_missing_recogniser_package_is_503_not_500(tmp_path: Path) -> None:
+    """The image installs the runtime set only, so this is the normal case inside one.
+
+    Reaching the first request and raising ImportError gives a 500, a stack
+    trace in a log the caller cannot read, and a /health that still says the
+    recogniser is fine.
+    """
+    import asyncio
+
+    from mindsurf_omni.service import factory
+
+    # Forced rather than inferred from this machine: a test that quietly passes
+    # wherever funasr happens to be installed is the check that never fails.
+    absent = {"funasr"}
+    real = factory._importable
+    factory._importable = lambda module: module not in absent and real(module)  # type: ignore[assignment]
+    try:
+        engine = build(_ready(tmp_path))
+    finally:
+        factory._importable = real  # type: ignore[assignment]
+
+    assert engine is not None
+    assert "transcriber" in engine.unwired  # type: ignore[attr-defined]
+    with pytest.raises(ConfigurationError, match="funasr"):
+        asyncio.run(engine.transcribe(b"\x00\x01" * 8, 16_000))
+
+
 def test_health_does_not_call_a_half_built_cascade_ready(tmp_path: Path) -> None:
     """It holds every component and still cannot answer a turn."""
     from mindsurf_omni.service.health import assess

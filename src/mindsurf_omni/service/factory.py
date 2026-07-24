@@ -41,8 +41,19 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     recogniser = SenseVoiceRecogniser(
         model_dir=settings.paths.audio_encoder, device=settings.device
     )
+    # The package, not the weights. Loading stays deferred to the first request
+    # so a container that cannot reach its weights still starts and explains
+    # itself, but a package the image never installed is knowable now -- and
+    # discovering it inside a request produces a 500 with an ImportError, which
+    # is neither the documented 503 nor visible to /health.
+    recogniser_available = _importable("funasr")
 
     async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        if not recogniser_available:
+            raise ConfigurationError(
+                "the recogniser needs the funasr package, which this image does not "
+                "carry: install the 'asr' extra"
+            )
         return await recogniser.transcribe(pcm, sample_rate)
 
     async def generate(messages: list[dict[str, str]], _: Any) -> Any:
@@ -56,7 +67,11 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
 
     # Named here because assembly is the only place that knows which stages
     # will refuse. "generator" is unconditional until the Thinker lands.
-    unwired = ["generator"] if settings.tts else ["generator", "synthesiser"]
+    unwired = ["generator"]
+    if not settings.tts:
+        unwired.append("synthesiser")
+    if not recogniser_available:
+        unwired.append("transcriber")
 
     return CascadeEngine(
         transcriber=transcribe,
@@ -66,6 +81,21 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         token_spec=token_spec(),
         unwired=tuple(unwired),
     )
+
+
+def _importable(module: str) -> bool:
+    """Is the package present, without paying to import it.
+
+    find_spec rather than import: the answer is needed at assembly, and funasr
+    pulls in torch, which is seconds and hundreds of megabytes to learn
+    something the file system already knows.
+    """
+    import importlib.util
+
+    try:
+        return importlib.util.find_spec(module) is not None
+    except (ImportError, ValueError):
+        return False
 
 
 def _build_synthesiser(settings: Settings) -> Any:
@@ -99,13 +129,11 @@ def _build_synthesiser(settings: Settings) -> Any:
     # runtime set only, so this is the expected outcome inside one -- and a 503
     # naming the extra is a better answer than an ImportError raised halfway
     # through a turn, which /health cannot see.
-    try:
-        import edge_tts  # noqa: F401
-    except ImportError as error:
+    if not _importable("edge_tts"):
         raise ConfigurationError(
             "MINDSURF_TTS=edge needs the edge-tts package, which the container does not "
             "carry: install the 'tts' extra, or leave MINDSURF_TTS unset"
-        ) from error
+        )
 
     synthesiser = EdgeSynthesiser()
 
