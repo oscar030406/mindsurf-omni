@@ -1,0 +1,55 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.01267823322510823,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.041405937812187786
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [],
+    "sample_size": 160
+  },
+  "generated_by": {
+    "components": [
+      {
+        "frozen": false,
+        "name": "thinker",
+        "parameters": 89864448,
+        "sha256": null
+      },
+      {
+        "frozen": true,
+        "name": "sensevoice-small",
+        "parameters": 234000000,
+        "sha256": null
+      },
+      {
+        "frozen": true,
+        "name": "tts-edge",
+        "parameters": null,
+        "sha256": null
+      }
+    ],
+    "licence": "CC-BY-NC-4.0",
+    "model": "mindsurf-omni",
+    "path": "cascade",
+    "sampling": null,
+    "text_source": "probe"
+  },
+  "judge": "whisper-small",
+  "probe_set": "configs/speech_probes_zh_v1.jsonl",
+  "text_regression": null,
+  "what": "evaluation-chain floor: the model did not speak",
+  "what_this_does_not_say": "Not a subtrahend for a model run: measured on 9-character probes while model replies run to 124, and CER is normalised by reference length."
+}

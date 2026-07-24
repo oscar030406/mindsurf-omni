@@ -18,6 +18,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+# The repository root too, because this imports scripts.watch_training. Without
+# it the --log path -- the one the handover documents -- died on ModuleNotFound
+# while the flagless invocation worked, so the crash only appeared to whoever
+# followed the instructions.
+sys.path.insert(0, str(ROOT))
 
 
 def git(*arguments: str) -> str:
@@ -93,21 +98,33 @@ def training(log: Path | None) -> list[str]:
     if log is None or not log.exists():
         return ["未提供训练日志（--log）"]
 
-    from scripts.watch_training import compare_epochs, parse
+    from scripts.watch_training import compare_epochs, parse, runs
 
     points = parse(log)
     if not points:
         return [f"{log} 里没有训练记录"]
 
     latest = points[-1]
+    # A2A writes two stages into one log and both number their epochs from
+    # one, so comparing across the whole file compares two different training
+    # configurations and calls the difference an epoch effect.
+    staged = [point for point in points if point.run == latest.run]
     lines = [
         f"epoch {latest.epoch}  step {latest.step}/{latest.steps}  "
         f"loss {latest.loss:.4f}  text {latest.text:.4f}  audio {latest.audio:.4f}"
     ]
+    if len(runs(points)) > 1:
+        lines.append(f"  日志含多个阶段 {runs(points)}，只看 {latest.run!r}")
     # More than one window, because a single one has already given the wrong
-    # answer about convergence here.
-    for low, high in [(5000, 8000), (15000, 18000), (25000, 28000)]:
-        rows = compare_epochs(points, "audio", low, high)
+    # answer about convergence here. Placed as fractions of the run rather than
+    # at fixed steps: the fixed ones were chosen for T2A's 31224 steps, and
+    # A2A's 25877 left the last window hanging off the end of the run, where it
+    # is never full and is therefore always dropped.
+    total = latest.steps
+    for fraction in (0.2, 0.5, 0.8):
+        low = int(total * fraction)
+        high = min(low + 3000, total)
+        rows = compare_epochs(staged, "audio", low, high)
         verdicts = [str(row.get("verdict", "-")) for row in rows if "verdict" in row]
         if verdicts:
             lines.append(f"  audio {low}-{high}: {' -> '.join(verdicts)}")

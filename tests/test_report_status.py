@@ -66,25 +66,49 @@ def test_the_licence_summary_counts_unread_terms_rather_than_saying_mostly(
     assert any("/6" in line for line in lines)
 
 
+def _run_log(path: Path, total: int, epochs: int) -> Path:
+    lines = []
+    for epoch in range(1, epochs + 1):
+        for step in range(50, total + 1, 50):
+            audio = 5.0 - epoch * 0.3 + (step % 250) * 0.002
+            lines.append(
+                f"Epoch:[{epoch}/{epochs}]({step}/{total}), loss: {audio + 1.6:.4f}, "
+                f"text: 1.6000, audio: {audio:.4f}, lr: 0.0004, epoch_time: 1.0min"
+            )
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return path
+
+
+def _windows(summary: list[str]) -> list[tuple[int, int]]:
+    found = []
+    for line in summary:
+        if line.strip().startswith("audio ") and ":" in line:
+            span = line.strip().split("audio ", 1)[1].split(":", 1)[0]
+            low, high = span.split("-")
+            found.append((int(low), int(high)))
+    return found
+
+
 def test_training_summary_reports_more_than_one_window(tmp_path: Path) -> None:
     """A single window has already given the wrong answer about convergence here."""
-    log = tmp_path / "train.log"
-    lines = []
-    for epoch in (1, 2):
-        for window_start in (5000, 15000):
-            for index in range(61):
-                step = window_start + index * 50
-                audio = 5.0 - epoch * 0.3 + (index % 5) * 0.01
-                lines.append(
-                    f"Epoch:[{epoch}/6]({step}/31224), loss: {audio + 1.6:.4f}, "
-                    f"text: 1.6000, audio: {audio:.4f}, lr: 0.0004, epoch_time: 1.0min"
-                )
-    log.write_text("\n".join(lines), encoding="utf-8")
+    summary = training(_run_log(tmp_path / "t2a.log", total=31224, epochs=6))
 
-    summary = training(log)
+    assert len(_windows(summary)) == 3, summary
 
-    assert any("5000-8000" in line for line in summary)
-    assert any("15000-18000" in line for line in summary)
+
+def test_the_windows_follow_the_length_of_the_run(tmp_path: Path) -> None:
+    """Fixed steps were chosen for T2A's 31224 and hung off the end of A2A's 25877.
+
+    A window reaching past the last step is never full, so it is always
+    dropped, and the report quietly loses a third of the evidence it exists to
+    show.
+    """
+    total = 25877
+    summary = training(_run_log(tmp_path / "a2a.log", total=total, epochs=3))
+
+    windows = _windows(summary)
+    assert len(windows) == 3, summary
+    assert all(high <= total for _, high in windows)
 
 
 def test_a_missing_log_is_said_rather_than_skipped(tmp_path: Path) -> None:

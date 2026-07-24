@@ -123,24 +123,25 @@ def test_the_decisions_that_contradict_the_brief_give_their_evidence() -> None:
     assert "logit 差 0.0" in text
 
 
-def test_the_handover_states_that_no_quality_number_exists_yet() -> None:
-    """The most likely misreading of this repository is that it has results.
+def test_the_handover_says_what_the_cer_is_not() -> None:
+    """The likely misreading changed once a real number existed.
 
-    It has a pipeline that would produce them. Someone skimming the test count
-    and the CI badge could easily conclude otherwise.
+    It used to be "this repository has results" when it had none. Now the
+    cascade has a measured CER, and the misreading is taking it for the
+    model's speech quality -- on that path the reference is the model's own
+    text and a synthesiser reads it, so the model emits no audio at all and
+    the error belongs to the synthesiser and the judge.
 
-    Harder to skim past now that a real CER exists: it is the instrument's own
-    floor, measured with the model silent, and it is the best-looking wrong
-    number this repository could print. So the handover has to carry both the
-    absence and the reason the number present is not it.
+    So the handover must carry the number, the reason it is not what it looks
+    like, and the fact that the native path still has nothing.
     """
     text = (ROOT / "docs" / "HANDOVER.md").read_text(encoding="utf-8")
 
-    assert "没有任何质量数字" in text
-    assert "CER" in text
-    # The floor is stated, and stated as a subtrahend rather than a score.
-    assert "0.0414" in text
-    assert "不是成绩" in text
+    assert "0.0325" in text  # the measured cascade CER
+    assert "不是模型的语音质量" in text
+    assert "模型一个音都没发" in text
+    # The path that would make CER a model metric has no numbers yet.
+    assert "原生路径" in text and "一个都没有" in text
 
 
 def test_the_handover_names_the_trap_that_silently_ruins_a_run() -> None:

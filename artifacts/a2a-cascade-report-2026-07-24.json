@@ -1,0 +1,102 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.006846034516886132,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0324936957490698
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [],
+    "sample_size": 160
+  },
+  "checkpoint_sha256": "1f5b6bf55707dbf79a0fa24ad14691b2567d23930a7372ca17afd270f0682e26",
+  "comparison": {
+    "cer": "cer: indistinguishable (-0.0035, within ±0.0336)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)"
+  },
+  "generated_by": {
+    "components": [
+      {
+        "frozen": false,
+        "name": "thinker",
+        "parameters": 89864448,
+        "sha256": "1f5b6bf55707dbf79a0fa24ad14691b2567d23930a7372ca17afd270f0682e26"
+      },
+      {
+        "frozen": true,
+        "name": "sensevoice-small",
+        "parameters": 234000000,
+        "sha256": null
+      },
+      {
+        "frozen": true,
+        "name": "tts-edge",
+        "parameters": null,
+        "sha256": null
+      }
+    ],
+    "licence": "CC-BY-NC-4.0",
+    "model": "mindsurf-omni",
+    "path": "cascade",
+    "sampling": {
+      "max_tokens": 128,
+      "temperature": 0.7,
+      "top_p": 0.9
+    },
+    "text_source": "model"
+  },
+  "judge": "whisper-small",
+  "latency": {
+    "gating_eligible": false,
+    "note": "resolves 339.4372 at best, but the effect of interest is 200.0000",
+    "p50_ms": 1472.0134000017424,
+    "p95_ms": 1855.5330999988655,
+    "stage_medians_ms": {
+      "encode": 46.051299999817275,
+      "first_clause": 87.22310000302969,
+      "first_text_token": 10.419300000648946,
+      "synthesis": 1313.2380999995803
+    },
+    "stages_not_measured": [
+      "vad_endpoint",
+      "transport"
+    ],
+    "turns": 40
+  },
+  "probe_set": "configs/speech_probes_zh_v1.jsonl",
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.0088448122643496,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.03597089298751788
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 160
+  },
+  "text_regression": null,
+  "what": "first evaluation of the A2A checkpoint, cascade path",
+  "what_this_does_not_say": "CER on the cascade path is not a model quality score: the reference is the model's own text and the audio is a synthesiser reading it, so the error is the synthesiser's and the judge's. It becomes a model metric on the native path, where the model emits the audio itself."
+}
