@@ -129,3 +129,37 @@ def test_audio_with_no_silence_survives_intact() -> None:
     clip = pcm([8000] * 1200)
 
     assert trim_silence(clip, keep_ms=0) == clip
+
+
+def test_a_clip_is_split_into_frames_a_transport_will_carry() -> None:
+    """A whole clause of speech exceeds the common 1 MB WebSocket frame limit.
+
+    The peer's answer to an oversized frame is to close the connection with
+    1009 and no error event, so the turn stops and reads as the model having
+    gone quiet rather than as a transport fault.
+    """
+    from mindsurf_omni.service.audio import MAX_FRAME_BYTES, frames
+
+    clip = b"\x00\x01" * 200_000  # 400 kB, about 8 seconds at 24 kHz
+
+    pieces = frames(clip)
+
+    assert b"".join(pieces) == clip
+    assert all(len(piece) <= MAX_FRAME_BYTES for piece in pieces)
+
+
+def test_frames_never_split_a_sample_in_half() -> None:
+    """An odd offset shifts every following byte and turns the rest into noise."""
+    from mindsurf_omni.service.audio import frames
+
+    pieces = frames(b"\x00\x01" * 10, limit=7)
+
+    assert all(len(piece) % 2 == 0 for piece in pieces)
+    assert b"".join(pieces) == b"\x00\x01" * 10
+
+
+def test_no_audio_produces_no_frames() -> None:
+    """An empty frame would be a delta event carrying nothing."""
+    from mindsurf_omni.service.audio import frames
+
+    assert frames(b"") == []

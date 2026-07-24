@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 
 import httpx
 from scripts.measure_latency import measure, speech_like
@@ -17,10 +18,18 @@ def test_the_probe_audio_is_not_silence() -> None:
 
 
 class _Service:
-    def __init__(self, *, fail_every: int | None = None, delay: float = 0.0) -> None:
+    def __init__(
+        self,
+        *,
+        fail_every: int | None = None,
+        delay: float = 0.0,
+        deltas: list[str] | None = None,
+    ) -> None:
         self.fail_every = fail_every
         self.delay = delay
         self.turn = 0
+        self.deltas = deltas
+        self.spoken: list[str] = []
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
@@ -30,15 +39,17 @@ class _Service:
                 return httpx.Response(500)
             return httpx.Response(200, json={"text": "听到的", "language": "zh"})
         if path == "/v1/chat/completions":
-            body = (
-                'data: {"choices":[{"delta":{"content":"好"}}]}\n\n'
-                'data: {"choices":[{"delta":{"content":"的。"}}]}\n\n'
-                "data: [DONE]\n\n"
+            pieces = self.deltas if self.deltas is not None else ["好", "的。"]
+            body = "".join(
+                "data: " + json.dumps({"choices": [{"delta": {"content": piece}}]}) + "\n\n"
+                for piece in pieces
             )
+            body += "data: [DONE]\n\n"
             return httpx.Response(
                 200, content=body.encode(), headers={"content-type": "text/event-stream"}
             )
         if path == "/v1/audio/speech":
+            self.spoken.append(json.loads(request.content)["input"])
             return httpx.Response(200, content=b"\x00\x01" * 100)
         return httpx.Response(404)
 
@@ -107,3 +118,32 @@ def test_percentiles_are_values_some_turn_actually_had() -> None:
 
     assert report.percentile(0.95) in totals
     assert report.percentile(0.5) in totals
+
+
+def test_first_clause_stops_at_a_clause_rather_than_at_the_end_of_the_reply() -> None:
+    """Reading the stream to the end and subtracting measures the whole generation.
+
+    Filed under "first_clause" it inflates time-to-first-audio by the entire
+    tail of the reply and makes the model look like the dominant stage -- the
+    exact conclusion this instrument exists to prevent. Nothing after the first
+    speakable clause can change when the listener hears something, because
+    synthesis has already started by then.
+    """
+    tail = ["还有很多很多后面的内容。"] * 40
+    service = _Service(deltas=["今天", "天气很好。", *tail])
+
+    _, errors = _run(service, turns=1)
+
+    assert not errors
+    assert service.spoken == ["今天天气很好。"]  # the clause, not the clause plus the tail
+
+
+def test_a_reply_with_no_clause_boundary_is_still_spoken() -> None:
+    """Dropping it would report a turn that never made a sound as a fast turn."""
+    service = _Service(deltas=["短句没有句号"])
+
+    report, errors = _run(service, turns=1)
+
+    assert not errors
+    assert service.spoken == ["短句没有句号"]
+    assert "first_clause" in report.turns[0].stages

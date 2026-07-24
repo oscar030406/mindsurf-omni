@@ -74,6 +74,30 @@ def to_wav(pcm: bytes, sample_rate: int, channels: int = 1) -> bytes:
     return wav_header(sample_rate, channels, len(pcm)) + pcm
 
 
+# A frame the transport will actually carry. WebSocket implementations cap
+# frame size -- the common default is 1 MB -- and base64 adds a third on top,
+# so a whole clause of 24 kHz audio can exceed it. When it does the peer closes
+# the connection with 1009 and no error event: the turn simply stops, which
+# reads as the model having gone quiet rather than as a transport fault.
+# 48000 bytes is one second at OUTPUT_SAMPLE_RATE, about 64 kB encoded.
+MAX_FRAME_BYTES = 48_000
+
+
+def frames(pcm: bytes, limit: int = MAX_FRAME_BYTES) -> list[bytes]:
+    """Split PCM into pieces small enough to send, on sample boundaries.
+
+    Splitting mid-sample would shift every following byte by one and turn the
+    rest of the clip into noise, so the limit is rounded down to an even
+    number rather than trusted to be one.
+    """
+    if limit < 2:
+        raise ValueError("a frame must hold at least one 16-bit sample")
+    limit -= limit % 2
+    if not pcm:
+        return []
+    return [pcm[start : start + limit] for start in range(0, len(pcm), limit)]
+
+
 def peak_normalise(pcm: bytes, target_peak: float = 0.95) -> bytes:
     """Scale so the loudest sample sits just below full scale.
 

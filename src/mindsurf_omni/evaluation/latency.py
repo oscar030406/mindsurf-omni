@@ -85,12 +85,26 @@ class LatencyReport:
         return medians
 
     def budget_verdict(self, budget_ms: float = 3000.0) -> str:
+        """Whether these turns met the budget, and whether that generalises.
+
+        Two different claims, and the second is the one a release gate needs.
+        "Over budget" describes the turns that were measured, which is always
+        safe to say; that the next forty would also miss is a judgement, and
+        this project does not let an instrument make one before its noise floor
+        has been shown smaller than the effect it is judging. Printing the
+        verdict alone puts a pass or fail at the top of the report with the
+        qualification somewhere below it, which is how the qualification stops
+        being read.
+        """
         p95 = self.percentile(0.95)
         if p95 != p95:  # NaN
             return "no turns recorded"
         margin = budget_ms - p95
         verdict = "within budget" if margin >= 0 else "over budget"
-        return f"P95 {p95:.0f} ms against {budget_ms:.0f} ms: {verdict} by {abs(margin):.0f} ms"
+        line = f"P95 {p95:.0f} ms against {budget_ms:.0f} ms: {verdict} by {abs(margin):.0f} ms"
+        if not self.measurement().gating_eligible:
+            line += "（仅描述这批轮次，不能据此判定通过或失败）"
+        return line
 
     def measurement(self, effect_of_interest_ms: float = 200.0) -> Measurement:
         """Latency as a metric that must earn the right to judge, like any other."""

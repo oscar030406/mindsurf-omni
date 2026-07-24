@@ -33,7 +33,7 @@ from mindsurf_omni.contract import (
     VoiceInfo,
     VoiceList,
 )
-from mindsurf_omni.service.audio import wav_header
+from mindsurf_omni.service.audio import frames, wav_header
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine
 
@@ -312,11 +312,15 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                             await websocket.send_json(
                                 {"type": "response.text.delta", "delta": chunk.text}
                             )
-                        if chunk.pcm:
+                        # Split rather than sent whole: a clause of speech can
+                        # exceed the peer's frame limit, and the peer's answer
+                        # to that is to close the connection, which the caller
+                        # sees as the reply stopping rather than as a fault.
+                        for frame in frames(chunk.pcm):
                             await websocket.send_json(
                                 {
                                     "type": "response.audio.delta",
-                                    "audio": base64.b64encode(chunk.pcm).decode("ascii"),
+                                    "audio": base64.b64encode(frame).decode("ascii"),
                                 }
                             )
                     buffer.clear()

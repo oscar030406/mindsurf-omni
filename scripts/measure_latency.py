@@ -25,6 +25,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from mindsurf_omni.evaluation.latency import LatencyReport, TurnTimings  # noqa: E402
+from mindsurf_omni.service.engine import split_first_utterance  # noqa: E402
 
 
 def speech_like(seconds: float, rate: int = 16_000) -> bytes:
@@ -51,6 +52,7 @@ async def one_turn(client: httpx.AsyncClient, prompt: str, audio: bytes) -> Turn
     started = time.perf_counter()
     first_token_at: float | None = None
     text = ""
+    clause: str | None = None
     async with client.stream(
         "POST",
         "/v1/chat/completions",
@@ -64,12 +66,28 @@ async def one_turn(client: httpx.AsyncClient, prompt: str, audio: bytes) -> Turn
                 timings.stages["first_text_token"] = (first_token_at - started) * 1000
             delta = json.loads(line[6:])["choices"][0].get("delta", {}).get("content", "")
             text += delta
-    timings.stages["first_clause"] = (time.perf_counter() - started) * 1000 - timings.stages.get(
-        "first_text_token", 0.0
-    )
+            # Stop at the first speakable clause, using the same function the
+            # cascade cuts with. Reading the stream to the end and subtracting
+            # measures the whole generation and files it under "first_clause" --
+            # which inflates time-to-first-audio by the entire tail of the
+            # reply and makes the model look like the dominant stage. That is
+            # precisely the wrong conclusion this instrument exists to prevent:
+            # nothing after this point can affect when the listener hears
+            # something, because synthesis has already started.
+            clause = split_first_utterance(text)
+            if clause is not None:
+                timings.stages["first_clause"] = (time.perf_counter() - first_token_at) * 1000
+                break
+
+    if clause is None:
+        # The reply never reached a clause boundary. Whatever there is, is what
+        # gets spoken -- the same fallback the cascade takes.
+        clause = text.strip()
+        if first_token_at is not None:
+            timings.stages["first_clause"] = (time.perf_counter() - first_token_at) * 1000
 
     started = time.perf_counter()
-    audio_reply = await client.post("/v1/audio/speech", json={"input": text[:60] or "好的"})
+    audio_reply = await client.post("/v1/audio/speech", json={"input": clause or "好的"})
     timings.stages["synthesis"] = (time.perf_counter() - started) * 1000
     if audio_reply.status_code != 200:
         raise RuntimeError(f"speech returned {audio_reply.status_code}")
@@ -114,6 +132,12 @@ def main() -> None:
     print("\n各阶段中位数:")
     for name, value in report.stage_medians().items():
         print(f"  {name:18} {value:7.0f} ms")
+
+    # A stage nobody measured reads as a stage that costs nothing, and the
+    # total is a sum -- so an omission makes the budget look met.
+    absent = report.turns[0].missing_stages()
+    if absent:
+        print(f"\n未计入的阶段: {', '.join(absent)}——总和因此偏小，不是真的 TTF-Audio")
 
     dominant = report.dominant_stage()
     if dominant:

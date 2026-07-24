@@ -123,3 +123,36 @@ def test_enough_consistent_turns_may_judge() -> None:
         report.add(_turn(encode=rng.gauss(1000, 40)))
 
     assert report.measurement(effect_of_interest_ms=200).gating_eligible
+
+
+def test_a_budget_verdict_from_an_ineligible_instrument_says_so() -> None:
+    """A pass or fail at the top of a report is read; a caveat below it is not.
+
+    "Over budget" about the turns measured is always safe. That the next batch
+    would also miss is a judgement, and an instrument that cannot resolve the
+    effect it is judging may not make one.
+    """
+    report = LatencyReport()
+    for value in (100.0, 9000.0):  # two turns: nowhere near enough to gate
+        timings = TurnTimings()
+        timings.stages["synthesis"] = value
+        report.add(timings)
+
+    verdict = report.budget_verdict(3000.0)
+
+    assert "over budget" in verdict
+    assert "不能据此判定" in verdict
+
+
+def test_an_eligible_instrument_states_the_verdict_plainly() -> None:
+    """The qualification is for instruments that need it, not decoration."""
+    report = LatencyReport()
+    for _ in range(60):
+        timings = TurnTimings()
+        timings.stages["synthesis"] = 100.0  # no spread, so the floor is tiny
+        report.add(timings)
+
+    verdict = report.budget_verdict(3000.0)
+
+    assert "within budget" in verdict
+    assert "不能据此判定" not in verdict
