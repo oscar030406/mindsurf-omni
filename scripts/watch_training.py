@@ -30,10 +30,14 @@ LINE = re.compile(
     r"loss: (?P<loss>[\d.]+), text: (?P<text>[\d.]+), audio: (?P<audio>[\d.]+), "
     r"lr: (?P<lr>[\d.eE+-]+)"
 )
+# run_a2a.sh writes one of these before each stage, into a single log. Both
+# stages then number their epochs from one, so epoch is not a key on its own.
+RUN = re.compile(r"^=====\s+(?P<label>.+?)\s+=====\s*$")
 
 
 @dataclass(frozen=True, slots=True)
 class Point:
+    run: str
     epoch: int
     step: int
     steps: int
@@ -45,11 +49,17 @@ class Point:
 
 def parse(path: Path) -> list[Point]:
     points = []
+    run = ""
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        marker = RUN.match(line.strip())
+        if marker:
+            run = marker["label"].split()[0]
+            continue
         match = LINE.search(line)
         if match:
             points.append(
                 Point(
+                    run=run,
                     epoch=int(match["epoch"]),
                     step=int(match["step"]),
                     steps=int(match["steps"]),
@@ -60,6 +70,15 @@ def parse(path: Path) -> list[Point]:
                 )
             )
     return points
+
+
+def runs(points: list[Point]) -> list[str]:
+    """Run labels in the order they appear, for logs holding more than one."""
+    seen: list[str] = []
+    for point in points:
+        if point.run not in seen:
+            seen.append(point.run)
+    return seen
 
 
 def window(points: list[Point], epoch: int, low: int, high: int) -> list[Point]:
@@ -74,7 +93,7 @@ def compare_epochs(
     tolerance: float = 3.0,
     minimum_coverage: float = 0.8,
 ) -> list[dict[str, object]]:
-    """Aligned comparison across epochs, with a verdict per step.
+    """Aligned comparison across epochs of one run, with a verdict per step.
 
     An epoch is compared only once it has largely crossed the window. A
     partially filled one is not merely a smaller sample -- it is the *first*
@@ -84,6 +103,14 @@ def compare_epochs(
     Coverage is measured against the fullest epoch rather than an absolute
     count, because the number of logged points per window depends on the log
     interval, which is a run-time choice.
+
+    Callers must pass points from a single run. A2A writes two stages into one
+    log and both number their epochs from one, so keying on the epoch alone
+    merged the projector stage into the full stage's epoch 1: 122 points where
+    every other epoch had 61, which pushed the coverage bar above them and
+    dropped the two epochs that could actually be compared. Had the counts
+    matched it would have been worse -- a comparison between 0.99M trainable
+    parameters at lr 5e-4 and 152M at 2e-5, reported as an epoch effect.
     """
     results: list[dict[str, object]] = []
     previous: tuple[float, float] | None = None
@@ -134,6 +161,11 @@ def main() -> None:
         help="step range to compare across epochs; positions must match, "
         "because shuffling makes different positions see different data",
     )
+    parser.add_argument(
+        "--run",
+        help="which stage to compare, when one log holds several (a2a_proj, "
+        "a2a_full); defaults to the one the last line belongs to",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -143,10 +175,20 @@ def main() -> None:
 
     low, high = (int(part) for part in args.window.split(":"))
     latest = points[-1]
-    rows = compare_epochs(points, args.metric, low, high)
+    # The stage still running is the one being asked about; the earlier ones
+    # trained different parameters at a different rate and are not comparable
+    # to it, so they are named rather than mixed in.
+    selected = args.run or latest.run
+    staged = [point for point in points if point.run == selected]
+    rows = compare_epochs(staged, args.metric, low, high)
 
     if args.json:
-        print(json.dumps({"latest": vars(latest), "comparison": rows}, indent=2))
+        print(
+            json.dumps(
+                {"run": selected, "runs": runs(points), "latest": vars(latest), "comparison": rows},
+                indent=2,
+            )
+        )
         return
 
     print(
@@ -154,6 +196,11 @@ def main() -> None:
         f"loss {latest.loss:.4f}  text {latest.text:.4f}  "
         f"audio {latest.audio:.4f}  lr {latest.lr:.6f}"
     )
+    if len(runs(points)) > 1:
+        print(
+            f"日志含多个阶段 {runs(points)}；只比 {selected!r}——"
+            "其余阶段可训参数与学习率都不同，跨阶段比出来的差异不是 epoch 效应"
+        )
     print(f"\n{args.metric} 在 step {low}-{high} 的逐 epoch 对比（对齐位置，含噪声底）:")
     for row in rows:
         line = (

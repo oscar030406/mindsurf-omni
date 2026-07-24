@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.watch_training import compare_epochs, parse, window
+from scripts.watch_training import compare_epochs, parse, runs, window
 
 
 def _line(step: int, loss: float, text: float, audio: float, lr: float) -> str:
@@ -189,3 +189,57 @@ def test_windows_can_disagree_and_the_tool_does_not_hide_it(tmp_path: Path) -> N
 
     assert rows_early[1]["verdict"] == "indistinguishable"
     assert rows_late[1]["verdict"] == "improved"
+
+
+def test_two_stages_in_one_log_are_not_merged(tmp_path: Path) -> None:
+    """A2A writes both stages to one file and both number epochs from one.
+
+    Keying on the epoch alone put the projector stage into the full stage's
+    epoch 1, doubling its count; the coverage bar is measured against the
+    fullest epoch, so the two epochs that could actually be compared fell below
+    it and were dropped. The tool then said there was nothing to compare for a
+    run with three epochs. Had the counts matched it would have compared 0.99M
+    trainable parameters at lr 5e-4 against 152M at 2e-5 and called the
+    difference an epoch effect.
+    """
+    lines = ["===== a2a_proj 2026-07-24T05:43:35+00:00 ====="]
+    for step in range(5000, 8001, 50):
+        lines.append(f"Epoch:[1/3]({step}/25877), loss: 9.0, text: 9.0, audio: 9.0, lr: 0.0005")
+    lines.append("===== a2a_full 2026-07-24T06:53:00+00:00 =====")
+    for epoch, value in ((1, 4.07), (2, 4.00), (3, 3.98)):
+        for step in range(5000, 8001, 50):
+            lines.append(
+                f"Epoch:[{epoch}/3]({step}/25877), loss: 5.0, text: 1.3, "
+                f"audio: {value}, lr: 0.00002"
+            )
+    log = tmp_path / "a2a.log"
+    log.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    points = parse(log)
+    assert runs(points) == ["a2a_proj", "a2a_full"]
+
+    full = [point for point in points if point.run == "a2a_full"]
+    rows = compare_epochs(full, "audio", 5000, 8000)
+
+    assert [row["epoch"] for row in rows] == [1, 2, 3]
+    assert all(row["n"] == 61 for row in rows)
+    # The projector stage's 9.0 never reaches the comparison.
+    assert all(float(row["mean"]) < 5.0 for row in rows)
+
+
+def test_a_log_with_no_stage_markers_still_parses(tmp_path: Path) -> None:
+    """T2A wrote one run with no markers, and its published conclusion came from here."""
+    log = tmp_path / "t2a.log"
+    log.write_text(
+        "\n".join(
+            f"Epoch:[1/6]({step}/25877), loss: 5.0, text: 1.3, audio: 4.0, lr: 0.0001"
+            for step in range(5000, 8001, 50)
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    points = parse(log)
+
+    assert runs(points) == [""]
+    assert len(compare_epochs(points, "audio", 5000, 8000)) == 1
