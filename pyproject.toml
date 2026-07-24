@@ -33,7 +33,10 @@ dev = [
 # transformers is pinned below 5 by MiniMind-O; the training host has its
 # own environment, so this is the declared floor rather than a resolution.
 train = ["torch>=2.6", "pyarrow>=15", "safetensors>=0.4", "transformers>=4.57"]
-evaluate = ["openai-whisper>=20231117"]
+# zhconv folds traditional characters to simplified before CER. The judge
+# picks a script per utterance, and without this the metric spends most of its
+# range on that choice rather than on the speech -- see normalise_for_cer.
+evaluate = ["openai-whisper>=20231117", "zhconv>=1.4"]
 # The cascade path's recogniser. Separate from the runtime set because the
 # native path does not need it, and funasr pulls in torch.
 asr = ["funasr>=1.3", "librosa>=0.10"]

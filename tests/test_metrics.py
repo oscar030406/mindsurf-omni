@@ -24,6 +24,22 @@ def test_punctuation_and_case_do_not_count_as_errors() -> None:
     assert character_error_rate("Hello, World!", "hello world") == 0.0
 
 
+def test_the_judges_choice_of_script_does_not_count_as_error() -> None:
+    """The single largest term in the measured floor, and none of it was speech.
+
+    Whisper picks traditional or simplified per utterance regardless of the
+    input. Over the hundred-probe floor run this alone was mean CER 0.1788
+    against 0.0370 with it folded away -- four fifths of the number.
+    """
+    assert character_error_rate("地铁几点开始运营", "地鐵幾點開始運營") == 0.0
+    assert character_error_rate("为什么树叶秋天会变黄", "為什麼樹葉秋天會變黃") == 0.0
+
+
+def test_folding_script_does_not_forgive_a_wrong_word() -> None:
+    """It must collapse the writing system, not the vocabulary."""
+    assert character_error_rate("猫为什么喜欢纸箱", "毛為什麼喜歡紙箱") == pytest.approx(1 / 8)
+
+
 def test_spacing_differences_do_not_count() -> None:
     """Chinese output is unspaced and English is not; keeping spaces would
     make the two scripts incomparable."""

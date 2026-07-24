@@ -78,7 +78,7 @@ class _Service:
         return httpx.Response(404)
 
 
-def _run(service: _Service, tmp_path: Path, count: int = 3) -> dict:
+def _run(service: _Service, tmp_path: Path, count: int = 3, text_source: str = "model") -> dict:
     transport = httpx.MockTransport(service.handler)
     original = httpx.AsyncClient
 
@@ -95,6 +95,7 @@ def _run(service: _Service, tmp_path: Path, count: int = 3) -> dict:
                 load_probes(_probes(tmp_path, count)),
                 tmp_path / "out",
                 timeout=5.0,
+                text_source=text_source,
             )
         )
     finally:
@@ -116,6 +117,27 @@ def test_the_model_reply_is_the_reference_not_the_prompt(tmp_path: Path) -> None
     sample = report["samples"][0]
     assert sample["reference_text"] == "回答问题0"
     assert sample["prompt"] == "问题0"
+
+
+def test_a_floor_run_says_the_model_never_spoke(tmp_path: Path) -> None:
+    """The most flattering wrong number this project could print.
+
+    Speaking the probe text measures what the synthesiser and the judge cost
+    between them. Read as a model score it looks excellent, so the manifest
+    has to carry the distinction rather than leaving it to whoever remembers
+    which command was run.
+    """
+    report = _run(_Service(), tmp_path, count=1, text_source="probe")
+
+    assert report["generated_by"]["text_source"] == "probe"
+    sample = report["samples"][0]
+    assert sample["reference_text"] == "问题0"  # the probe, not a reply
+
+
+def test_a_normal_run_is_marked_as_the_model_speaking(tmp_path: Path) -> None:
+    report = _run(_Service(), tmp_path, count=1)
+
+    assert report["generated_by"]["text_source"] == "model"
 
 
 def test_failed_samples_are_named_not_silently_dropped(tmp_path: Path) -> None:

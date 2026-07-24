@@ -37,7 +37,7 @@ def load_probes(path: Path) -> list[dict[str, str]]:
 
 
 async def generate(
-    base: str, probes: list[dict[str, str]], output: Path, timeout: float
+    base: str, probes: list[dict[str, str]], output: Path, timeout: float, text_source: str
 ) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     samples: list[dict[str, Any]] = []
@@ -50,20 +50,28 @@ async def generate(
 
         for index, probe in enumerate(probes):
             started = time.perf_counter()
-            reply = await client.post(
-                "/v1/chat/completions",
-                json={"messages": [{"role": "user", "content": probe["prompt"]}]},
-            )
-            if reply.status_code != 200:
-                samples.append(
-                    {
-                        "id": probe["id"],
-                        "prompt": probe["prompt"],
-                        "error": f"chat returned {reply.status_code}",
-                    }
+            if text_source == "probe":
+                # Nothing is asked of the model: the probe text is spoken as
+                # written, so the CER that comes back is the floor the
+                # synthesiser and the judge contribute between them. Recorded
+                # in the manifest, because a floor read as a model score would
+                # be the most flattering wrong number this project could print.
+                text = probe["prompt"]
+            else:
+                reply = await client.post(
+                    "/v1/chat/completions",
+                    json={"messages": [{"role": "user", "content": probe["prompt"]}]},
                 )
-                continue
-            text = reply.json()["choices"][0]["message"]["content"]
+                if reply.status_code != 200:
+                    samples.append(
+                        {
+                            "id": probe["id"],
+                            "prompt": probe["prompt"],
+                            "error": f"chat returned {reply.status_code}",
+                        }
+                    )
+                    continue
+                text = reply.json()["choices"][0]["message"]["content"]
 
             audio = await client.post("/v1/audio/speech", json={"input": text})
             path = output / f"{probe['id']}.wav"
@@ -92,6 +100,9 @@ async def generate(
             "model": served.get("id"),
             "components": served.get("components"),
             "licence": served.get("licence"),
+            # "probe" means the model never spoke: this run measures the
+            # instrument, not the model. Downstream reports carry it forward.
+            "text_source": text_source,
         },
         "probe_count": len(probes),
         "generated": len(samples) - len(failed),
@@ -108,12 +119,22 @@ def main() -> None:
     parser.add_argument("--probes", type=Path, default=Path("configs/speech_probes_zh_v1.jsonl"))
     parser.add_argument("--output", type=Path, default=Path("artifacts/speech_samples"))
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument(
+        "--text-source",
+        choices=("model", "probe"),
+        default="model",
+        help="'probe' speaks the probe text as written instead of asking the "
+        "model, which measures what the synthesiser and the judge cost between "
+        "them -- the floor any model score has to be read against",
+    )
     args = parser.parse_args()
 
     probes = load_probes(args.probes)
     print(f"生成 {len(probes)} 条，来自 {args.base}")
+    if args.text_source == "probe":
+        print("文本来自探针，模型没有参与——这一轮量的是仪器底噪，不是模型")
 
-    report = asyncio.run(generate(args.base, probes, args.output, args.timeout))
+    report = asyncio.run(generate(args.base, probes, args.output, args.timeout, args.text_source))
 
     manifest = args.output / "manifest.json"
     manifest.write_text(

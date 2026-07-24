@@ -27,13 +27,29 @@ def normalise_for_cer(text: str) -> str:
     them in measures the recogniser's punctuation habits rather than the
     speech. Whitespace goes too: Chinese output is unspaced and English is not,
     and keeping it would make the two scripts incomparable.
+
+    Traditional characters are folded to simplified for the same reason, and it
+    is not a small correction. Whisper picks a script per utterance with no
+    regard for the input, so 地铁 comes back 地鐵 and every character of it
+    counts as a substitution. Measured over the hundred-probe floor run: mean
+    CER 0.1788 before folding, 0.0370 after, exact matches 46 of 100 to 80 of
+    100. Four fifths of what looked like synthesis error was the judge's choice
+    of script.
+
+    Both sides are folded, not just the hypothesis. What is being measured is
+    whether the audio said the words; which script someone wrote them in is a
+    property of the text, visible in the text, and not something a measurement
+    of speech should be charging to the speaker.
     """
+    from zhconv import convert
+
     text = unicodedata.normalize("NFKC", text).lower()
-    return "".join(
+    stripped = "".join(
         character
         for character in text
         if not unicodedata.category(character).startswith(("P", "Z", "C"))
     )
+    return str(convert(stripped, "zh-cn"))
 
 
 def edit_distance(reference: str, hypothesis: str) -> int:

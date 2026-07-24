@@ -67,7 +67,9 @@ def _generate(tmp_path: Path, probe_count: int) -> dict:
 
     httpx.AsyncClient = Patched  # type: ignore[misc]
     try:
-        return asyncio.run(generate("http://test", load_probes(probes), tmp_path / "audio", 5.0))
+        return asyncio.run(
+            generate("http://test", load_probes(probes), tmp_path / "audio", 5.0, "model")
+        )
     finally:
         httpx.AsyncClient = original  # type: ignore[misc]
 
