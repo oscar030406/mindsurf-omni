@@ -20,8 +20,14 @@ FROM="${FROM_WEIGHT:-sft_mindsurf}"
 
 cd "$ROOT/trainer" || exit 1
 
-if pgrep -f "lib/train_omni.py" >/dev/null; then
-  echo "a run is already going; stop it first" >&2
+# Match a real python process running the launcher, not any command line that
+# merely mentions it. A bare `pgrep -f` substring match has already produced a
+# false positive here twice: once matching an ssh command that carried the
+# path as an argument, once matching a dry run still winding down.
+running=$(pgrep -f "python.*train_omni\.py --data_path" 2>/dev/null | wc -l)
+if [ "$running" -gt 0 ]; then
+  echo "a training run is already going ($running processes); stop it first" >&2
+  ps -eo pid,etime,cmd | grep "train_omni\.py --data_path" | grep -v grep >&2
   exit 1
 fi
 

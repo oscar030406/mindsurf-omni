@@ -1,0 +1,9 @@
+# Shell scripts run on Linux and are edited on Windows. Without this, CRLF
+# reaches the server and the shebang becomes "bash\r", which env cannot find --
+# a failure whose message names bash rather than the line endings.
+*.sh text eol=lf
+
+# Same reasoning for anything else executed rather than read.
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

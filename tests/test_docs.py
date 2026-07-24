@@ -267,3 +267,16 @@ def test_the_example_checks_the_licence_before_using_the_output() -> None:
     example = (ROOT / "examples" / "minimal_client.py").read_text(encoding="utf-8")
 
     assert "commercial_use_permitted" in example
+
+
+def test_the_a2a_guard_matches_a_process_not_a_substring() -> None:
+    """A bare `pgrep -f` has produced a false positive here twice.
+
+    Once it matched an ssh command carrying the path as an argument, once a
+    dry run still winding down. Both times the guard refused to start a run
+    that nothing was actually blocking.
+    """
+    script = (ROOT / "scripts" / "run_a2a.sh").read_text(encoding="utf-8")
+
+    assert "python.*train_omni" in script  # anchored on the interpreter
+    assert "--data_path" in script  # and on an argument only a real run has
