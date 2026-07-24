@@ -1,9 +1,14 @@
 """Loading the Thinker, and the two ways it silently loads the wrong model.
 
 torch is not in the test environment and the container does not carry it, so
-what is exercised here is the weight selection and the refusals. The load path
-itself was run against the real 359 MB checkpoint: 91 tensors, all kept, and
-the model built to exactly 89,864,448 parameters.
+what is exercised here is the weight selection and the refusals that do not
+need it.
+
+The load path itself was run against the real 359 MB checkpoint: 91 tensors,
+all kept, the model built to exactly 89,864,448 parameters. The missing-tensor
+refusal was checked the only way it can be -- by handing it a checkpoint with
+every second tensor removed, which it declined, naming 45 of them. Both need
+torch and a real file, so neither is repeated here.
 """
 
 from __future__ import annotations

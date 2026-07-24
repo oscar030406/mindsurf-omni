@@ -113,7 +113,6 @@ class ThinkerGenerator:
         model = module.MiniMindForCausalLM(module.MiniMindConfig(**THINKER_SHAPE))
         state = torch.load(str(self.checkpoint), map_location="cpu", weights_only=True)
         weights = thinker_weights(state)
-        model.load_state_dict(weights, strict=False)
 
         # The check that would have caught the silent 113.13M run: a wrong
         # config still loads and still generates, just not from our base.
@@ -122,6 +121,22 @@ class ThinkerGenerator:
             raise ConfigurationError(
                 f"the Thinker built to {count:,} parameters, but our base is "
                 f"{THINKER_PARAMETERS:,} -- the config does not match the checkpoint"
+            )
+
+        # And this is the other half of that failure, which the count alone
+        # cannot see: the count describes the model that was built, not the
+        # weights that reached it. strict=False leaves anything the checkpoint
+        # does not supply at its random initialisation, silently, and the model
+        # still runs and still answers. Tied embeddings are the one legitimate
+        # absence -- lm_head.weight is the embedding table, so a checkpoint that
+        # stores it once is complete.
+        incompatible = model.load_state_dict(weights, strict=False)
+        missing = [key for key in incompatible.missing_keys if key not in {"lm_head.weight"}]
+        if missing:
+            raise ConfigurationError(
+                f"{len(missing)} tensors are not in {self.checkpoint.name} and stayed at "
+                f"random initialisation: {missing[:4]}{' …' if len(missing) > 4 else ''} -- "
+                "serving this would be serving a partly untrained model that answers normally"
             )
 
         self._tokenizer = AutoTokenizer.from_pretrained(str(self.tokenizer_dir))
