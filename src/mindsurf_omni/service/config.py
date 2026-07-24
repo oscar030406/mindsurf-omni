@@ -67,6 +67,10 @@ class Settings:
     paths: Paths
     device: str = "cpu"
     chunk_frames: int = 4
+    # Which synthesiser the cascade speaks with. Empty is the honest default:
+    # the path answers with the reason it cannot speak rather than quietly
+    # reaching a hosted endpoint nobody asked it to reach.
+    tts: str = ""
 
     @classmethod
     def from_environment(cls, environment: dict[str, str] | None = None) -> Settings | None:
@@ -95,6 +99,7 @@ class Settings:
             ),
             device=source.get("MINDSURF_DEVICE", "cpu"),
             chunk_frames=int(source.get("MINDSURF_CHUNK_FRAMES", "4")),
+            tts=source.get("MINDSURF_TTS", "").strip().lower(),
         )
 
     def verify(self) -> None:
@@ -134,4 +139,9 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
             ComponentInfo(name="mimi-codec", frozen=True),
         ]
     components.append(ComponentInfo(name="sensevoice-small", parameters=234_000_000, frozen=True))
+    if settings.path == "cascade" and settings.tts:
+        # Named, because CER measures whether the synthesiser said the reply.
+        # A report that does not say which one spoke has not measured anything
+        # that can be compared to the next report.
+        components.append(ComponentInfo(name=f"tts-{settings.tts}", frozen=True))
     return components

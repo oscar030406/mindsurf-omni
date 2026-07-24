@@ -23,7 +23,7 @@ jobs:
         # Only the declared sets. Installing anything extra here would hide
         # exactly the fault this job exists to catch: code importing a package
         # nobody declared.
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,tts]"
 
       - name: Lint
         run: |

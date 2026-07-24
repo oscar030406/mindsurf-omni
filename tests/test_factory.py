@@ -60,6 +60,73 @@ def test_an_unwired_stage_says_which_stage_and_why(tmp_path: Path) -> None:
         asyncio.run(_first_chunk(engine))
 
 
+def test_the_unwired_generator_reaches_the_caller_as_503(tmp_path: Path) -> None:
+    """Assembled for real, not with a fake: this is the stage that is actually unwired."""
+    from fastapi.testclient import TestClient
+
+    from mindsurf_omni.service.app import create_app
+
+    client = TestClient(create_app(build(_ready(tmp_path))))
+
+    response = client.post(
+        "/v1/chat/completions", json={"messages": [{"role": "user", "content": "你好"}]}
+    )
+
+    assert response.status_code == 503
+    assert "text generator" in response.json()["detail"]
+
+
+def test_health_does_not_call_a_half_built_cascade_ready(tmp_path: Path) -> None:
+    """It holds every component and still cannot answer a turn."""
+    from mindsurf_omni.service.health import assess
+
+    report = assess(build(_ready(tmp_path)))
+
+    assert report.status == "degraded"
+    assert "generator" in [component.name for component in report.components if not component.ready]
+
+
+def test_no_synthesiser_is_chosen_without_being_asked_for(tmp_path: Path) -> None:
+    """Defaulting to the hosted one would send replies off the machine unasked."""
+    settings = _ready(tmp_path)
+
+    assert settings.tts == ""
+    assert not any("tts" in component.name for component in build(settings).describe().components)  # type: ignore[union-attr]
+
+
+def test_an_unknown_synthesiser_is_refused_rather_than_ignored(tmp_path: Path) -> None:
+    """Falling back silently would report audio produced by something else."""
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_TTS": "cosyvoice",
+        }
+    )
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+
+    with pytest.raises(ConfigurationError, match="cosyvoice"):
+        build(settings)
+
+
+def test_the_wired_synthesiser_is_named_in_the_component_list(tmp_path: Path) -> None:
+    """CER measures what the synthesiser said, so a report that omits it compares nothing."""
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_TTS": "edge",
+        }
+    )
+
+    names = [component.name for component in build(settings).describe().components]  # type: ignore[union-attr]
+
+    assert "tts-edge" in names
+
+
 async def _first_chunk(engine: object) -> None:
     from mindsurf_omni.service.engine import GenerationSettings
 

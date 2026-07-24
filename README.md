@@ -15,7 +15,7 @@
 | 文本基座（89,864,448 参数，中文为主） | ✅ 已训练、已发布、已验证可接入 |
 | 接口契约与桩服务 | ✅ 已冻结，后端可据此开工 |
 | 原生音频路径（Thinker-Talker） | 🔨 训练中 |
-| 级联兜底路径（ASR → LLM → TTS） | 🔨 搭建中 |
+| 级联兜底路径（ASR → LLM → TTS） | 🔨 两端可跑真音频，中间那段等 checkpoint |
 
 文本基座来自[上游预训练仓库](https://github.com/io-wy/MindSurf/tree/pretrain)，
 权重在它的 Release 里。已实测该基座可直接加载进 MiniMind 的模型类，

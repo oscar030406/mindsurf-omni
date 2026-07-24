@@ -5,7 +5,9 @@ from __future__ import annotations
 import pytest
 
 from mindsurf_omni.service.tts import (
+    EDGE_PROSODY,
     EMOTION_INSTRUCTIONS,
+    EdgeSynthesiser,
     Utterance,
     clean_for_speech,
     instruction_leaked,
@@ -101,3 +103,119 @@ def test_misaligned_inputs_are_refused_rather_than_silently_zipped() -> None:
     """A shifted pair would blame the wrong sample and hide the real one."""
     with pytest.raises(ValueError, match="misaligned|against"):
         screen_batch([Utterance(text="a")], ["a", "b"])
+
+
+# --------------------------------------------------------------------------
+# The hosted synthesiser. The endpoint is faked; the decode is real, because
+# an encoded blob that will not decode is one of the ways this actually fails.
+# --------------------------------------------------------------------------
+
+
+class _FakeEndpoint:
+    """Records what was asked for and hands back real, decodable audio."""
+
+    requests: list[tuple[str, str, dict[str, str]]] = []
+    seconds: float = 0.5
+
+    def __init__(self, text: str, voice: str, **options: str) -> None:
+        type(self).requests.append((text, voice, options))
+        self._text = text
+
+    async def stream(self):  # type: ignore[no-untyped-def]
+        import io
+        import math
+
+        import numpy
+        import soundfile
+
+        if not type(self).seconds:
+            return
+        rate = 24_000
+        count = int(rate * type(self).seconds)
+        tone = numpy.array(
+            [int(0.3 * 32767 * math.sin(2 * math.pi * 220 * i / rate)) for i in range(count)],
+            dtype=numpy.int16,
+        )
+        container = io.BytesIO()
+        soundfile.write(container, tone, rate, format="WAV", subtype="PCM_16")
+        yield {"type": "audio", "data": container.getvalue()}
+
+
+@pytest.fixture
+def endpoint(monkeypatch: pytest.MonkeyPatch) -> type[_FakeEndpoint]:
+    import sys
+    import types
+
+    _FakeEndpoint.requests = []
+    _FakeEndpoint.seconds = 0.5
+    module = types.ModuleType("edge_tts")
+    module.Communicate = _FakeEndpoint  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "edge_tts", module)
+    return _FakeEndpoint
+
+
+async def test_the_delivery_instruction_is_never_sent_as_text(
+    endpoint: type[_FakeEndpoint],
+) -> None:
+    """This endpoint has no instruct mode, so a prefix would be read aloud every time.
+
+    Not the intermittent leak screen_batch watches for -- a guaranteed one.
+    """
+    await EdgeSynthesiser().synthesise(Utterance(text="今天天气真好", emotion="happy"))
+
+    sent, _, _ = endpoint.requests[0]
+    assert sent == "今天天气真好"
+    assert EMOTION_INSTRUCTIONS["happy"] not in sent
+
+
+async def test_emotion_is_carried_as_prosody_instead(endpoint: type[_FakeEndpoint]) -> None:
+    await EdgeSynthesiser().synthesise(Utterance(text="今天天气真好", emotion="happy"))
+
+    _, _, options = endpoint.requests[0]
+    assert options == EDGE_PROSODY["happy"]
+
+
+async def test_an_unknown_emotion_falls_back_to_neutral_prosody(
+    endpoint: type[_FakeEndpoint],
+) -> None:
+    await EdgeSynthesiser().synthesise(Utterance(text="x", emotion="ecstatic"))
+
+    assert endpoint.requests[0][2] == EDGE_PROSODY["neutral"]
+
+
+async def test_the_text_is_cleaned_before_it_is_spoken(endpoint: type[_FakeEndpoint]) -> None:
+    """Otherwise every caller cleans it, and one forgets."""
+    await EdgeSynthesiser().synthesise(Utterance(text="**灵山大佛**通高 `88` 米"))
+
+    assert endpoint.requests[0][0] == "灵山大佛通高 88 米"
+
+
+async def test_nothing_worth_saying_costs_no_request(endpoint: type[_FakeEndpoint]) -> None:
+    """A request for silence spends a round trip and plays a click."""
+    assert await EdgeSynthesiser().synthesise(Utterance(text="\n\n")) == b""
+    assert endpoint.requests == []
+
+
+async def test_returned_audio_is_pcm16_at_the_contract_rate(
+    endpoint: type[_FakeEndpoint],
+) -> None:
+    """Anything else reaches the client as a chipmunk, reported as "sounds strange"."""
+    from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE
+
+    pcm = await EdgeSynthesiser().synthesise(Utterance(text="今天天气真好"))
+
+    assert len(pcm) == int(OUTPUT_SAMPLE_RATE * 0.5) * 2
+
+
+async def test_an_empty_response_raises_rather_than_returning_silence(
+    endpoint: type[_FakeEndpoint],
+) -> None:
+    """Silence scores as the model having said nothing, blaming the model for a network fault."""
+    endpoint.seconds = 0.0
+
+    with pytest.raises(RuntimeError, match="no audio"):
+        await EdgeSynthesiser().synthesise(Utterance(text="今天天气真好"))
+
+
+def test_a_synthesiser_is_never_eligible_to_judge_its_own_output() -> None:
+    assert EdgeSynthesiser().eligible_as_judge is False
