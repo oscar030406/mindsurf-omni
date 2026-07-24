@@ -43,9 +43,16 @@ def test_an_empty_probe_file_is_refused(tmp_path: Path) -> None:
 class _Service:
     """A stand-in service, with configurable failures."""
 
-    def __init__(self, *, path: str = "cascade", fail_audio_for: set[str] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        path: str = "cascade",
+        fail_audio_for: set[str] | None = None,
+        truncate_audio_for: set[str] | None = None,
+    ) -> None:
         self.path = path
         self.fail_audio_for = fail_audio_for or set()
+        self.truncate_audio_for = truncate_audio_for or set()
         self.seen: list[str] = []
 
     def handler(self, request: httpx.Request) -> httpx.Response:
@@ -74,6 +81,10 @@ class _Service:
             spoken = json.loads(request.content)["input"]
             if any(marker in spoken for marker in self.fail_audio_for):
                 return httpx.Response(500)
+            if any(marker in spoken for marker in self.truncate_audio_for):
+                # Synthesis streams, so a fault after the headers is not a
+                # status code -- it is a body that stops early.
+                raise httpx.RemoteProtocolError("peer closed connection")
             return httpx.Response(200, content=b"RIFF" + b"\x00" * 40)
         return httpx.Response(404)
 
@@ -96,7 +107,7 @@ def _run(service: _Service, tmp_path: Path, count: int = 3, text_source: str = "
                 tmp_path / "out",
                 timeout=5.0,
                 text_source=text_source,
-                sampling={"temperature": 0.7, "top_p": 0.9},
+                sampling={"temperature": 0.7, "top_p": 0.9, "max_tokens": 512},
             )
         )
     finally:
@@ -119,7 +130,11 @@ def test_the_manifest_records_the_sampling_that_produced_the_replies(tmp_path: P
     """
     report = _run(_Service(), tmp_path, count=1)
 
-    assert report["generated_by"]["sampling"] == {"temperature": 0.7, "top_p": 0.9}
+    assert report["generated_by"]["sampling"] == {
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "max_tokens": 512,
+    }
 
 
 def test_a_floor_run_records_no_sampling_because_nothing_was_sampled(tmp_path: Path) -> None:
@@ -156,6 +171,24 @@ def test_a_normal_run_is_marked_as_the_model_speaking(tmp_path: Path) -> None:
     report = _run(_Service(), tmp_path, count=1)
 
     assert report["generated_by"]["text_source"] == "model"
+
+
+def test_one_broken_stream_does_not_discard_the_whole_run(tmp_path: Path) -> None:
+    """Generation is the expensive half, and this script exists to run it once.
+
+    A synthesis fault arrives as a truncated body rather than a status, so it
+    raises rather than returning a code. Letting it propagate would end the run
+    at that sample and throw away every one already produced.
+    """
+    report = _run(_Service(truncate_audio_for={"问题1"}), tmp_path)
+
+    assert report["probe_count"] == 3
+    assert report["generated"] == 2
+    assert report["failed"] == ["zh001"]
+    broken = next(s for s in report["samples"] if s["id"] == "zh001")
+    assert "RemoteProtocolError" in broken["error"]
+    # The reply is kept: the model did answer, only the audio was lost.
+    assert broken["reference_text"] == "回答问题1"
 
 
 def test_failed_samples_are_named_not_silently_dropped(tmp_path: Path) -> None:

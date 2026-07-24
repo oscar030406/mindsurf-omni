@@ -71,6 +71,11 @@ class Settings:
     # the path answers with the reason it cannot speak rather than quietly
     # reaching a hosted endpoint nobody asked it to reach.
     tts: str = ""
+    # The Thinker checkpoint the cascade answers from, and the MiniMind-O
+    # checkout its model class is built from. Both unset until a checkpoint
+    # exists, at which point the text stage stops being the unwired one.
+    thinker: Path | None = None
+    minimind_root: Path | None = None
 
     @classmethod
     def from_environment(cls, environment: dict[str, str] | None = None) -> Settings | None:
@@ -100,6 +105,10 @@ class Settings:
             device=source.get("MINDSURF_DEVICE", "cpu"),
             chunk_frames=int(source.get("MINDSURF_CHUNK_FRAMES", "4")),
             tts=source.get("MINDSURF_TTS", "").strip().lower(),
+            thinker=Path(source["MINDSURF_THINKER"]) if source.get("MINDSURF_THINKER") else None,
+            minimind_root=(
+                Path(source["MINIMIND_O_ROOT"]) if source.get("MINIMIND_O_ROOT") else None
+            ),
         )
 
     def verify(self) -> None:

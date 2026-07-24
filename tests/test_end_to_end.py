@@ -74,7 +74,7 @@ def _generate(tmp_path: Path, probe_count: int) -> dict:
                 tmp_path / "audio",
                 5.0,
                 "model",
-                {"temperature": 0.7, "top_p": 0.9},
+                {"temperature": 0.7, "top_p": 0.9, "max_tokens": 512},
             )
         )
     finally:

@@ -56,18 +56,14 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
             )
         return await recogniser.transcribe(pcm, sample_rate)
 
-    async def generate(messages: list[dict[str, str]], _: Any) -> Any:
-        raise ConfigurationError(
-            "the cascade path has no text generator wired yet; "
-            "the Thinker checkpoint is still training"
-        )
-        yield ""  # pragma: no cover - makes this an async generator
-
+    generate = _build_generator(settings)
     synthesise = _build_synthesiser(settings)
 
     # Named here because assembly is the only place that knows which stages
-    # will refuse. "generator" is unconditional until the Thinker lands.
-    unwired = ["generator"]
+    # will refuse.
+    unwired = []
+    if settings.thinker is None:
+        unwired.append("generator")
     if not settings.tts:
         unwired.append("synthesiser")
     if not recogniser_available:
@@ -81,6 +77,41 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         token_spec=token_spec(),
         unwired=tuple(unwired),
     )
+
+
+def _build_generator(settings: Settings) -> Any:
+    """The cascade's text stage, or one that says what it is waiting for."""
+    if settings.thinker is None:
+
+        async def unwired(messages: list[dict[str, str]], _: Any) -> Any:
+            raise ConfigurationError(
+                "the cascade path has no text generator wired; point MINDSURF_THINKER at a "
+                "Thinker checkpoint and MINIMIND_O_ROOT at a MiniMind-O checkout"
+            )
+            yield ""  # pragma: no cover - makes this an async generator
+
+        return unwired
+
+    if settings.minimind_root is None:
+        raise ConfigurationError(
+            "MINDSURF_THINKER is set but MINIMIND_O_ROOT is not; the Thinker is built from "
+            "MiniMind's own model class rather than a copy of it, so the checkout is needed"
+        )
+    if not _importable("torch"):
+        raise ConfigurationError(
+            "MINDSURF_THINKER is set but torch is not installed; the image carries the "
+            "runtime set only, so the text stage runs on a host with the 'train' extra"
+        )
+
+    from mindsurf_omni.service.thinker import ThinkerGenerator
+
+    thinker = ThinkerGenerator(
+        checkpoint=settings.thinker,
+        tokenizer_dir=settings.paths.tokenizer,
+        minimind_root=settings.minimind_root,
+        device=settings.device,
+    )
+    return thinker.generate
 
 
 def _importable(module: str) -> bool:

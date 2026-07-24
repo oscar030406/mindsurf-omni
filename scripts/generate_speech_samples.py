@@ -84,10 +84,22 @@ async def generate(
                     continue
                 text = reply.json()["choices"][0]["message"]["content"]
 
-            audio = await client.post("/v1/audio/speech", json={"input": text})
             path = output / f"{probe['id']}.wav"
-            if audio.status_code == 200:
-                path.write_bytes(audio.content)
+            spoken = False
+            try:
+                audio = await client.post("/v1/audio/speech", json={"input": text})
+                if audio.status_code == 200:
+                    path.write_bytes(audio.content)
+                    spoken = True
+                else:
+                    failure = f"speech returned {audio.status_code}"
+            except Exception as error:  # noqa: BLE001 - one bad sample is data
+                # Synthesis is a streaming response, so a fault after the
+                # headers arrives as a truncated body rather than a status.
+                # Letting it propagate ends the run at whichever sample hit it
+                # and discards every sample already generated -- the expensive
+                # half, and the one this script exists to run only once.
+                failure = f"{type(error).__name__}: {error}"
 
             samples.append(
                 {
@@ -97,8 +109,9 @@ async def generate(
                     # measuring whether the synthesiser said it, not whether
                     # the model answered well.
                     "reference_text": text,
-                    "audio_path": str(path) if audio.status_code == 200 else None,
+                    "audio_path": str(path) if spoken else None,
                     "elapsed_ms": (time.perf_counter() - started) * 1000,
+                    **({} if spoken else {"error": failure}),
                 }
             )
             if (index + 1) % 10 == 0:
@@ -136,6 +149,15 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument(
+        "--max-tokens",
+        type=int,
+        default=512,
+        help="512 tokens of Chinese is around 1100 characters, or 75 seconds "
+        "spoken as one turn. The judge stops early on audio that long when it "
+        "is repetitive, and the missing text is charged to the synthesiser as "
+        "deletions -- so a run that means to measure CER should cap this",
+    )
+    parser.add_argument(
         "--text-source",
         choices=("model", "probe"),
         default="model",
@@ -157,7 +179,11 @@ def main() -> None:
             args.output,
             args.timeout,
             args.text_source,
-            {"temperature": args.temperature, "top_p": args.top_p},
+            {
+                "temperature": args.temperature,
+                "top_p": args.top_p,
+                "max_tokens": args.max_tokens,
+            },
         )
     )
 
