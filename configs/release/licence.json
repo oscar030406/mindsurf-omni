@@ -1,63 +1,63 @@
 {
-  "schema_version": 1,
-  "recorded_at": "2026-07-23",
-  "conclusion": {
-    "commercial_use_permitted": false,
-    "reason": "the text base inherits CC-BY-NC-4.0 from its training data, and that restriction passes to every derivative including fine-tuned ones",
-    "binding_constraint": "text_base"
-  },
   "assets": [
     {
-      "name": "text_base",
-      "what": "89,864,448 parameter Chinese-first language model",
-      "licence": "CC-BY-NC-4.0",
-      "inherited_from": "gongjy/minimind_dataset @ 74aad49f",
       "commercial_use": false,
+      "inherited_from": "gongjy/minimind_dataset @ 74aad49f",
+      "licence": "CC-BY-NC-4.0",
+      "name": "text_base",
+      "note": "the MIT licence on MiniMind's code repository does not apply: weights inherit the licence of the data, not of the code that trained them",
       "verified": true,
-      "note": "the MIT licence on MiniMind's code repository does not apply: weights inherit the licence of the data, not of the code that trained them"
+      "what": "89,864,448 parameter Chinese-first language model"
     },
     {
-      "name": "minimind_o_code",
-      "licence": "Apache-2.0",
       "commercial_use": true,
+      "licence": "Apache-2.0",
+      "name": "minimind_o_code",
       "verified": true
     },
     {
+      "commercial_use": null,
+      "licence": "unstated",
       "name": "minimind_o_data",
-      "what": "sft_t2a / sft_a2a, Mimi codes",
-      "licence": "unstated",
-      "commercial_use": null,
+      "note": "upstream sources checked 2026-07-24: VoiceAssistant-400K is Apache-2.0 and UltraChat-300K-SLAM-Omni is MIT. Still unverified: minimind-o also synthesised multi-speaker audio with Qwen3-TTS, whose terms have not been read.",
       "verified": false,
-      "note": "upstream sources include VoiceAssistant-400K and UltraChat-300K-SLAM-Omni; each carries its own terms and neither has been read"
+      "what": "sft_t2a / sft_a2a, Mimi codes"
     },
     {
+      "commercial_use": null,
+      "licence": "unstated",
       "name": "sensevoice_small",
-      "what": "frozen audio encoder, 234M parameters",
-      "licence": "unstated",
-      "commercial_use": null,
-      "verified": false
+      "verified": false,
+      "what": "frozen audio encoder, 234M parameters"
     },
     {
+      "commercial_use": null,
+      "licence": "unstated",
       "name": "mimi",
-      "what": "frozen speech codec, 96M parameters",
-      "licence": "unstated",
-      "commercial_use": null,
-      "verified": false
+      "verified": false,
+      "what": "frozen speech codec, 96M parameters"
     },
     {
-      "name": "campplus",
-      "what": "frozen speaker embedding",
-      "licence": "unstated",
       "commercial_use": null,
-      "verified": false
+      "licence": "unstated",
+      "name": "campplus",
+      "verified": false,
+      "what": "frozen speaker embedding"
     }
   ],
   "attribution_required": [
     "gongjy/minimind_dataset @ 74aad49fa4443e7ed640d44bc4e9c7d1fe71ada5"
   ],
+  "conclusion": {
+    "binding_constraint": "text_base",
+    "commercial_use_permitted": false,
+    "reason": "the text base inherits CC-BY-NC-4.0 from its training data, and that restriction passes to every derivative including fine-tuned ones"
+  },
+  "how_to_change_the_conclusion": "replace the text base's training data with a corpus whose licence permits commercial use, and read the terms of the frozen components; loosening the statement without doing that would be a false claim",
   "open_questions": [
     "the training data's licence is unstated upstream; the audio corpora it draws from have not been read",
     "three frozen components ship in the runtime with unread terms"
   ],
-  "how_to_change_the_conclusion": "replace the text base's training data with a corpus whose licence permits commercial use, and read the terms of the frozen components; loosening the statement without doing that would be a false claim"
+  "recorded_at": "2026-07-23",
+  "schema_version": 1
 }
