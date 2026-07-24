@@ -103,3 +103,56 @@ def test_only_the_cached_row_groups_stay_resident(dataset: Path) -> None:
         lazy["conversations"][index].as_py()
 
     assert len(lazy._local.cache) <= 2
+
+
+def test_an_oversized_row_group_is_refused_with_the_remedy(tmp_path: Path) -> None:
+    """Reading one row from a single-group file materialises the whole file.
+
+    sft_a2a.parquet ships exactly this way -- 414,024 rows in one 6.1 GB group
+    -- and it OOM-killed a DataLoader worker before a single step ran. Lazy
+    reading silently buys nothing there, so the reader has to say so.
+    """
+    path = tmp_path / "one_group.parquet"
+    pq.write_table(
+        pa.table({"conversations": pa.array(["x" * 200] * 500, type=pa.large_string())}),
+        path,
+        row_group_size=10_000,  # one group for all 500 rows
+    )
+
+    # The threshold is lowered rather than writing a gigabyte to disk; the
+    # behaviour under test is the refusal, not the specific byte count.
+    original = LazyParquetTable.LARGEST_SENSIBLE_ROW_GROUP_BYTES
+    LazyParquetTable.LARGEST_SENSIBLE_ROW_GROUP_BYTES = 100
+    try:
+        with pytest.raises(ValueError, match="materialises the whole group"):
+            LazyParquetTable(str(path), check_row_group_size=True)
+    finally:
+        LazyParquetTable.LARGEST_SENSIBLE_ROW_GROUP_BYTES = original
+
+
+def test_the_refusal_names_the_command_that_fixes_it(tmp_path: Path) -> None:
+    """An error that only diagnoses leaves the reader to find the remedy."""
+    path = tmp_path / "one_group.parquet"
+    pq.write_table(
+        pa.table({"c": pa.array(["x" * 200] * 500, type=pa.large_string())}),
+        path,
+        row_group_size=10_000,
+    )
+
+    original = LazyParquetTable.LARGEST_SENSIBLE_ROW_GROUP_BYTES
+    LazyParquetTable.LARGEST_SENSIBLE_ROW_GROUP_BYTES = 100
+    try:
+        LazyParquetTable(str(path))
+    except ValueError as error:
+        assert "repartition_parquet.py" in str(error)
+    else:
+        raise AssertionError("an oversized row group should be refused")
+    finally:
+        LazyParquetTable.LARGEST_SENSIBLE_ROW_GROUP_BYTES = original
+
+
+def test_normal_row_groups_are_accepted(dataset: Path) -> None:
+    """The check must not fire on the layout that works."""
+    table = LazyParquetTable(str(dataset), check_row_group_size=True)
+
+    assert len(table) == 250

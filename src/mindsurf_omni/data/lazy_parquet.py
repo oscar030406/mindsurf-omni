@@ -50,7 +50,18 @@ class LazyParquetTable:
     ``column_names`` attribute, which is what the access pattern needs.
     """
 
-    def __init__(self, paths: str | list[str], cached_row_groups: int = 4) -> None:
+    # A row group larger than this defeats the point: reading one row means
+    # materialising the whole group. sft_a2a.parquet ships as a single 6.1 GB
+    # group holding all 414,024 rows, which OOM-killed a DataLoader worker
+    # before a single step ran.
+    LARGEST_SENSIBLE_ROW_GROUP_BYTES = 512 * 1024 * 1024
+
+    def __init__(
+        self,
+        paths: str | list[str],
+        cached_row_groups: int = 4,
+        check_row_group_size: bool = True,
+    ) -> None:
         if isinstance(paths, str):
             paths = [part.strip() for part in paths.split(",") if part.strip()]
         self._paths = [str(Path(path)) for path in paths]
@@ -67,9 +78,21 @@ class LazyParquetTable:
             if not self.column_names:
                 self.column_names = list(handle.schema_arrow.names)
             for group_index in range(handle.metadata.num_row_groups):
+                group = handle.metadata.row_group(group_index)
+                if check_row_group_size and group.total_byte_size > (
+                    self.LARGEST_SENSIBLE_ROW_GROUP_BYTES
+                ):
+                    handle.close()
+                    raise ValueError(
+                        f"{path} row group {group_index} holds {group.num_rows:,} rows "
+                        f"in {group.total_byte_size / 1e9:.1f} GB. Reading one row "
+                        f"materialises the whole group, so lazy reading buys nothing "
+                        f"and a worker will be OOM-killed. Repartition it first: "
+                        f"python scripts/repartition_parquet.py --input {path}"
+                    )
                 self._offsets.append(total)
                 self._groups.append((file_index, group_index))
-                total += handle.metadata.row_group(group_index).num_rows
+                total += group.num_rows
             handle.close()
         self._length = total
 
