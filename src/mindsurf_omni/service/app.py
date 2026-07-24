@@ -17,7 +17,7 @@ import uuid
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from mindsurf_omni.contract import (
     AUDIO_ENCODING,
@@ -33,6 +33,8 @@ from mindsurf_omni.contract import (
     VoiceInfo,
     VoiceList,
 )
+from mindsurf_omni.service.audio import wav_header
+from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine
 
 UNAVAILABLE = (
@@ -52,7 +54,7 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     app = FastAPI(title="MindSurf Omni", version="0.1.0")
 
     if engine is None:
-        from mindsurf_omni.service.config import ConfigurationError, Settings
+        from mindsurf_omni.service.config import Settings
         from mindsurf_omni.service.factory import build
 
         try:
@@ -61,6 +63,17 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             app.state.configuration_error = str(error)
 
     app.state.engine = engine
+
+    @app.exception_handler(ConfigurationError)
+    async def unconfigured(request: Request, error: Exception) -> JSONResponse:
+        """A stage that is not wired answers 503 with its reason, not a traceback.
+
+        The same shape the service gives when no engine exists at all, so a
+        caller integrating against a half-built service handles one failure
+        rather than two -- and the reason names the stage rather than arriving
+        as a 500 someone has to read a log to explain.
+        """
+        return JSONResponse({"detail": str(error)}, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     def require_engine(request: Request) -> SpeechEngine:
         configured: SpeechEngine | None = getattr(request.app.state, "engine", None)
@@ -214,15 +227,24 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     async def speech(request: Request, body: SpeechRequest) -> StreamingResponse:
         engine = require_engine(request)
         settings = GenerationSettings(voice=body.voice, emotion=body.emotion)
+        as_wav = body.response_format == "wav"
 
         async def stream() -> Any:
+            # The container header goes out before any audio exists, carrying
+            # the maximum length: a decoder then reads to the end of the
+            # stream. Without it the body is bare PCM in a response labelled
+            # audio/wav, and every decoder refuses it -- the evaluation harness
+            # writes this response straight to a .wav file and hands the path
+            # to a recogniser, so the whole chain returns empty transcripts.
+            if as_wav:
+                yield wav_header(OUTPUT_SAMPLE_RATE)
             async for chunk in engine.speak(body.input, settings):
                 if chunk.pcm:
                     yield chunk.pcm
 
         return StreamingResponse(
             stream(),
-            media_type="audio/wav" if body.response_format == "wav" else "application/octet-stream",
+            media_type="audio/wav" if as_wav else "application/octet-stream",
             headers={"X-Sample-Rate": str(OUTPUT_SAMPLE_RATE), "X-Encoding": AUDIO_ENCODING},
         )
 

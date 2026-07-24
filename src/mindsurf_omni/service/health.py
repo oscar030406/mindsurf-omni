@@ -78,4 +78,11 @@ def assess(engine: object | None, configuration_error: str | None = None) -> Hea
         # A frozen component that failed to load is as fatal as a trainable
         # one; frozen describes what training did, not whether it is needed.
         health.add(component.name, True, "frozen" if component.frozen else "trainable")
+
+    # A stage that raises when called is not ready, whatever its components
+    # report. Reporting the whole engine ready because the parts are present
+    # is the failure this endpoint exists to prevent: the parts being present
+    # is what `ps` already tells you.
+    for stage in getattr(engine, "unwired", ()):
+        health.add(stage, False, "not wired; this stage refuses with the reason")
     return health

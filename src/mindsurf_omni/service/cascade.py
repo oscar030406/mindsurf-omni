@@ -58,12 +58,18 @@ class CascadeEngine(SpeechEngine):
         synthesiser: Synthesiser,
         components: list[ComponentInfo],
         token_spec: TokenSpec,
+        unwired: tuple[str, ...] = (),
     ) -> None:
         self._transcribe = transcriber
         self._generate = generator
         self._synthesise = synthesiser
         self._components = components
         self._token_spec = token_spec
+        # Which of the three stages will refuse if called. Assembly knows this
+        # and the health check cannot work it out by looking, so it is carried
+        # rather than probed -- an engine that answers "ready" while a stage
+        # raises is worse than no health check, because a backend routes on it.
+        self.unwired = unwired
         self.last_timings = CascadeTimings()
 
     def describe(self) -> EngineDescription:

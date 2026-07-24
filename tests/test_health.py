@@ -52,6 +52,21 @@ def test_every_component_appears_including_the_frozen_ones() -> None:
     assert {"thinker", "sensevoice-small"} <= names
 
 
+def test_a_stage_that_would_refuse_is_not_reported_ready() -> None:
+    """The components being present is what `ps` already tells you.
+
+    An engine holding every part but unable to complete a turn reads as ready
+    on the strength of the parts, and a backend routes traffic to it.
+    """
+    engine = _Engine()
+    engine.unwired = ("generator",)  # type: ignore[attr-defined]
+
+    report = assess(engine)
+
+    assert report.status == "degraded"
+    assert report.to_dict()["not_ready"] == ["generator"]
+
+
 def test_a_partial_failure_is_degraded_not_down() -> None:
     """A service still answering over the fallback should stay in rotation."""
     report = Health()

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import struct
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -80,6 +81,30 @@ def test_models_reports_the_path_and_the_licence(client: TestClient) -> None:
     assert body["licence"] == "CC-BY-NC-4.0"
 
 
+def test_a_stage_that_is_not_wired_answers_503_rather_than_a_traceback() -> None:
+    """A 500 sends the caller to a log the caller cannot read.
+
+    The service already answers 503-with-a-reason when no engine exists; a
+    stage that is present but unwired must fail the same way, so an integration
+    handles one failure shape instead of two.
+    """
+    from mindsurf_omni.service.config import ConfigurationError
+
+    class HalfBuilt(FakeEngine):
+        async def complete(  # type: ignore[override]
+            self, messages: list[dict[str, str]], settings: GenerationSettings
+        ) -> AsyncIterator[str]:
+            raise ConfigurationError("the widget stage is not wired; set MINDSURF_WIDGET")
+            yield ""  # pragma: no cover - makes this an async generator
+
+    response = TestClient(create_app(HalfBuilt())).post(
+        "/v1/chat/completions", json={"messages": [{"role": "user", "content": "你好"}]}
+    )
+
+    assert response.status_code == 503
+    assert "MINDSURF_WIDGET" in response.json()["detail"]
+
+
 def test_an_unconfigured_service_says_so_instead_of_faking_success(bare: TestClient) -> None:
     """An integration that passes against stubs fails on the day the model lands."""
     assert bare.get("/v1/models").json()["data"] == []
@@ -129,11 +154,37 @@ def test_empty_audio_is_rejected_not_transcribed(client: TestClient) -> None:
 
 def test_speech_declares_its_sample_rate_in_headers(client: TestClient) -> None:
     """The client must not have to guess how to play what it received."""
-    response = client.post("/v1/audio/speech", json={"input": "你好"})
+    response = client.post("/v1/audio/speech", json={"input": "你好", "response_format": "pcm"})
 
     assert response.headers["x-sample-rate"] == "24000"
     assert response.headers["x-encoding"] == "pcm_s16le"
     assert response.content == b"\x00\x01" * 8
+
+
+def test_speech_asked_for_wav_returns_a_container_a_decoder_will_open(
+    client: TestClient,
+) -> None:
+    """A body labelled audio/wav that carries bare PCM is refused by every decoder.
+
+    The evaluation harness writes this response to a .wav and hands the path to
+    a recogniser, so the failure surfaces as every sample transcribing to the
+    empty string -- a whole eval run that reports nothing rather than an error.
+    """
+    response = client.post("/v1/audio/speech", json={"input": "你好"})
+
+    assert response.headers["content-type"].startswith("audio/wav")
+    assert response.content[:4] == b"RIFF"
+    assert response.content[8:12] == b"WAVE"
+    assert struct.unpack("<I", response.content[24:28])[0] == 24_000
+    assert response.content[44:] == b"\x00\x01" * 8
+
+
+def test_speech_asked_for_pcm_carries_no_container(client: TestClient) -> None:
+    """Raw PCM is the streaming format; prefixing a header would corrupt it."""
+    response = client.post("/v1/audio/speech", json={"input": "你好", "response_format": "pcm"})
+
+    assert response.content[:4] != b"RIFF"
+    assert response.headers["content-type"].startswith("application/octet-stream")
 
 
 def test_realtime_turn_produces_text_then_audio(client: TestClient) -> None:
