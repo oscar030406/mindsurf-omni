@@ -32,7 +32,7 @@ def normalise_for_cer(text: str) -> str:
     is not a small correction. Whisper picks a script per utterance with no
     regard for the input, so 地铁 comes back 地鐵 and every character of it
     counts as a substitution. Measured over the hundred-probe floor run: mean
-    CER 0.1788 before folding, 0.0370 after, exact matches 46 of 100 to 80 of
+    CER 0.1788 before folding, 0.0388 after, exact matches 46 of 100 to 80 of
     100. Four fifths of what looked like synthesis error was the judge's choice
     of script.
 
@@ -40,6 +40,12 @@ def normalise_for_cer(text: str) -> str:
     whether the audio said the words; which script someone wrote them in is a
     property of the text, visible in the text, and not something a measurement
     of speech should be charging to the speaker.
+
+    ``zh-hans`` and not ``zh-cn``: the latter also swaps regional vocabulary,
+    turning 軟體 into 软件 rather than 软体, and that would forgive a genuinely
+    different word rather than a differently written one. On this data the two
+    agree to 0.0018, well inside the noise floor -- so the strict fold costs
+    nothing measurable and keeps the metric to what it claims to measure.
     """
     from zhconv import convert
 
@@ -49,7 +55,7 @@ def normalise_for_cer(text: str) -> str:
         for character in text
         if not unicodedata.category(character).startswith(("P", "Z", "C"))
     )
-    return str(convert(stripped, "zh-cn"))
+    return str(convert(stripped, "zh-hans"))
 
 
 def edit_distance(reference: str, hypothesis: str) -> int:

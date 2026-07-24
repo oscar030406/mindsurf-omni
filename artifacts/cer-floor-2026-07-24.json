@@ -23,27 +23,28 @@
     "licence": "CC-BY-NC-4.0",
     "model": "mindsurf-omni",
     "path": "cascade",
+    "sampling": null,
     "text_source": "probe"
   },
   "judge": "whisper-small",
   "measurements": {
     "cer": {
       "gating_eligible": true,
-      "noise_floor": 0.016376082251082252,
+      "noise_floor": 0.01267823322510823,
       "note": "",
-      "sample_size": 100,
-      "value": 0.03696223221223221
+      "sample_size": 160,
+      "value": 0.041405937812187786
     },
     "silent_rate": {
       "gating_eligible": true,
       "noise_floor": 0.0,
       "note": "",
-      "sample_size": 100,
+      "sample_size": 160,
       "value": 0.0
     }
   },
   "not_claimed": [],
   "probe_set": "configs/speech_probes_zh_v1.jsonl",
-  "sample_size": 100,
+  "sample_size": 160,
   "what": "evaluation-chain floor: the model did not speak"
 }

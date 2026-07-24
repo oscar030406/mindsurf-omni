@@ -139,7 +139,7 @@ def test_the_handover_states_that_no_quality_number_exists_yet() -> None:
     assert "没有任何质量数字" in text
     assert "CER" in text
     # The floor is stated, and stated as a subtrahend rather than a score.
-    assert "0.0370" in text
+    assert "0.0414" in text
     assert "不是成绩" in text
 
 

@@ -29,7 +29,7 @@ def test_the_judges_choice_of_script_does_not_count_as_error() -> None:
 
     Whisper picks traditional or simplified per utterance regardless of the
     input. Over the hundred-probe floor run this alone was mean CER 0.1788
-    against 0.0370 with it folded away -- four fifths of the number.
+    against 0.0388 with it folded away -- four fifths of the number.
     """
     assert character_error_rate("地铁几点开始运营", "地鐵幾點開始運營") == 0.0
     assert character_error_rate("为什么树叶秋天会变黄", "為什麼樹葉秋天會變黃") == 0.0
@@ -38,6 +38,17 @@ def test_the_judges_choice_of_script_does_not_count_as_error() -> None:
 def test_folding_script_does_not_forgive_a_wrong_word() -> None:
     """It must collapse the writing system, not the vocabulary."""
     assert character_error_rate("猫为什么喜欢纸箱", "毛為什麼喜歡紙箱") == pytest.approx(1 / 8)
+
+
+def test_folding_script_does_not_forgive_regional_vocabulary() -> None:
+    """軟體 and 软件 are the same idea and different words, spoken differently.
+
+    A locale conversion maps one to the other and would score them equal; a
+    script fold makes 軟體 into 软体, which stays distinct from 软件. The
+    difference is what keeps this a measurement of whether the audio said the
+    words rather than whether it meant them.
+    """
+    assert character_error_rate("软件很好用", "軟體很好用") > 0.0
 
 
 def test_spacing_differences_do_not_count() -> None:
