@@ -173,7 +173,17 @@ def check_realtime(base: str, results: Results) -> None:
     try:
         from websockets.sync.client import connect
     except ImportError:
-        print("  跳过  websockets 未安装，实时链路未检查")
+        # Counted as a failure, not skipped. "Could not check" and "checked and
+        # it works" are different answers, and printing a note while returning
+        # zero turns the first into the second -- a green smoke run that never
+        # touched the realtime path at all. A sister project lost a fleet to
+        # the same shape: a catch branch that treated blocked playback as
+        # playback finished, so every device went silent and nothing reported.
+        results.check(
+            "WS /v1/realtime",
+            False,
+            "websockets 未安装，实时链路未检查——这不是通过",
+        )
         return
 
     parsed = urlparse(base)

@@ -113,3 +113,35 @@ def test_a_service_that_errors_on_models_is_caught(status: int) -> None:
     check_models(_client(app), results)
 
     assert results.failed
+
+
+def test_an_unavailable_websocket_client_is_a_failure_not_a_skip() -> None:
+    """ "Could not check" and "checked, it works" must not exit the same way.
+
+    Printing a note and returning zero turns the first into the second: a green
+    smoke run that never touched the realtime path. A sister project lost a
+    fleet of devices to this shape -- a catch branch that treated blocked
+    playback as playback finished, so everything went silent and nothing
+    reported a fault.
+    """
+    import builtins
+
+    from scripts.smoke_service import Results, check_realtime
+
+    real_import = builtins.__import__
+
+    def without_websockets(name: str, *args: object, **kwargs: object) -> object:
+        if name.startswith("websockets"):
+            raise ImportError("no websockets")
+        return real_import(name, *args, **kwargs)  # type: ignore[arg-type]
+
+    results = Results()
+    builtins.__import__ = without_websockets  # type: ignore[assignment]
+    try:
+        check_realtime("http://test", results)
+    finally:
+        builtins.__import__ = real_import  # type: ignore[assignment]
+
+    assert not results.passed
+    assert results.failed and "未检查" in results.failed[0][1]
+    assert results.report() == 1  # non-zero exit
