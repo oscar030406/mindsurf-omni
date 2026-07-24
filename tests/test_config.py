@@ -117,3 +117,42 @@ def test_the_cascade_path_does_not_claim_a_talker() -> None:
 
     assert "talker" not in names
     assert "sensevoice-small" in names
+
+
+def test_the_thinker_component_names_which_weights_spoke(tmp_path: Path) -> None:
+    """Two runs on two checkpoints would otherwise carry identical provenance.
+
+    That is the whole comparison the evaluation exists to make -- base against
+    fine-tuned -- and nothing else in the manifest distinguishes them.
+    """
+    from mindsurf_omni.service.config import checkpoint_digest, describe_components
+
+    checkpoint = tmp_path / "sft.pth"
+    checkpoint.write_bytes(b"weights")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_THINKER": str(checkpoint),
+        }
+    )
+    assert settings is not None
+
+    thinker = describe_components(settings)[0]
+
+    assert thinker.name == "thinker"
+    assert thinker.sha256 == checkpoint_digest(checkpoint)
+    assert thinker.sha256 is not None and len(thinker.sha256) == 64
+
+
+def test_no_checkpoint_reports_no_digest_rather_than_a_wrong_one(tmp_path: Path) -> None:
+    """None is "nothing configured", not "a checkpoint we did not hash"."""
+    from mindsurf_omni.service.config import checkpoint_digest, describe_components
+
+    settings = Settings.from_environment(
+        {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": str(tmp_path)}
+    )
+    assert settings is not None
+
+    assert describe_components(settings)[0].sha256 is None
+    assert checkpoint_digest(tmp_path / "absent.pth") is None

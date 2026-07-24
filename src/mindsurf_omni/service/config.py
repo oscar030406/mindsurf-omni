@@ -11,6 +11,7 @@ exist. "Engine unavailable" tells an operator nothing at three in the morning.
 
 from __future__ import annotations
 
+import hashlib
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -133,6 +134,23 @@ def token_spec(vocab_size: int = 6400) -> TokenSpec:
     )
 
 
+def checkpoint_digest(path: Path | None) -> str | None:
+    """SHA-256 of the weights, or None when there are none to name.
+
+    Read in chunks because the file is hundreds of megabytes, and computed once
+    at assembly rather than per request. None means no checkpoint is
+    configured, which is different from a checkpoint whose digest is unknown --
+    the same distinction the licence record makes with null.
+    """
+    if path is None or not path.is_file():
+        return None
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def describe_components(settings: Settings) -> list[ComponentInfo]:
     """What is loaded, with the frozen pieces marked as such.
 
@@ -140,7 +158,16 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
     it belongs in the response rather than in a document beside it.
     """
     components = [
-        ComponentInfo(name="thinker", parameters=89_864_448, frozen=False),
+        ComponentInfo(
+            name="thinker",
+            parameters=89_864_448,
+            # Which weights spoke. Without it two evaluation runs -- one on the
+            # pretrained base, one on the fine-tuned checkpoint -- produce
+            # byte-identical provenance, and the report comparing them is
+            # comparing two things it cannot name.
+            sha256=checkpoint_digest(settings.thinker),
+            frozen=False,
+        ),
     ]
     if settings.path == "native":
         components += [
