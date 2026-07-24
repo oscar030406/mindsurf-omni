@@ -122,19 +122,37 @@ class EdgeSynthesiser:
         # and would simply read it out -- not the intermittent leak
         # ``instruction_leaked`` screens for, but every single utterance.
         prosody = EDGE_PROSODY.get(utterance.emotion, EDGE_PROSODY["neutral"])
-        speech = edge_tts.Communicate(
-            spoken, self.voice, rate=prosody["rate"], pitch=prosody["pitch"]
-        )
 
-        encoded = bytearray()
-        async for chunk in speech.stream():
-            if chunk["type"] == "audio":
-                encoded += chunk["data"]
-        if not encoded:
-            raise RuntimeError(
-                f"the synthesiser returned no audio for {spoken[:20]!r}; "
-                "a silent sample would be scored as the model saying nothing"
-            )
+        # Measured at 2 turns in 160: the endpoint intermittently returns no
+        # audio at all for text it accepts. It is a hosted service on the far
+        # side of a network, so one retry is the difference between a 1.25%
+        # turn failure rate and a negligible one. Only one, and the second
+        # failure is raised rather than swallowed -- a persistent fault is not
+        # something to paper over with attempts.
+        for attempt in (1, 2):
+            encoded = bytearray()
+            try:
+                speech = edge_tts.Communicate(
+                    spoken, self.voice, rate=prosody["rate"], pitch=prosody["pitch"]
+                )
+                async for chunk in speech.stream():
+                    if chunk["type"] == "audio":
+                        encoded += chunk["data"]
+            except Exception as error:  # noqa: BLE001 - the endpoint's own failures
+                if attempt == 2:
+                    raise RuntimeError(
+                        f"the synthesiser returned no audio for {spoken[:20]!r} twice "
+                        f"({type(error).__name__}); a silent sample would be scored as "
+                        "the model having said nothing"
+                    ) from error
+                continue
+            if encoded:
+                break
+            if attempt == 2:
+                raise RuntimeError(
+                    f"the synthesiser returned no audio for {spoken[:20]!r} twice; "
+                    "a silent sample would be scored as the model having said nothing"
+                )
 
         audio, rate = soundfile.read(io.BytesIO(bytes(encoded)), dtype="int16")
         return resample(audio.tobytes(), rate, OUTPUT_SAMPLE_RATE)

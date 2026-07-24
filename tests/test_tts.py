@@ -116,6 +116,7 @@ class _FakeEndpoint:
 
     requests: list[tuple[str, str, dict[str, str]]] = []
     seconds: float = 0.5
+    fail_first_n: int = 0
 
     def __init__(self, text: str, voice: str, **options: str) -> None:
         type(self).requests.append((text, voice, options))
@@ -128,7 +129,11 @@ class _FakeEndpoint:
         import numpy
         import soundfile
 
-        if not type(self).seconds:
+        cls = type(self)
+        if cls.fail_first_n:
+            cls.fail_first_n -= 1
+            raise RuntimeError("NoAudioReceived")
+        if not cls.seconds:
             return
         rate = 24_000
         count = int(rate * type(self).seconds)
@@ -148,6 +153,7 @@ def endpoint(monkeypatch: pytest.MonkeyPatch) -> type[_FakeEndpoint]:
 
     _FakeEndpoint.requests = []
     _FakeEndpoint.seconds = 0.5
+    _FakeEndpoint.fail_first_n = 0
     module = types.ModuleType("edge_tts")
     module.Communicate = _FakeEndpoint  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "edge_tts", module)
@@ -219,3 +225,29 @@ async def test_an_empty_response_raises_rather_than_returning_silence(
 
 def test_a_synthesiser_is_never_eligible_to_judge_its_own_output() -> None:
     assert EdgeSynthesiser().eligible_as_judge is False
+
+
+async def test_a_single_transient_failure_is_retried(endpoint: type[_FakeEndpoint]) -> None:
+    """Measured at 2 turns in 160: the endpoint sometimes returns nothing.
+
+    It sits behind a network, so one retry is the difference between a 1.25%
+    turn failure rate and a negligible one.
+    """
+    endpoint.fail_first_n = 1
+
+    pcm = await EdgeSynthesiser().synthesise(Utterance(text="今天天气真好"))
+
+    assert pcm  # the second attempt produced audio
+    assert len(endpoint.requests) == 2
+
+
+async def test_a_persistent_failure_is_raised_not_papered_over(
+    endpoint: type[_FakeEndpoint],
+) -> None:
+    """Attempts are not a fix for something that is actually broken."""
+    endpoint.fail_first_n = 5
+
+    with pytest.raises(RuntimeError, match="twice"):
+        await EdgeSynthesiser().synthesise(Utterance(text="今天天气真好"))
+
+    assert len(endpoint.requests) == 2  # tried twice, then stopped
