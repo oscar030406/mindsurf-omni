@@ -19,8 +19,18 @@ ROOT = Path(__file__).resolve().parent.parent
 # inside functions so that importing our modules never requires them.
 VENDORED = {"model", "dataset", "trainer"}
 
-# Import name to distribution name, where they differ.
+# Import name to distribution name, where they differ by more than punctuation.
 ALIASES = {"whisper": "openai-whisper", "yaml": "pyyaml"}
+
+
+def canonical(name: str) -> str:
+    """PEP 503 names: underscore and hyphen are the same distribution.
+
+    Without this the audit reports ``edge_tts`` as undeclared while
+    ``edge-tts`` sits in pyproject -- a false alarm that invites the next
+    person to silence the whole check.
+    """
+    return name.lower().replace("_", "-")
 
 
 def declared_packages() -> set[str]:
@@ -31,7 +41,7 @@ def declared_packages() -> set[str]:
         item for group in project.get("optional-dependencies", {}).values() for item in group
     ]:
         name = requirement.split(">=")[0].split("==")[0].split("[")[0].strip()
-        names.add(name.lower())
+        names.add(canonical(name))
     return names
 
 
@@ -63,7 +73,7 @@ def test_every_import_is_declared_or_explicitly_vendored() -> None:
     undeclared = {
         module: source
         for module, source in imported_packages().items()
-        if module not in VENDORED and ALIASES.get(module, module).lower() not in declared
+        if module not in VENDORED and canonical(ALIASES.get(module, module)) not in declared
     }
 
     assert not undeclared, "imported but declared nowhere: " + ", ".join(
