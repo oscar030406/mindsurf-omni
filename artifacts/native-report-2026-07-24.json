@@ -1,0 +1,101 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": false,
+        "noise_floor": 0.026400319949704654,
+        "note": "resolves 0.0792 at best, but the effect of interest is 0.0500",
+        "sample_size": 160,
+        "value": 0.29807339334800304
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [
+      "cer"
+    ],
+    "sample_size": 160
+  },
+  "checkpoint_sha256": "1f5b6bf55707dbf79a0fa24ad14691b2567d23930a7372ca17afd270f0682e26",
+  "comparison": {
+    "cer": "cer: reported only (resolves 0.0792 at best, but the effect of interest is 0.0500)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)"
+  },
+  "generated_by": {
+    "components": [
+      {
+        "frozen": false,
+        "name": "thinker",
+        "parameters": 89864448,
+        "sha256": "1f5b6bf55707dbf79a0fa24ad14691b2567d23930a7372ca17afd270f0682e26"
+      },
+      {
+        "frozen": false,
+        "name": "talker",
+        "parameters": null,
+        "sha256": null
+      },
+      {
+        "frozen": true,
+        "name": "mimi-codec",
+        "parameters": null,
+        "sha256": null
+      },
+      {
+        "frozen": true,
+        "name": "sensevoice-small",
+        "parameters": 234000000,
+        "sha256": null
+      }
+    ],
+    "licence": "CC-BY-NC-4.0",
+    "model": "mindsurf-omni",
+    "path": "native",
+    "sampling": null,
+    "stimulus": "sha256:12ae60c1965be2784c39d590c5bda367",
+    "text_source": "model"
+  },
+  "judge": "whisper-small",
+  "latency": {
+    "first_audio_p50_ms": 296,
+    "first_audio_p95_ms": 352,
+    "first_text_p50_ms": 72,
+    "first_text_p95_ms": 87,
+    "note": "measured over /v1/realtime; measure_latency.py drives HTTP chat plus speech and cannot express this path",
+    "turns": 25,
+    "whole_turn_p50_ms": 5223,
+    "whole_turn_p95_ms": 13037
+  },
+  "probe_set": "configs/speech_probes_zh_v1.jsonl",
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.006846034516886132,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0324936957490698
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 160
+  },
+  "stimulus": "the 160 spoken probes from the floor run, identical across runs",
+  "text_regression": null,
+  "what": "first evaluation of the native path, speech in and speech out",
+  "what_this_does_not_say": "The latency comparison is not like for like: the cascade's synthesis stage is a network round trip to a hosted service, so a local synthesiser would move it. CER here is a model metric, unlike on the cascade, because the model produced the audio itself."
+}

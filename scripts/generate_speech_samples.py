@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import sys
 import time
@@ -141,6 +142,17 @@ async def generate(
     }
 
 
+def stimulus_digest(directory: Path, ids: list[str]) -> str:
+    """A name for the spoken probes that two runs can be checked against."""
+    sha = hashlib.sha256()
+    for probe_id in sorted(ids):
+        audio = directory / f"{probe_id}.wav"
+        sha.update(probe_id.encode())
+        if audio.is_file():
+            sha.update(audio.read_bytes())
+    return f"sha256:{sha.hexdigest()[:32]}"
+
+
 async def generate_realtime(
     base: str,
     probes: list[dict[str, str]],
@@ -252,7 +264,11 @@ async def generate_realtime(
             "licence": served.get("licence"),
             "text_source": "model",
             "sampling": None,  # the realtime session carries its own defaults
-            "stimulus": str(stimulus),
+            # Identified by what it contains, not where it sits. A path is a
+            # fact about one machine -- and carries a username into a file that
+            # gets committed -- while the digest is what actually has to match
+            # for two runs to be comparable.
+            "stimulus": stimulus_digest(stimulus, [probe["id"] for probe in probes]),
         },
         "probe_count": len(probes),
         "generated": len(samples) - len(failed),

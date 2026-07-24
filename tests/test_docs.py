@@ -123,25 +123,25 @@ def test_the_decisions_that_contradict_the_brief_give_their_evidence() -> None:
     assert "logit 差 0.0" in text
 
 
-def test_the_handover_says_what_the_cer_is_not() -> None:
-    """The likely misreading changed once a real number existed.
+def test_the_handover_says_which_cer_belongs_to_the_model() -> None:
+    """The misreading has moved twice, and this is where it is now.
 
-    It used to be "this repository has results" when it had none. Now the
-    cascade has a measured CER, and the misreading is taking it for the
-    model's speech quality -- on that path the reference is the model's own
-    text and a synthesiser reads it, so the model emits no audio at all and
-    the error belongs to the synthesiser and the judge.
+    First it was "this repository has results" when it had none. Then the
+    cascade had a CER and the risk was reading it as the model's speech. Now
+    both paths have one, and the risk is reading them as the same measurement:
+    on the cascade a synthesiser produces the audio and the model emits no
+    sound at all, while on the native path the model produces it itself. The
+    two numbers differ by an order of magnitude and are not comparable as
+    quality.
 
-    So the handover must carry the number, the reason it is not what it looks
-    like, and the fact that the native path still has nothing.
+    So the handover carries both, and says which one is about the model.
     """
     text = (ROOT / "docs" / "HANDOVER.md").read_text(encoding="utf-8")
 
-    assert "0.0325" in text  # the measured cascade CER
+    assert "0.0325" in text  # cascade
+    assert "0.2981" in text  # native
     assert "不是模型的语音质量" in text
     assert "模型一个音都没发" in text
-    # The path that would make CER a model metric has no numbers yet.
-    assert "原生路径" in text and "一个都没有" in text
 
 
 def test_the_handover_names_the_trap_that_silently_ruins_a_run() -> None:

@@ -215,3 +215,32 @@ def test_audio_files_land_where_the_manifest_says(tmp_path: Path) -> None:
 
     for sample in report["samples"]:
         assert Path(sample["audio_path"]).exists()
+
+
+def test_the_stimulus_is_named_by_content_not_by_where_it_sits(tmp_path: Path) -> None:
+    """A path is a fact about one machine, and it carried a username into a commit.
+
+    The release gate caught exactly that: the native manifest recorded an
+    absolute path to the spoken probes, and the artifact built from it went
+    into the repository with a home directory in it. What two runs actually
+    need to agree on is the audio, so the audio is what is recorded.
+    """
+    from scripts.generate_speech_samples import stimulus_digest
+
+    for index in range(3):
+        (tmp_path / f"zh{index:03d}.wav").write_bytes(b"RIFF" + bytes([index]) * 20)
+    ids = ["zh000", "zh001", "zh002"]
+
+    digest = stimulus_digest(tmp_path, ids)
+
+    assert digest.startswith("sha256:")
+    assert str(tmp_path) not in digest
+    # Same audio in a different place is the same stimulus.
+    elsewhere = tmp_path / "moved"
+    elsewhere.mkdir()
+    for index in range(3):
+        (elsewhere / f"zh{index:03d}.wav").write_bytes(b"RIFF" + bytes([index]) * 20)
+    assert stimulus_digest(elsewhere, ids) == digest
+    # Different audio is a different stimulus.
+    (elsewhere / "zh001.wav").write_bytes(b"RIFF" + b"\xff" * 20)
+    assert stimulus_digest(elsewhere, ids) != digest
