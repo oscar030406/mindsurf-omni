@@ -162,14 +162,38 @@ async def _first_chunk(engine: object) -> None:
 
 
 def test_the_native_path_says_what_it_is_waiting_for(tmp_path: Path) -> None:
+    """One checkpoint supplies both halves, so both variables are needed."""
     for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
         (tmp_path / name).mkdir(exist_ok=True)
     settings = Settings.from_environment(
         {"MINDSURF_ENGINE": "native", "MINDSURF_WEIGHTS": str(tmp_path)}
     )
 
-    with pytest.raises(ConfigurationError, match="still\ntraining|still training"):
+    with pytest.raises(ConfigurationError, match="MINDSURF_THINKER"):
         build(settings)
+
+
+def test_the_native_path_refuses_a_checkout_it_cannot_find(tmp_path: Path) -> None:
+    """Named before torch is imported: the image has no torch and would say so instead."""
+    from mindsurf_omni.service import factory
+
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "native",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_THINKER": str(tmp_path / "sft.pth"),
+            "MINIMIND_O_ROOT": str(tmp_path / "absent"),
+        }
+    )
+    real = factory._importable
+    factory._importable = lambda module: module == "torch" or real(module)  # type: ignore[assignment]
+    try:
+        with pytest.raises(ConfigurationError, match="checkout is not at"):
+            build(settings)
+    finally:
+        factory._importable = real  # type: ignore[assignment]
 
 
 def test_the_engine_carries_the_token_spec_clients_need(tmp_path: Path) -> None:

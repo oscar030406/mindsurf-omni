@@ -228,6 +228,12 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         engine = require_engine(request)
         settings = GenerationSettings(voice=body.voice, emotion=body.emotion)
         as_wav = body.response_format == "wav"
+        # Started here rather than inside the generator: an engine that cannot
+        # speak arbitrary text -- the native path, whose model only says its own
+        # words -- refuses on the call, and refusing inside a StreamingResponse
+        # happens after the headers are out. The caller then sees a truncated
+        # body instead of the 503 that names the reason.
+        speaking = engine.speak(body.input, settings)
 
         async def stream() -> Any:
             # wav is buffered so the header can carry a real length; pcm
@@ -245,11 +251,11 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             # the whole chain came back with empty transcripts.
             if as_wav:
                 spoken = bytearray()
-                async for chunk in engine.speak(body.input, settings):
+                async for chunk in speaking:
                     spoken += chunk.pcm
                 yield to_wav(bytes(spoken), OUTPUT_SAMPLE_RATE)
                 return
-            async for chunk in engine.speak(body.input, settings):
+            async for chunk in speaking:
                 if chunk.pcm:
                     yield chunk.pcm
 

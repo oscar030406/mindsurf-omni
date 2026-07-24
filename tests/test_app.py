@@ -391,3 +391,25 @@ def test_a_session_can_be_cleared_between_conversations(client: TestClient) -> N
 
     assert event["type"] == "session.created"
     assert event["context"]["turns"] == 0
+
+
+def test_an_engine_that_cannot_speak_arbitrary_text_answers_503() -> None:
+    """The native model says its own words; reading someone else's is not a wire it lacks.
+
+    Refusing inside the StreamingResponse would land after the headers, and the
+    caller would see a truncated body rather than the reason.
+    """
+    from mindsurf_omni.service.config import ConfigurationError
+
+    class OnlyItsOwnWords(FakeEngine):
+        def speak(  # type: ignore[override]
+            self, text: str, settings: GenerationSettings
+        ) -> AsyncIterator[SpeechChunk]:
+            raise ConfigurationError("the native path has no text-to-speech step")
+
+    response = TestClient(create_app(OnlyItsOwnWords())).post(
+        "/v1/audio/speech", json={"input": "随便一句话"}
+    )
+
+    assert response.status_code == 503
+    assert "text-to-speech" in response.json()["detail"]

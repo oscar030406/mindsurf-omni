@@ -177,7 +177,43 @@ def _build_synthesiser(settings: Settings) -> Any:
 
 
 def _build_native(settings: Settings) -> SpeechEngine:
-    raise ConfigurationError(
-        "the native path needs the Thinker-Talker checkpoint, which is still "
-        "training; use MINDSURF_ENGINE=cascade until it lands"
+    """Thinker and Talker in one model, with the codec that turns codes to sound."""
+    if settings.thinker is None or settings.minimind_root is None:
+        raise ConfigurationError(
+            "the native path needs MINDSURF_THINKER pointing at an omni checkpoint and "
+            "MINIMIND_O_ROOT at a MiniMind-O checkout; the Talker lives in the same file "
+            "as the Thinker, so one checkpoint supplies both"
+        )
+    if not _importable("torch"):
+        raise ConfigurationError(
+            "the native path needs torch, which the image does not carry: run it on a "
+            "host with the 'train' extra"
+        )
+
+    from mindsurf_omni.service.native import NativeConfig, NativeEngine, load_omni
+
+    model, tokenizer, codec = load_omni(
+        checkpoint=settings.thinker,
+        minimind_root=settings.minimind_root,
+        tokenizer_dir=settings.paths.tokenizer,
+        audio_encoder=settings.paths.audio_encoder,
+        codec_dir=settings.paths.codec,
+        device=settings.device,
+    )
+    recogniser = None
+    if _importable("funasr"):
+        from mindsurf_omni.service.asr import SenseVoiceRecogniser
+
+        recogniser = SenseVoiceRecogniser(
+            model_dir=settings.paths.audio_encoder, device=settings.device
+        )
+    return NativeEngine(
+        model=model,
+        codec=codec,
+        tokenizer=tokenizer,
+        token_spec=token_spec(),
+        components=describe_components(settings),
+        config=NativeConfig(chunk_frames=settings.chunk_frames),
+        device=settings.device,
+        recogniser=recogniser,
     )

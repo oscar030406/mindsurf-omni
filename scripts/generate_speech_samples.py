@@ -20,6 +20,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -140,6 +141,126 @@ async def generate(
     }
 
 
+async def generate_realtime(
+    base: str,
+    probes: list[dict[str, str]],
+    output: Path,
+    timeout: float,
+    stimulus: Path,
+) -> dict[str, Any]:
+    """Speech in, speech out, over the WebSocket -- the native path's own shape.
+
+    The cascade is measured by asking for a reply and then asking for it to be
+    spoken. The native path has no second step: one turn produces the words and
+    the sound together, and it cannot read text it did not write. So it is
+    driven the way it is meant to be driven, with audio, and the stimulus is a
+    fixed set of spoken probes rather than something synthesised per run --
+    the input has to be identical across runs for the outputs to be comparable.
+    """
+    import base64
+
+    import soundfile
+    import websockets
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+    from mindsurf_omni.contract import INPUT_SAMPLE_RATE, OUTPUT_SAMPLE_RATE
+    from mindsurf_omni.service.audio import resample, to_wav
+
+    output.mkdir(parents=True, exist_ok=True)
+    samples: list[dict[str, Any]] = []
+
+    async with httpx.AsyncClient(base_url=base, timeout=timeout) as client:
+        models = (await client.get("/v1/models")).json().get("data", [])
+        if not models:
+            raise SystemExit("the service reports no model; set MINDSURF_ENGINE before generating")
+        served = models[0]
+
+    parsed = urlparse(base)
+    url = f"{'wss' if parsed.scheme == 'https' else 'ws'}://{parsed.netloc}/v1/realtime"
+
+    for index, probe in enumerate(probes):
+        spoken_probe = stimulus / f"{probe['id']}.wav"
+        if not spoken_probe.is_file():
+            samples.append(
+                {
+                    "id": probe["id"],
+                    "prompt": probe["prompt"],
+                    "error": f"no stimulus audio at {spoken_probe}",
+                }
+            )
+            continue
+
+        heard, rate = soundfile.read(spoken_probe, dtype="int16")
+        pcm = resample(heard.tobytes(), rate, INPUT_SAMPLE_RATE)
+        path = output / f"{probe['id']}.wav"
+        started = time.perf_counter()
+        text, audio, failure = "", bytearray(), None
+
+        try:
+            async with websockets.connect(url, max_size=None, open_timeout=timeout) as socket:
+                await socket.recv()  # session.created
+                await socket.send(
+                    json.dumps(
+                        {
+                            "type": "input_audio_buffer.append",
+                            "audio": base64.b64encode(pcm).decode("ascii"),
+                        }
+                    )
+                )
+                await socket.send(json.dumps({"type": "input_audio_buffer.commit"}))
+                while True:
+                    event = json.loads(await asyncio.wait_for(socket.recv(), timeout=timeout))
+                    kind = event.get("type")
+                    if kind == "response.text.delta":
+                        text += event.get("delta", "")
+                    elif kind == "response.audio.delta":
+                        audio += base64.b64decode(event.get("audio", ""))
+                    elif kind == "error":
+                        failure = str(event.get("error", {}).get("message"))[:200]
+                        break
+                    elif kind == "response.done":
+                        break
+        except Exception as error:  # noqa: BLE001 - one bad turn is data
+            failure = f"{type(error).__name__}: {error}"
+
+        if audio and failure is None:
+            path.write_bytes(to_wav(bytes(audio), OUTPUT_SAMPLE_RATE))
+        elif failure is None:
+            failure = "the turn produced no audio"
+
+        samples.append(
+            {
+                "id": probe["id"],
+                "prompt": probe["prompt"],
+                # The model's own words, spoken by the model itself -- so on
+                # this path CER really is about the model, not a synthesiser.
+                "reference_text": text,
+                "audio_path": str(path) if (audio and failure is None) else None,
+                "elapsed_ms": (time.perf_counter() - started) * 1000,
+                **({} if failure is None else {"error": failure}),
+            }
+        )
+        if (index + 1) % 10 == 0:
+            print(f"  {index + 1}/{len(probes)}", flush=True)
+
+    failed = [sample for sample in samples if "error" in sample or not sample.get("audio_path")]
+    return {
+        "generated_by": {
+            "path": served.get("path"),
+            "model": served.get("id"),
+            "components": served.get("components"),
+            "licence": served.get("licence"),
+            "text_source": "model",
+            "sampling": None,  # the realtime session carries its own defaults
+            "stimulus": str(stimulus),
+        },
+        "probe_count": len(probes),
+        "generated": len(samples) - len(failed),
+        "failed": [sample["id"] for sample in failed],
+        "samples": samples,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default="http://localhost:8000")
@@ -158,6 +279,20 @@ def main() -> None:
         "deletions -- so a run that means to measure CER should cap this",
     )
     parser.add_argument(
+        "--via",
+        choices=("http", "realtime"),
+        default="http",
+        help="'realtime' drives /v1/realtime with spoken probes, which is the only "
+        "way to measure the native path: it produces words and sound in one turn "
+        "and cannot read text it did not write",
+    )
+    parser.add_argument(
+        "--stimulus",
+        type=Path,
+        help="directory of <probe id>.wav to speak at the model, for --via realtime; "
+        "a fixed set, so two runs differ by the model and not by the input",
+    )
+    parser.add_argument(
         "--text-source",
         choices=("model", "probe"),
         default="model",
@@ -171,6 +306,17 @@ def main() -> None:
     print(f"生成 {len(probes)} 条，来自 {args.base}")
     if args.text_source == "probe":
         print("文本来自探针，模型没有参与——这一轮量的是仪器底噪，不是模型")
+
+    if args.via == "realtime":
+        if args.stimulus is None:
+            raise SystemExit("--via realtime needs --stimulus pointing at spoken probes")
+        _write(
+            asyncio.run(
+                generate_realtime(args.base, probes, args.output, args.timeout, args.stimulus)
+            ),
+            args.output,
+        )
+        return
 
     report = asyncio.run(
         generate(
@@ -187,7 +333,11 @@ def main() -> None:
         )
     )
 
-    manifest = args.output / "manifest.json"
+    _write(report, args.output)
+
+
+def _write(report: dict[str, Any], output: Path) -> None:
+    manifest = output / "manifest.json"
     manifest.write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
