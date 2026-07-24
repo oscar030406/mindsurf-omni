@@ -19,6 +19,7 @@ import struct
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 
@@ -94,6 +95,83 @@ async def one_turn(client: httpx.AsyncClient, prompt: str, audio: bytes) -> Turn
     return timings
 
 
+async def one_realtime_turn(url: str, pcm: bytes, timeout: float) -> TurnTimings:
+    """One turn over the WebSocket, which is the native path's only shape.
+
+    Two stages, not six. The cascade's breakdown exists because its stages are
+    separate processes and one of them is worth going to fix; the native path
+    runs encode, generation and audio off a single forward pass, so the only
+    boundaries that exist are the first word and the first sound. The stages it
+    cannot report stay absent rather than being recorded as zero, and the
+    script names them.
+    """
+    import base64
+
+    import websockets
+
+    timings = TurnTimings()
+    async with websockets.connect(url, max_size=None, open_timeout=timeout) as socket:
+        await socket.recv()  # session.created
+        await socket.send(
+            json.dumps(
+                {
+                    "type": "input_audio_buffer.append",
+                    "audio": base64.b64encode(pcm).decode("ascii"),
+                }
+            )
+        )
+        started = time.perf_counter()
+        await socket.send(json.dumps({"type": "input_audio_buffer.commit"}))
+
+        spoke_at = None
+        while True:
+            event = json.loads(await asyncio.wait_for(socket.recv(), timeout=timeout))
+            kind = event.get("type")
+            if kind == "response.text.delta" and "first_text_token" not in timings.stages:
+                spoke_at = time.perf_counter()
+                timings.stages["first_text_token"] = (spoke_at - started) * 1000
+            elif kind == "response.audio.delta":
+                # From the first word to the first sound. On this path that is
+                # the Talker filling a chunk, not a separate synthesiser.
+                reference = spoke_at or started
+                timings.stages["synthesis"] = (time.perf_counter() - reference) * 1000
+                return timings
+            elif kind == "error":
+                raise RuntimeError(str(event.get("error", {}).get("message"))[:200])
+            elif kind == "response.done":
+                raise RuntimeError("the turn finished without producing audio")
+
+
+async def measure_realtime(
+    base: str, turns: int, timeout: float, stimulus: Path, probes: list[str]
+) -> tuple[LatencyReport, list[str]]:
+    import soundfile
+
+    from mindsurf_omni.contract import INPUT_SAMPLE_RATE
+    from mindsurf_omni.service.audio import resample
+
+    parsed = urlparse(base)
+    url = f"{'wss' if parsed.scheme == 'https' else 'ws'}://{parsed.netloc}/v1/realtime"
+
+    report = LatencyReport()
+    errors: list[str] = []
+    for index in range(turns):
+        audio_file = stimulus / f"{probes[index % len(probes)]}.wav"
+        if not audio_file.is_file():
+            errors.append(f"turn {index}: no stimulus at {audio_file.name}")
+            continue
+        heard, rate = soundfile.read(audio_file, dtype="int16")
+        try:
+            report.add(
+                await one_realtime_turn(
+                    url, resample(heard.tobytes(), rate, INPUT_SAMPLE_RATE), timeout
+                )
+            )
+        except Exception as error:  # noqa: BLE001 - a failed turn is data
+            errors.append(f"turn {index}: {type(error).__name__}: {error}")
+    return report, errors
+
+
 async def measure(base: str, turns: int, timeout: float) -> tuple[LatencyReport, list[str]]:
     report = LatencyReport()
     errors: list[str] = []
@@ -115,10 +193,31 @@ def main() -> None:
     parser.add_argument("--budget-ms", type=float, default=3000.0)
     parser.add_argument("--timeout", type=float, default=60.0)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--via",
+        choices=("http", "realtime"),
+        default="http",
+        help="'realtime' is the only way to time the native path: it makes words "
+        "and sound in one pass and will not read text it did not write",
+    )
+    parser.add_argument("--stimulus", type=Path, help="spoken probes, for --via realtime")
+    parser.add_argument("--probes", type=Path, default=Path("configs/speech_probes_zh_v1.jsonl"))
     args = parser.parse_args()
 
     print(f"测 {args.turns} 轮，对 {args.base}")
-    report, errors = asyncio.run(measure(args.base, args.turns, args.timeout))
+    if args.via == "realtime":
+        if args.stimulus is None:
+            raise SystemExit("--via realtime needs --stimulus pointing at spoken probes")
+        ids = [
+            json.loads(line)["id"]
+            for line in args.probes.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        report, errors = asyncio.run(
+            measure_realtime(args.base, args.turns, args.timeout, args.stimulus, ids)
+        )
+    else:
+        report, errors = asyncio.run(measure(args.base, args.turns, args.timeout))
 
     if not report.turns:
         print("没有一轮成功：")

@@ -147,3 +147,22 @@ def test_a_reply_with_no_clause_boundary_is_still_spoken() -> None:
     assert not errors
     assert service.spoken == ["短句没有句号"]
     assert "first_clause" in report.turns[0].stages
+
+
+def test_the_native_turn_reports_only_the_stages_it_can_see() -> None:
+    """Two stages, not six, and the missing four are named rather than zeroed.
+
+    The cascade's breakdown exists because its stages are separate processes
+    and one of them is worth going to fix. The native path runs encode,
+    generation and audio off a single forward pass, so those boundaries do not
+    exist in it. Recording them as zero would make the total look like a
+    complete time-to-first-audio when it is not.
+    """
+    from mindsurf_omni.evaluation.latency import TurnTimings
+
+    timings = TurnTimings()
+    timings.stages["first_text_token"] = 72.0
+    timings.stages["synthesis"] = 224.0
+
+    assert timings.time_to_first_audio_ms == 296.0
+    assert timings.missing_stages() == ["vad_endpoint", "encode", "first_clause", "transport"]

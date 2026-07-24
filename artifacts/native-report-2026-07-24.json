@@ -63,14 +63,36 @@
   },
   "judge": "whisper-small",
   "latency": {
-    "first_audio_p50_ms": 296,
-    "first_audio_p95_ms": 352,
-    "first_text_p50_ms": 72,
-    "first_text_p95_ms": 87,
-    "note": "measured over /v1/realtime; measure_latency.py drives HTTP chat plus speech and cannot express this path",
-    "turns": 25,
-    "whole_turn_p50_ms": 5223,
-    "whole_turn_p95_ms": 13037
+    "cascade": {
+      "gating_eligible": false,
+      "note": "resolves 258.0368 at best, but the effect of interest is 200.0000",
+      "p50_ms": 1436.9814000019687,
+      "p95_ms": 2168.0596999940462,
+      "stage_medians_ms": {
+        "encode": 67.09830000181682,
+        "first_clause": 107.70249999768566,
+        "first_text_token": 16.688999996404164,
+        "synthesis": 1222.0114999945508
+      },
+      "turns": 40
+    },
+    "correction": "An earlier ad-hoc run reported native first audio at 296 ms and was wrong: it was taken while the GPU happened to be idle. This machine has other processes on the GPU, per-turn latency swings by a factor of eight with load, and the two paths must be measured interleaved to be comparable.",
+    "measured": "interleaved with the cascade, one path then the other, so machine load hits both",
+    "native": {
+      "gating_eligible": false,
+      "note": "resolves 863.1840 at best, but the effect of interest is 200.0000",
+      "p50_ms": 2780.7972000009613,
+      "p95_ms": 3770.256600000721,
+      "stage_medians_ms": {
+        "first_text_token": 671.2116999988211,
+        "synthesis": 2107.4958000026527
+      },
+      "turns": 40
+    },
+    "stages_not_measured": [
+      "vad_endpoint",
+      "transport"
+    ]
   },
   "probe_set": "configs/speech_probes_zh_v1.jsonl",
   "reference": {
@@ -94,8 +116,28 @@
     "not_claimed": [],
     "sample_size": 160
   },
+  "reproducibility": {
+    "run_2": {
+      "cer": {
+        "gating_eligible": false,
+        "noise_floor": 0.0345506592835228,
+        "note": "resolves 0.1037 at best, but the effect of interest is 0.0500",
+        "sample_size": 160,
+        "value": 0.3075440061610368
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.009375,
+        "note": "1 of 160 produced no speech",
+        "sample_size": 160,
+        "value": 0.00625
+      }
+    },
+    "verdict": "cer 0.2981 against 0.3075, inside either run's noise floor; silent_rate 0.0000 against 0.0063, indistinguishable",
+    "what": "a second run over the same stimulus, same checkpoint"
+  },
   "stimulus": "the 160 spoken probes from the floor run, identical across runs",
   "text_regression": null,
   "what": "first evaluation of the native path, speech in and speech out",
-  "what_this_does_not_say": "The latency comparison is not like for like: the cascade's synthesis stage is a network round trip to a hosted service, so a local synthesiser would move it. CER here is a model metric, unlike on the cascade, because the model produced the audio itself."
+  "what_this_does_not_say": "CER here is a model metric, unlike on the cascade, because the model produced the audio itself. The latency instrument cannot gate: it resolves about 981 ms against an effect of interest of 200 ms, so the interleaved comparison names a direction and not a size."
 }
