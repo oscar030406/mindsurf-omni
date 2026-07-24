@@ -179,6 +179,24 @@ def test_speech_asked_for_wav_returns_a_container_a_decoder_will_open(
     assert response.content[44:] == b"\x00\x01" * 8
 
 
+def test_the_wav_length_is_real_and_not_a_placeholder(client: TestClient) -> None:
+    """A placeholder size read as signed is negative, and a client crashed on it.
+
+    A sister project on this team had exactly this: an upstream that streamed
+    0xFFFFFFFF chunk sizes, and an Android parser that computed a negative
+    offset from them and fell over. ffmpeg tolerates the placeholder; a
+    hand-written parser does not, and there is one downstream of this service.
+    """
+    body = client.post("/v1/audio/speech", json={"input": "你好"}).content
+
+    audio = len(body) - 44
+    assert struct.unpack("<I", body[4:8])[0] == 36 + audio
+    assert struct.unpack("<I", body[40:44])[0] == audio
+    # Both sizes survive a signed read, which is the failure being prevented.
+    assert struct.unpack("<i", body[4:8])[0] > 0
+    assert struct.unpack("<i", body[40:44])[0] > 0
+
+
 def test_speech_asked_for_pcm_carries_no_container(client: TestClient) -> None:
     """Raw PCM is the streaming format; prefixing a header would corrupt it."""
     response = client.post("/v1/audio/speech", json={"input": "你好", "response_format": "pcm"})

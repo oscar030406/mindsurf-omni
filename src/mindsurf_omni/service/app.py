@@ -33,7 +33,7 @@ from mindsurf_omni.contract import (
     VoiceInfo,
     VoiceList,
 )
-from mindsurf_omni.service.audio import frames, wav_header
+from mindsurf_omni.service.audio import frames, to_wav
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine
 
@@ -230,14 +230,25 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         as_wav = body.response_format == "wav"
 
         async def stream() -> Any:
-            # The container header goes out before any audio exists, carrying
-            # the maximum length: a decoder then reads to the end of the
-            # stream. Without it the body is bare PCM in a response labelled
-            # audio/wav, and every decoder refuses it -- the evaluation harness
-            # writes this response straight to a .wav file and hands the path
-            # to a recogniser, so the whole chain returns empty transcripts.
+            # wav is buffered so the header can carry a real length; pcm
+            # streams, which is what a caller wanting bytes as they arrive
+            # should ask for.
+            #
+            # A streaming wav would have to write a placeholder size, and a
+            # sister project on this team already paid for that: their upstream
+            # sent 0xFFFFFFFF chunk sizes, an Android client read them as
+            # signed, computed a negative offset and crashed. ffmpeg tolerates
+            # the placeholder, a hand-written parser does not, and the clients
+            # here include one. Without any header at all the body is bare PCM
+            # labelled audio/wav, which every decoder refuses -- and the
+            # evaluation harness writes this response straight to a .wav, so
+            # the whole chain came back with empty transcripts.
             if as_wav:
-                yield wav_header(OUTPUT_SAMPLE_RATE)
+                spoken = bytearray()
+                async for chunk in engine.speak(body.input, settings):
+                    spoken += chunk.pcm
+                yield to_wav(bytes(spoken), OUTPUT_SAMPLE_RATE)
+                return
             async for chunk in engine.speak(body.input, settings):
                 if chunk.pcm:
                     yield chunk.pcm

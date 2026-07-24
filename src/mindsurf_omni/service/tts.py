@@ -164,16 +164,32 @@ def instruction_leaked(spoken_text: str, transcript: str) -> bool:
     Compared against the instruction rather than the text, because the failure
     is additive: the reply is still there, with the instruction in front of it.
     A length or similarity check on the reply alone would not see it.
+
+    What actually leaks is not always the whole instruction. The sister project
+    that hit this reproducibly saw only its *tail* -- "…的语气说吗？" -- survive
+    into the audio, because the template's instruction and text are separated
+    by a marker the synthesiser sometimes starts reading just after. Matching
+    the instruction's first characters therefore misses the observed failure,
+    so any suffix of the instruction counts.
+
+    Still anchored at the start rather than containment: whatever fragment
+    leaks, it is read *before* the reply. A reply that merely discusses tone
+    contains those words in the middle, and flagging it would train everyone to
+    ignore the screen.
     """
     if not transcript:
         return False
     normalised = re.sub(r"[^一-鿿 a-zA-Z]", "", transcript).lower()
     for instruction in EMOTION_INSTRUCTIONS.values():
         stripped = re.sub(r"[^一-鿿 a-zA-Z]", "", instruction).lower()
-        # A prefix match rather than containment: the instruction is prepended,
-        # and its words could legitimately appear inside a reply about tone.
-        if stripped and normalised.startswith(stripped[: min(len(stripped), 8)]):
-            return True
+        if not stripped:
+            continue
+        # Every suffix long enough not to fire on ordinary speech. Five
+        # characters of an instruction ending is already "的语气说吗", which is
+        # not a way a reply begins.
+        for start in range(len(stripped) - 4):
+            if normalised.startswith(stripped[start:][: min(len(stripped) - start, 8)]):
+                return True
     return False
 
 
@@ -184,6 +200,14 @@ def screen_batch(
 
     Run over every synthesised batch, not a sample of it. The leak is
     intermittent, so a spot check finds it in the batches it did not ruin.
+
+    Necessary and not sufficient. A recogniser only reports words, so this
+    screen is blind to anything that is not speech: the sister project chased
+    intermittent pops through 38 clips of acoustic screening and clean
+    spectrograms before concluding they were random and unreproducible. Their
+    fix was at playback -- a limiter after the analyser -- not a better screen.
+    A batch that passes here has been shown to say the right words, not to
+    sound right.
     """
     if len(utterances) != len(transcripts):
         raise ValueError(

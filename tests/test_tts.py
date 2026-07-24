@@ -251,3 +251,26 @@ async def test_a_persistent_failure_is_raised_not_papered_over(
         await EdgeSynthesiser().synthesise(Utterance(text="今天天气真好"))
 
     assert len(endpoint.requests) == 2  # tried twice, then stopped
+
+
+def test_only_the_tail_of_the_instruction_leaking_is_still_caught() -> None:
+    """What the sister project actually observed, reproducibly.
+
+    Their template put the instruction before a separator and the text after,
+    and the synthesiser sometimes began reading just inside the instruction --
+    so only "…的语气说吗？" survived into the audio. Matching the instruction's
+    opening characters would have called that clean.
+    """
+    tail = EMOTION_INSTRUCTIONS["care"][-6:]
+
+    assert instruction_leaked("今天天气真好", tail + "今天天气真好")
+
+
+def test_a_reply_that_merely_discusses_tone_is_still_not_flagged() -> None:
+    """Widening to any suffix must not widen to containment.
+
+    Whatever fragment leaks is read before the reply; a reply about tone has
+    those words in the middle. Flagging it would teach everyone to ignore this.
+    """
+    assert not instruction_leaked("x", "这句话应该用开心热情的语气说才自然")
+    assert not instruction_leaked("x", "导游会用温柔关切的语气说这段话")
