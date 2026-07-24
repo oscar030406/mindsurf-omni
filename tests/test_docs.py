@@ -128,11 +128,19 @@ def test_the_handover_states_that_no_quality_number_exists_yet() -> None:
 
     It has a pipeline that would produce them. Someone skimming the test count
     and the CI badge could easily conclude otherwise.
+
+    Harder to skim past now that a real CER exists: it is the instrument's own
+    floor, measured with the model silent, and it is the best-looking wrong
+    number this repository could print. So the handover has to carry both the
+    absence and the reason the number present is not it.
     """
     text = (ROOT / "docs" / "HANDOVER.md").read_text(encoding="utf-8")
 
     assert "没有任何质量数字" in text
     assert "CER" in text
+    # The floor is stated, and stated as a subtrahend rather than a score.
+    assert "0.0370" in text
+    assert "不是成绩" in text
 
 
 def test_the_handover_names_the_trap_that_silently_ruins_a_run() -> None:
