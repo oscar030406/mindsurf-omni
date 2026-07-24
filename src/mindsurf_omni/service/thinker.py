@@ -54,16 +54,17 @@ IM_END = 2
 def thinker_weights(state: dict[str, Any]) -> dict[str, Any]:
     """The text transformer's tensors, from a base or an omni checkpoint.
 
-    An omni checkpoint also carries ``talker.*`` and the projections. Passing
-    those to the text model would be silently dropped by ``strict=False``,
-    which is the same forgiveness that hides a wrong config, so they are
-    removed here and the count is checked by the caller.
+    An omni checkpoint also carries ``talker.*``, ``audio_proj.*`` and
+    ``vision_proj.*``. Passing those to the text model would be silently
+    dropped by ``strict=False``, which is the same forgiveness that hides a
+    wrong config, so they are removed here and the count is checked by the
+    caller.
+
+    Counted on the real files: the text base is 91 tensors and all of them are
+    kept; ``sft_omni_768.pth`` is 195, of which 90 ``model.*`` and one
+    ``lm_head.*`` are the same 91.
     """
-    return {
-        key: value
-        for key, value in state.items()
-        if key.startswith(("model.", "lm_head.")) and not key.startswith("model.talker")
-    }
+    return {key: value for key, value in state.items() if key.startswith(("model.", "lm_head."))}
 
 
 @dataclass(slots=True)

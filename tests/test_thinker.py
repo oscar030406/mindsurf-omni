@@ -37,18 +37,40 @@ def test_the_talker_and_the_projections_are_left_behind() -> None:
 
     Silently is the problem: the same forgiveness hides a wrong config, so the
     caller can only check the parameter count if the input was filtered first.
+
+    The prefixes are the ones sft_omni_768.pth actually carries, read off the
+    file: model, lm_head, talker, audio_proj, vision_proj.
     """
     kept = thinker_weights(
         {
             "model.embed_tokens.weight": 1,
             "lm_head.weight": 2,
-            "talker.layers.0.self_attn.q_proj.weight": 3,
-            "audio_proj.weight": 4,
-            "vision_proj.weight": 5,
+            "talker.text_scale": 3,
+            "talker.layers.0.self_attn.q_proj.weight": 4,
+            "audio_proj.0.weight": 5,
+            "vision_proj.0.weight": 6,
         }
     )
 
     assert sorted(kept) == ["lm_head.weight", "model.embed_tokens.weight"]
+
+
+def test_one_omni_checkpoint_yields_the_same_tensors_as_the_text_base() -> None:
+    """What lets the same loader read either file, and the reason it is safe to.
+
+    Counted on the real checkpoints: the base is 91 tensors, sft_omni_768.pth
+    is 195 of which 90 model.* plus one lm_head.* are the same 91. If a future
+    checkpoint changes that split, the parameter-count check in load() is what
+    stops it being loaded as if nothing had changed.
+    """
+    omni = {f"model.layers.{index}.weight": index for index in range(90)}
+    omni["lm_head.weight"] = 90
+    omni.update({f"talker.layers.{index}.weight": index for index in range(92)})
+    omni.update({f"audio_proj.{index}.weight": index for index in range(6)})
+    omni.update({f"vision_proj.{index}.weight": index for index in range(6)})
+
+    assert len(omni) == 195
+    assert len(thinker_weights(omni)) == 91
 
 
 def test_the_shape_is_stated_rather_than_left_to_upstream_defaults() -> None:
