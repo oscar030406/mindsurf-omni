@@ -37,7 +37,12 @@ def load_probes(path: Path) -> list[dict[str, str]]:
 
 
 async def generate(
-    base: str, probes: list[dict[str, str]], output: Path, timeout: float, text_source: str
+    base: str,
+    probes: list[dict[str, str]],
+    output: Path,
+    timeout: float,
+    text_source: str,
+    sampling: dict[str, float],
 ) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     samples: list[dict[str, Any]] = []
@@ -58,9 +63,15 @@ async def generate(
                 # be the most flattering wrong number this project could print.
                 text = probe["prompt"]
             else:
+                # Sent explicitly rather than left to the server default, so
+                # what the manifest records is what was used rather than what
+                # this script assumed the server would do.
                 reply = await client.post(
                     "/v1/chat/completions",
-                    json={"messages": [{"role": "user", "content": probe["prompt"]}]},
+                    json={
+                        "messages": [{"role": "user", "content": probe["prompt"]}],
+                        **sampling,
+                    },
                 )
                 if reply.status_code != 200:
                     samples.append(
@@ -103,6 +114,9 @@ async def generate(
             # "probe" means the model never spoke: this run measures the
             # instrument, not the model. Downstream reports carry it forward.
             "text_source": text_source,
+            # Two runs at different temperatures are two different measurements
+            # and would otherwise be indistinguishable in the artifacts.
+            "sampling": None if text_source == "probe" else sampling,
         },
         "probe_count": len(probes),
         "generated": len(samples) - len(failed),
@@ -119,6 +133,8 @@ def main() -> None:
     parser.add_argument("--probes", type=Path, default=Path("configs/speech_probes_zh_v1.jsonl"))
     parser.add_argument("--output", type=Path, default=Path("artifacts/speech_samples"))
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument(
         "--text-source",
         choices=("model", "probe"),
@@ -134,7 +150,16 @@ def main() -> None:
     if args.text_source == "probe":
         print("文本来自探针，模型没有参与——这一轮量的是仪器底噪，不是模型")
 
-    report = asyncio.run(generate(args.base, probes, args.output, args.timeout, args.text_source))
+    report = asyncio.run(
+        generate(
+            args.base,
+            probes,
+            args.output,
+            args.timeout,
+            args.text_source,
+            {"temperature": args.temperature, "top_p": args.top_p},
+        )
+    )
 
     manifest = args.output / "manifest.json"
     manifest.write_text(

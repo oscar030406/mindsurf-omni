@@ -96,6 +96,7 @@ def _run(service: _Service, tmp_path: Path, count: int = 3, text_source: str = "
                 tmp_path / "out",
                 timeout=5.0,
                 text_source=text_source,
+                sampling={"temperature": 0.7, "top_p": 0.9},
             )
         )
     finally:
@@ -108,6 +109,23 @@ def test_the_manifest_records_which_path_produced_the_audio(tmp_path: Path) -> N
 
     assert report["generated_by"]["path"] == "native"
     assert report["generated_by"]["licence"] == "CC-BY-NC-4.0"
+
+
+def test_the_manifest_records_the_sampling_that_produced_the_replies(tmp_path: Path) -> None:
+    """Two runs at different temperatures are two measurements, not one repeated.
+
+    Nothing else in the artifacts distinguishes them, so a comparison across
+    them would look like a model difference.
+    """
+    report = _run(_Service(), tmp_path, count=1)
+
+    assert report["generated_by"]["sampling"] == {"temperature": 0.7, "top_p": 0.9}
+
+
+def test_a_floor_run_records_no_sampling_because_nothing_was_sampled(tmp_path: Path) -> None:
+    report = _run(_Service(), tmp_path, count=1, text_source="probe")
+
+    assert report["generated_by"]["sampling"] is None
 
 
 def test_the_model_reply_is_the_reference_not_the_prompt(tmp_path: Path) -> None:
