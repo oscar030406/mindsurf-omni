@@ -254,6 +254,26 @@ def speak_forced(
     return frames, input_ids.shape[1] - start_pos
 
 
+def parse_temperature(value: str) -> float | list[float]:
+    """One number for all eight codebooks, or eight numbers.
+
+    Eight is not a convenience: the diagnostic found codebook 0 agrees with
+    greedy 86.8% of the time and codebook 7 only 70.8%, so "one temperature for
+    the stack" is an assumption nobody has tested. Anything other than one or
+    eight values is refused rather than broadcast -- a four-value list would
+    silently mean something this loop does not implement.
+    """
+    parts = [piece.strip() for piece in value.split(",") if piece.strip()]
+    if len(parts) == 1:
+        return float(parts[0])
+    if len(parts) != 8:
+        raise SystemExit(
+            f"--audio-temperature takes 1 or 8 values, got {len(parts)}; "
+            "there are eight codebooks and no rule for spreading four across them"
+        )
+    return [float(piece) for piece in parts]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", required=True, type=Path)
@@ -267,7 +287,28 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=20260725)
     parser.add_argument("--limit", type=int, help="first N texts only, for a smoke run")
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--audio-temperature",
+        default="0.2",
+        help="one value, or eight comma-separated -- one per codebook. The "
+        "inherited 0.2 is what upstream's stream_generate hardcodes, so leaving "
+        "it alone measures the released decoding path",
+    )
+    parser.add_argument(
+        "--audio-penalty",
+        type=float,
+        default=DEFAULT_SAMPLING.penalty,
+        help="repetition penalty over the last --audio-penalty-window codes",
+    )
+    parser.add_argument("--audio-penalty-window", type=int, default=DEFAULT_SAMPLING.penalty_window)
     args = parser.parse_args()
+
+    sampling = AudioSampling(
+        temperature=parse_temperature(args.audio_temperature),
+        top_k=DEFAULT_SAMPLING.top_k,
+        penalty=args.audio_penalty,
+        penalty_window=args.audio_penalty_window,
+    )
 
     import torch
     from transformers import AutoTokenizer, MimiModel
@@ -289,7 +330,13 @@ def main() -> None:
     for index, row in enumerate(texts):
         started = time.perf_counter()
         frames, steps = speak_forced(
-            model, tokenizer, row["prompt"], row["text"], args.device, seed=args.seed + index
+            model,
+            tokenizer,
+            row["prompt"],
+            row["text"],
+            args.device,
+            seed=args.seed + index,
+            sampling=sampling,
         )
         elapsed = time.perf_counter() - started
 
@@ -333,7 +380,17 @@ def main() -> None:
             "components": [{"name": f"talker teacher-forced, shape {args.shape}"}],
             "text_source": "fixed",
             "texts_sha256": hashlib.sha256(args.texts.read_bytes()).hexdigest(),
-            "sampling": {"audio_temperature": 0.2, "audio_top_k": 50, "seed": args.seed},
+            # What actually ran, not what the default was when this line was
+            # written. A manifest that reports the default while the run used
+            # something else is how a sweep becomes eight identical-looking
+            # reports.
+            "sampling": {
+                "audio_temperature": sampling.temperature,
+                "audio_top_k": sampling.top_k,
+                "audio_penalty": sampling.penalty,
+                "audio_penalty_window": sampling.penalty_window,
+                "seed": args.seed,
+            },
         },
         # The survey's reproduction checklist: efficiency alongside quality.
         "efficiency": {

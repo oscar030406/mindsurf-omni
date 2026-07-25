@@ -19,7 +19,8 @@ do it, and one would forget.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE
@@ -204,25 +205,29 @@ class VoxCPMSynthesiser:
     lineage: str = "voxcpm"
     eligible_as_judge: bool = False
     _model: Any = None
+    # Two first requests arriving together would otherwise each load half a
+    # billion parameters onto the same card.
+    _guard: threading.Lock = field(default_factory=threading.Lock)
 
     def load(self) -> Any:
-        """The weights, loaded once and kept."""
-        if self._model is None:
-            from voxcpm import VoxCPM
+        """The weights, loaded once and kept. Safe to call from a worker thread."""
+        with self._guard:
+            if self._model is None:
+                from voxcpm import VoxCPM
 
-            self._model = VoxCPM.from_pretrained(
-                self.model_id,
-                # The denoiser cleans a *prompt* clip before cloning, which is
-                # a separate ModelScope download and does nothing for text this
-                # path synthesises from scratch.
-                load_denoiser=False,
-                # torch.compile costs a minute of warm-up per process and is
-                # not available on every host this runs on. RTF is already
-                # below 1 without it; revisit when a measurement says to.
-                optimize=False,
-                device=self.device,
-            )
-        return self._model
+                self._model = VoxCPM.from_pretrained(
+                    self.model_id,
+                    # The denoiser cleans a *prompt* clip before cloning, which
+                    # is a separate ModelScope download and does nothing for
+                    # text this path synthesises from scratch.
+                    load_denoiser=False,
+                    # torch.compile costs a warm-up per process and is not
+                    # available on every host this runs on. Revisit when a
+                    # measurement on the deployment card asks for it.
+                    optimize=False,
+                    device=self.device,
+                )
+            return self._model
 
     async def synthesise(self, utterance: Utterance) -> bytes:
         import asyncio
@@ -234,10 +239,11 @@ class VoxCPMSynthesiser:
             # Synthesising nothing spends a forward pass and plays a click.
             return b""
 
-        model = self.load()
-
         def speak() -> Any:
-            return model.generate(
+            # Loading happens in the worker thread too: the first request would
+            # otherwise hold the event loop for the length of a weight load,
+            # and every health check behind it.
+            return self.load().generate(
                 text=spoken,
                 prompt_wav_path=self.prompt_wav,
                 prompt_text=self.prompt_text,

@@ -55,3 +55,34 @@ def test_an_empty_target_is_refused_up_front(tmp_path: Path) -> None:
 
     with pytest.raises(SystemExit, match="no text"):
         load_texts(bad)
+
+
+def test_one_temperature_or_eight_but_not_four() -> None:
+    """Four values have no meaning for eight codebooks, and broadcasting would invent one."""
+    import pytest
+    from scripts.evaluate_talker import parse_temperature
+
+    assert parse_temperature("0.2") == 0.2
+    assert parse_temperature("0.2,0.2,0.15,0.15,0.1,0.1,0.05,0.05") == [
+        0.2,
+        0.2,
+        0.15,
+        0.15,
+        0.1,
+        0.1,
+        0.05,
+        0.05,
+    ]
+    with pytest.raises(SystemExit, match="1 or 8"):
+        parse_temperature("0.2,0.3,0.4,0.5")
+
+
+def test_a_per_codebook_temperature_reaches_the_right_codebook() -> None:
+    """The list is indexed by codebook, so an off-by-one would sample the wrong stack."""
+    from scripts.evaluate_talker import AudioSampling
+
+    sampling = AudioSampling(temperature=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+
+    assert sampling.for_codebook(0) == 0.1
+    assert sampling.for_codebook(7) == 0.8
+    assert AudioSampling(temperature=0.2).for_codebook(5) == 0.2
