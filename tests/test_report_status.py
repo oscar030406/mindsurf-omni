@@ -210,3 +210,21 @@ def test_a_corrupt_licence_record_is_treated_as_unusable(
     lines = report.licence()
 
     assert any("无法解析" in line for line in lines)
+
+
+def test_a_file_with_no_measurements_is_skipped_rather_than_listed_as_untested(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An experiment summary is not a model report; saying "text ability not
+    measured" about it is true, useless, and crowds out the lines that matter."""
+    import scripts.report_status as report
+
+    (tmp_path / "artifacts").mkdir()
+    (tmp_path / "artifacts" / "sweep-report.json").write_text(
+        json.dumps({"what": "a sweep", "arms": {"a": 1}}), encoding="utf-8"
+    )
+    monkeypatch.setattr(report, "ROOT", tmp_path)
+
+    assert report.measured_results() == [] or all(
+        "sweep-report" not in line for line in report.measured_results()
+    )

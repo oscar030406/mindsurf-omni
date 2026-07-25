@@ -1,0 +1,81 @@
+{
+  "arms": {
+    "baseline": {
+      "cer": 0.0762535458073665,
+      "noise_floor": 0.015859868577004305,
+      "shape": {
+        "cer_median": 0.05,
+        "cer_over_0_3": 7.0,
+        "sample_size": 160.0
+      },
+      "temperature": 0.2,
+      "utmos": 2.4018
+    },
+    "cb0_greedy": {
+      "cer": 0.07821720117655263,
+      "noise_floor": 0.016892299256732822,
+      "paired_against_baseline": "cer: indistinguishable (+0.0020, within ±0.0477, paired n=160)",
+      "paired_utmos_against_baseline": "utmos: indistinguishable (+0.0111, within ±0.0860, paired n=160)",
+      "shape": {
+        "cer_median": 0.05025231286795627,
+        "cer_over_0_3": 6.0,
+        "sample_size": 160.0
+      },
+      "temperature": [
+        0.05,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "utmos": 2.4129
+    },
+    "deep_greedy": {
+      "cer": 0.07316255208458632,
+      "noise_floor": 0.012844467505853583,
+      "paired_against_baseline": "cer: indistinguishable (-0.0031, within ±0.0306, paired n=160)",
+      "paired_utmos_against_baseline": "utmos: indistinguishable (+0.0220, within ±0.0828, paired n=160)",
+      "shape": {
+        "cer_median": 0.05217785843920145,
+        "cer_over_0_3": 3.0,
+        "sample_size": 160.0
+      },
+      "temperature": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.05,
+        0.05,
+        0.05,
+        0.05
+      ],
+      "utmos": 2.4238
+    }
+  },
+  "candidate": {
+    "measurements": {}
+  },
+  "checkpoint": "sft_omni_768 (upstream release, 113,131,266 parameters, shape upstream-default)",
+  "closed_at": {
+    "cer_paired_resolvable": {
+      "cb0_greedy": 0.0477,
+      "deep_greedy": 0.0306
+    },
+    "effect_of_interest": {
+      "cer": 0.05,
+      "utmos": 0.2
+    },
+    "note": "an eligible indistinguishable, not an instrument that could not see: both resolvable effects sit under the effect of interest",
+    "utmos_paired_resolvable": {
+      "cb0_greedy": 0.086,
+      "deep_greedy": 0.0828
+    }
+  },
+  "note": "reported here for the record; the per-arm reports are codebook-temperature-*-report.json",
+  "protocol": "configs/talker_texts_zh_v1.jsonl, teacher-forced text, seed 20260725, judge paraformer-zh, paired per sample",
+  "what": "per-codebook audio temperature on upstream's released Talker"
+}

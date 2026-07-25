@@ -102,6 +102,12 @@ def measured_results() -> list[str]:
                 f"n={measurement['sample_size']}{mark}{instrument}"
             )
         regression = payload.get("text_regression")
+        if regression is None and not candidate.get("measurements"):
+            # A file with neither is not a model report -- an experiment
+            # summary, say. Saying "text ability not measured" about it is
+            # true and useless, and a list of useless lines is how the useful
+            # ones stop being read.
+            continue
         if regression is None:
             lines.append(f"{path.name}: 文本能力未测")
         elif isinstance(regression, dict) and "delta_over_base" in regression:
