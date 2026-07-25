@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from scripts.evaluate_speech import Sample, load, score
 
 
@@ -288,3 +289,44 @@ def test_compare_paired_gives_only_three_answers() -> None:
 
     thin = compare_paired("cer", [0.9])
     assert "reported only" in thin
+
+
+def test_the_median_is_reported_beside_the_mean() -> None:
+    """A mean improving while the median holds means fewer catastrophes, not better speech.
+
+    Both shapes below average near 0.15; only the median tells them apart, and
+    they want different fixes.
+    """
+    from scripts.evaluate_speech import score
+
+    uniform = [
+        Sample(prompt="p", reference_text="字" * 10, transcript="错" + "字" * 9) for _ in range(120)
+    ]
+    occasional = [
+        Sample(
+            prompt="p",
+            reference_text="字" * 10,
+            transcript=("错" * 10 if index < 18 else "字" * 10),
+        )
+        for index in range(120)
+    ]
+
+    flat = score("uniform", uniform, {"cer": 0.05})
+    spiky = score("occasional", occasional, {"cer": 0.05})
+
+    assert flat.shape["cer_median"] == pytest.approx(0.1)
+    assert spiky.shape["cer_median"] == 0.0
+    assert spiky.shape["cer_over_0_3"] == 18.0
+    assert flat.to_json()["shape"]["cer_median"] == pytest.approx(0.1)
+
+
+def test_the_shape_line_names_the_failure_pattern() -> None:
+    from scripts.evaluate_speech import score, shape_lines
+
+    widespread = score(
+        "ours",
+        [Sample(prompt="p", reference_text="字" * 10, transcript="错" * 10) for _ in range(120)],
+        {"cer": 0.05},
+    )
+
+    assert "普遍念不准" in shape_lines(widespread)[0]

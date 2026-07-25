@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import statistics
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -56,11 +58,20 @@ class Report:
     name: str
     samples: list[Sample]
     measurements: dict[str, Measurement] = field(default_factory=dict)
+    # The mean's shape, because the mean alone has misled this project once.
+    # Two systems reached similar means by different failure patterns: ours
+    # missed characters on nearly every sentence (median 0.2944, 78 of 160 over
+    # 0.3), upstream's was accurate except on a few hard ones (median 0.0500,
+    # 7 of 160). A mean that improves while the median holds means the
+    # catastrophes thinned out, not that the speech got better -- and those two
+    # want different fixes.
+    shape: dict[str, float] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "sample_size": len(self.samples),
+            "shape": self.shape,
             "measurements": {
                 key: {
                     "value": measurement.value,
@@ -84,14 +95,22 @@ def score(name: str, samples: list[Sample], effects: dict[str, float]) -> Report
 
     transcribed = [sample for sample in samples if sample.transcript is not None]
     if transcribed:
+        rates = [
+            character_error_rate(sample.reference_text, sample.transcript or "")
+            for sample in transcribed
+        ]
         report.measurements["cer"] = assess(
-            "cer",
-            [
-                character_error_rate(sample.reference_text, sample.transcript or "")
-                for sample in transcribed
-            ],
-            effect_of_interest=effects.get("cer", 0.05),
+            "cer", rates, effect_of_interest=effects.get("cer", 0.05)
         )
+        finite = [rate for rate in rates if math.isfinite(rate)]
+        report.shape = {
+            "cer_median": statistics.median(finite) if finite else float("nan"),
+            # The count, not the fraction: "78 of 160" is what a reader can
+            # check against the samples, and it is how the failure shape was
+            # first noticed.
+            "cer_over_0_3": float(sum(1 for rate in rates if rate > 0.3)),
+            "sample_size": float(len(rates)),
+        }
 
     rated = [sample.utmos for sample in samples if sample.utmos is not None]
     if rated:
@@ -148,6 +167,22 @@ def paired_deltas(
         if mine.utmos is not None and theirs.utmos is not None:
             deltas["utmos"].append(mine.utmos - theirs.utmos)
     return {key: values for key, values in deltas.items() if values}
+
+
+def shape_lines(report: Report) -> list[str]:
+    """The median beside the mean, and how many samples are badly wrong.
+
+    Printed rather than left in the JSON: the whole point is that a reader who
+    only sees the mean draws the wrong conclusion about what to fix.
+    """
+    if not report.shape:
+        return []
+    total = int(report.shape["sample_size"])
+    over = int(report.shape["cer_over_0_3"])
+    return [
+        f"  形状: 中位 CER {report.shape['cer_median']:.4f}，{over}/{total} 超过 0.3"
+        + ("（普遍念不准）" if over > total * 0.25 else "（少数难例）")
+    ]
 
 
 def judges_of(samples: list[Sample]) -> set[str]:
@@ -229,6 +264,7 @@ def main() -> None:
     for _, measurement in sorted(candidate.measurements.items()):
         mark = "有门控资格" if measurement.gating_eligible else f"仅报告（{measurement.note}）"
         lines.append(f"  {measurement}  {mark}")
+    lines.extend(shape_lines(candidate))
 
     payload: dict[str, Any] = {"candidate": candidate.to_json()}
 
@@ -243,6 +279,8 @@ def main() -> None:
             # to everyone who does not know the field exists.
             lines.append("判官未记录（其中一臂没有 judge 字段）——同判官这件事没有被检查")
         payload["reference"] = reference.to_json()
+        lines.append(f"参照 n={len(reference.samples)}")
+        lines.extend(shape_lines(reference))
         payload["judge"] = {
             "candidate": sorted(judges_of(candidate.samples)),
             "reference": sorted(judges_of(reference.samples)),
