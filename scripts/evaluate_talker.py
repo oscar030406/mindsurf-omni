@@ -1,0 +1,319 @@
+"""Talker-isolated evaluation: fixed text, teacher-forced, paired across checkpoints.
+
+The free-running native evaluation conflates two questions: what the model
+chose to say, and how well it spoke it. The text changes every run -- sampling
+at temperature 0.7 -- so per-sample CER spreads with the text, the noise floor
+lands around ±0.03, and CER has never been eligible to certify the 0.05 effect
+it declares an interest in. The benchmark survey's answer is the standard TTS
+protocol: hold the text fixed and teacher-force it, so the only thing that
+varies between two checkpoints is the speaking.
+
+Teacher forcing is not a trick here, it is the training objective. T2A trains
+the Talker to emit audio codes for the assistant text it is conditioned on;
+forcing that text at evaluation reproduces the training-time conditioning
+exactly. Every checkpoint speaks the same 160 sentences, so comparisons are
+paired sample-by-sample -- the text variance that dominated the free-run noise
+floor is simply gone from the axis being measured.
+
+The generation loop mirrors ``stream_generate`` step for step -- the one-step
+audio lag, the per-codebook diagonal, the temperature-0.2 top-50 audio
+sampling, the repetition penalty over the last three codes, the enter-then-pad
+text tail. It has to: the codes come out on that diagonal, and a loop that
+disagrees with it decodes to noise. The only divergence is where the text
+token comes from -- a queue of the target's tokens instead of a sample.
+
+What this does not measure: whether the model would have *chosen* good text
+(the free-run eval keeps that), and naturalness (measure_naturalness.py reads
+the same manifest). Both remain separate numbers on purpose.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE  # noqa: E402
+from mindsurf_omni.service.audio import to_wav  # noqa: E402
+
+# Our base's shape. The upstream release uses the trainer defaults; both are
+# stated fully because a shape left to defaults has already cost one training
+# run and one wrong conclusion each.
+SHAPES = {
+    "mindsurf": {"intermediate_size": 3584, "num_key_value_heads": 8},
+    "upstream-default": {},
+}
+ENTER_TOKEN = 201  # what stream_generate emits on the step after the text ends
+PAD_TOKEN = 0
+EOS_TOKEN = 2
+
+
+def forced_text_plan(target_ids: list[int]) -> list[int]:
+    """The text tokens the loop will feed, in order, ending with EOS.
+
+    Everything after this plan is the enter-then-pad tail stream_generate
+    produces once the text is finished; that part depends on how long the
+    audio runs and stays in the loop.
+    """
+    return [*target_ids, EOS_TOKEN]
+
+
+def load_texts(path: Path) -> list[dict[str, str]]:
+    rows = [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    if not rows:
+        raise SystemExit(f"no texts in {path}")
+    for row in rows:
+        if not row.get("text", "").strip():
+            raise SystemExit(f"row {row.get('id')} has no text; an empty target scores as silence")
+    return rows
+
+
+def build_model(
+    checkpoint: Path, minimind_root: Path, audio_encoder: Path, shape: str, device: str
+) -> Any:
+    import torch
+
+    if str(minimind_root) not in sys.path:
+        sys.path.insert(0, str(minimind_root))
+    from model import model_minimind, model_omni  # type: ignore[import-not-found]
+
+    overrides = SHAPES[shape]
+    if overrides:
+        original = model_minimind.MiniMindConfig.__init__
+
+        def patched(self: Any, *args: Any, **kwargs: Any) -> None:
+            for key, value in overrides.items():
+                kwargs.setdefault(key, value)
+            original(self, *args, **kwargs)
+
+        model_minimind.MiniMindConfig.__init__ = patched  # type: ignore[method-assign]
+
+    model = model_omni.MiniMindOmni(
+        model_omni.OmniConfig(hidden_size=768, num_hidden_layers=8, use_moe=False),
+        audio_encoder_path=str(audio_encoder),
+        vision_model_path=str(checkpoint.parent / "nonexistent-vision"),
+    )
+    state = torch.load(str(checkpoint), map_location="cpu", weights_only=True)
+    report = model.load_state_dict(state, strict=False)
+    if report.missing_keys or report.unexpected_keys:
+        raise SystemExit(
+            f"{checkpoint.name} does not fit the {shape!r} shape: "
+            f"{len(report.missing_keys)} missing, {len(report.unexpected_keys)} unexpected -- "
+            "a half-loaded model speaks, plausibly, from random weights"
+        )
+    return model.eval().to(device)
+
+
+def speak_forced(
+    model: Any, tokenizer: Any, prompt: str, text: str, device: str, seed: int, max_steps: int = 640
+) -> tuple[list[list[int]], int]:
+    """Teacher-force the text and collect whole Mimi frames.
+
+    Follows stream_generate's schedule exactly; see the module docstring for
+    why divergence is not an option.
+    """
+    import torch
+    import torch.nn.functional as functional
+
+    torch.manual_seed(seed)  # audio sampling stays stochastic; the text is not
+
+    rendered = tokenizer.apply_chat_template(
+        [{"role": "user", "content": prompt}], tokenize=False, add_generation_prompt=True
+    )
+    input_ids = torch.tensor(
+        tokenizer(rendered).data["input_ids"], dtype=torch.long, device=device
+    )[None, ...]
+    plan = forced_text_plan(tokenizer(text, add_special_tokens=False).data["input_ids"])
+
+    start_pos, past, text_finished, first_finished = input_ids.shape[1], None, False, True
+    audio_codes: list[list[int]] = [[] for _ in range(8)]
+    audio_stop: list[int | None] = [None] * 8
+    audio_buffer = torch.full(
+        (1, 8, start_pos), model.audio_pad_token, dtype=torch.long, device=device
+    )
+    frames: list[list[int]] = []
+
+    with torch.no_grad():
+        while input_ids.shape[1] < start_pos + max_steps:
+            if past is None:
+                out = model.forward(
+                    torch.cat((audio_buffer, input_ids.unsqueeze(1)), dim=1),
+                    past_key_values=past,
+                    use_cache=True,
+                )
+            else:
+                out = model.forward(
+                    torch.cat((audio_buffer[:, :, -1:], input_ids[:, -1:].unsqueeze(1)), dim=1),
+                    past_key_values=past,
+                    use_cache=True,
+                )
+            past = out.past_key_values
+
+            step = input_ids.shape[1] - start_pos
+            if text_finished:
+                text_token = ENTER_TOKEN if first_finished else PAD_TOKEN
+                first_finished = False
+            else:
+                text_token = plan[step] if step < len(plan) else EOS_TOKEN
+
+            audio_step = step - 1
+            for layer, logits in enumerate(out.audio_logits):
+                if audio_step < layer:
+                    audio_codes[layer].append(model.audio_pad_token)
+                    continue
+                scores = logits[0, -1, :].clone() / 0.2
+                for previous in audio_codes[layer][-3:]:
+                    value = scores[previous]
+                    scores[previous] = torch.where(value > 0, value / 1.05, value * 1.05)
+                top_values, top_indices = scores.topk(50)
+                code = int(
+                    top_indices[torch.multinomial(functional.softmax(top_values, dim=-1), 1)]
+                )
+                audio_codes[layer].append(code)
+                if audio_stop[layer] is None and code >= 2048:
+                    audio_stop[layer] = len(audio_codes[layer]) - 1
+
+            if text_finished and all(stop is not None for stop in audio_stop):
+                break
+
+            input_ids = torch.cat((input_ids, torch.tensor([[text_token]], device=device)), dim=1)
+            audio_buffer = torch.cat(
+                (
+                    audio_buffer,
+                    torch.full((1, 8, 1), model.audio_pad_token, dtype=torch.long, device=device),
+                ),
+                dim=2,
+            )
+            for layer in range(min(audio_step + 1, 8)):
+                audio_buffer[0, layer, -1] = audio_codes[layer][-1]
+
+            if audio_step >= 7:
+                frame = [audio_codes[layer][step - 7 + layer] for layer in range(8)]
+                active = sum(
+                    1
+                    for layer in range(8)
+                    if audio_stop[layer] is None or step - 7 + layer < audio_stop[layer]
+                )
+                if active >= 8:
+                    frames.append(frame)
+
+            if not text_finished and text_token == EOS_TOKEN:
+                text_finished = True
+
+    return frames, input_ids.shape[1] - start_pos
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--checkpoint", required=True, type=Path)
+    parser.add_argument("--shape", choices=sorted(SHAPES), default="mindsurf")
+    parser.add_argument("--texts", type=Path, default=Path("configs/talker_texts_zh_v1.jsonl"))
+    parser.add_argument("--tokenizer", type=Path, default=Path("assets/tokenizer"))
+    parser.add_argument("--minimind-root", required=True, type=Path)
+    parser.add_argument("--audio-encoder", required=True, type=Path)
+    parser.add_argument("--codec", required=True, type=Path, help="Mimi model directory")
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--seed", type=int, default=20260725)
+    parser.add_argument("--limit", type=int, help="first N texts only, for a smoke run")
+    parser.add_argument("--device", default="cuda")
+    args = parser.parse_args()
+
+    import torch
+    from transformers import AutoTokenizer, MimiModel
+
+    texts = load_texts(args.texts)[: args.limit]
+    tokenizer = AutoTokenizer.from_pretrained(str(args.tokenizer))
+    model = build_model(
+        args.checkpoint, args.minimind_root, args.audio_encoder, args.shape, args.device
+    )
+    codec = MimiModel.from_pretrained(str(args.codec)).eval().to(args.device)
+    if args.device.startswith("cuda"):
+        torch.cuda.reset_peak_memory_stats()
+
+    args.output.mkdir(parents=True, exist_ok=True)
+    samples: list[dict[str, Any]] = []
+    generation_seconds = 0.0
+    audio_seconds = 0.0
+
+    for index, row in enumerate(texts):
+        started = time.perf_counter()
+        frames, steps = speak_forced(
+            model, tokenizer, row["prompt"], row["text"], args.device, seed=args.seed + index
+        )
+        elapsed = time.perf_counter() - started
+
+        path = args.output / f"{row['id']}.wav"
+        seconds = 0.0
+        if frames:
+            codes = torch.tensor(frames, dtype=torch.long, device=args.device).T.unsqueeze(0)
+            codes = torch.where(codes >= 2049, torch.zeros_like(codes), codes)
+            with torch.no_grad():
+                waveform = codec.decode(codes).audio_values.squeeze().float().cpu().numpy()
+            seconds = len(waveform) / OUTPUT_SAMPLE_RATE
+            pcm = (waveform * 32767).astype("int16").tobytes()
+            path.write_bytes(to_wav(pcm, OUTPUT_SAMPLE_RATE))
+
+        generation_seconds += elapsed
+        audio_seconds += seconds
+        samples.append(
+            {
+                "id": row["id"],
+                "prompt": row["prompt"],
+                # The forced text: on this protocol the reference really is
+                # what the Talker was told to say.
+                "reference_text": row["text"],
+                "audio_path": str(path) if frames else None,
+                "elapsed_ms": elapsed * 1000,
+                "audio_seconds": seconds,
+                "steps": steps,
+                **({} if frames else {"error": "no complete frames"}),
+            }
+        )
+        if (index + 1) % 10 == 0:
+            print(f"  {index + 1}/{len(texts)}", flush=True)
+
+    failed = [sample["id"] for sample in samples if "error" in sample]
+    manifest = {
+        "generated_by": {
+            "path": "talker-isolated",
+            "model": args.checkpoint.name,
+            "checkpoint_sha256": hashlib.sha256(args.checkpoint.read_bytes()).hexdigest(),
+            "shape": args.shape,
+            "components": [{"name": f"talker teacher-forced, shape {args.shape}"}],
+            "text_source": "fixed",
+            "texts_sha256": hashlib.sha256(args.texts.read_bytes()).hexdigest(),
+            "sampling": {"audio_temperature": 0.2, "audio_top_k": 50, "seed": args.seed},
+        },
+        # The survey's reproduction checklist: efficiency alongside quality.
+        "efficiency": {
+            "rtf": (generation_seconds / audio_seconds) if audio_seconds else None,
+            "peak_vram_bytes": (
+                int(torch.cuda.max_memory_allocated()) if args.device.startswith("cuda") else None
+            ),
+            "parameters": sum(p.numel() for p in model.parameters()),
+        },
+        "probe_count": len(texts),
+        "generated": len(samples) - len(failed),
+        "failed": failed,
+        "samples": samples,
+    }
+    (args.output / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    rtf = manifest["efficiency"]["rtf"]
+    vram = manifest["efficiency"]["peak_vram_bytes"] or 0
+    print(f"\ngenerated {manifest['generated']}/{len(texts)}  failed {failed[:5]}")
+    print(f"RTF {rtf:.2f}  peak VRAM {vram >> 20} MiB")
+    print(f"清单 {args.output / 'manifest.json'}")
+
+
+if __name__ == "__main__":
+    main()
