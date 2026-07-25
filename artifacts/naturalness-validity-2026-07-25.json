@@ -1,0 +1,50 @@
+{
+  "adjacent_comparisons": [
+    {
+      "difference": 0.3808411315083502,
+      "left": "edge-tts probes",
+      "right": "edge-tts replies",
+      "threshold": 0.16785873398821538,
+      "verdict": "可区分"
+    },
+    {
+      "difference": 1.0599072761833668,
+      "left": "edge-tts replies",
+      "right": "official Talker",
+      "threshold": 0.2093609977469605,
+      "verdict": "可区分"
+    },
+    {
+      "difference": 0.28953448832035056,
+      "left": "official Talker",
+      "right": "our Talker",
+      "threshold": 0.23604829938651173,
+      "verdict": "可区分"
+    }
+  ],
+  "caveat": "UTMOS is trained mostly on English MOS; absolute values are not calibrated to a Chinese listener panel. Valid for ranking systems on the same content, which is what it is used for here.",
+  "effect_of_interest": 0.2,
+  "predictor": "utmos22_strong @ tarepan/SpeechMOS:v1.2.0",
+  "sets": {
+    "edge-tts probes": {
+      "n": 160,
+      "noise_floor": 0.03232063651084882,
+      "utmos": 3.775532531738281
+    },
+    "edge-tts replies": {
+      "n": 160,
+      "noise_floor": 0.04567389562726021,
+      "utmos": 3.394691400229931
+    },
+    "official Talker": {
+      "n": 160,
+      "noise_floor": 0.05276476591825485,
+      "utmos": 2.334784124046564
+    },
+    "our Talker": {
+      "n": 160,
+      "noise_floor": 0.05836828947067274,
+      "utmos": 2.0452496357262135
+    }
+  }
+}

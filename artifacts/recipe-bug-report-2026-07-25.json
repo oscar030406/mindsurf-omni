@@ -14,6 +14,13 @@
         "note": "",
         "sample_size": 160,
         "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.05836828947067274,
+        "note": "",
+        "sample_size": 160,
+        "value": 2.0452496357262135
       }
     },
     "name": "candidate",
@@ -22,12 +29,23 @@
     ],
     "sample_size": 160
   },
-  "comparison": "official improved (-0.1594 against +/-0.0972); silent_rate indistinguishable",
+  "comparison": {
+    "cer": "cer: reported only (resolves 0.0836 at best, but the effect of interest is 0.0500)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)",
+    "utmos": "utmos: regressed (-0.2895 against ±0.2360)"
+  },
   "judge_sensitivity": {
     "cascade_paraformer": 0.0359,
     "cascade_whisper_small": 0.0325,
     "ours_paraformer": 0.2172,
     "ours_whisper_small": 0.2981
+  },
+  "naturalness": {
+    "note": "gating eligible, unlike CER; validity check in artifacts/naturalness-validity-2026-07-25.json",
+    "official": 2.3348,
+    "ours": 2.0452,
+    "predictor": "utmos22_strong @ tarepan/SpeechMOS:v1.2.0",
+    "verdict": "utmos: regressed (-0.2895 against ±0.2360)"
   },
   "official_reference": {
     "measurements": {
@@ -44,9 +62,16 @@
         "note": "",
         "sample_size": 160,
         "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.05276476591825485,
+        "note": "",
+        "sample_size": 160,
+        "value": 2.334784124046564
       }
     },
-    "name": "candidate",
+    "name": "reference",
     "not_claimed": [],
     "sample_size": 160
   },
