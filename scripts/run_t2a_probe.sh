@@ -59,4 +59,32 @@ echo "t2a_probe pid $pid" | tee -a "$LOG"
 wait "$pid"
 status=$?
 echo "t2a_probe exited $status" | tee -a "$LOG"
-exit "$status"
+[ "$status" -eq 0 ] || exit "$status"
+
+# Read it here rather than leaving a checkpoint for someone to discover. The
+# verdict is one number -- does the stage product speak -- and waiting for a
+# human to run three commands is how a four-hour answer becomes a next-day one.
+REPO="${MINDSURF_REPO:-$HOME/omni/mindsurf-omni}"
+OUT="${PROBE_OUT:-$HOME/omni/probe_eval}"
+cd "$REPO" || exit 1
+mkdir -p "$OUT"
+
+echo "===== reading the probe's stage product $(date -Is) =====" | tee -a "$LOG"
+"$PY" scripts/evaluate_talker.py \
+  --checkpoint "$ROOT/out/t2a_lr5e5_768.pth" --shape mindsurf \
+  --minimind-root "$ROOT" --audio-encoder "$ROOT/model/SenseVoiceSmall" \
+  --codec "$ROOT/model/mimi" --tokenizer assets/tokenizer \
+  --texts configs/talker_texts_zh_v1.jsonl \
+  --output "$OUT/t2a_lr5e5" >>"$LOG" 2>&1 || exit 1
+"$PY" scripts/transcribe_samples.py --manifest "$OUT/t2a_lr5e5/manifest.json" \
+  --output "$OUT/t2a_lr5e5.jsonl" --judge paraformer >>"$LOG" 2>&1 || exit 1
+
+# Scoring needs zhconv, which this venv does not carry, and installing into a
+# training environment is not something to do casually. The rows are the
+# deliverable: copy $OUT/t2a_lr5e5.jsonl and run evaluate_speech.py against
+# artifacts/codebook_baseline_mos.jsonl wherever zhconv is installed.
+{
+  echo "===== probe read done $(date -Is) ====="
+  echo "rows at $OUT/t2a_lr5e5.jsonl -- score them against artifacts/codebook_baseline_mos.jsonl"
+  echo "prediction on record: the stage product speaks, CER leaves 1.0 and silence leaves 0.6"
+} | tee -a "$LOG"
