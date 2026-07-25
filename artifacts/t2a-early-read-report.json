@@ -1,0 +1,88 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.013136898561629862,
+        "note": "",
+        "sample_size": 160,
+        "value": 1.0086527748189025
+      },
+      "silent_rate": {
+        "gating_eligible": false,
+        "noise_floor": 0.078125,
+        "note": "100 of 160 produced no speech",
+        "sample_size": 160,
+        "value": 0.625
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.006808543950319268,
+        "note": "",
+        "sample_size": 160,
+        "value": 1.3661907568573952
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [
+      "silent_rate"
+    ],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 1.0,
+      "cer_over_0_3": 160.0,
+      "sample_size": 160.0
+    }
+  },
+  "comparison": {
+    "cer": "cer: regressed (+0.9324 against ±0.0618)",
+    "silent_rate": "silent_rate: reported only (100 of 160 produced no speech)",
+    "utmos": "utmos: regressed (-1.0356 against ±0.1314)"
+  },
+  "judge": {
+    "candidate": [
+      "paraformer-zh"
+    ],
+    "reference": [
+      "paraformer-zh"
+    ]
+  },
+  "paired_comparison": {
+    "cer": "cer: regressed (+0.9324 against ±0.0622, paired n=160)",
+    "utmos": "utmos: regressed (-1.0356 against ±0.1192, paired n=160)"
+  },
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.015859868577004305,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0762535458073665
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.04327965900301933,
+        "note": "",
+        "sample_size": 160,
+        "value": 2.40181859433651
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 0.05,
+      "cer_over_0_3": 7.0,
+      "sample_size": 160.0
+    }
+  },
+  "text_regression": null
+}
