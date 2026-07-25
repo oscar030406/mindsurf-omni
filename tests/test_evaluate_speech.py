@@ -172,3 +172,75 @@ def test_a_report_without_the_text_check_says_so_rather_than_omitting_it() -> No
         assert "未测" in result.stdout
         assert json.loads(output.read_text(encoding="utf-8"))["candidate"]
         assert json.loads(output.read_text(encoding="utf-8"))["text_regression"] is None
+
+
+def test_paired_deltas_refuse_mismatched_texts() -> None:
+    """A pair over different texts subtracts two unrelated numbers.
+
+    Free-run output has different texts per run, so pairing it silently would
+    produce a smaller noise floor that certifies nonsense. None means "use the
+    unpaired comparison", not "something went wrong".
+    """
+    from scripts.evaluate_speech import Sample, paired_deltas
+
+    mine = [Sample(prompt="p", reference_text="文本甲", transcript="文本甲", id="a")]
+    theirs = [Sample(prompt="p", reference_text="文本乙", transcript="文本乙", id="a")]
+
+    assert paired_deltas(mine, theirs) is None
+
+
+def test_paired_deltas_refuse_thin_overlap() -> None:
+    """Pairing a fifth of the runs would report the pairs as if they were the runs."""
+    from scripts.evaluate_speech import Sample, paired_deltas
+
+    mine = [
+        Sample(prompt="p", reference_text=f"t{i}", transcript=f"t{i}", id=f"s{i}")
+        for i in range(10)
+    ]
+    theirs = [Sample(prompt="p", reference_text="t0", transcript="t0", id="s0")]
+
+    assert paired_deltas(mine, theirs) is None
+
+
+def test_paired_deltas_cancel_shared_item_difficulty() -> None:
+    """The whole point of pairing: per-item difficulty subtracts out.
+
+    Two systems that differ by a constant on wildly different items should
+    show that constant with a tiny floor, not the items' spread.
+    """
+    from scripts.evaluate_speech import Sample, paired_deltas
+
+    mine, theirs = [], []
+    for index in range(40):
+        text = "字" * (10 + index * 3)  # very different difficulties
+        wrong = 2 + index % 5
+        mine.append(
+            Sample(
+                prompt="p",
+                reference_text=text,
+                transcript="错" * wrong + text[wrong:],
+                id=f"s{index}",
+            )
+        )
+        theirs.append(Sample(prompt="p", reference_text=text, transcript=text, id=f"s{index}"))
+
+    deltas = paired_deltas(mine, theirs)
+
+    assert deltas is not None
+    assert all(delta > 0 for delta in deltas["cer"])  # ours strictly worse per item
+
+
+def test_compare_paired_gives_only_three_answers() -> None:
+    from mindsurf_omni.evaluation.metrics import compare_paired
+
+    clear = compare_paired("cer", [0.2] * 50)
+    assert "regressed" in clear and "paired n=50" in clear
+
+    noisy = compare_paired("cer", [0.5, -0.5] * 25)
+    assert "indistinguishable" in noisy
+
+    better = compare_paired("utmos", [0.4] * 50, lower_is_better=False)
+    assert "improved" in better
+
+    thin = compare_paired("cer", [0.9])
+    assert "reported only" in thin

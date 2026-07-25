@@ -28,6 +28,7 @@ from mindsurf_omni.evaluation.metrics import (  # noqa: E402
     assess,
     character_error_rate,
     compare,
+    compare_paired,
 )
 from mindsurf_omni.evaluation.text_regression import (  # noqa: E402
     assess_text_regression,
@@ -43,6 +44,7 @@ class Sample:
     audio_path: Path | None = None
     transcript: str | None = None  # third-party ASR of the generated audio
     utmos: float | None = None
+    id: str | None = None  # what lets two runs pair sample-for-sample
 
 
 @dataclass
@@ -113,6 +115,37 @@ def score(name: str, samples: list[Sample], effects: dict[str, float]) -> Report
     return report
 
 
+def paired_deltas(
+    candidate: list[Sample], reference: list[Sample]
+) -> dict[str, list[float]] | None:
+    """Per-sample differences on shared ids, or None when pairing is invalid.
+
+    Valid pairing needs two things: ids on both sides, and the same reference
+    text per id. The second is the load-bearing one -- on the fixed-text
+    protocol the texts match and per-item difficulty cancels in the
+    subtraction; on free-run output the texts differ and a "pair" would
+    subtract two unrelated numbers. Refusing is better than quietly producing
+    a smaller, wrong noise floor.
+    """
+    by_id = {sample.id: sample for sample in reference if sample.id}
+    pairs = [(mine, by_id[mine.id]) for mine in candidate if mine.id and mine.id in by_id]
+    if len(pairs) < max(2, int(0.8 * min(len(candidate), len(reference)))):
+        return None
+    if any(mine.reference_text != theirs.reference_text for mine, theirs in pairs):
+        return None
+
+    deltas: dict[str, list[float]] = {"cer": [], "utmos": []}
+    for mine, theirs in pairs:
+        if mine.transcript is not None and theirs.transcript is not None:
+            deltas["cer"].append(
+                character_error_rate(mine.reference_text, mine.transcript or "")
+                - character_error_rate(theirs.reference_text, theirs.transcript or "")
+            )
+        if mine.utmos is not None and theirs.utmos is not None:
+            deltas["utmos"].append(mine.utmos - theirs.utmos)
+    return {key: values for key, values in deltas.items() if values}
+
+
 def load(path: Path) -> list[Sample]:
     samples = []
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -126,6 +159,7 @@ def load(path: Path) -> list[Sample]:
                 audio_path=Path(row["audio_path"]) if row.get("audio_path") else None,
                 transcript=row.get("transcript"),
                 utmos=row.get("utmos"),
+                id=row.get("id"),
             )
         )
     return samples
@@ -186,6 +220,21 @@ def main() -> None:
             )
             for key in sorted(set(candidate.measurements) & set(reference.measurements))
         }
+
+        deltas = paired_deltas(candidate.samples, reference.samples)
+        if deltas:
+            lines.append("")
+            lines.append("配对对比（同 id 同文本，逐样本相减）:")
+            payload["paired_comparison"] = {}
+            for key in sorted(deltas):
+                verdict = compare_paired(key, deltas[key], lower_is_better=key != "utmos")
+                lines.append("  " + verdict)
+                payload["paired_comparison"][key] = verdict
+        elif any(sample.id for sample in candidate.samples):
+            lines.append("")
+            lines.append(
+                "配对对比：不可用（id 或文本不对齐——free-run 输出属正常，用上面的非配对对比）"
+            )
 
     if args.strict_losses:
         losses = json.loads(args.strict_losses.read_text(encoding="utf-8"))

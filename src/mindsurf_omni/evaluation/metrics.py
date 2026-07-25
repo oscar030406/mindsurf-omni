@@ -179,6 +179,34 @@ def assess(
     )
 
 
+def compare_paired(
+    name: str, deltas: list[float], lower_is_better: bool = True, seed: int = 0
+) -> str:
+    """The same three verdicts, from per-sample differences on shared items.
+
+    Pairing is what the fixed-text protocol buys. Unpaired comparison combines
+    two whole-set noise floors, most of which is per-item difficulty that both
+    systems share; on the same items that difficulty cancels in the subtraction
+    and the floor shrinks to what actually differs between the systems. The
+    caller is responsible for only pairing rows whose reference text matches --
+    a pair over different texts subtracts two unrelated numbers.
+    """
+    if len(deltas) < 2:
+        return f"{name}: reported only (only {len(deltas)} pairs)"
+
+    difference = sum(deltas) / len(deltas)
+    threshold = resolvable_effect(bootstrap_noise_floor(deltas, seed=seed))
+
+    if abs(difference) <= threshold:
+        return (
+            f"{name}: indistinguishable ({difference:+.4f}, within ±{threshold:.4f}, "
+            f"paired n={len(deltas)})"
+        )
+    improved = difference < 0 if lower_is_better else difference > 0
+    verdict = "improved" if improved else "regressed"
+    return f"{name}: {verdict} ({difference:+.4f} against ±{threshold:.4f}, paired n={len(deltas)})"
+
+
 def compare(
     name: str, candidate: Measurement, reference: Measurement, lower_is_better: bool = True
 ) -> str:

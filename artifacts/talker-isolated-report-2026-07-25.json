@@ -1,0 +1,74 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": false,
+        "noise_floor": 0.029046240442299975,
+        "note": "resolves 0.0871 at best, but the effect of interest is 0.0500",
+        "sample_size": 160,
+        "value": 0.2998871605327448
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [
+      "cer"
+    ],
+    "sample_size": 160
+  },
+  "checkpoints": {
+    "official": "5a05a617858453aa",
+    "ours": "1f5b6bf55707dbf7"
+  },
+  "comparison": {
+    "cer": "cer: reported only (resolves 0.0871 at best, but the effect of interest is 0.0500)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)"
+  },
+  "efficiency": {
+    "official": {
+      "parameters": 113131266,
+      "peak_vram_bytes": 1495800832,
+      "rtf": 0.26858539508179224
+    },
+    "ours": {
+      "parameters": 152059650,
+      "peak_vram_bytes": 1643936256,
+      "rtf": 0.25643814650722807
+    }
+  },
+  "paired_comparison": {
+    "cer": "cer: regressed (+0.2236 against ±0.0815, paired n=160)"
+  },
+  "per_sample": "official better on 140 of 160, ours on 9, tied 11",
+  "protocol": "configs/talker_texts_zh_v1.jsonl (digest in each manifest), teacher-forced text, seeded audio sampling, judge paraformer-zh",
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.01585986857700431,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.07625354580736649
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 160
+  },
+  "significance": "First gating-quality CER verdict this project has produced: pairing on fixed text turns cer from 'reported only' into 'regressed (+0.2236 against ±0.0815)'. Confirms the recipe finding at the strongest evidence level available without retraining.",
+  "text_regression": null,
+  "what": "Talker-isolated teacher-forced benchmark: same 160 fixed texts, paired sample-for-sample"
+}
