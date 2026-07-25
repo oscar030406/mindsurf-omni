@@ -86,7 +86,14 @@ def measured_results() -> list[str]:
         # synthesiser and the judge. Read as a model score it is the most
         # flattering wrong number this project can print, and this list is
         # exactly where someone skims it out of context.
-        instrument = "（仪器底噪，模型未参与）" if payload.get("instrument_only") else ""
+        # Either the report says so, or its provenance does: a probe run speaks
+        # the probe text as written, which is the same thing said earlier.
+        provenance = payload.get("generated_by") or {}
+        instrument = (
+            "（仪器底噪，模型未参与）"
+            if payload.get("instrument_only") or provenance.get("text_source") == "probe"
+            else ""
+        )
         for name, measurement in sorted(candidate.get("measurements", {}).items()):
             mark = "" if measurement["gating_eligible"] else "（仅报告）"
             lines.append(
