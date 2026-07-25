@@ -1,0 +1,52 @@
+{
+  "overall_argmax_agreement": 0.7780393323471367,
+  "per_codebook": {
+    "0": {
+      "argmax_agreement": 0.8683403385209587,
+      "steps": 8803,
+      "top1_probability_median": 0.9618446826934814
+    },
+    "1": {
+      "argmax_agreement": 0.7823804633116512,
+      "steps": 8763,
+      "top1_probability_median": 0.8476021885871887
+    },
+    "2": {
+      "argmax_agreement": 0.7821850280866675,
+      "steps": 8723,
+      "top1_probability_median": 0.8391379117965698
+    },
+    "3": {
+      "argmax_agreement": 0.7900495220545894,
+      "steps": 8683,
+      "top1_probability_median": 0.8560912013053894
+    },
+    "4": {
+      "argmax_agreement": 0.7878051602452852,
+      "steps": 8643,
+      "top1_probability_median": 0.864956796169281
+    },
+    "5": {
+      "argmax_agreement": 0.7661280948506335,
+      "steps": 8603,
+      "top1_probability_median": 0.8243589997291565
+    },
+    "6": {
+      "argmax_agreement": 0.7396940324652576,
+      "steps": 8563,
+      "top1_probability_median": 0.7963979840278625
+    },
+    "7": {
+      "argmax_agreement": 0.7077320192420509,
+      "steps": 8523,
+      "top1_probability_median": 0.7436257600784302
+    }
+  },
+  "settings": {
+    "penalty": 1.05,
+    "temperature": 0.2,
+    "top_k": 50,
+    "window": 3
+  },
+  "verdict": "live"
+}

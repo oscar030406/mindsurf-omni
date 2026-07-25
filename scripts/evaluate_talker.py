@@ -34,6 +34,7 @@ import hashlib
 import json
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -112,13 +113,49 @@ def build_model(
     return model.eval().to(device)
 
 
+@dataclass(frozen=True)
+class AudioSampling:
+    """How audio codes are drawn. Upstream's values are the default.
+
+    ``temperature`` accepts a list of eight to set one per codebook. The
+    diagnostic found the codebooks are not alike -- codebook 0 picks the argmax
+    86.8% of the time and codebook 7 only 70.8% -- so a single number is an
+    assumption, not a given.
+    """
+
+    temperature: float | list[float] = 0.2
+    top_k: int = 50
+    penalty: float = 1.05
+    penalty_window: int = 3
+
+    def for_codebook(self, layer: int) -> float:
+        if isinstance(self.temperature, list):
+            return self.temperature[layer]
+        return self.temperature
+
+
+DEFAULT_SAMPLING = AudioSampling()
+
+
 def speak_forced(
-    model: Any, tokenizer: Any, prompt: str, text: str, device: str, seed: int, max_steps: int = 640
+    model: Any,
+    tokenizer: Any,
+    prompt: str,
+    text: str,
+    device: str,
+    seed: int,
+    max_steps: int = 640,
+    sampling: AudioSampling = DEFAULT_SAMPLING,
+    observer: Any = None,
 ) -> tuple[list[list[int]], int]:
     """Teacher-force the text and collect whole Mimi frames.
 
     Follows stream_generate's schedule exactly; see the module docstring for
-    why divergence is not an option.
+    why divergence is not an option. That is also why this is the only copy:
+    the schedule is delicate enough that three drifting transcriptions of it
+    would eventually disagree, and the one that decodes to noise would not
+    announce itself. Sweeps and diagnostics call in here rather than restating
+    it -- ``sampling`` varies the knobs, ``observer`` watches each draw.
     """
     import torch
     import torch.nn.functional as functional
@@ -169,14 +206,20 @@ def speak_forced(
                 if audio_step < layer:
                     audio_codes[layer].append(model.audio_pad_token)
                     continue
-                scores = logits[0, -1, :].clone() / 0.2
-                for previous in audio_codes[layer][-3:]:
-                    value = scores[previous]
-                    scores[previous] = torch.where(value > 0, value / 1.05, value * 1.05)
-                top_values, top_indices = scores.topk(50)
-                code = int(
-                    top_indices[torch.multinomial(functional.softmax(top_values, dim=-1), 1)]
-                )
+                scores = logits[0, -1, :].clone() / sampling.for_codebook(layer)
+                if sampling.penalty != 1.0:
+                    for previous in audio_codes[layer][-sampling.penalty_window :]:
+                        value = scores[previous]
+                        scores[previous] = torch.where(
+                            value > 0, value / sampling.penalty, value * sampling.penalty
+                        )
+                top_values, top_indices = scores.topk(min(sampling.top_k, scores.shape[-1]))
+                probabilities = functional.softmax(top_values, dim=-1)
+                code = int(top_indices[torch.multinomial(probabilities, 1)])
+                if observer is not None:
+                    # What the sampler chose against what greedy would have,
+                    # from the same logits -- the only place both are in hand.
+                    observer(layer, float(probabilities[0]), code == int(top_indices[0]))
                 audio_codes[layer].append(code)
                 if audio_stop[layer] is None and code >= 2048:
                     audio_stop[layer] = len(audio_codes[layer]) - 1
