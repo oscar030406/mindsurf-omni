@@ -1,0 +1,61 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": false,
+        "noise_floor": 0.027855560289905656,
+        "note": "resolves 0.0836 at best, but the effect of interest is 0.0500",
+        "sample_size": 160,
+        "value": 0.21724000782118816
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [
+      "cer"
+    ],
+    "sample_size": 160
+  },
+  "comparison": "official improved (-0.1594 against +/-0.0972); silent_rate indistinguishable",
+  "judge_sensitivity": {
+    "cascade_paraformer": 0.0359,
+    "cascade_whisper_small": 0.0325,
+    "ours_paraformer": 0.2172,
+    "ours_whisper_small": 0.2981
+  },
+  "official_reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.016533524565095818,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.05787146803391274
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [],
+    "sample_size": 160
+  },
+  "protocol": "same 160 spoken probes (digest sha256:12ae60c1...), same NativeEngine.respond path, same sampling, judge paraformer-zh",
+  "root_cause": {
+    "a2a_full": "ran lr 2e-5; report recipe is 5e-5",
+    "conclusion": "architecture and base size excluded (official thinker is smaller); retraining with the report recipe, scripts/run_full_recipe.sh",
+    "t2a": "ran 6 epochs at lr 5e-4 (trainer default, flag omitted); report recipe is 1 epoch at 5e-6"
+  },
+  "text_regression": null,
+  "what": "upstream's released sft_omni_768 through our exact harness, vs our A2A checkpoint"
+}
