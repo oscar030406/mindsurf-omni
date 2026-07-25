@@ -1,0 +1,89 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.010778555590271618,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.04196872735545653
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": false,
+        "noise_floor": 0.103809605911374,
+        "note": "resolves 0.3114 at best, but the effect of interest is 0.3000",
+        "sample_size": 160,
+        "value": 2.7664799466729164
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [
+      "utmos"
+    ],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 0.018264462809917358,
+      "cer_over_0_3": 2.0,
+      "sample_size": 160.0
+    }
+  },
+  "comparison": {
+    "cer": "cer: indistinguishable (+0.0061, within ±0.0416)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)",
+    "utmos": "utmos: reported only (resolves 0.3114 at best, but the effect of interest is 0.3000)"
+  },
+  "instrument_only": true,
+  "judge": {
+    "candidate": [
+      "paraformer-zh"
+    ],
+    "reference": [
+      "paraformer-zh"
+    ]
+  },
+  "paired_comparison": {
+    "cer": "cer: indistinguishable (+0.0061, within ±0.0178, paired n=160)",
+    "utmos": "utmos: regressed (-0.6282 against ±0.2897, paired n=160)"
+  },
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.00872932833668335,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.03585847392398827
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.04567389562726021,
+        "note": "",
+        "sample_size": 160,
+        "value": 3.394691400229931
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 0.018928571428571427,
+      "cer_over_0_3": 1.0,
+      "sample_size": 160.0
+    }
+  },
+  "text_regression": null
+}
