@@ -154,6 +154,51 @@ def test_the_wired_synthesiser_is_named_in_the_component_list(tmp_path: Path) ->
     assert "tts-edge" in names
 
 
+def test_the_local_synthesiser_is_named_too(tmp_path: Path) -> None:
+    """Two synthesisers make the same audio into two different measurements."""
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_TTS": "voxcpm",
+        }
+    )
+    from mindsurf_omni.service import factory
+
+    real = factory._importable
+    factory._importable = lambda module: module == "voxcpm" or real(module)
+    try:
+        names = [component.name for component in build(settings).describe().components]  # type: ignore[union-attr]
+    finally:
+        factory._importable = real
+
+    assert "tts-voxcpm" in names
+
+
+def test_the_local_synthesiser_names_its_own_extra_when_absent(tmp_path: Path) -> None:
+    """ "install the tts extra" would install the hosted one, which is the opposite choice."""
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_TTS": "voxcpm",
+        }
+    )
+    from mindsurf_omni.service import factory
+
+    real = factory._importable
+    factory._importable = lambda module: module != "voxcpm" and real(module)
+    try:
+        with pytest.raises(ConfigurationError, match="tts-local"):
+            build(settings)
+    finally:
+        factory._importable = real
+
+
 async def _first_chunk(engine: object) -> None:
     from mindsurf_omni.service.engine import GenerationSettings
 

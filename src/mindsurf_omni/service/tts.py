@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE
 from mindsurf_omni.service.audio import resample
@@ -156,6 +156,108 @@ class EdgeSynthesiser:
 
         audio, rate = soundfile.read(io.BytesIO(bytes(encoded)), dtype="int16")
         return resample(audio.tobytes(), rate, OUTPUT_SAMPLE_RATE)
+
+
+@dataclass(slots=True)
+class VoxCPMSynthesiser:
+    """Local synthesis, so speaking stops being a network round trip.
+
+    Why this is the lever: the cascade's P50 is 1976 ms, of which synthesis is
+    1463 ms, of which 1222 ms is the trip to a hosted endpoint and back. The
+    models in this path cost 393 ms between them. Nothing else on the list buys
+    a second without training something.
+
+    What it costs instead is a card. Weights load once and stay resident beside
+    the Thinker, the Talker and SenseVoice, so this is 0.5B of company on a GPU
+    that is already shared -- and the P95 does not disappear, it changes shape
+    from network jitter into compute that grows with the sentence.
+
+    Emotion is not carried. This model has no instruct mode and no prosody
+    arguments, so the three delivery instructions have nowhere to go: putting
+    one in the text would have it read aloud on every single utterance, which
+    is the failure ``instruction_leaked`` exists to catch. The knob that does
+    exist is voice cloning from a prompt clip, and an emotion-per-clip mapping
+    would need recordings this repository does not have. Until then a caller
+    asking for 'happy' gets neutral delivery, and the report says so rather
+    than the audio quietly not matching the request.
+
+    Loading is deferred to the first call. Assembly happens at process start,
+    when a card may be busy with something else, and a container that cannot
+    load weights should answer 503 rather than fail to boot.
+    """
+
+    model_id: str = "openbmb/VoxCPM-0.5B"
+    device: str = "cuda"
+    # A clip to clone, with what it says. Both or neither -- the model rejects
+    # one without the other, and it is right to: the prompt text is what tells
+    # it which sounds in the clip belong to which characters.
+    prompt_wav: str | None = None
+    prompt_text: str | None = None
+    # wetext folds "10 美元" and "5G" into what a reader would say. 71 of the
+    # 160 fixed evaluation texts contain digits, so leaving this off would
+    # measure the front end rather than the voice.
+    normalise_text: bool = True
+    # VoxCPM emits 16 kHz. Stated rather than read off the loaded object: a
+    # wrong rate here is not an exception, it is a chipmunk, and the bug report
+    # says "sounds strange".
+    sample_rate: int = 16_000
+    lineage: str = "voxcpm"
+    eligible_as_judge: bool = False
+    _model: Any = None
+
+    def load(self) -> Any:
+        """The weights, loaded once and kept."""
+        if self._model is None:
+            from voxcpm import VoxCPM
+
+            self._model = VoxCPM.from_pretrained(
+                self.model_id,
+                # The denoiser cleans a *prompt* clip before cloning, which is
+                # a separate ModelScope download and does nothing for text this
+                # path synthesises from scratch.
+                load_denoiser=False,
+                # torch.compile costs a minute of warm-up per process and is
+                # not available on every host this runs on. RTF is already
+                # below 1 without it; revisit when a measurement says to.
+                optimize=False,
+                device=self.device,
+            )
+        return self._model
+
+    async def synthesise(self, utterance: Utterance) -> bytes:
+        import asyncio
+
+        import numpy
+
+        spoken = clean_for_speech(utterance.text)
+        if not spoken:
+            # Synthesising nothing spends a forward pass and plays a click.
+            return b""
+
+        model = self.load()
+
+        def speak() -> Any:
+            return model.generate(
+                text=spoken,
+                prompt_wav_path=self.prompt_wav,
+                prompt_text=self.prompt_text,
+                normalize=self.normalise_text,
+            )
+
+        # A GPU forward pass is seconds of blocking work, and the service is a
+        # single event loop: doing it inline stalls every other connection,
+        # including the health check the backend routes on.
+        waveform = await asyncio.to_thread(speak)
+
+        if waveform is None or len(waveform) == 0:
+            raise RuntimeError(
+                f"the synthesiser returned no audio for {spoken[:20]!r}; a silent "
+                "sample would be scored as the model having said nothing"
+            )
+        pcm = (numpy.clip(numpy.asarray(waveform, dtype="float32"), -1.0, 1.0) * 32767).astype(
+            "int16"
+        )
+        return resample(pcm.tobytes(), self.sample_rate, OUTPUT_SAMPLE_RATE)
 
 
 def instruction_leaked(spoken_text: str, transcript: str) -> bool:

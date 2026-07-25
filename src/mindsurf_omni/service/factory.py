@@ -138,35 +138,49 @@ def _build_synthesiser(settings: Settings) -> Any:
     silently reaches a hosted endpoint.
     """
     from mindsurf_omni.service.engine import GenerationSettings
-    from mindsurf_omni.service.tts import EdgeSynthesiser, Utterance
+    from mindsurf_omni.service.tts import (
+        EdgeSynthesiser,
+        Synthesiser,
+        Utterance,
+        VoxCPMSynthesiser,
+    )
 
     if not settings.tts:
 
         async def unwired(text: str, _: Any) -> bytes:
             raise ConfigurationError(
-                "the cascade path has no synthesiser wired; set MINDSURF_TTS=edge for the "
-                "hosted one, which reaches the network and is named in /v1/models"
+                "the cascade path has no synthesiser wired; set MINDSURF_TTS=voxcpm for the "
+                "local one, or MINDSURF_TTS=edge for the hosted one, which reaches the "
+                "network -- either way it is named in /v1/models"
             )
 
         return unwired
 
-    if settings.tts != "edge":
+    if settings.tts not in {"edge", "voxcpm"}:
         raise ConfigurationError(
             f"MINDSURF_TTS={settings.tts!r} names no synthesiser this build has; "
-            "'edge' is wired, CosyVoice2 is not yet"
+            "'edge' (hosted) and 'voxcpm' (local) are wired"
         )
 
     # Checked here rather than on the first request. The container installs the
     # runtime set only, so this is the expected outcome inside one -- and a 503
     # naming the extra is a better answer than an ImportError raised halfway
     # through a turn, which /health cannot see.
-    if not _importable("edge_tts"):
+    package, extra = ("edge_tts", "tts") if settings.tts == "edge" else ("voxcpm", "tts-local")
+    if not _importable(package):
         raise ConfigurationError(
-            "MINDSURF_TTS=edge needs the edge-tts package, which the container does not "
-            "carry: install the 'tts' extra, or leave MINDSURF_TTS unset"
+            f"MINDSURF_TTS={settings.tts} needs the {package} package, which the container "
+            f"does not carry: install the '{extra}' extra, or leave MINDSURF_TTS unset"
         )
 
-    synthesiser = EdgeSynthesiser()
+    synthesiser: Synthesiser = (
+        EdgeSynthesiser()
+        if settings.tts == "edge"
+        # Weights load on the first request, not here: the card may be busy at
+        # process start, and a 503 that says so beats a container that will not
+        # boot.
+        else VoxCPMSynthesiser(device=settings.device)
+    )
 
     async def speak(text: str, generation: GenerationSettings) -> bytes:
         return await synthesiser.synthesise(

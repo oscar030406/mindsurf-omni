@@ -253,6 +253,121 @@ async def test_a_persistent_failure_is_raised_not_papered_over(
     assert len(endpoint.requests) == 2  # tried twice, then stopped
 
 
+# --------------------------------------------------------------------------
+# The local synthesiser. The weights are faked -- what is being checked is the
+# contract around them: rate, emptiness, and that a card is touched once.
+# --------------------------------------------------------------------------
+
+
+class _FakeVoxCPM:
+    """Hands back a real float32 waveform at VoxCPM's own 16 kHz."""
+
+    loads: int = 0
+    calls: list[dict[str, object]] = []
+    seconds: float = 0.5
+
+    def __init__(self) -> None:
+        type(self).loads += 1
+
+    @classmethod
+    def from_pretrained(cls, model_id: str, **options: object) -> _FakeVoxCPM:
+        return cls()
+
+    def generate(self, **options: object):  # type: ignore[no-untyped-def]
+        import numpy
+
+        type(self).calls.append(options)
+        count = int(16_000 * type(self).seconds)
+        return numpy.zeros(count, dtype="float32")
+
+
+@pytest.fixture
+def voxcpm(monkeypatch: pytest.MonkeyPatch) -> type[_FakeVoxCPM]:
+    import sys
+    import types
+
+    _FakeVoxCPM.loads = 0
+    _FakeVoxCPM.calls = []
+    _FakeVoxCPM.seconds = 0.5
+    module = types.ModuleType("voxcpm")
+    module.VoxCPM = _FakeVoxCPM  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "voxcpm", module)
+    return _FakeVoxCPM
+
+
+async def test_local_audio_arrives_as_pcm16_at_the_contract_rate(
+    voxcpm: type[_FakeVoxCPM],
+) -> None:
+    """The model speaks at 16 kHz and the contract is 24; unresampled it is a chipmunk."""
+    from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    pcm = await VoxCPMSynthesiser().synthesise(Utterance(text="今天天气真好"))
+
+    assert len(pcm) == int(OUTPUT_SAMPLE_RATE * 0.5) * 2
+
+
+async def test_the_weights_are_loaded_once_not_per_utterance(
+    voxcpm: type[_FakeVoxCPM],
+) -> None:
+    """Half a billion parameters per turn would be slower than the endpoint it replaces."""
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    synthesiser = VoxCPMSynthesiser()
+    await synthesiser.synthesise(Utterance(text="第一句"))
+    await synthesiser.synthesise(Utterance(text="第二句"))
+
+    assert voxcpm.loads == 1
+
+
+async def test_the_delivery_instruction_is_not_prepended_locally_either(
+    voxcpm: type[_FakeVoxCPM],
+) -> None:
+    """This model has no instruct mode, so a prefix would be read aloud every time."""
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    await VoxCPMSynthesiser().synthesise(Utterance(text="今天天气真好", emotion="happy"))
+
+    assert voxcpm.calls[0]["text"] == "今天天气真好"
+
+
+async def test_local_synthesis_of_nothing_costs_no_forward_pass(
+    voxcpm: type[_FakeVoxCPM],
+) -> None:
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    assert await VoxCPMSynthesiser().synthesise(Utterance(text="\n\n")) == b""
+    assert voxcpm.calls == []
+
+
+async def test_local_silence_raises_rather_than_being_scored_as_speech(
+    voxcpm: type[_FakeVoxCPM],
+) -> None:
+    """An empty waveform would be charged to the model as having said nothing."""
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    voxcpm.seconds = 0.0
+
+    with pytest.raises(RuntimeError, match="no audio"):
+        await VoxCPMSynthesiser().synthesise(Utterance(text="今天天气真好"))
+
+
+async def test_the_text_is_cleaned_before_the_local_model_sees_it(
+    voxcpm: type[_FakeVoxCPM],
+) -> None:
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    await VoxCPMSynthesiser().synthesise(Utterance(text="**灵山大佛**通高 `88` 米"))
+
+    assert voxcpm.calls[0]["text"] == "灵山大佛通高 88 米"
+
+
+def test_the_local_synthesiser_is_not_eligible_to_judge_either() -> None:
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    assert VoxCPMSynthesiser().eligible_as_judge is False
+
+
 def test_only_the_tail_of_the_instruction_leaking_is_still_caught() -> None:
     """What the sister project actually observed, reproducibly.
 

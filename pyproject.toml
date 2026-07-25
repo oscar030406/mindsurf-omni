@@ -40,11 +40,16 @@ evaluate = ["openai-whisper>=20231117", "zhconv>=1.4"]
 # The cascade path's recogniser. Separate from the runtime set because the
 # native path does not need it, and funasr pulls in torch.
 asr = ["funasr>=1.3", "librosa>=0.10"]
-# The cascade path's synthesiser, until CosyVoice2 or the Talker lands. Its own
-# set because it reaches a hosted endpoint: an image that carries it is an
-# image that can be configured to send replies off the machine, so the choice
-# is made when installing rather than inherited by every deployment.
+# The cascade path's hosted synthesiser. Its own set because it reaches a
+# hosted endpoint: an image that carries it is an image that can be configured
+# to send replies off the machine, so the choice is made when installing rather
+# than inherited by every deployment.
 tts = ["edge-tts>=7"]
+# The local one, which is the same choice made the other way: no network, and
+# 0.5B of weights plus torch on whatever card the model is already using. Kept
+# separate from 'tts' for that reason -- a host that installs one has no use
+# for the other.
+tts-local = ["voxcpm>=2", "torch>=2.6"]
 
 [build-system]
 requires = ["hatchling"]
