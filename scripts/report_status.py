@@ -89,8 +89,21 @@ def measured_results() -> list[str]:
                 f"± {measurement['noise_floor']:.4f} "
                 f"n={measurement['sample_size']}{mark}"
             )
-        if payload.get("text_regression") is None:
+        regression = payload.get("text_regression")
+        if regression is None:
             lines.append(f"{path.name}: 文本能力未测")
+        elif isinstance(regression, dict) and "delta_over_base" in regression:
+            # Surfaced, not buried in the file: this is the one measurement the
+            # audio numbers structurally cannot show, and a large delta is the
+            # thing most worth seeing at a glance -- with its caveat, because
+            # base vs SFT is not a like-for-like regression.
+            base = regression["base_strict_val"]
+            a2a = regression["a2a_strict_val"]
+            delta = regression["delta_over_base"]
+            lines.append(
+                f"{path.name}: 文本 strict_val {a2a:.4f}（base {base:.4f}, 差 {delta:+.4f}）"
+                "——base 对 SFT 非同类比较，大不等于坏"
+            )
     return lines
 
 

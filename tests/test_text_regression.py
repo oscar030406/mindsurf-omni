@@ -106,4 +106,44 @@ def test_the_measurement_script_refuses_a_checkpoint_that_is_not_the_thinker() -
     ).read_text(encoding="utf-8")
 
     assert "not the Thinker" in script
-    assert "loaded < 50" in script
+    assert "< 50" in script  # too few language tensors matched
+
+
+def test_the_packing_is_token_weighted_not_per_example_padded() -> None:
+    """The baseline is token-weighted packed loss; padded per-example is a different number.
+
+    An earlier version padded each text to max_length and averaged per-example
+    means, counting the padding as targets. It reproduced neither the recipe
+    nor the 1.7268 it claimed to be comparable to -- the exact "looks
+    comparable and is not" failure this check exists to prevent.
+    """
+    from scripts.measure_strict_loss import packed_blocks
+
+    class Tok:
+        eos_token_id = 99
+
+        def encode(self, text: str, add_special_tokens: bool = False) -> list[int]:
+            return [ord(character) % 90 for character in text]
+
+    # Two texts pack contiguously with an EOS between; blocks are exactly
+    # max_length+1, and the trailing partial buffer is dropped.
+    blocks = packed_blocks(["abcdef", "ghij"], Tok(), max_length=3)
+
+    assert all(len(block) == 4 for block in blocks)
+    flat = [token for block in blocks for token in block]
+    assert 99 in flat  # the EOS separator survived into the packed stream
+    # 6 + 1 + 4 + 1 = 12 tokens -> three full blocks of 4, no remainder here.
+    assert len(blocks) == 3
+
+
+def test_a_short_holdout_yields_no_full_block_rather_than_a_padded_one() -> None:
+    """A block shorter than max_length+1 would be padding counted as signal."""
+    from scripts.measure_strict_loss import packed_blocks
+
+    class Tok:
+        eos_token_id = 99
+
+        def encode(self, text: str, add_special_tokens: bool = False) -> list[int]:
+            return [1, 2]
+
+    assert packed_blocks(["hi"], Tok(), max_length=384) == []

@@ -96,7 +96,17 @@
     "not_claimed": [],
     "sample_size": 160
   },
-  "text_regression": null,
+  "text_regression": {
+    "a2a_strict_val": 3.329,
+    "base_reproduces_baseline": "1.7246 vs recorded 1.7268, -0.0022 -- the seed-noise floor, so the setup is validated",
+    "base_strict_val": 1.7246,
+    "delta_over_base": 1.6044,
+    "holdout": "minimind_official_v1/strict_splits/pretrain_strict_val_2k.jsonl (not in the repo; lives in the pretraining project)",
+    "interpretation": "A2A's loss on pretraining prose roughly doubled. This is NOT by itself evidence the language ability broke: a full audio-SFT reallocates probability toward the chat/assistant format and scores worse on raw prose whatever its ability, and the model's chat output is fluent and on-topic (cascade CER 0.0325). The 0.05-nat threshold does not apply to base vs SFT. What is established: the Thinker's general-Chinese prior shifted a lot under audio SFT, the audio metrics cannot see it, and disentangling expected distribution shift from genuine forgetting needs a chat-format holdout that is not yet available.",
+    "recipe": "token-weighted packed loss, max_length 384, the pretraining eval's frozen strict_val holdout",
+    "recorded_baseline": 1.7268,
+    "robustness": "official/val +1.6044, official/test +1.5844, team/val +2.0156 -- consistent across splits and corpora"
+  },
   "what": "first evaluation of the A2A checkpoint, cascade path",
   "what_this_does_not_say": "CER on the cascade path is not a model quality score: the reference is the model's own text and the audio is a synthesiser reading it, so the error is the synthesiser's and the judge's. It becomes a model metric on the native path, where the model emits the audio itself."
 }
