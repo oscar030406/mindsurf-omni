@@ -133,7 +133,9 @@ def main() -> None:
         print(f"效度检查：{HUB_MODEL}（{HUB_REPO}）\n")
         results = {}
         for entry in args.validate:
-            label, _, directory = entry.partition("=")
+            # Split on the last separator, not the first: a label is free text
+            # and "chunk_frames=1=<dir>" is a reasonable thing to type.
+            label, _, directory = entry.rpartition("=")
             paths = sorted(Path(directory).glob("*.wav"))
             if not paths:
                 raise SystemExit(f"no wavs in {directory}")
