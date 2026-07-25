@@ -249,6 +249,13 @@ def main() -> None:
         "say whether the audio training eroded the text ability",
     )
     parser.add_argument(
+        "--instrument-only",
+        action="store_true",
+        help="the model never spoke: the text was read as written, so the CER "
+        "belongs to the synthesiser and the judge. Marked in the report because "
+        "a floor read as a model score is the best-looking wrong number here",
+    )
+    parser.add_argument(
         "--cer-effect",
         type=float,
         default=0.05,
@@ -267,6 +274,9 @@ def main() -> None:
     lines.extend(shape_lines(candidate))
 
     payload: dict[str, Any] = {"candidate": candidate.to_json()}
+    if args.instrument_only:
+        lines.insert(0, "模型没有参与这一轮：下面的 CER 是合成器加判官的底噪，不是模型质量")
+        payload["instrument_only"] = True
 
     if args.reference:
         reference = score("reference", load(args.reference), effects)

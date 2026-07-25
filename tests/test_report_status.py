@@ -56,6 +56,39 @@ def test_an_ineligible_measurement_is_marked_in_the_summary(
     assert any("文本能力未测" in line for line in lines)
 
 
+def test_a_run_the_model_sat_out_is_marked_as_the_instrument(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """0.0325 read as a model score is the best-looking wrong number here."""
+    import scripts.report_status as report
+
+    (tmp_path / "artifacts").mkdir()
+    (tmp_path / "artifacts" / "floor-report.json").write_text(
+        json.dumps(
+            {
+                "instrument_only": True,
+                "candidate": {
+                    "measurements": {
+                        "cer": {
+                            "value": 0.0325,
+                            "noise_floor": 0.0068,
+                            "sample_size": 160,
+                            "gating_eligible": True,
+                        }
+                    }
+                },
+                "text_regression": None,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(report, "ROOT", tmp_path)
+
+    lines = report.measured_results()
+
+    assert any("模型未参与" in line for line in lines)
+
+
 def test_the_licence_summary_counts_unread_terms_rather_than_saying_mostly(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

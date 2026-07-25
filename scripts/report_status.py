@@ -82,12 +82,17 @@ def measured_results() -> list[str]:
     for path in reports:
         payload = json.loads(path.read_text(encoding="utf-8"))
         candidate = payload.get("candidate", {})
+        # A run where the model never spoke produces a CER that belongs to the
+        # synthesiser and the judge. Read as a model score it is the most
+        # flattering wrong number this project can print, and this list is
+        # exactly where someone skims it out of context.
+        instrument = "（仪器底噪，模型未参与）" if payload.get("instrument_only") else ""
         for name, measurement in sorted(candidate.get("measurements", {}).items()):
             mark = "" if measurement["gating_eligible"] else "（仅报告）"
             lines.append(
                 f"{path.name}: {name} {measurement['value']:.4f} "
                 f"± {measurement['noise_floor']:.4f} "
-                f"n={measurement['sample_size']}{mark}"
+                f"n={measurement['sample_size']}{mark}{instrument}"
             )
         regression = payload.get("text_regression")
         if regression is None:
