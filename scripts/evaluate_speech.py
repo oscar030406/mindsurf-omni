@@ -45,6 +45,10 @@ class Sample:
     transcript: str | None = None  # third-party ASR of the generated audio
     utmos: float | None = None
     id: str | None = None  # what lets two runs pair sample-for-sample
+    # Which recogniser produced the transcript. whisper-small and paraformer-zh
+    # read the same 160 clips 0.08 apart, so two arms judged differently are
+    # not comparable and this is what lets that be caught rather than assumed.
+    judge: str | None = None
 
 
 @dataclass
@@ -146,6 +150,38 @@ def paired_deltas(
     return {key: values for key, values in deltas.items() if values}
 
 
+def judges_of(samples: list[Sample]) -> set[str]:
+    """Which recognisers produced these transcripts, as far as the rows say.
+
+    Empty means the rows predate the field. That is unknown, not agreement --
+    the caller says so rather than assuming the run it is comparing against
+    used the same judge.
+    """
+    return {sample.judge for sample in samples if sample.judge}
+
+
+def check_same_judge(candidate: list[Sample], reference: list[Sample]) -> str | None:
+    """The reason these two runs may not be compared, or None.
+
+    A CER difference of 0.08 comes free with a change of judge, which is larger
+    than most effects this harness is asked to certify. Refusing is the whole
+    point: a comparison across judges is not a weaker result, it is a
+    measurement of the recognisers.
+    """
+    for label, samples in (("候选", candidate), ("参照", reference)):
+        found = judges_of(samples)
+        if len(found) > 1:
+            return f"{label}臂里混了两个判官 {sorted(found)}——同一臂内必须同一个"
+    mine, theirs = judges_of(candidate), judges_of(reference)
+    if mine and theirs and mine != theirs:
+        return (
+            f"候选臂判官 {sorted(mine)}，参照臂 {sorted(theirs)}——"
+            "whisper-small 与 paraformer-zh 在同一批音频上差 0.08，"
+            "这不是两个模型的差别，是两个判官的差别"
+        )
+    return None
+
+
 def load(path: Path) -> list[Sample]:
     samples = []
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -160,6 +196,7 @@ def load(path: Path) -> list[Sample]:
                 transcript=row.get("transcript"),
                 utmos=row.get("utmos"),
                 id=row.get("id"),
+                judge=row.get("judge"),
             )
         )
     return samples
@@ -197,7 +234,19 @@ def main() -> None:
 
     if args.reference:
         reference = score("reference", load(args.reference), effects)
+        mismatch = check_same_judge(candidate.samples, reference.samples)
+        if mismatch:
+            raise SystemExit(f"两臂判官不一致，拒绝比较：{mismatch}")
+        if not (judges_of(candidate.samples) and judges_of(reference.samples)):
+            # Not fatal: the field is newer than some of the artifacts on disk.
+            # Said out loud, because "no judge recorded" reads as "same judge"
+            # to everyone who does not know the field exists.
+            lines.append("判官未记录（其中一臂没有 judge 字段）——同判官这件事没有被检查")
         payload["reference"] = reference.to_json()
+        payload["judge"] = {
+            "candidate": sorted(judges_of(candidate.samples)),
+            "reference": sorted(judges_of(reference.samples)),
+        }
         lines.append("")
         lines.append("对比:")
         for key in sorted(set(candidate.measurements) & set(reference.measurements)):

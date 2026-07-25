@@ -80,6 +80,15 @@ def test_the_reference_text_survives_transcription(tmp_path: Path) -> None:
     assert rows[0]["transcript"] == "听到的"
 
 
+def test_the_judge_is_stamped_on_every_row(tmp_path: Path) -> None:
+    """Including the rows that failed, which is where provenance is easiest to lose."""
+    rows = transcribe_all(
+        _manifest(tmp_path, [True, False]), lambda p: "话", "paraformer", judge="paraformer-zh"
+    )
+
+    assert [row["judge"] for row in rows] == ["paraformer-zh", "paraformer-zh"]
+
+
 def test_an_empty_manifest_is_refused(tmp_path: Path) -> None:
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps({"samples": []}), encoding="utf-8")

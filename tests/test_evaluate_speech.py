@@ -230,6 +230,50 @@ def test_paired_deltas_cancel_shared_item_difficulty() -> None:
     assert all(delta > 0 for delta in deltas["cer"])  # ours strictly worse per item
 
 
+def test_two_arms_judged_differently_are_refused() -> None:
+    """The 0.08 between whisper-small and paraformer-zh is bigger than most
+    effects this harness is asked to certify, so it would arrive as a result."""
+    from scripts.evaluate_speech import check_same_judge
+
+    mine = [Sample(prompt="p", reference_text="t", transcript="t", judge="paraformer-zh")]
+    theirs = [Sample(prompt="p", reference_text="t", transcript="t", judge="whisper-small")]
+
+    reason = check_same_judge(mine, theirs)
+
+    assert reason and "paraformer-zh" in reason and "whisper-small" in reason
+
+
+def test_one_arm_judged_by_two_recognisers_is_refused() -> None:
+    """Halfway through a rerun is exactly how this happens."""
+    from scripts.evaluate_speech import check_same_judge
+
+    mixed = [
+        Sample(prompt="p", reference_text="t", transcript="t", judge="paraformer-zh"),
+        Sample(prompt="p", reference_text="t", transcript="t", judge="whisper-small"),
+    ]
+
+    assert check_same_judge(mixed, mixed)
+
+
+def test_the_same_judge_on_both_arms_passes() -> None:
+    from scripts.evaluate_speech import check_same_judge
+
+    arm = [Sample(prompt="p", reference_text="t", transcript="t", judge="paraformer-zh")]
+
+    assert check_same_judge(arm, list(arm)) is None
+
+
+def test_rows_without_a_judge_are_unknown_rather_than_matching() -> None:
+    """Artifacts predate the field; silence must not read as agreement."""
+    from scripts.evaluate_speech import check_same_judge, judges_of
+
+    old = [Sample(prompt="p", reference_text="t", transcript="t")]
+    new = [Sample(prompt="p", reference_text="t", transcript="t", judge="paraformer-zh")]
+
+    assert judges_of(old) == set()
+    assert check_same_judge(new, old) is None  # not refused, but not confirmed either
+
+
 def test_compare_paired_gives_only_three_answers() -> None:
     from mindsurf_omni.evaluation.metrics import compare_paired
 
