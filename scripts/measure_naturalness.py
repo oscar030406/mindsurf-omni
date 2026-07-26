@@ -58,6 +58,21 @@ HUB_MODEL = "utmos22_strong"
 EFFECT_OF_INTEREST = 0.2
 
 
+def limit_cpu_threads(device: str, threads: int) -> None:
+    """Leave the machine usable when this runs beside a training job.
+
+    ``--device cpu`` was chosen once precisely to keep off the training card,
+    and torch then took every core: 8 CPU-hours in 35 minutes of wall clock,
+    13.6 of 16 cores, next to a run with 8 dataloader workers. Getting out of
+    the way of the GPU is not the same as getting out of the way.
+    """
+    if device != "cpu" or threads <= 0:
+        return
+    import torch
+
+    torch.set_num_threads(threads)
+
+
 def load_predictor(device: str) -> Any:
     import torch
 
@@ -121,12 +136,21 @@ def main() -> None:
         "whether this instrument reproduces it -- run this before trusting it",
     )
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        default=4,
+        help="cores to use when --device cpu. Defaults to 4 rather than all of "
+        "them: this runs beside training more often than not, and torch's "
+        "default took 13.6 of 16 cores. 0 leaves torch to decide",
+    )
     parser.add_argument("--report", type=Path, help="write the validation table as JSON")
     args = parser.parse_args()
 
     if not args.validate and not args.scored:
         raise SystemExit("give --scored to annotate a run, or --validate to check the instrument")
 
+    limit_cpu_threads(args.device, args.cpu_threads)
     model = load_predictor(args.device)
 
     if args.validate:
