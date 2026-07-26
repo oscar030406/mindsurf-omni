@@ -14,6 +14,13 @@
         "note": "",
         "sample_size": 160,
         "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.043280113860964864,
+        "note": "",
+        "sample_size": 160,
+        "value": 2.4333699211478232
       }
     },
     "name": "candidate",
@@ -27,7 +34,8 @@
   },
   "comparison": {
     "cer": "cer: indistinguishable (+0.0057, within ±0.0520)",
-    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)"
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)",
+    "utmos": "utmos: indistinguishable (+0.0316, within ±0.1836)"
   },
   "judge": {
     "candidate": [
@@ -41,7 +49,8 @@
     "fold_numerals": true
   },
   "paired_comparison": {
-    "cer": "cer: indistinguishable (+0.0057, within ±0.0420, paired n=160)"
+    "cer": "cer: indistinguishable (+0.0057, within ±0.0420, paired n=160)",
+    "utmos": "utmos: indistinguishable (+0.0316, within ±0.1063, paired n=160)"
   },
   "reference": {
     "measurements": {
