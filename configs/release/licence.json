@@ -17,9 +17,10 @@
     },
     {
       "commercial_use": null,
-      "licence": "unstated",
+      "licence": "declared apache-2.0 and gpl-3.0 (dataset card lists both, with no per-file mapping)",
+      "licence_link": "https://huggingface.co/datasets/jingyaogong/minimind-o_dataset",
       "name": "minimind_o_data",
-      "note": "upstream sources checked 2026-07-24: VoiceAssistant-400K is Apache-2.0 and UltraChat-300K-SLAM-Omni is MIT. Still unverified: minimind-o also synthesised multi-speaker audio with Qwen3-TTS, whose terms have not been read.",
+      "note": "upstream sources checked 2026-07-24: VoiceAssistant-400K is Apache-2.0 and UltraChat-300K-SLAM-Omni is MIT. Card re-read 2026-07-26: it is no longer unstated, it declares apache-2.0 AND gpl-3.0 and says nothing about which governs which file. The repo holds the exact parquets this project trains on (sft_t2a.parquet 5,352,974,361 bytes, sft_a2a.parquet 5,754,147,166). Neither declared licence forbids commercial use, so this asset is not a candidate for the binding constraint -- but GPL-3.0 on a dataset is unexplained and would carry copyleft obligations if it is the one that governs the audio. Still unverified for a second reason: minimind-o synthesised multi-speaker audio with Qwen3-TTS, and which route was used is stated nowhere -- the open weights are Apache-2.0 (released 2026-01) but a hosted API's output terms are not, and the technical report (arXiv 2605.03937) does not mention the synthesis provenance at all. An uploader's declaration cannot relicense what went into it.",
       "verified": false,
       "what": "sft_t2a / sft_a2a, Mimi codes"
     },
@@ -62,7 +63,7 @@
   },
   "how_to_change_the_conclusion": "replace the text base's training data with a corpus whose licence permits commercial use, and read the terms of the frozen components; loosening the statement without doing that would be a false claim",
   "open_questions": [
-    "the training data's licence is unstated upstream; the audio corpora it draws from have not been read",
+    "the training data's card declares apache-2.0 and gpl-3.0 with no per-file mapping, and leaves unstated whether its synthesised audio came from Qwen3-TTS open weights or a hosted API. Neither declared licence forbids commercial use, so this is an unresolved obligation rather than an unresolved permission",
     "the audio encoder's terms have been read and do not resolve commercial use: broad grant, reference-and-learning-purposes wording, unilateral amendment. Settling it needs the licensor, not another reading -- and the copy shipped in the tree states a different licence than its own upstream does"
   ],
   "recorded_at": "2026-07-26",
