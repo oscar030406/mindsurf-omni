@@ -354,3 +354,28 @@ def test_the_codec_roundtrip_manifest_points_at_the_rebuilt_audio() -> None:
     # The stamp has to say a model did not make these, or a reader takes the
     # ceiling for a result.
     assert "not a model reading" in stamp["note"]
+
+
+def test_the_manifest_rewrite_survives_a_windows_path() -> None:
+    """This one already fired: 160 clips, every transcript empty.
+
+    Manifests are written on Windows and consumed on Linux. Path(...).name is
+    not portable between them -- on POSIX a backslash is an ordinary character,
+    so the whole "artifacts\tts_edge\zh000.wav" comes back as the filename,
+    the rewritten path names nothing, and the report reads as a model that
+    never spoke. Which is exactly what it read as.
+    """
+    from scripts.codec_roundtrip import basename, repoint_manifest
+
+    assert basename(r"artifacts\tts_edge\zh000.wav") == "zh000.wav"
+    assert basename("artifacts/tts_edge/zh000.wav") == "zh000.wav"
+    assert basename("zh000.wav") == "zh000.wav"
+
+    target = Path("/home/oscar/omni/codec_out")
+    manifest = repoint_manifest(
+        {"samples": [{"audio_path": r"artifacts\tts_edge\zh000.wav"}]},
+        Path("in"),
+        target,
+        None,
+    )
+    assert manifest["samples"][0]["audio_path"] == str(target / "zh000.wav")

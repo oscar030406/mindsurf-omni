@@ -30,11 +30,26 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 MIMI_RATE = 24_000  # what the codec was trained at; anything else is resampled
 CODEBOOKS = 8
+
+
+def basename(recorded: str) -> str:
+    """The filename, whichever platform wrote the path.
+
+    ``Path(...).name`` is not portable across the two: a manifest written on
+    Windows carries ``artifacts\\tts_edge\\zh000.wav``, and on POSIX every
+    backslash is an ordinary character, so ``.name`` hands back the whole
+    string. The rewritten path then names a file that does not exist,
+    transcription returns nothing for all 160 clips, and the report reads as a
+    model that never spoke -- this repository's signature failure, and it
+    happened here before the test below existed.
+    """
+    return re.split(r"[\\/]", recorded)[-1]
 
 
 def repoint_manifest(
@@ -48,7 +63,7 @@ def repoint_manifest(
     """
     for sample in manifest.get("samples", []):
         if sample.get("audio_path"):
-            sample["audio_path"] = str(target / Path(sample["audio_path"]).name)
+            sample["audio_path"] = str(target / basename(sample["audio_path"]))
     manifest.setdefault("generated_by", {})["codec_roundtrip"] = {
         "codec": "mimi",
         "codebooks": CODEBOOKS,
@@ -75,6 +90,13 @@ def main() -> None:
         default=4,
         help="cores on CPU. Not all of them: this runs beside training more often than not",
     )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="leave clips already rebuilt alone, so an interrupted run resumes. "
+        "Each clip is independent, and on a shared box a long job gets killed "
+        "for reasons that have nothing to do with it -- this one was, twice",
+    )
     args = parser.parse_args()
 
     import numpy as np
@@ -94,7 +116,12 @@ def main() -> None:
         raise SystemExit(f"no wavs in {args.input}")
 
     frames_total = seconds_total = 0.0
+    skipped = 0
     for index, clip in enumerate(clips, start=1):
+        rebuilt = args.output / clip.name
+        if args.skip_existing and rebuilt.is_file():
+            skipped += 1
+            continue
         waveform, rate = sf.read(str(clip))
         if getattr(waveform, "ndim", 1) > 1:
             waveform = waveform.mean(axis=1)
@@ -108,15 +135,28 @@ def main() -> None:
             restored = mimi.decode(codes).audio_values.squeeze().cpu().numpy()
         # Written at the codec's own rate, not the input's: resampling the
         # output too would fold a second resampler's error into the reading.
-        sf.write(str(args.output / clip.name), np.clip(restored, -1.0, 1.0), MIMI_RATE)
+        sf.write(str(rebuilt), np.clip(restored, -1.0, 1.0), MIMI_RATE)
         frames_total += codes.shape[-1]
         seconds_total += len(waveform) / MIMI_RATE
         if index % 20 == 0:
             print(f"  {index}/{len(clips)}", flush=True)
 
+    if skipped:
+        print(f"  跳过已重建的 {skipped} 条")
+    # The manifest is only trustworthy once every clip exists; a partial run
+    # writing it would point downstream at a directory with holes in it.
+    rebuilt_count = len(list(args.output.glob("*.wav")))
     manifest_path = args.input / "manifest.json"
+    if rebuilt_count < len(clips):
+        print(
+            f"  {rebuilt_count}/{len(clips)} 条就绪，**没写 manifest**——重跑补齐（--skip-existing）"
+        )
+        return
     if manifest_path.is_file():
-        rate_hz = round(frames_total / seconds_total, 3) if seconds_total else None
+        # None rather than a partial average: on a resumed run this counter only
+        # saw the clips this invocation rebuilt, and a frame rate measured over
+        # a third of the set reads exactly like one measured over all of it.
+        rate_hz = round(frames_total / seconds_total, 3) if seconds_total and not skipped else None
         rewritten = repoint_manifest(
             json.loads(manifest_path.read_text(encoding="utf-8")), args.input, args.output, rate_hz
         )
