@@ -1,0 +1,46 @@
+{
+  "overall_argmax_agreement": 0.7228158946769041,
+  "per_codebook": {
+    "0": {
+      "argmax_agreement": 0.8387916707400528,
+      "steps": 10229,
+      "top1_probability_median": 0.945544421672821
+    },
+    "1": {
+      "argmax_agreement": 0.7440376877024242,
+      "steps": 10189,
+      "top1_probability_median": 0.8078282475471497
+    },
+    "2": {
+      "argmax_agreement": 0.7074588629421618,
+      "steps": 10149,
+      "top1_probability_median": 0.7773745059967041
+    },
+    "3": {
+      "argmax_agreement": 0.7279651795429815,
+      "steps": 10109,
+      "top1_probability_median": 0.8134243488311768
+    },
+    "4": {
+      "argmax_agreement": 0.7272817558843977,
+      "steps": 10069,
+      "top1_probability_median": 0.8153811097145081
+    },
+    "5": {
+      "argmax_agreement": 0.7055538937082461,
+      "steps": 10029,
+      "top1_probability_median": 0.7835738658905029
+    },
+    "6": {
+      "argmax_agreement": 0.6880568625488037,
+      "steps": 9989,
+      "top1_probability_median": 0.7250502705574036
+    },
+    "7": {
+      "argmax_agreement": 0.6433812443461654,
+      "steps": 9949,
+      "top1_probability_median": 0.6405047178268433
+    }
+  },
+  "verdict": "live"
+}
