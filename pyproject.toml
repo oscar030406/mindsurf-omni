@@ -48,6 +48,11 @@ asr = ["funasr>=1.3", "librosa>=0.10"]
 # to send replies off the machine, so the choice is made when installing rather
 # than inherited by every deployment.
 tts = ["edge-tts>=7"]
+# Voice-clone scoring: CAM++ from modelscope, mel front-end from torchaudio.
+# Its own set because it is the only thing here that needs either, it runs on
+# the training host rather than in the container, and the front-end has to
+# match upstream's value for value -- see measure_voice_clone.py.
+voice = ["modelscope>=1.18", "torchaudio>=2.6", "torch>=2.6", "transformers>=4.57"]
 # The local one, which is the same choice made the other way: no network, and
 # 0.5B of weights plus torch on whatever card the model is already using. Kept
 # separate from 'tts' for that reason -- a host that installs one has no use

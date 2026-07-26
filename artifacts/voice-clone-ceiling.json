@@ -1,0 +1,78 @@
+{
+  "mean": 0.840889592965444,
+  "mode": "ceiling",
+  "voices": [
+    {
+      "ceiling": 0.8395744562149048,
+      "reference_seconds": 8.08,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "ceiling": 0.833805501461029,
+      "reference_seconds": 6.08,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "ceiling": 0.8964252471923828,
+      "reference_seconds": 6.72,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "ceiling": 0.8927444815635681,
+      "reference_seconds": 7.44,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "ceiling": 0.8144500851631165,
+      "reference_seconds": 6.64,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "ceiling": 0.892984926700592,
+      "reference_seconds": 9.44,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "ceiling": 0.8337101340293884,
+      "reference_seconds": 6.32,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "ceiling": 0.8313542604446411,
+      "reference_seconds": 5.92,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "ceiling": 0.8525420427322388,
+      "reference_seconds": 5.12,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "ceiling": 0.8195790648460388,
+      "reference_seconds": 5.76,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "ceiling": 0.7946557998657227,
+      "reference_seconds": 6.32,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "ceiling": 0.7888491153717041,
+      "reference_seconds": 7.28,
+      "split": "unseen",
+      "voice": "moon"
+    }
+  ]
+}
