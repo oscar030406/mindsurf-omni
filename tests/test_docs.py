@@ -300,3 +300,31 @@ def test_the_trainer_can_keep_upstream_talker_shape() -> None:
     # Discrimination has to be by class -- OmniConfig is the Thinker's config,
     # the Talker builds a plain MiniMindConfig.
     assert "type(self) is MiniMindConfig" in source
+
+
+def test_the_inference_recommendation_matches_the_code_it_recommends() -> None:
+    """A recommendation that drifts from the defaults is worse than none.
+
+    The backend reads section 6.5 to decide what to send. If the contract's
+    defaults move and that table does not, the document starts advising values
+    the service no longer uses -- and nobody finds out, because both halves
+    look internally consistent.
+    """
+    guide = (ROOT / "docs" / "INTEGRATION.md").read_text(encoding="utf-8")
+    contract = (ROOT / "src" / "mindsurf_omni" / "contract.py").read_text(encoding="utf-8")
+    native = (ROOT / "src" / "mindsurf_omni" / "service" / "native.py").read_text(encoding="utf-8")
+
+    assert "temperature: float = Field(default=0.7" in contract
+    assert "top_p: float = Field(default=0.9" in contract
+    assert "max_tokens: int = Field(default=512" in contract
+    # Text carries no repetition penalty; the audio path's 1.05 is upstream's
+    # and is not reachable from the request.
+    assert "rp=1.0," in native
+
+    recommendation = guide[guide.index("## 6.5") : guide.index("## 7.")]
+    for value in ("0.7", "0.9", "512", "1.0", "0.2", "50", "1.05"):
+        assert value in recommendation, value
+    # The load-bearing sentence: the request's sampling knobs do not reach the
+    # audio path. A backend that misses this raises temperature expecting
+    # livelier speech and gets identical audio.
+    assert "碰不到音频" in recommendation
