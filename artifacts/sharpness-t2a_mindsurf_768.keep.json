@@ -1,0 +1,46 @@
+{
+  "overall_argmax_agreement": 0.8695402453169792,
+  "per_codebook": {
+    "0": {
+      "argmax_agreement": 0.8919852034525277,
+      "steps": 24330,
+      "top1_probability_median": 1.0
+    },
+    "1": {
+      "argmax_agreement": 0.8864141622066695,
+      "steps": 24290,
+      "top1_probability_median": 1.0
+    },
+    "2": {
+      "argmax_agreement": 0.8929896907216495,
+      "steps": 24250,
+      "top1_probability_median": 1.0
+    },
+    "3": {
+      "argmax_agreement": 0.9133002891367203,
+      "steps": 24210,
+      "top1_probability_median": 1.0
+    },
+    "4": {
+      "argmax_agreement": 0.9007447248655358,
+      "steps": 24170,
+      "top1_probability_median": 1.0
+    },
+    "5": {
+      "argmax_agreement": 0.9119353501864899,
+      "steps": 24130,
+      "top1_probability_median": 1.0
+    },
+    "6": {
+      "argmax_agreement": 0.7797841427978415,
+      "steps": 24090,
+      "top1_probability_median": 0.8526822328567505
+    },
+    "7": {
+      "argmax_agreement": 0.7791683991683992,
+      "steps": 24050,
+      "top1_probability_median": 0.8542963564395905
+    }
+  },
+  "verdict": "live"
+}
