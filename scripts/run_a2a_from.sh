@@ -23,10 +23,31 @@
 # set only one of them. train_omni.py now refuses a checkpoint it can only half
 # load, so getting this wrong costs a minute rather than seven hours.
 #
+# Three stages now, not two, and at upstream's sequence length. Its train.sh
+# runs A2A at --max_seq_len 1024 and we were passing 640 and 768, which drops
+# the target Mimi codes past the cap on 16.9% and 7.5% of samples -- the ends
+# of the longest utterances, never supervised, no warning in the log. And its
+# line 6 is a third A2A pass at 5e-6 that we had never run at all. Neither is
+# expected to fix anything: upstream's own T2A truncates twice as hard as ours
+# and scores four times better. They are known deviations being removed. See
+# docs/experiments/2026-07-26-sequence-truncation.md.
+#
+# A2A_SEQ and the batch sizes are variables because 1024 has not been run on
+# this card. If the first stage dies on memory, lower PROJ_BS / FULL_BS rather
+# than the sequence length -- the batch is the axis we already differ from
+# upstream on (one GPU against four), the sequence length is the one we are
+# aligning.
+#
+# SKIP_PROJ=1 starts at the full stage. The projector pass belongs at the top
+# of a chain; a model that has already had one gets its projector moved a long
+# way by a second 5e-4 epoch.
+#
 #   setsid nohup bash ~/omni/mindsurf-omni/scripts/run_a2a_from.sh t2a_lr5e5 \
 #     >~/omni/a2a_from.log 2>&1 </dev/null &
 #   setsid nohup bash ~/omni/mindsurf-omni/scripts/run_a2a_from.sh \
 #     t2a_graft sft_graft graft >~/omni/a2a_from.log 2>&1 </dev/null &
+#   SKIP_PROJ=1 setsid nohup bash ~/omni/mindsurf-omni/scripts/run_a2a_from.sh \
+#     sft_mindsurf sft_mindsurf_tail >~/omni/a2a_from.log 2>&1 </dev/null &
 set -u
 
 FROM="${1:?give the starting weight name, e.g. t2a_lr5e5}"
@@ -42,6 +63,10 @@ LIB="${MINDSURF_LIB:-$HOME/omni/lib}"
 PY="${OMNI_PYTHON:-$HOME/.venvs/omni/bin/python}"
 LOG="${A2A_LOG:-$HOME/omni/a2a_from.log}"
 DATA_A2A="${A2A_DATA:-../dataset/sft_a2a.parquet}"
+A2A_SEQ="${A2A_SEQ:-1024}"   # upstream's value; ours were 640 and 768
+PROJ_BS="${PROJ_BS:-16}"
+FULL_BS="${FULL_BS:-10}"
+SKIP_PROJ="${SKIP_PROJ:-0}"
 
 cd "$ROOT/trainer" || exit 1
 
@@ -80,14 +105,32 @@ run() {
   [ "$status" -eq 0 ] || exit "$status"
 }
 
-run "a2a_proj" \
-  --data_path "$DATA_A2A" --epochs 1 --batch_size 24 --max_seq_len 640 \
-  --learning_rate 5e-4 --from_weight "$FROM" --save_weight "$SAVE" \
-  --mode audio_proj --num_workers 8 --use_moe 0 --log_interval 50
+echo "seq $A2A_SEQ, proj bs $PROJ_BS, full bs $FULL_BS, skip_proj $SKIP_PROJ" | tee -a "$LOG"
 
+# Upstream line 2.
+if [ "$SKIP_PROJ" -eq 0 ]; then
+  run "a2a_proj" \
+    --data_path "$DATA_A2A" --epochs 1 --batch_size "$PROJ_BS" --max_seq_len "$A2A_SEQ" \
+    --learning_rate 5e-4 --from_weight "$FROM" --save_weight "$SAVE" \
+    --mode audio_proj --num_workers 8 --use_moe 0 --log_interval 50
+  NEXT_FROM="$SAVE"
+else
+  echo "skipping a2a_proj: $FROM has had one" | tee -a "$LOG"
+  NEXT_FROM="$FROM"
+fi
+
+# Upstream line 3.
 run "a2a_full" \
-  --data_path "$DATA_A2A" --epochs 3 --batch_size 16 --max_seq_len 768 \
-  --learning_rate 5e-5 --from_weight "$SAVE" --save_weight "$SAVE" \
+  --data_path "$DATA_A2A" --epochs 3 --batch_size "$FULL_BS" --max_seq_len "$A2A_SEQ" \
+  --learning_rate 5e-5 --from_weight "$NEXT_FROM" --save_weight "$SAVE" \
+  --num_workers 8 --use_moe 0 --log_interval 50
+
+# Upstream line 6, which we had never run. In its pipeline the two I2T passes
+# sit between this and the one above; we skip vision, so this follows directly.
+# That ordering difference is itself a deviation and is recorded as one.
+run "a2a_tail" \
+  --data_path "$DATA_A2A" --epochs 1 --batch_size "$FULL_BS" --max_seq_len "$A2A_SEQ" \
+  --learning_rate 5e-6 --from_weight "$SAVE" --save_weight "$SAVE" \
   --num_workers 8 --use_moe 0 --log_interval 50
 
 echo "===== a2a from $FROM done $(date -Is) =====" >>"$LOG"

@@ -114,3 +114,26 @@ def test_the_a2a_tail_sets_the_talker_shape_in_both_places() -> None:
     assert 'MINDSURF_TALKER_SHAPE="$TALKER_SHAPE"' in script
     assert '--shape "$SHAPE"' in script
     assert "--shape mindsurf" not in script  # the hardcoded one this replaced
+
+
+def test_the_a2a_tail_runs_upstreams_three_passes_at_upstreams_length() -> None:
+    """640 and 768 dropped the ends of the longest utterances, silently.
+
+    Out-of-range target codes are neither written nor labelled, so the cap was
+    deciding how much of each answer got supervised: 16.9% of A2A samples lost
+    codes at 640 and 7.5% at 768, against none at upstream's 1024. Line 6 of
+    that pipeline -- a third A2A pass at 5e-6 -- had never been run here.
+    """
+    script = (ROOT / "scripts" / "run_a2a_from.sh").read_text(encoding="utf-8")
+
+    assert 'A2A_SEQ="${A2A_SEQ:-1024}"' in script
+    assert "--max_seq_len 640" not in script
+    assert "--max_seq_len 768" not in script
+
+    projector = script.index('run "a2a_proj"')
+    full = script.index('run "a2a_full"')
+    tail = script.index('run "a2a_tail"')
+    assert projector < full < tail
+    assert "--learning_rate 5e-4" in script[projector:full]
+    assert "--learning_rate 5e-5" in script[full:tail]
+    assert "--learning_rate 5e-6" in script[tail:]
