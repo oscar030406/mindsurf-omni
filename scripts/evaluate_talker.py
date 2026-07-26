@@ -109,9 +109,7 @@ def build_model(
         config_kwargs = dict(overrides)
 
     model = model_omni.MiniMindOmni(
-        model_omni.OmniConfig(
-            hidden_size=768, num_hidden_layers=8, use_moe=False, **config_kwargs
-        ),
+        model_omni.OmniConfig(hidden_size=768, num_hidden_layers=8, use_moe=False, **config_kwargs),
         audio_encoder_path=str(audio_encoder),
         vision_model_path=str(checkpoint.parent / "nonexistent-vision"),
     )

@@ -111,9 +111,7 @@ def edit_distance(reference: str, hypothesis: str) -> int:
     return previous[-1]
 
 
-def character_error_rate(
-    reference: str, hypothesis: str, fold_numbers: bool = False
-) -> float:
+def character_error_rate(reference: str, hypothesis: str, fold_numbers: bool = False) -> float:
     """Errors per reference character.
 
     Can exceed 1.0: a model that says far more than it was asked to is worse

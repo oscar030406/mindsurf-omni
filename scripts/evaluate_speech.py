@@ -164,9 +164,7 @@ def paired_deltas(
         if mine.transcript is not None and theirs.transcript is not None:
             deltas["cer"].append(
                 character_error_rate(mine.reference_text, mine.transcript or "", fold_numbers)
-                - character_error_rate(
-                    theirs.reference_text, theirs.transcript or "", fold_numbers
-                )
+                - character_error_rate(theirs.reference_text, theirs.transcript or "", fold_numbers)
             )
         if mine.utmos is not None and theirs.utmos is not None:
             deltas["utmos"].append(mine.utmos - theirs.utmos)

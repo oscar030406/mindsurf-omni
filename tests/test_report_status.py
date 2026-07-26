@@ -56,6 +56,54 @@ def test_an_ineligible_measurement_is_marked_in_the_summary(
     assert any("文本能力未测" in line for line in lines)
 
 
+def test_a_folded_cer_says_so_beside_the_unfolded_ones(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two rulers in one list is a comparison of normalisations.
+
+    Folding numerals takes two thirds off an arm that speaks and almost
+    nothing off one that does not, which is larger than most effects this
+    project certifies. Only the newer reports carry the field, so the ones
+    that do have to say it.
+    """
+    import scripts.report_status as report
+
+    (tmp_path / "artifacts").mkdir()
+    (tmp_path / "artifacts" / "folded-report.json").write_text(
+        json.dumps(
+            {
+                "normalisation": {"fold_numerals": True},
+                "candidate": {
+                    "measurements": {
+                        "cer": {
+                            "value": 0.0124,
+                            "noise_floor": 0.0034,
+                            "sample_size": 160,
+                            "gating_eligible": True,
+                        },
+                        "utmos": {
+                            "value": 3.39,
+                            "noise_floor": 0.05,
+                            "sample_size": 160,
+                            "gating_eligible": True,
+                        },
+                    }
+                },
+                "text_regression": None,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(report, "ROOT", tmp_path)
+
+    lines = report.measured_results()
+    cer = next(line for line in lines if " cer " in line)
+    utmos = next(line for line in lines if " utmos " in line)
+
+    assert "数字已折叠" in cer
+    assert "数字已折叠" not in utmos  # the fold touches the CER and nothing else
+
+
 def test_a_run_the_model_sat_out_is_marked_as_the_instrument(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

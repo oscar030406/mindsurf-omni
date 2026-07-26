@@ -94,12 +94,19 @@ def measured_results() -> list[str]:
             if payload.get("instrument_only") or provenance.get("text_source") == "probe"
             else ""
         )
+        # Two rulers now exist. Folding numerals moves every CER in this list,
+        # by two thirds on an arm that speaks and by almost nothing on one that
+        # does not -- so a folded number read beside an unfolded one is a
+        # comparison of normalisations. This list is exactly where that would
+        # happen, and only the newer reports carry the field.
+        folded = "（数字已折叠）" if payload.get("normalisation", {}).get("fold_numerals") else ""
         for name, measurement in sorted(candidate.get("measurements", {}).items()):
             mark = "" if measurement["gating_eligible"] else "（仅报告）"
+            suffix = folded if name == "cer" else ""
             lines.append(
                 f"{path.name}: {name} {measurement['value']:.4f} "
                 f"± {measurement['noise_floor']:.4f} "
-                f"n={measurement['sample_size']}{mark}{instrument}"
+                f"n={measurement['sample_size']}{mark}{instrument}{suffix}"
             )
         regression = payload.get("text_regression")
         if regression is None and not candidate.get("measurements"):
