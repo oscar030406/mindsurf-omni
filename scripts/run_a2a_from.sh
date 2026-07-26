@@ -6,6 +6,13 @@
 # is the same recipe. So this is run_full_recipe.sh with the first stage cut
 # out and the starting weight made an argument.
 #
+# The two A2A learning rates are the report's, unscaled, on purpose. Our base's
+# weights are 5.2x larger per parameter than upstream's, so the same AdamW rate
+# moves them a fifth as far in relative terms -- but the round that produced
+# speech ran a2a_full at 2e-5 on this same base and got there, so A2A is not the
+# stage the scale argument indicts. T2A is. See
+# docs/experiments/2026-07-26-weight-scale.md.
+#
 # Only to be run when the probe's stage product has passed its own gate --
 # CER out of 1.0, silence out of 0.6 on the fixed 160. Starting the seven-hour
 # tail from a Talker that does not speak is what this round already cost.
