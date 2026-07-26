@@ -192,39 +192,41 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
     embedder = Embedder(root, args.device)
     pattern = re.compile(args.name_pattern)
 
-    manifest_voice = None
-    manifest_path = args.score / "manifest.json"
-    if manifest_path.is_file():
-        stamped = json.loads(manifest_path.read_text(encoding="utf-8"))
-        manifest_voice = (stamped.get("generated_by") or {}).get("voice")
-        if manifest_voice and manifest_voice not in voices:
-            raise SystemExit(f"manifest 记的音色 {manifest_voice!r} 不在音色包里")
-        if manifest_voice:
-            print(f"音色取自 manifest：{manifest_voice}（不看文件名）")
-        else:
-            print("manifest 里 voice 是空的——这批是**无条件生成**的，量不出克隆")
-
     by_voice: dict[str, list[float]] = {}
     unmatched = []
     resamplers: dict[int, Any] = {}
-    for path in sorted(args.score.glob("*.wav")):
-        if manifest_voice:
-            name = manifest_voice
-        else:
-            match = pattern.search(path.stem)
-            if not match or match.group("voice") not in voices:
-                unmatched.append(path.name)
-                continue
-            name = match.group("voice")
-        waveform, rate = sf.read(str(path))
-        audio = torch.tensor(waveform, dtype=torch.float32)
-        if audio.ndim > 1:
-            audio = audio.mean(dim=1)
-        if rate != MEL["sample_rate"]:
-            if rate not in resamplers:
-                resamplers[rate] = torchaudio.transforms.Resample(rate, MEL["sample_rate"])
-            audio = resamplers[rate](audio)
-        by_voice.setdefault(name, []).append(cosine(embedder(audio), voices[name]["spk_emb"]))
+    for directory in args.score:
+        manifest_voice = None
+        manifest_path = directory / "manifest.json"
+        if manifest_path.is_file():
+            stamped = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest_voice = (stamped.get("generated_by") or {}).get("voice")
+            if manifest_voice and manifest_voice not in voices:
+                raise SystemExit(
+                    f"{directory} 的 manifest 记的音色 {manifest_voice!r} 不在音色包里"
+                )
+            if manifest_voice:
+                print(f"{directory.name}: 音色取自 manifest：{manifest_voice}")
+            else:
+                print(f"{directory.name}: manifest 里 voice 是空的——**无条件生成**，量不出克隆")
+        for path in sorted(directory.glob("*.wav")):
+            if manifest_voice:
+                name = manifest_voice
+            else:
+                match = pattern.search(path.stem)
+                if not match or match.group("voice") not in voices:
+                    unmatched.append(path.name)
+                    continue
+                name = match.group("voice")
+            waveform, rate = sf.read(str(path))
+            audio = torch.tensor(waveform, dtype=torch.float32)
+            if audio.ndim > 1:
+                audio = audio.mean(dim=1)
+            if rate != MEL["sample_rate"]:
+                if rate not in resamplers:
+                    resamplers[rate] = torchaudio.transforms.Resample(rate, MEL["sample_rate"])
+                audio = resamplers[rate](audio)
+            by_voice.setdefault(name, []).append(cosine(embedder(audio), voices[name]["spk_emb"]))
 
     if not by_voice:
         raise SystemExit(
@@ -295,7 +297,14 @@ def main() -> None:
         help="measure what a perfect cloner would score, by decoding the stored "
         "reference strips and re-embedding them. Run this before trusting any score",
     )
-    parser.add_argument("--score", type=Path, help="directory of generated wavs")
+    parser.add_argument(
+        "--score",
+        type=Path,
+        nargs="+",
+        help="directories of generated wavs. One per voice is the normal shape, "
+        "because evaluate_talker.py takes a single --voice per run and its clips "
+        "are named by text id, so two voices in one directory would collide",
+    )
     parser.add_argument(
         "--name-pattern",
         default=r"clone-(?P<voice>[a-z_]+)-",
@@ -320,7 +329,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if not args.ceiling and not args.score:
-        raise SystemExit("给 --ceiling 验仪器，或给 --score <目录> 打分")
+        raise SystemExit("给 --ceiling 验仪器，或给 --score <目录…> 打分")
 
     if args.device == "cpu" and args.cpu_threads > 0:
         import torch
