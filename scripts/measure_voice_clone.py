@@ -175,9 +175,13 @@ def run_ceiling(args: argparse.Namespace) -> dict[str, Any]:
 def run_score(args: argparse.Namespace) -> dict[str, Any]:
     """Score generated clips against the voice each was conditioned on.
 
-    Filenames carry the voice, because a clip whose conditioning cannot be
-    recovered from the artifact is a clip that cannot be scored twice -- the
-    same reason every other harness here writes its provenance down.
+    Two generators write these directories and they record the conditioning
+    differently. evaluate_talker.py names clips by text id and stamps the voice
+    in the manifest; upstream's eval_omni.py --mode 3 puts it in the filename
+    and writes no manifest. The manifest wins when present -- it is the
+    authoritative record and a filename is a convention -- and the pattern is
+    the fallback. A clip whose conditioning cannot be recovered from the
+    artifact is a clip nobody can score twice.
     """
     import soundfile as sf
     import torch
@@ -188,15 +192,30 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
     embedder = Embedder(root, args.device)
     pattern = re.compile(args.name_pattern)
 
+    manifest_voice = None
+    manifest_path = args.score / "manifest.json"
+    if manifest_path.is_file():
+        stamped = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest_voice = (stamped.get("generated_by") or {}).get("voice")
+        if manifest_voice and manifest_voice not in voices:
+            raise SystemExit(f"manifest 记的音色 {manifest_voice!r} 不在音色包里")
+        if manifest_voice:
+            print(f"音色取自 manifest：{manifest_voice}（不看文件名）")
+        else:
+            print("manifest 里 voice 是空的——这批是**无条件生成**的，量不出克隆")
+
     by_voice: dict[str, list[float]] = {}
     unmatched = []
     resamplers: dict[int, Any] = {}
     for path in sorted(args.score.glob("*.wav")):
-        match = pattern.search(path.stem)
-        if not match or match.group("voice") not in voices:
-            unmatched.append(path.name)
-            continue
-        name = match.group("voice")
+        if manifest_voice:
+            name = manifest_voice
+        else:
+            match = pattern.search(path.stem)
+            if not match or match.group("voice") not in voices:
+                unmatched.append(path.name)
+                continue
+            name = match.group("voice")
         waveform, rate = sf.read(str(path))
         audio = torch.tensor(waveform, dtype=torch.float32)
         if audio.ndim > 1:
@@ -209,8 +228,8 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
 
     if not by_voice:
         raise SystemExit(
-            f"{args.score} 里没有能匹配 {args.name_pattern!r} 且在音色包里的 wav；"
-            f"看到的前几个: {unmatched[:5]}"
+            f"{args.score} 里没有可打分的 wav。manifest 没记音色时按 "
+            f"{args.name_pattern!r} 匹配文件名；看到的前几个: {unmatched[:5]}"
         )
 
     rows = []
