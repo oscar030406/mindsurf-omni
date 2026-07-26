@@ -14,7 +14,7 @@
 | --- | --- |
 | 文本基座（89,864,448 参数，中文为主） | ✅ 已训练、已发布、已验证可接入 |
 | 接口契约与桩服务 | ✅ 已冻结，后端可据此开工 |
-| 原生音频路径（Thinker-Talker） | 🔨 训练中（第二轮，第一轮的配方缺陷已定性） |
+| 原生音频路径（Thinker-Talker） | 🔨 训练中（第三轮／嫁接体）。**第一轮那个「配方缺陷」2026-07-26 查出并不存在**——上游 `train.sh` 写的就是那套参数，见 [配方 bug 不是 bug](docs/experiments/2026-07-26-recipe-bug-was-not-a-bug.md) |
 | 级联兜底路径（ASR → LLM → TTS） | ✅ 三段都接了：SenseVoice、Thinker（指 `MINDSURF_THINKER`）、合成器两选一（`MINDSURF_TTS=edge` 托管 / `voxcpm` 本地，**默认不选**） |
 
 文本基座来自[上游预训练仓库](https://github.com/io-wy/MindSurf/tree/pretrain)，
