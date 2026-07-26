@@ -17,12 +17,26 @@
 # CER out of 1.0, silence out of 0.6 on the fixed 160. Starting the seven-hour
 # tail from a Talker that does not speak is what this round already cost.
 #
+# The third argument is the shape, and it is one variable rather than two on
+# purpose: a grafted checkpoint needs the Talker left at upstream's shape both
+# while training and while being read, and two separate knobs is two chances to
+# set only one of them. train_omni.py now refuses a checkpoint it can only half
+# load, so getting this wrong costs a minute rather than seven hours.
+#
 #   setsid nohup bash ~/omni/mindsurf-omni/scripts/run_a2a_from.sh t2a_lr5e5 \
 #     >~/omni/a2a_from.log 2>&1 </dev/null &
+#   setsid nohup bash ~/omni/mindsurf-omni/scripts/run_a2a_from.sh \
+#     t2a_graft sft_graft graft >~/omni/a2a_from.log 2>&1 </dev/null &
 set -u
 
 FROM="${1:?give the starting weight name, e.g. t2a_lr5e5}"
 SAVE="${2:-sft_${FROM}}"
+SHAPE="${3:-mindsurf}"
+case "$SHAPE" in
+  mindsurf) TALKER_SHAPE="" ;;
+  graft) TALKER_SHAPE="upstream" ;;
+  *) echo "shape must be 'mindsurf' or 'graft', not '$SHAPE'" >&2; exit 1 ;;
+esac
 ROOT="${MINIMIND_O_ROOT:-$HOME/omni/minimind-o}"
 LIB="${MINDSURF_LIB:-$HOME/omni/lib}"
 PY="${OMNI_PYTHON:-$HOME/.venvs/omni/bin/python}"
@@ -56,6 +70,7 @@ run() {
   echo "===== $stage $(date -Is) =====" >>"$LOG"
   setsid nohup env \
     MINIMIND_O_ROOT="$ROOT" PYTHONPATH="$LIB" PYTHONUNBUFFERED=1 \
+    MINDSURF_TALKER_SHAPE="$TALKER_SHAPE" \
     "$PY" "$LIB/train_omni.py" "$@" >>"$LOG" 2>&1 </dev/null &
   local pid=$!
   echo "$stage pid $pid" | tee -a "$LOG"
@@ -83,7 +98,7 @@ OUT="${A2A_OUT:-$HOME/omni/a2a_from_eval}"
 cd "$REPO" || exit 1
 mkdir -p "$OUT"
 "$PY" scripts/evaluate_talker.py \
-  --checkpoint "$ROOT/out/${SAVE}_768.pth" --shape mindsurf \
+  --checkpoint "$ROOT/out/${SAVE}_768.pth" --shape "$SHAPE" \
   --minimind-root "$ROOT" --audio-encoder "$ROOT/model/SenseVoiceSmall" \
   --codec "$ROOT/model/mimi" --tokenizer assets/tokenizer \
   --texts configs/talker_texts_zh_v1.jsonl \

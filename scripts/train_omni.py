@@ -80,6 +80,46 @@ def force_thinker_shape(intermediate_size: int, num_key_value_heads: int) -> Non
         )
 
 
+def refuse_skipped_tensors(model: Any, weight_path: Path) -> None:
+    """Refuse to train on a checkpoint the loader only half read.
+
+    ``trainer_utils.init_omni_model`` drops every tensor whose shape disagrees
+    with the model it built, logs one line, and carries on. That line scrolls
+    past in a log nobody watches for four hours, and what comes out is a model
+    trained from random weights where the checkpoint was supposed to be.
+
+    It has cost this project one full run already, and the next caller to pay
+    is whoever starts A2A from a grafted checkpoint without saying the Talker
+    keeps upstream's shape -- the same twenty tensors, the same silence.
+
+    A shape disagreement on a tensor that exists on both sides is never
+    something a training run should proceed through, so this is fatal rather
+    than a warning. Missing keys are a different matter and stay allowed: a
+    text-only base has no Talker yet, which is the normal way T2A starts.
+    """
+    import torch
+
+    if not weight_path.exists():
+        return
+    try:
+        state = torch.load(str(weight_path), map_location="cpu", weights_only=True, mmap=True)
+    except (TypeError, RuntimeError):  # older serialisation cannot be mapped
+        state = torch.load(str(weight_path), map_location="cpu", weights_only=True)
+    shapes = {name: tuple(p.shape) for name, p in model.named_parameters()}
+    skipped = sorted(
+        name
+        for name, tensor in state.items()
+        if name in shapes and tuple(tensor.shape) != shapes[name]
+    )
+    if skipped:
+        raise SystemExit(
+            f"{len(skipped)} tensors in {weight_path.name} do not fit the model this run "
+            f"built, so the loader would drop them and train their random init instead: "
+            f"{skipped[:6]}{' ...' if len(skipped) > 6 else ''} -- "
+            "if the Talker comes from upstream, set MINDSURF_TALKER_SHAPE=upstream"
+        )
+
+
 def verify_base_loaded(minimind_root: Path) -> None:
     """Fail loudly if the checkpoint did not actually go into the model."""
     from trainer import trainer_utils  # type: ignore[import-not-found]
@@ -95,7 +135,20 @@ def verify_base_loaded(minimind_root: Path) -> None:
                 f"the Thinker has {thinker:,} parameters, but our base has 89,864,448 -- "
                 "the checkpoint did not load into this shape"
             )
-        print(f"[mindsurf] thinker {thinker:,} parameters", flush=True)
+        # The Thinker count above cannot see the Talker: a grafted Talker that
+        # got dropped leaves the parameter total looking right, because the
+        # freshly built one has the same size as the one it replaced.
+        config = kwargs.get("omni_config", args[0] if args else None)
+        from_weight = kwargs.get("from_weight", "full_sft")
+        save_dir = kwargs.get("save_dir", "../out")
+        if config is not None and from_weight != "none":
+            suffix = "_moe" if getattr(config, "use_moe", False) else ""
+            refuse_skipped_tensors(
+                model, Path(f"{save_dir}/{from_weight}_{config.hidden_size}{suffix}.pth")
+            )
+        talker_module = getattr(model, "talker", None)
+        talker = sum(p.numel() for p in talker_module.parameters()) if talker_module else 0
+        print(f"[mindsurf] thinker {thinker:,} parameters, talker {talker:,}", flush=True)
         return result
 
     trainer_utils.init_omni_model = patched
