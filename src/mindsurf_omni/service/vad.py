@@ -11,6 +11,16 @@ about -- and the product's first environment is someone at a desk with a
 headset, not a factory floor. The threshold adapts to the observed noise floor
 so it does not have to be tuned per microphone.
 
+**Nothing in the service calls this, on purpose, and that has to be said here
+rather than discovered.** The frozen contract endpoints turns with an explicit
+``input_audio_buffer.commit`` from the client, so the client's VAD decides and
+this module is not in the path. A tested module with no caller is the shape of
+a feature that looks shipped and is not -- the same shape as the evaluation
+stub that was more correct than its implementation. It is kept rather than
+deleted because the group document's own audio-input section asks for
+server-side endpointing (a 300 ms silence auto-commit), and this is what would
+serve that if the contract ever grows the event. See DECISIONS.md section 11.
+
 ponytail: energy VAD with an adaptive floor; swap in Silero if the measured
 false-endpoint rate on real recordings exceeds a few percent.
 """
