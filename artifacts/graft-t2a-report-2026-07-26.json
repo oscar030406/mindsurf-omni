@@ -1,0 +1,80 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.01372975588939112,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0819194226470999
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 0.06451612903225806,
+      "cer_over_0_3": 4.0,
+      "sample_size": 160.0
+    }
+  },
+  "comparison": {
+    "cer": "cer: indistinguishable (+0.0057, within ±0.0629)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)"
+  },
+  "judge": {
+    "candidate": [
+      "paraformer-zh"
+    ],
+    "reference": [
+      "paraformer-zh"
+    ]
+  },
+  "normalisation": {
+    "fold_numerals": false
+  },
+  "paired_comparison": {
+    "cer": "cer: indistinguishable (+0.0057, within ±0.0412, paired n=160)"
+  },
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.01585986857700431,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.07625354580736649
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.04327965900301933,
+        "note": "",
+        "sample_size": 160,
+        "value": 2.40181859433651
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 0.05,
+      "cer_over_0_3": 7.0,
+      "sample_size": 160.0
+    }
+  },
+  "text_regression": null
+}

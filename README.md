@@ -14,7 +14,7 @@
 | --- | --- |
 | 文本基座（89,864,448 参数，中文为主） | ✅ 已训练、已发布、已验证可接入 |
 | 接口契约与桩服务 | ✅ 已冻结，后端可据此开工 |
-| 原生音频路径（Thinker-Talker） | 🔨 训练中（第三轮／嫁接体）。**第一轮那个「配方缺陷」2026-07-26 查出并不存在**——上游 `train.sh` 写的就是那套参数，见 [配方 bug 不是 bug](docs/experiments/2026-07-26-recipe-bug-was-not-a-bug.md) |
+| 原生音频路径（Thinker-Talker） | ✅ **T2A 段追平上游**：Talker 隔离配对 CER 0.0819 ± 0.0137 对官方 0.0763 ± 0.0159，判定 `indistinguishable`，静音 0/160（我们的 Thinker + 上游的 Talker，重训那座桥）。见 [嫁接体验收](docs/experiments/2026-07-26-graft-acceptance.md)。A2A 尾巴在跑。<br>**第一轮那个「配方缺陷」2026-07-26 查出并不存在**——上游 `train.sh` 写的就是那套参数，见 [配方 bug 不是 bug](docs/experiments/2026-07-26-recipe-bug-was-not-a-bug.md) |
 | 级联兜底路径（ASR → LLM → TTS） | ✅ 三段都接了：SenseVoice、Thinker（指 `MINDSURF_THINKER`）、合成器两选一（`MINDSURF_TTS=edge` 托管 / `voxcpm` 本地，**默认不选**） |
 
 文本基座来自[上游预训练仓库](https://github.com/io-wy/MindSurf/tree/pretrain)，

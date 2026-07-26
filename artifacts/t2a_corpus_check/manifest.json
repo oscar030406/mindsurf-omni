@@ -1,0 +1,35 @@
+{
+  "generated_by": {
+    "components": [
+      {
+        "name": "sft_t2a corpus, stored Mimi codes"
+      }
+    ]
+  },
+  "samples": [
+    {
+      "id": "g0_r0",
+      "prompt": "",
+      "reference_text": "Sure! Here are three tips for staying healthy:   1. Eat a balanced diet rich in fruits, vegetables, lean proteins, and whole grains. This helps ensure your body gets the necessary nutrients. 2. Exercise regularly, aiming for at least 30 minutes of moderate activity most days of the week. Physical activity helps maintain a healthy weight and boosts overall wellness. 3. Get enough sleep, ideally 7-8 hours each night, to help your body recover and maintain optimal function. Good sleep hygiene improves mood and cognitive performance.",
+      "audio_path": "artifacts\\t2a_corpus_check\\g0_r0.wav"
+    },
+    {
+      "id": "g94_r0",
+      "prompt": "",
+      "reference_text": "非洲大陆最高峰是哪座山？\n参考答案：非洲大陆最高峰是乞力马扎罗山。",
+      "audio_path": "artifacts\\t2a_corpus_check\\g94_r0.wav"
+    },
+    {
+      "id": "g94_r1",
+      "prompt": "",
+      "reference_text": "好的，我会再生成一句与之相反的情感。如果这句话让你感到快乐，那么我就说我现在感到非常沮丧和失望。",
+      "audio_path": "artifacts\\t2a_corpus_check\\g94_r1.wav"
+    },
+    {
+      "id": "g150_r3",
+      "prompt": "",
+      "reference_text": "您可以随时来向我寻求帮助。祝您好运并祝您一天愉快！",
+      "audio_path": "artifacts\\t2a_corpus_check\\g150_r3.wav"
+    }
+  ]
+}
