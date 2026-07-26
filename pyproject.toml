@@ -36,7 +36,10 @@ train = ["torch>=2.6", "pyarrow>=15", "safetensors>=0.4", "transformers>=4.57"]
 # zhconv folds traditional characters to simplified before CER. The judge
 # picks a script per utterance, and without this the metric spends most of its
 # range on that choice rather than on the speech -- see normalise_for_cer.
-evaluate = ["openai-whisper>=20231117", "zhconv>=1.4"]
+# cn2an is the same correction one notation over: a synthesiser that reads
+# 2021 as 二零二一 is right, and unfolded the metric charges it a substitution
+# per digit. Opt-in (--fold-numerals), so it is a dependency of the flag.
+evaluate = ["openai-whisper>=20231117", "zhconv>=1.4", "cn2an>=0.5"]
 # The cascade path's recogniser. Separate from the runtime set because the
 # native path does not need it, and funasr pulls in torch.
 asr = ["funasr>=1.3", "librosa>=0.10"]

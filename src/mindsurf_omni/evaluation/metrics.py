@@ -20,7 +20,37 @@ import unicodedata
 from dataclasses import dataclass
 
 
-def normalise_for_cer(text: str) -> str:
+def fold_numerals(text: str) -> str:
+    """Write Chinese number words as digits, so 二零二一 and 2021 compare equal.
+
+    A synthesiser that reads 2021年9月23日 as 二零二一年九月二十三日 is doing
+    exactly what it should; the judge transcribes what it hears; and the metric
+    then charges a substitution for every digit. On the fixed 160 texts, 71
+    contain digits and the split is the whole floor: 0.0050 without them,
+    0.0746 with. Same class of correction as the traditional-to-simplified
+    fold above -- same word, different notation -- and applied to both sides
+    for the same reason.
+
+    Ordinary words get caught too (一般 becomes 1般), which is harmless because
+    both sides pass through it. What it cannot do is context: a handful of
+    sentences fold asymmetrically and score worse, 3 of 160 on each arm.
+
+    Off by default. The retrain's acceptance thresholds were calibrated on the
+    unfolded metric, and moving the ruler after the run is the thing
+    PROJECT_RULES.md section 7 forbids.
+    """
+    import cn2an
+
+    try:
+        return str(cn2an.transform(text, "cn2an"))
+    except Exception:
+        # Its parser raises on inputs it cannot segment. An unfolded sample is
+        # a sample scored the old way, which is a worse number, not a wrong
+        # one -- the alternative is one bad row killing a 160-sample run.
+        return text
+
+
+def normalise_for_cer(text: str, fold_numbers: bool = False) -> str:
     """Strip what a listener would not hear before comparing transcripts.
 
     Punctuation and case survive into ASR output inconsistently, so leaving
@@ -50,6 +80,8 @@ def normalise_for_cer(text: str) -> str:
     from zhconv import convert
 
     text = unicodedata.normalize("NFKC", text).lower()
+    if fold_numbers:
+        text = fold_numerals(text)
     stripped = "".join(
         character
         for character in text
@@ -79,14 +111,16 @@ def edit_distance(reference: str, hypothesis: str) -> int:
     return previous[-1]
 
 
-def character_error_rate(reference: str, hypothesis: str) -> float:
+def character_error_rate(
+    reference: str, hypothesis: str, fold_numbers: bool = False
+) -> float:
     """Errors per reference character.
 
     Can exceed 1.0: a model that says far more than it was asked to is worse
     than one that says nothing, and clamping would hide exactly that failure.
     """
-    reference = normalise_for_cer(reference)
-    hypothesis = normalise_for_cer(hypothesis)
+    reference = normalise_for_cer(reference, fold_numbers)
+    hypothesis = normalise_for_cer(hypothesis, fold_numbers)
     if not reference:
         return 0.0 if not hypothesis else float("inf")
     return edit_distance(reference, hypothesis) / len(reference)

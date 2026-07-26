@@ -90,13 +90,15 @@ class Report:
         }
 
 
-def score(name: str, samples: list[Sample], effects: dict[str, float]) -> Report:
+def score(
+    name: str, samples: list[Sample], effects: dict[str, float], fold_numbers: bool = False
+) -> Report:
     report = Report(name=name, samples=samples)
 
     transcribed = [sample for sample in samples if sample.transcript is not None]
     if transcribed:
         rates = [
-            character_error_rate(sample.reference_text, sample.transcript or "")
+            character_error_rate(sample.reference_text, sample.transcript or "", fold_numbers)
             for sample in transcribed
         ]
         report.measurements["cer"] = assess(
@@ -139,7 +141,7 @@ def score(name: str, samples: list[Sample], effects: dict[str, float]) -> Report
 
 
 def paired_deltas(
-    candidate: list[Sample], reference: list[Sample]
+    candidate: list[Sample], reference: list[Sample], fold_numbers: bool = False
 ) -> dict[str, list[float]] | None:
     """Per-sample differences on shared ids, or None when pairing is invalid.
 
@@ -161,8 +163,10 @@ def paired_deltas(
     for mine, theirs in pairs:
         if mine.transcript is not None and theirs.transcript is not None:
             deltas["cer"].append(
-                character_error_rate(mine.reference_text, mine.transcript or "")
-                - character_error_rate(theirs.reference_text, theirs.transcript or "")
+                character_error_rate(mine.reference_text, mine.transcript or "", fold_numbers)
+                - character_error_rate(
+                    theirs.reference_text, theirs.transcript or "", fold_numbers
+                )
             )
         if mine.utmos is not None and theirs.utmos is not None:
             deltas["utmos"].append(mine.utmos - theirs.utmos)
@@ -262,24 +266,39 @@ def main() -> None:
         help="the CER difference worth detecting; an instrument that cannot "
         "resolve it is reported but may not judge",
     )
+    parser.add_argument(
+        "--fold-numerals",
+        action="store_true",
+        help="write 二零二一 as 2021 on both sides before comparing, so a "
+        "synthesiser that correctly reads out a date is not charged a "
+        "substitution per digit. Off by default: it moves every CER in this "
+        "project, and the acceptance thresholds were calibrated without it",
+    )
     args = parser.parse_args()
 
     effects = {"cer": args.cer_effect}
-    candidate = score("candidate", load(args.candidate), effects)
+    candidate = score("candidate", load(args.candidate), effects, args.fold_numerals)
 
     lines = [f"候选 n={len(candidate.samples)}"]
+    if args.fold_numerals:
+        lines.insert(0, "阿拉伯数字已折叠（两边都过 cn2an）——与未折叠的历史数字不可比")
     for _, measurement in sorted(candidate.measurements.items()):
         mark = "有门控资格" if measurement.gating_eligible else f"仅报告（{measurement.note}）"
         lines.append(f"  {measurement}  {mark}")
     lines.extend(shape_lines(candidate))
 
-    payload: dict[str, Any] = {"candidate": candidate.to_json()}
+    # In the artifact, not only on the screen: a stored CER whose normalisation
+    # is unrecorded is a number nobody can pair against later.
+    payload: dict[str, Any] = {
+        "candidate": candidate.to_json(),
+        "normalisation": {"fold_numerals": args.fold_numerals},
+    }
     if args.instrument_only:
         lines.insert(0, "模型没有参与这一轮：下面的 CER 是合成器加判官的底噪，不是模型质量")
         payload["instrument_only"] = True
 
     if args.reference:
-        reference = score("reference", load(args.reference), effects)
+        reference = score("reference", load(args.reference), effects, args.fold_numerals)
         mismatch = check_same_judge(candidate.samples, reference.samples)
         if mismatch:
             raise SystemExit(f"两臂判官不一致，拒绝比较：{mismatch}")
@@ -318,7 +337,7 @@ def main() -> None:
             for key in sorted(set(candidate.measurements) & set(reference.measurements))
         }
 
-        deltas = paired_deltas(candidate.samples, reference.samples)
+        deltas = paired_deltas(candidate.samples, reference.samples, args.fold_numerals)
         if deltas:
             lines.append("")
             lines.append("配对对比（同 id 同文本，逐样本相减）:")

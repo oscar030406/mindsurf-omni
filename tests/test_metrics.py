@@ -51,6 +51,30 @@ def test_folding_script_does_not_forgive_regional_vocabulary() -> None:
     assert character_error_rate("软件很好用", "軟體很好用") > 0.0
 
 
+def test_reading_a_date_aloud_is_only_forgiven_when_asked() -> None:
+    """The worst pair on the fixed 160 both arms scored 0.500, and correctly.
+
+    The reference says 2021年9月23日, the synthesiser reads it out as
+    二零二一年九月二十三日, the judge transcribes what it heard, and every
+    digit costs a substitution. Folding both sides makes it free -- but the
+    retrain's thresholds were calibrated unfolded, so it has to be asked for.
+    """
+    reference, spoken = "2021年9月23日", "二零二一年九月二十三日"
+    assert character_error_rate(reference, spoken) > 0.4
+    assert character_error_rate(reference, spoken, fold_numbers=True) == 0.0
+
+
+def test_folding_numerals_does_not_forgive_a_wrong_number() -> None:
+    assert character_error_rate("9月23日", "9月24日", fold_numbers=True) > 0.0
+
+
+def test_folding_numerals_hits_both_sides_of_an_ordinary_word() -> None:
+    """一般 becomes 1般 -- harmless because it happens to reference and
+    hypothesis alike, which is the same argument the script fold rests on."""
+    assert character_error_rate("一般的问题", "一般的问题", fold_numbers=True) == 0.0
+    assert normalise_for_cer("一般", fold_numbers=True) == "1般"
+
+
 def test_spacing_differences_do_not_count() -> None:
     """Chinese output is unspaced and English is not; keeping spaces would
     make the two scripts incomparable."""
