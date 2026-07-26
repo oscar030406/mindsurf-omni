@@ -116,6 +116,21 @@ def test_the_a2a_tail_sets_the_talker_shape_in_both_places() -> None:
     assert "--shape mindsurf" not in script  # the hardcoded one this replaced
 
 
+def test_the_t2a_probe_names_its_product_after_its_rate() -> None:
+    """Two probes differing only in learning rate must not share a filename.
+
+    The archived stage product is the entire reason for running one stage
+    instead of a chain: the round before this one lost its T2A checkpoint to
+    the A2A stages and could not attribute its own failure.
+    """
+    script = (ROOT / "scripts" / "run_t2a_probe.sh").read_text(encoding="utf-8")
+
+    assert 'T2A_LR="${T2A_LR:-5e-5}"' in script
+    assert '--learning_rate "$T2A_LR"' in script
+    assert "t2a_lr5e5" not in script.split("set -u", 1)[1]  # no hardcoded name below the header
+    assert '--checkpoint "$ROOT/out/${SAVE}_768.pth"' in script
+
+
 def test_the_a2a_tail_runs_upstreams_three_passes_at_upstreams_length() -> None:
     """640 and 768 dropped the ends of the longest utterances, silently.
 

@@ -10,15 +10,28 @@
 # audio, and ours has not.
 #
 # So this changes exactly one thing against run_full_recipe.sh's first stage --
-# --learning_rate 5e-5 instead of 5e-6, still a tenth of the 5e-4 the broken
-# round took by accident -- and stops after that stage. The stage product is
-# the verdict; there is no need to spend a full chain to read it.
+# --learning_rate 5e-5 instead of 5e-6, still a tenth of the 5e-4 the round
+# that spoke used -- and stops after that stage. The stage product is the
+# verdict; there is no need to spend a full chain to read it.
 #
 # Prediction, written before the run: the product speaks. CER leaves 1.0 and
 # the silent rate leaves 0.6. If it does not, the hypothesis is dead and the
 # next question is data and architecture, not hyperparameters.
 #
+# It did not. CER 0.9862, 22 of 160 silent. And the sentence above was wrong
+# about what comes next: on 2026-07-26 upstream's own trainer/train.sh turned
+# out to say --learning_rate 5e-4 --epochs 6 for this stage, word for word
+# what the round that speaks ran, while the 5e-6 exists only in the report's
+# prose. So the untested cell is not data or architecture, it is the learning
+# budget between 5e-6 x 1 and 5e-4 x 6, and this script is the cheapest way to
+# probe it: T2A_LR=5e-4 for one epoch, about four hours. See
+# docs/experiments/2026-07-26-recipe-bug-was-not-a-bug.md.
+#
+# T2A_LR names the product too, so two probes cannot overwrite each other.
+#
 #   setsid nohup bash ~/omni/mindsurf-omni/scripts/run_t2a_probe.sh \
+#     >~/omni/t2a_probe.log 2>&1 </dev/null &
+#   T2A_LR=5e-4 setsid nohup bash ~/omni/mindsurf-omni/scripts/run_t2a_probe.sh \
 #     >~/omni/t2a_probe.log 2>&1 </dev/null &
 set -u
 
@@ -28,6 +41,12 @@ PY="${OMNI_PYTHON:-$HOME/.venvs/omni/bin/python}"
 LOG="${PROBE_LOG:-$HOME/omni/t2a_probe.log}"
 DATA_T2A="${T2A_DATA:-../dataset/sft_t2a.parquet}"
 BASE="${BASE_WEIGHT:-llm_mindsurf}"
+T2A_LR="${T2A_LR:-5e-5}"
+T2A_EPOCHS="${T2A_EPOCHS:-1}"
+# The rate goes in the name. Two probes that differ only in it must not write
+# to the same file -- the archived stage product is the whole point of running
+# one stage instead of a chain.
+SAVE="${SAVE_WEIGHT:-t2a_lr$(printf %s "$T2A_LR" | tr -d '-')}"
 
 cd "$ROOT/trainer" || exit 1
 
@@ -46,12 +65,12 @@ if [ "$running" -gt 0 ]; then
   exit 1
 fi
 
-echo "===== t2a_probe lr5e-5 $(date -Is) =====" >>"$LOG"
+echo "===== t2a_probe lr$T2A_LR x$T2A_EPOCHS -> $SAVE $(date -Is) =====" | tee -a "$LOG"
 setsid nohup env \
   MINIMIND_O_ROOT="$ROOT" PYTHONPATH="$LIB" PYTHONUNBUFFERED=1 \
   "$PY" "$LIB/train_omni.py" \
-  --data_path "$DATA_T2A" --epochs 1 --batch_size 32 --max_seq_len 640 \
-  --learning_rate 5e-5 --from_weight "$BASE" --save_weight t2a_lr5e5 \
+  --data_path "$DATA_T2A" --epochs "$T2A_EPOCHS" --batch_size 32 --max_seq_len 640 \
+  --learning_rate "$T2A_LR" --from_weight "$BASE" --save_weight "$SAVE" \
   --num_workers 8 --use_moe 0 --log_interval 50 \
   >>"$LOG" 2>&1 </dev/null &
 pid=$!
@@ -71,20 +90,20 @@ mkdir -p "$OUT"
 
 echo "===== reading the probe's stage product $(date -Is) =====" | tee -a "$LOG"
 "$PY" scripts/evaluate_talker.py \
-  --checkpoint "$ROOT/out/t2a_lr5e5_768.pth" --shape mindsurf \
+  --checkpoint "$ROOT/out/${SAVE}_768.pth" --shape mindsurf \
   --minimind-root "$ROOT" --audio-encoder "$ROOT/model/SenseVoiceSmall" \
   --codec "$ROOT/model/mimi" --tokenizer assets/tokenizer \
   --texts configs/talker_texts_zh_v1.jsonl \
-  --output "$OUT/t2a_lr5e5" >>"$LOG" 2>&1 || exit 1
-"$PY" scripts/transcribe_samples.py --manifest "$OUT/t2a_lr5e5/manifest.json" \
-  --output "$OUT/t2a_lr5e5.jsonl" --judge paraformer >>"$LOG" 2>&1 || exit 1
+  --output "$OUT/$SAVE" >>"$LOG" 2>&1 || exit 1
+"$PY" scripts/transcribe_samples.py --manifest "$OUT/$SAVE/manifest.json" \
+  --output "$OUT/$SAVE.jsonl" --judge paraformer >>"$LOG" 2>&1 || exit 1
 
 # Scoring needs zhconv, which this venv does not carry, and installing into a
 # training environment is not something to do casually. The rows are the
-# deliverable: copy $OUT/t2a_lr5e5.jsonl and run evaluate_speech.py against
+# deliverable: copy $OUT/$SAVE.jsonl and run evaluate_speech.py against
 # artifacts/codebook_baseline_mos.jsonl wherever zhconv is installed.
 {
   echo "===== probe read done $(date -Is) ====="
-  echo "rows at $OUT/t2a_lr5e5.jsonl -- score them against artifacts/codebook_baseline_mos.jsonl"
-  echo "prediction on record: the stage product speaks, CER leaves 1.0 and silence leaves 0.6"
+  echo "rows at $OUT/$SAVE.jsonl -- score them against artifacts/codebook_baseline_mos.jsonl"
+  echo "gate, unchanged since the first probe: the stage product speaks -- CER leaves 1.0, silence leaves 0.6"
 } | tee -a "$LOG"
