@@ -1,0 +1,89 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.01372975588939112,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0819194226470999
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.043280113860964864,
+        "note": "",
+        "sample_size": 160,
+        "value": 2.4333699211478232
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 0.06451612903225806,
+      "cer_over_0_3": 4.0,
+      "sample_size": 160.0
+    }
+  },
+  "comparison": {
+    "cer": "cer: indistinguishable (+0.0418, within ±0.0537)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)",
+    "utmos": "utmos: regressed (-0.2052 against ±0.1811)"
+  },
+  "judge": {
+    "candidate": [
+      "paraformer-zh"
+    ],
+    "reference": [
+      "paraformer-zh"
+    ]
+  },
+  "normalisation": {
+    "fold_numerals": false
+  },
+  "paired_comparison": {
+    "cer": "cer: regressed (+0.0418 against ±0.0342, paired n=160)",
+    "utmos": "utmos: regressed (-0.2052 against ±0.1032, paired n=160)"
+  },
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.011475448157514102,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.04015692393112723
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 160,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.04210111945867534,
+        "note": "",
+        "sample_size": 160,
+        "value": 2.6386151418089865
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 160,
+    "shape": {
+      "cer_median": 0.02343893059879143,
+      "cer_over_0_3": 2.0,
+      "sample_size": 160.0
+    }
+  },
+  "text_regression": null
+}
