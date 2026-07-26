@@ -25,28 +25,35 @@
     },
     {
       "commercial_use": null,
-      "licence": "unstated",
+      "licence": "FunASR Model Open Source License Agreement v1.1",
+      "licence_link": "https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE",
       "name": "sensevoice_small",
+      "note": "read 2026-07-26, and it does not answer the question. The grant is broad -- use, copy, modify and share, with attribution kept and the model names retained -- but there is no commercial clause either way, and it states the software is provided for reference and learning purposes only. Two further terms matter to a product: the licensor may amend the agreement unilaterally with continued use counting as acceptance, and any breach terminates it automatically. So this stays null: null means nobody can say yes, which is the true state, and false would claim a finding nobody made. WARNING: the README shipped inside model/SenseVoiceSmall says Apache-2.0. That is wrong. The authoritative card (huggingface.co/FunAudioLLM/SenseVoiceSmall) carries license: other, license_name: model-license, pointing at the agreement above. A copy's claim about its own licence is not evidence.",
       "verified": false,
       "what": "frozen audio encoder, 234M parameters"
     },
     {
-      "commercial_use": null,
-      "licence": "unstated",
+      "commercial_use": true,
+      "licence": "CC-BY-4.0",
+      "licence_link": "https://creativecommons.org/licenses/by/4.0/",
       "name": "mimi",
-      "verified": false,
+      "note": "read 2026-07-26, two sources agreeing: the README shipped in model/mimi and the upstream card at huggingface.co/kyutai/mimi. Commercial use is permitted and attribution is mandatory, so this asset adds an obligation rather than a restriction. What ships is minimind-o's fp16 conversion, and which upstream revision it was converted from is recorded nowhere -- the revision pinned under attribution_required is the one whose terms were read, not a provenance claim about these bytes.",
+      "verified": true,
       "what": "frozen speech codec, 96M parameters"
     },
     {
-      "commercial_use": null,
-      "licence": "unstated",
+      "commercial_use": true,
+      "licence": "Apache-2.0",
+      "licence_link": "https://www.apache.org/licenses/LICENSE-2.0",
       "name": "campplus",
-      "verified": false,
+      "note": "read 2026-07-26. The README shipped in model/campplus, the upstream card at huggingface.co/funasr/campplus and the 3D-Speaker project it came from all say Apache-2.0. Commercial use is permitted; the copyright and licence notices travel with any redistribution.",
+      "verified": true,
       "what": "frozen speaker embedding"
     }
   ],
   "attribution_required": [
-    "gongjy/minimind_dataset @ 74aad49fa4443e7ed640d44bc4e9c7d1fe71ada5"
+    "gongjy/minimind_dataset @ 74aad49fa4443e7ed640d44bc4e9c7d1fe71ada5",
+    "kyutai/mimi @ 89091b3e466eb6a9d11e537bf26b144f194978f7"
   ],
   "conclusion": {
     "binding_constraint": "text_base",
@@ -56,8 +63,8 @@
   "how_to_change_the_conclusion": "replace the text base's training data with a corpus whose licence permits commercial use, and read the terms of the frozen components; loosening the statement without doing that would be a false claim",
   "open_questions": [
     "the training data's licence is unstated upstream; the audio corpora it draws from have not been read",
-    "three frozen components ship in the runtime with unread terms"
+    "the audio encoder's terms have been read and do not resolve commercial use: broad grant, reference-and-learning-purposes wording, unilateral amendment. Settling it needs the licensor, not another reading -- and the copy shipped in the tree states a different licence than its own upstream does"
   ],
-  "recorded_at": "2026-07-23",
+  "recorded_at": "2026-07-26",
   "schema_version": 1
 }

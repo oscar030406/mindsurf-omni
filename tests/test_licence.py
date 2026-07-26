@@ -66,6 +66,32 @@ def test_the_record_says_what_would_change_the_conclusion() -> None:
     assert "false claim" in RECORD["how_to_change_the_conclusion"]
 
 
+def test_a_copys_claim_about_its_own_licence_is_not_evidence() -> None:
+    """model/SenseVoiceSmall ships a README saying Apache-2.0. It is wrong.
+
+    The authoritative card carries license: other, pointing at the FunASR
+    Model Open Source License Agreement. Recording the copy's claim would have
+    turned a component whose terms do not resolve commercial use into a clean
+    yes, in the one file a reader trusts to be checked.
+    """
+    encoder = next(asset for asset in RECORD["assets"] if asset["name"] == "sensevoice_small")
+
+    assert "Apache" not in encoder["licence"]
+    assert "FunASR" in encoder["licence"]
+    # Read, and still unanswered: the licence has no commercial clause either
+    # way, so null stays null. false would claim a finding nobody made.
+    assert encoder["commercial_use"] is None
+    assert encoder["verified"] is False
+
+
+def test_a_permissive_asset_that_demands_credit_says_where() -> None:
+    """CC-BY-4.0 loosens nothing and adds an obligation; unlisted, it is unmet."""
+    codec = next(asset for asset in RECORD["assets"] if asset["name"] == "mimi")
+
+    assert codec["commercial_use"] is True
+    assert any("mimi" in entry for entry in RECORD["attribution_required"])
+
+
 def test_attribution_names_a_pinned_revision() -> None:
     """ "The minimind dataset" is not attribution; a revision is."""
     for entry in RECORD["attribution_required"]:
