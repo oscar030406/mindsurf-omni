@@ -289,3 +289,14 @@ def test_the_a2a_guard_matches_a_process_not_a_substring() -> None:
 
     assert "python.*train_omni" in script  # anchored on the interpreter
     assert "--data_path" in script  # and on an argument only a real run has
+
+
+def test_the_trainer_can_keep_upstream_talker_shape() -> None:
+    """A grafted checkpoint dies silently without this: the loader skips
+    mismatched tensors, so the graft evaporates and the run looks healthy."""
+    source = (ROOT / "scripts" / "train_omni.py").read_text(encoding="utf-8")
+
+    assert "MINDSURF_TALKER_SHAPE" in source
+    # Discrimination has to be by class -- OmniConfig is the Thinker's config,
+    # the Talker builds a plain MiniMindConfig.
+    assert "type(self) is MiniMindConfig" in source

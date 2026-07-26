@@ -49,7 +49,15 @@ from mindsurf_omni.service.audio import to_wav  # noqa: E402
 SHAPES = {
     "mindsurf": {"intermediate_size": 3584, "num_key_value_heads": 8},
     "upstream-default": {},
+    # A grafted checkpoint: our Thinker beside upstream's Talker. The two halves
+    # were built with different shapes, so the override cannot be global -- it
+    # goes into OmniConfig, which the Thinker reads, while the Talker builds a
+    # fresh MiniMindConfig and keeps the library defaults upstream trained with.
+    "graft": {"intermediate_size": 3584, "num_key_value_heads": 8},
 }
+# Which shapes patch MiniMindConfig globally (both halves) rather than passing
+# the override to OmniConfig (Thinker only).
+GLOBAL_SHAPE_PATCH = {"mindsurf", "upstream-default"}
 ENTER_TOKEN = 201  # what stream_generate emits on the step after the text ends
 PAD_TOKEN = 0
 EOS_TOKEN = 2
@@ -87,7 +95,8 @@ def build_model(
     from model import model_minimind, model_omni  # type: ignore[import-not-found]
 
     overrides = SHAPES[shape]
-    if overrides:
+    config_kwargs: dict[str, Any] = {}
+    if overrides and shape in GLOBAL_SHAPE_PATCH:
         original = model_minimind.MiniMindConfig.__init__
 
         def patched(self: Any, *args: Any, **kwargs: Any) -> None:
@@ -96,9 +105,13 @@ def build_model(
             original(self, *args, **kwargs)
 
         model_minimind.MiniMindConfig.__init__ = patched  # type: ignore[method-assign]
+    elif overrides:
+        config_kwargs = dict(overrides)
 
     model = model_omni.MiniMindOmni(
-        model_omni.OmniConfig(hidden_size=768, num_hidden_layers=8, use_moe=False),
+        model_omni.OmniConfig(
+            hidden_size=768, num_hidden_layers=8, use_moe=False, **config_kwargs
+        ),
         audio_encoder_path=str(audio_encoder),
         vision_model_path=str(checkpoint.parent / "nonexistent-vision"),
     )

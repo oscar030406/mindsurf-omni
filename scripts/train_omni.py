@@ -54,13 +54,30 @@ def force_thinker_shape(intermediate_size: int, num_key_value_heads: int) -> Non
     from model.model_minimind import MiniMindConfig  # type: ignore[import-not-found]
 
     original = MiniMindConfig.__init__
+    # A grafted checkpoint carries upstream's Talker, built at upstream's shape.
+    # Widening it here would make those 20 tensors mismatch, and the loader
+    # skips mismatched tensors *silently* -- the graft would evaporate and the
+    # run would train a freshly copied Talker while looking healthy. So when the
+    # Talker comes from elsewhere, the override applies to the Thinker only.
+    #
+    # Discriminated by class, not by call site: OmniConfig is the Thinker's
+    # config, while the Talker builds a plain MiniMindConfig with hidden_size
+    # and use_moe alone.
+    thinker_only = os.environ.get("MINDSURF_TALKER_SHAPE", "").strip() == "upstream"
 
     def patched(self: Any, *args: Any, **kwargs: Any) -> None:
-        kwargs.setdefault("intermediate_size", intermediate_size)
-        kwargs.setdefault("num_key_value_heads", num_key_value_heads)
+        if not (thinker_only and type(self) is MiniMindConfig):
+            kwargs.setdefault("intermediate_size", intermediate_size)
+            kwargs.setdefault("num_key_value_heads", num_key_value_heads)
         original(self, *args, **kwargs)
 
     MiniMindConfig.__init__ = patched  # type: ignore[method-assign]
+    if thinker_only:
+        print(
+            "[mindsurf] MINDSURF_TALKER_SHAPE=upstream: Talker keeps upstream's shape, "
+            "so a grafted checkpoint loads instead of being silently skipped",
+            flush=True,
+        )
 
 
 def verify_base_loaded(minimind_root: Path) -> None:
