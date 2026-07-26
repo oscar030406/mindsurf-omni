@@ -148,6 +148,29 @@ class AudioSampling:
 DEFAULT_SAMPLING = AudioSampling()
 
 
+def load_voice(name: str, pack_dir: Path, device: str) -> dict[str, Any]:
+    """One packaged speaker, batched and moved, or a listing of what exists.
+
+    Fails with the available names rather than a KeyError: a typo here does not
+    crash, it silently conditions on nothing if the caller is careless, and a
+    whole run of unconditioned audio looks exactly like a conditioned one.
+    """
+    import torch
+
+    available: dict[str, Any] = {}
+    for pack in ("voices.pt", "voices_unseen.pt"):
+        path = pack_dir / pack
+        if path.is_file():
+            available.update(torch.load(str(path), map_location="cpu"))
+    if name not in available:
+        raise SystemExit(f"没有音色 {name!r}；{pack_dir} 里有：{sorted(available) or '（空）'}")
+    entry = available[name]
+    return {
+        "ref_codes": entry["ref_codes"].unsqueeze(0).to(device),
+        "spk_emb": entry["spk_emb"].float().unsqueeze(0).to(device),
+    }
+
+
 def speak_forced(
     model: Any,
     tokenizer: Any,
@@ -158,6 +181,7 @@ def speak_forced(
     max_steps: int = 640,
     sampling: AudioSampling = DEFAULT_SAMPLING,
     observer: Any = None,
+    voice: dict[str, Any] | None = None,
 ) -> tuple[list[list[int]], int]:
     """Teacher-force the text and collect whole Mimi frames.
 
@@ -167,6 +191,13 @@ def speak_forced(
     would eventually disagree, and the one that decodes to noise would not
     announce itself. Sweeps and diagnostics call in here rather than restating
     it -- ``sampling`` varies the knobs, ``observer`` watches each draw.
+
+    ``voice`` conditions the speaker, and its placement is copied from
+    ``stream_generate`` line for line for the same reason: the reference codes
+    are *right-aligned* to end just before the assistant's first position, with
+    the speaker token one slot ahead of them. Off by one and the model reads a
+    reference that starts mid-syllable, which produces speech -- just not that
+    speaker's -- and nothing in the output says so.
     """
     import torch
     import torch.nn.functional as functional
@@ -189,6 +220,22 @@ def speak_forced(
     )
     frames: list[list[int]] = []
 
+    # stream_generate lines 331-341, transcribed rather than paraphrased.
+    speaker: dict[str, Any] = {}
+    if voice is not None:
+        reference, embedding = voice.get("ref_codes"), voice.get("spk_emb")
+        reserve = 1 if embedding is not None else 0
+        fill_end = start_pos
+        fill_start = max(reserve, start_pos - (reference.shape[2] if reference is not None else 0))
+        if reference is not None and fill_start < fill_end:
+            audio_buffer[:, :, fill_start:fill_end] = reference[:, :, -(fill_end - fill_start) :]
+        if embedding is not None and fill_start > 0:
+            audio_buffer[:, :, fill_start - 1] = model.audio_spk_token
+            # forward() swaps the Talker embedding wherever it sees the speaker
+            # token, so the vector has to ride along on every call, not just
+            # the first -- the cached path forwards one position at a time.
+            speaker["spk_emb"] = embedding
+
     with torch.no_grad():
         while input_ids.shape[1] < start_pos + max_steps:
             if past is None:
@@ -196,12 +243,14 @@ def speak_forced(
                     torch.cat((audio_buffer, input_ids.unsqueeze(1)), dim=1),
                     past_key_values=past,
                     use_cache=True,
+                    **speaker,
                 )
             else:
                 out = model.forward(
                     torch.cat((audio_buffer[:, :, -1:], input_ids[:, -1:].unsqueeze(1)), dim=1),
                     past_key_values=past,
                     use_cache=True,
+                    **speaker,
                 )
             past = out.past_key_values
 
@@ -312,6 +361,18 @@ def main() -> None:
         help="repetition penalty over the last --audio-penalty-window codes",
     )
     parser.add_argument("--audio-penalty-window", type=int, default=DEFAULT_SAMPLING.penalty_window)
+    parser.add_argument(
+        "--voice",
+        help="condition on a packaged speaker (dylan, momo, ...). Without it "
+        "generation is unconditioned, which is what every reading before "
+        "2026-07-26 used -- and why none of them can measure cloning",
+    )
+    parser.add_argument(
+        "--voice-pack",
+        type=Path,
+        help="directory holding voices.pt and voices_unseen.pt. Defaults to "
+        "<minimind-root>/model/speaker",
+    )
     args = parser.parse_args()
 
     sampling = AudioSampling(
@@ -330,6 +391,13 @@ def main() -> None:
         args.checkpoint, args.minimind_root, args.audio_encoder, args.shape, args.device
     )
     codec = MimiModel.from_pretrained(str(args.codec)).eval().to(args.device)
+    voice = (
+        load_voice(
+            args.voice, args.voice_pack or args.minimind_root / "model" / "speaker", args.device
+        )
+        if args.voice
+        else None
+    )
     if args.device.startswith("cuda"):
         torch.cuda.reset_peak_memory_stats()
 
@@ -348,6 +416,7 @@ def main() -> None:
             args.device,
             seed=args.seed + index,
             sampling=sampling,
+            voice=voice,
         )
         elapsed = time.perf_counter() - started
 
@@ -390,6 +459,10 @@ def main() -> None:
             "shape": args.shape,
             "components": [{"name": f"talker teacher-forced, shape {args.shape}"}],
             "text_source": "fixed",
+            # Named even when absent: an unconditioned run and a conditioned
+            # one differ in nothing else a reader can see, and the whole clone
+            # measurement turns on which of the two produced the clips.
+            "voice": args.voice,
             "texts_sha256": hashlib.sha256(args.texts.read_bytes()).hexdigest(),
             # What actually ran, not what the default was when this line was
             # written. A manifest that reports the default while the run used

@@ -328,3 +328,29 @@ def test_the_inference_recommendation_matches_the_code_it_recommends() -> None:
     # audio path. A backend that misses this raises temperature expecting
     # livelier speech and gets identical audio.
     assert "碰不到音频" in recommendation
+
+
+def test_the_codec_roundtrip_manifest_points_at_the_rebuilt_audio() -> None:
+    """A manifest left pointing at the input flatters, and does it silently.
+
+    Downstream reads audio_path. If the round trip rewrites the clips but not
+    the manifest, transcription and UTMOS score the originals while the report
+    claims to describe the codec ceiling -- and the ceiling comes out equal to
+    the input, which is exactly the answer that ends the investigation.
+    """
+    from scripts.codec_roundtrip import repoint_manifest
+
+    source, target = Path("artifacts/tts_edge"), Path("artifacts/tts_edge_mimi")
+    manifest = repoint_manifest(
+        {"samples": [{"id": "zh000", "audio_path": str(source / "zh000.wav")}]},
+        source,
+        target,
+        12.5,
+    )
+
+    assert manifest["samples"][0]["audio_path"] == str(target / "zh000.wav")
+    stamp = manifest["generated_by"]["codec_roundtrip"]
+    assert stamp["codec"] == "mimi" and stamp["codebooks"] == 8
+    # The stamp has to say a model did not make these, or a reader takes the
+    # ceiling for a result.
+    assert "not a model reading" in stamp["note"]

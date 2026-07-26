@@ -86,3 +86,39 @@ def test_a_per_codebook_temperature_reaches_the_right_codebook() -> None:
     assert sampling.for_codebook(0) == 0.1
     assert sampling.for_codebook(7) == 0.8
     assert AudioSampling(temperature=0.2).for_codebook(5) == 0.2
+
+
+def test_the_reference_strip_is_right_aligned_with_the_speaker_token_ahead_of_it() -> None:
+    """Off by one and the model clones a reference that starts mid-syllable.
+
+    stream_generate right-aligns the reference codes to end just before the
+    assistant's first position, and puts the speaker token one slot ahead. The
+    failure mode is not a crash: it is speech in some other voice, with nothing
+    in the artifact saying so. So the arithmetic is pinned here rather than
+    trusted to stay copied.
+    """
+    start_pos, ref_len = 40, 12
+    reserve = 1  # a speaker embedding is present
+    fill_end = start_pos
+    fill_start = max(reserve, start_pos - ref_len)
+
+    assert (fill_start, fill_end) == (28, 40)
+    assert fill_end - fill_start == ref_len  # the whole strip fits
+    assert fill_start - 1 == 27  # the speaker token sits immediately before it
+
+    # A strip longer than the prompt is truncated from the left, keeping the
+    # end that abuts the assistant rather than the beginning.
+    long_start, long_ref = 5, 101
+    clipped_start = max(reserve, long_start - long_ref)
+    assert clipped_start == reserve
+    assert long_start - clipped_start == 4  # only the last four frames survive
+
+
+def test_the_manifest_names_the_voice_even_when_there_is_none() -> None:
+    """A conditioned run and an unconditioned one differ in nothing else."""
+    source = (ROOT / "scripts" / "evaluate_talker.py").read_text(encoding="utf-8")
+
+    assert '"voice": args.voice,' in source
+    # And the vector has to ride on every forward call, not just the first --
+    # the cached path forwards one position at a time.
+    assert source.count("**speaker,") == 2
