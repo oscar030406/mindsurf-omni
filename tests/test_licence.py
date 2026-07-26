@@ -100,6 +100,23 @@ def test_attribution_names_a_pinned_revision() -> None:
         assert len(revision) >= 8, f"{entry} does not pin a revision"
 
 
+def test_attribution_names_the_host_it_resolves_on() -> None:
+    """owner/name is ambiguous across hubs, and one of ours was not on the one
+    everybody assumed: gongjy/minimind_dataset does not exist on Hugging Face,
+    it is a ModelScope repo. An attribution nobody can resolve is not one."""
+    for entry in RECORD["attribution_required"]:
+        assert "." in entry.split("/")[0], f"{entry} does not say which host"
+
+
+def test_every_component_that_ships_in_a_checkpoint_is_listed() -> None:
+    """The graft turned upstream's Talker from a benchmark into a component.
+
+    Twenty of its tensors travel inside t2a_graft and everything after it, so
+    it is part of what would be distributed and needs a row of its own.
+    """
+    assert "upstream_talker_weights" in {asset["name"] for asset in RECORD["assets"]}
+
+
 @pytest.mark.parametrize("document", ["README.md", "docs/INTEGRATION.md", "docs/EVALUATION.md"])
 def test_the_restriction_appears_wherever_someone_might_start(document: str) -> None:
     """A restriction stated in one place is one that gets missed."""

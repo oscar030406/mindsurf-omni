@@ -5,7 +5,7 @@
       "inherited_from": "gongjy/minimind_dataset @ 74aad49f",
       "licence": "CC-BY-NC-4.0",
       "name": "text_base",
-      "note": "the MIT licence on MiniMind's code repository does not apply: weights inherit the licence of the data, not of the code that trained them",
+      "note": "the MIT licence on MiniMind's code repository does not apply: weights inherit the licence of the data, not of the code that trained them. Re-checked 2026-07-26 and two things need saying. The corpus named here resolves on ModelScope, not Hugging Face -- an attribution that does not say which host is not resolvable, so the entry under attribution_required now names it. And the Hugging Face copy of the same corpus, jingyaogong/minimind_dataset, today declares apache-2.0 together with cc-by-nc-2.0, not 4.0. The pinned revision's own text could not be read to confirm which applied then. Non-commercial holds under either version, so the conclusion is untouched, but the exact version recorded here is now in doubt and should not be quoted as settled.",
       "verified": true,
       "what": "89,864,448 parameter Chinese-first language model"
     },
@@ -14,6 +14,15 @@
       "licence": "Apache-2.0",
       "name": "minimind_o_code",
       "verified": true
+    },
+    {
+      "commercial_use": null,
+      "licence": "declared apache-2.0 by the release card, but the same reasoning as text_base applies",
+      "licence_link": "https://huggingface.co/jingyaogong/minimind-3o",
+      "name": "upstream_talker_weights",
+      "note": "added 2026-07-26 because the graft made this a component rather than a benchmark. t2a_graft and everything downstream of it carry upstream's released Talker -- 20 tensors, 47.05M parameters, taken from sft_omni_768 by scripts/graft_talker.py, provenance in the sidecar. The card at huggingface.co/jingyaogong/minimind-3o says apache-2.0. This record does not take that at face value, for the reason already written under text_base: weights inherit the licence of the data. The sibling card jingyaogong/minimind-3 declares apache-2.0 while naming jingyaogong/minimind_dataset as its training data, and that dataset's own card declares apache-2.0 and cc-by-nc-2.0 together. So null: the declaration is on record, and it is contradicted by the corpus it names. The conclusion does not move either way -- our Thinker binds this checkpoint to CC-BY-NC-4.0 regardless.",
+      "verified": false,
+      "what": "upstream's released Talker, carried by every graft-derived checkpoint"
     },
     {
       "commercial_use": null,
@@ -53,8 +62,8 @@
     }
   ],
   "attribution_required": [
-    "gongjy/minimind_dataset @ 74aad49fa4443e7ed640d44bc4e9c7d1fe71ada5",
-    "kyutai/mimi @ 89091b3e466eb6a9d11e537bf26b144f194978f7"
+    "modelscope.cn/datasets/gongjy/minimind_dataset @ 74aad49fa4443e7ed640d44bc4e9c7d1fe71ada5",
+    "huggingface.co/kyutai/mimi @ 89091b3e466eb6a9d11e537bf26b144f194978f7"
   ],
   "conclusion": {
     "binding_constraint": "text_base",

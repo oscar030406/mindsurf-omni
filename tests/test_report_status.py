@@ -171,11 +171,18 @@ def test_an_older_probe_run_is_marked_from_its_provenance(
 def test_the_licence_summary_counts_unread_terms_rather_than_saying_mostly(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """ "Mostly verified" is exactly the rounding this report prevents."""
+    """ "Mostly verified" is exactly the rounding this report prevents.
+
+    The denominator is read from the record rather than written here: it grew
+    from six to seven the day the graft made upstream's Talker a component
+    that ships rather than a benchmark to compare against.
+    """
+    root = Path(__file__).resolve().parent.parent
+    record = json.loads((root / "configs" / "release" / "licence.json").read_text(encoding="utf-8"))
     lines = licence()
 
     assert any("未读" in line for line in lines)
-    assert any("/6" in line for line in lines)
+    assert any(f"/{len(record['assets'])}" in line for line in lines)
 
 
 def _run_log(path: Path, total: int, epochs: int) -> Path:
