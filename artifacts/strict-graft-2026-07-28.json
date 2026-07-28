@@ -1,0 +1,8 @@
+{
+  "baseline_checkpoint_strict_val": 1.7245730902209426,
+  "blocks": 1408,
+  "delta_over_baseline_checkpoint": 2.9927723570303484,
+  "holdout_sha256": "664772d3a8420fe49104c6c531c7eebeeaf92290dd4ab3d5bb34fe88a2fc1f34",
+  "max_length": 384,
+  "strict_val": 4.717345447251291
+}

@@ -193,6 +193,11 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
     pattern = re.compile(args.name_pattern)
 
     by_voice: dict[str, list[float]] = {}
+    # Per-clip rows as well as aggregates: two arms scored on the same voices
+    # and the same texts can be paired clip by clip, and a paired verdict is
+    # the only kind this project lets decide anything. Aggregates alone would
+    # force a comparison of means with no threshold.
+    samples: list[dict[str, Any]] = []
     unmatched = []
     resamplers: dict[int, Any] = {}
     for directory in args.score:
@@ -226,7 +231,16 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
                 if rate not in resamplers:
                     resamplers[rate] = torchaudio.transforms.Resample(rate, MEL["sample_rate"])
                 audio = resamplers[rate](audio)
-            by_voice.setdefault(name, []).append(cosine(embedder(audio), voices[name]["spk_emb"]))
+            similarity = cosine(embedder(audio), voices[name]["spk_emb"])
+            by_voice.setdefault(name, []).append(similarity)
+            samples.append(
+                {
+                    "id": f"{name}/{path.stem}",
+                    "voice": name,
+                    "split": voices[name]["split"],
+                    "similarity": similarity,
+                }
+            )
 
     if not by_voice:
         raise SystemExit(
@@ -250,7 +264,12 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
         split, mean = rows[-1]["split"], rows[-1]["similarity"]
         print(f"  {name:<10} {split:<6} n={len(values):<3} 相似度 {mean:.4f}")
 
-    payload: dict[str, Any] = {"mode": "score", "voices": rows, "unmatched": unmatched}
+    payload: dict[str, Any] = {
+        "mode": "score",
+        "voices": rows,
+        "samples": samples,
+        "unmatched": unmatched,
+    }
     for split in ("seen", "unseen"):
         values = [
             value for row in rows if row["split"] == split for value in by_voice[row["voice"]]
