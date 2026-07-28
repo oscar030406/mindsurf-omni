@@ -1,0 +1,12 @@
+{
+  "failed": [],
+  "gating_eligible": false,
+  "note": "resolves 1460.2059 at best, but the effect of interest is 200.0000",
+  "p50_ms": 3799.725150995073,
+  "p95_ms": 5586.499562006793,
+  "stage_medians_ms": {
+    "first_text_token": 871.9725879927864,
+    "synthesis": 2945.918874000199
+  },
+  "turns": 40
+}
