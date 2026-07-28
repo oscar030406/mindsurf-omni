@@ -61,16 +61,19 @@ def test_reading_a_date_aloud_is_only_forgiven_when_asked() -> None:
     """
     reference, spoken = "2021年9月23日", "二零二一年九月二十三日"
     assert character_error_rate(reference, spoken) > 0.4
+    pytest.importorskip("cn2an")  # the fold lives in the optional evaluate extra
     assert character_error_rate(reference, spoken, fold_numbers=True) == 0.0
 
 
 def test_folding_numerals_does_not_forgive_a_wrong_number() -> None:
+    pytest.importorskip("cn2an")  # the fold lives in the optional evaluate extra
     assert character_error_rate("9月23日", "9月24日", fold_numbers=True) > 0.0
 
 
 def test_folding_numerals_hits_both_sides_of_an_ordinary_word() -> None:
     """一般 becomes 1般 -- harmless because it happens to reference and
     hypothesis alike, which is the same argument the script fold rests on."""
+    pytest.importorskip("cn2an")  # the fold lives in the optional evaluate extra
     assert character_error_rate("一般的问题", "一般的问题", fold_numbers=True) == 0.0
     assert normalise_for_cer("一般", fold_numbers=True) == "1般"
 

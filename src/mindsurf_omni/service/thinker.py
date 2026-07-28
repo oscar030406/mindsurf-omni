@@ -163,13 +163,23 @@ class ThinkerGenerator:
         import threading
 
         import torch
-        from transformers import TextIteratorStreamer
+        from transformers import StoppingCriteria, TextIteratorStreamer
 
         self.load()
         streamer = TextIteratorStreamer(self._tokenizer, skip_prompt=True, skip_special_tokens=True)
         input_ids = self._tokenizer(self.prompt(messages), return_tensors="pt").input_ids.to(
             self.device
         )
+
+        # The same defence the native path needs, for the same reason: the
+        # streamer's queue is unbounded, so a caller that stops reading leaves
+        # `generate` running to max_new_tokens with nowhere to put its tokens.
+        # It raises nothing and shows up only as later turns being slower.
+        stop = threading.Event()
+
+        class Abandoned(StoppingCriteria):  # type: ignore[misc]
+            def __call__(self, input_ids: Any, scores: Any, **kwargs: Any) -> bool:
+                return stop.is_set()
 
         def run() -> None:
             with torch.inference_mode():
@@ -181,6 +191,7 @@ class ThinkerGenerator:
                     do_sample=settings.temperature > 0,
                     eos_token_id=IM_END,
                     streamer=streamer,
+                    stopping_criteria=[Abandoned()],
                 )
 
         thread = threading.Thread(target=run, daemon=True)
@@ -188,12 +199,15 @@ class ThinkerGenerator:
 
         iterator = iter(streamer)
         sentinel = object()
-        while True:
-            # next() on the streamer blocks until the model produces a token;
-            # doing that on the event loop would stall every other request on
-            # this worker for the length of a reply.
-            delta = await asyncio.to_thread(next, iterator, sentinel)
-            if delta is sentinel:
-                break
-            if delta:
-                yield str(delta)
+        try:
+            while True:
+                # next() on the streamer blocks until the model produces a
+                # token; doing that on the event loop would stall every other
+                # request on this worker for the length of a reply.
+                delta = await asyncio.to_thread(next, iterator, sentinel)
+                if delta is sentinel:
+                    break
+                if delta:
+                    yield str(delta)
+        finally:
+            stop.set()

@@ -14,6 +14,7 @@ torch and a real file, so neither is repeated here.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -184,3 +185,78 @@ def test_a_named_checkpoint_without_torch_says_so(tmp_path: Path) -> None:
             )
     finally:
         factory._importable = real  # type: ignore[assignment]
+
+
+def test_a_consumer_that_stops_stops_the_generation() -> None:
+    """A caller that reads part of a reply must not leave the model generating.
+
+    The streamer's queue is unbounded, so nothing pushes back on `generate`
+    when the reader goes away: it runs to max_new_tokens on the GPU and puts
+    the rest of the reply somewhere nobody will look. It raises nothing, and
+    surfaces only as later turns being slower -- which on the native path cost
+    this project three days and two wrong explanations of its own latency.
+
+    Needs torch and transformers, which the test environment does not carry;
+    it runs where the service runs.
+    """
+    import asyncio
+
+    pytest.importorskip("torch")
+    pytest.importorskip("transformers")
+
+    import torch
+
+    from mindsurf_omni.service.engine import GenerationSettings
+
+    steps = 0
+
+    class _Tokeniser:
+        def __call__(self, text: str, return_tensors: str = "pt") -> Any:
+            return type("_Encoded", (), {"input_ids": torch.zeros((1, 1), dtype=torch.long)})()
+
+        def decode(self, value: Any, **kwargs: Any) -> str:
+            # The streamer decodes the whole cache each step and emits the
+            # diff, so a constant string would look like no new text at all.
+            return "字" * len(value)
+
+    class _Model:
+        def generate(self, **kwargs: Any) -> None:
+            nonlocal steps
+            streamer = kwargs["streamer"]
+            # Tolerant on purpose: without the fix there is no criteria to
+            # read, and this should then run to 200 and fail the assertion
+            # rather than raise in the thread and hang the reader.
+            criteria = kwargs.get("stopping_criteria") or []
+            ids = torch.zeros((1, 1), dtype=torch.long)
+            for _ in range(200):
+                if any(one(ids, None) for one in criteria):
+                    break
+                steps += 1
+                streamer.put(ids)
+            streamer.end()
+
+    class _Generator(ThinkerGenerator):
+        def load(self) -> None:
+            pass
+
+        def prompt(self, messages: list[dict[str, str]]) -> str:
+            return "问"
+
+    generator = _Generator(
+        checkpoint=Path("unused"), tokenizer_dir=Path("unused"), minimind_root=Path("unused")
+    )
+    generator._model = _Model()
+    generator._tokenizer = _Tokeniser()
+
+    async def read_two() -> int:
+        stream = generator.generate([{"role": "user", "content": "问"}], GenerationSettings())
+        seen = 0
+        async for _ in stream:
+            seen += 1
+            if seen == 2:
+                break
+        await stream.aclose()
+        return seen
+
+    assert asyncio.run(read_two()) == 2
+    assert steps < 200, "generation ran to completion after the consumer stopped"
