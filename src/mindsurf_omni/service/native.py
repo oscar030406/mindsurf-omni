@@ -209,16 +209,29 @@ class NativeEngine(SpeechEngine):
         Generation is synchronous and holds the GIL between steps, so it runs
         on a thread and the pairs come back through a queue. Driving it on the
         event loop would stall every other request for the length of a reply.
+
+        The producer watches for the consumer leaving, which is not a detail.
+        A caller that stops early -- a cancelled turn, a client that hung up,
+        a measurement that reads the first chunk and closes -- abandons this
+        generator, and an unwatched producer would keep decoding the rest of
+        the reply on the GPU with nowhere to put it. Nothing raises, so the
+        cost shows up only as the next turn being slower, then the next: a
+        service that degrades with use and looks like a hardware problem. It
+        is also what makes the claim we hand the backend true, that generation
+        can be stopped at any step. Stopping the consumer has to stop the work.
         """
         import queue
         import threading
 
         outbox: queue.Queue[Any] = queue.Queue()
         done = object()
+        stop = threading.Event()
 
         def produce() -> None:
             try:
                 for item in self._stream(messages, settings, audio):
+                    if stop.is_set():
+                        return
                     outbox.put(item)
             except Exception as error:  # noqa: BLE001 - carried to the consumer
                 outbox.put(error)
@@ -227,13 +240,19 @@ class NativeEngine(SpeechEngine):
 
         thread = threading.Thread(target=produce, daemon=True)
         thread.start()
-        while True:
-            item = await asyncio.to_thread(outbox.get)
-            if item is done:
-                return
-            if isinstance(item, BaseException):
-                raise item
-            yield item
+        try:
+            while True:
+                item = await asyncio.to_thread(outbox.get)
+                if item is done:
+                    return
+                if isinstance(item, BaseException):
+                    raise item
+                yield item
+        finally:
+            # Runs on a normal return, on an exception, and when the generator
+            # is closed by a caller that stopped reading -- which is the case
+            # this exists for.
+            stop.set()
 
     def _stream(
         self,

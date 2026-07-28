@@ -217,3 +217,52 @@ def test_the_serving_loader_reads_the_talker_shape_off_the_checkpoint() -> None:
         detect_shape({"model.layers.0.mlp.gate_proj.weight": Tensor(3584, 768)})
     with pytest.raises(ConfigurationError, match="neither ours"):
         detect_shape({"talker.layers.0.mlp.gate_proj.weight": Tensor(999, 768)})
+
+
+def test_a_consumer_that_stops_stops_the_generation() -> None:
+    """A caller that reads part of a turn must not leave the GPU still decoding.
+
+    This is the bug that made the service get slower the more it was used:
+    every realtime turn whose client hung up early -- including every turn of
+    the latency measurement, which reads the first audio chunk and closes --
+    left a generation running with nowhere to put its output. Nothing raised,
+    so it surfaced only as the next turn being slower.
+    """
+    import asyncio
+    import threading
+    import time
+
+    from mindsurf_omni.service.engine import GenerationSettings
+    from mindsurf_omni.service.native import NativeEngine
+
+    total = 200
+    produced: list[int] = []
+    finished = threading.Event()
+
+    def stream(messages: object, settings: object, audio: object) -> object:
+        try:
+            for index in range(total):
+                produced.append(index)
+                time.sleep(0.002)
+                yield f"t{index}", None
+        finally:
+            finished.set()
+
+    engine = object.__new__(NativeEngine)
+    engine._stream = stream  # type: ignore[method-assign]
+
+    async def read_two() -> list[object]:
+        turn = engine._turn(None, GenerationSettings(), None)
+        seen: list[object] = []
+        async for item in turn:
+            seen.append(item)
+            if len(seen) == 2:
+                break
+        await turn.aclose()
+        return seen
+
+    seen = asyncio.run(read_two())
+
+    assert len(seen) == 2
+    assert finished.wait(timeout=5), "the producer never noticed the consumer had left"
+    assert len(produced) < total, "generation ran to completion after the consumer stopped"
