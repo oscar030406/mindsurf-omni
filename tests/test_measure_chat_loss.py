@@ -31,3 +31,18 @@ def test_a_merged_boundary_is_dropped_rather_than_scored_at_the_wrong_offset() -
 def test_an_empty_reply_is_dropped() -> None:
     assert reply_span([1, 2, 3], [1, 2, 3]) is None
     assert reply_span([1, 2, 3], [1, 2]) is None
+
+
+def test_the_repetition_screen_catches_a_loop_and_spares_short_text() -> None:
+    """It screens for a model that has started looping, nothing more.
+
+    A likelihood cannot see a loop, because a loop is exactly what a language
+    model finds probable -- so the arm that degenerates can score better. This
+    is not compared between arms as a quality number; the project already
+    shipped one repetition metric that rewarded a seven-character answer.
+    """
+    from scripts.measure_chat_loss import repetition
+
+    assert repetition("好的好的好的好的好的好的好的好的好的好的") > 0.5
+    assert repetition("今天天气晴朗，适合出门散步。") == 0.0
+    assert repetition("短") == 0.0  # shorter than the window, not a loop

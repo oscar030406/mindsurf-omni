@@ -44,6 +44,21 @@ from mindsurf_omni.evaluation.metrics import compare_paired  # noqa: E402
 EFFECT_OF_INTEREST = 0.05
 
 
+def repetition(text: str, window: int = 8) -> float:
+    """Share of `window`-grams that have appeared before, 0 when the text is short.
+
+    A screen, not a score. This project has already shipped a repetition metric
+    that gave a seven-character answer full marks, so this one is never
+    compared between arms as a quality judgement -- it is here to catch a model
+    that has started looping, which is the failure a likelihood number cannot
+    see because a loop is highly probable.
+    """
+    if len(text) <= window:
+        return 0.0
+    grams = [text[i : i + window] for i in range(len(text) - window + 1)]
+    return 1.0 - len(set(grams)) / len(grams)
+
+
 def reply_span(prefix_ids: list[int], full_ids: list[int]) -> slice | None:
     """Where the assistant's reply sits in the full sequence, or None.
 
@@ -104,6 +119,43 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
         total_tokens += count
         rows.append({"id": probe["id"], "nll": float(nll) / count, "tokens": count})
 
+    if args.generate:
+        replies: list[dict[str, Any]] = []
+        for probe in probes:
+            messages = [{"role": "user", "content": probe["prompt"]}]
+            torch.manual_seed(args.seed)
+            text = ""
+            import asyncio
+
+            async def collect(messages: Any = messages) -> str:
+                out = ""
+                async for delta in generator.generate(messages, _settings(args)):
+                    out += delta
+                return out
+
+            text = asyncio.run(collect())
+            replies.append(
+                {
+                    "id": probe["id"],
+                    "reply": text,
+                    "chars": len(text),
+                    "repetition": repetition(text),
+                    "empty": not text.strip(),
+                }
+            )
+        screen = {
+            "empty": sum(1 for r in replies if r["empty"]),
+            "looping": sum(1 for r in replies if r["repetition"] > 0.5),
+            "median_chars": statistics.median(int(r["chars"]) for r in replies),
+            "at_token_cap": sum(1 for r in replies if int(r["chars"]) >= args.max_tokens),
+        }
+        print(
+            f"  生成筛查: 空 {screen['empty']}  疑似循环 {screen['looping']}  "
+            f"中位长度 {screen['median_chars']:.0f} 字"
+        )
+    else:
+        replies, screen = [], {}
+
     return {
         "checkpoint": checkpoint.name,
         "probes": str(args.probes),
@@ -114,7 +166,17 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
         "chat_nll": total_nll / total_tokens if total_tokens else float("nan"),
         "mean_of_samples": statistics.fmean(row["nll"] for row in rows) if rows else float("nan"),
         "samples": rows,
+        "screen": screen,
+        "replies": replies,
     }
+
+
+def _settings(args: argparse.Namespace) -> Any:
+    from mindsurf_omni.service.engine import GenerationSettings
+
+    return GenerationSettings(
+        temperature=args.temperature, top_p=args.top_p, max_tokens=args.max_tokens
+    )
 
 
 def main() -> None:
@@ -126,6 +188,16 @@ def main() -> None:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--only", type=Path, help="JSON list of ids to keep, e.g. the clean 158")
     parser.add_argument("--reference", type=Path, help="a previous report, to pair against")
+    parser.add_argument(
+        "--generate",
+        action="store_true",
+        help="also answer each prompt and screen for gross defects -- a likelihood "
+        "cannot see a loop, because a loop is probable",
+    )
+    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--top-p", type=float, default=0.9)
+    parser.add_argument("--max-tokens", type=int, default=512)
+    parser.add_argument("--seed", type=int, default=1000)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
