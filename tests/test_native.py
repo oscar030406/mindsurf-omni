@@ -186,3 +186,34 @@ def test_no_audio_leaves_the_written_turn_alone() -> None:
 
     assert AUDIO_PLACEHOLDER not in prompt
     assert "今天天气怎么样" in prompt
+
+
+def test_the_serving_loader_reads_the_talker_shape_off_the_checkpoint() -> None:
+    """The graft could not be served at all until this existed.
+
+    Our Talker's feed-forward is 3584 wide and upstream's is 2432. The service
+    built ours unconditionally, so loading the grafted checkpoint -- the one
+    that passed acceptance -- raised twenty size mismatches at startup. A
+    shape passed by configuration would be a shape someone can set wrong, and
+    the way that goes wrong is a Talker left at random initialisation that
+    still emits codes.
+    """
+    from mindsurf_omni.service.config import ConfigurationError
+    from mindsurf_omni.service.native import OMNI_PARAMETERS, detect_shape
+
+    class Tensor:  # only .shape is read, and torch is not installed here
+        def __init__(self, *shape: int) -> None:
+            self.shape = shape
+
+    ours = {"talker.layers.0.mlp.gate_proj.weight": Tensor(3584, 768)}
+    graft = {"talker.layers.0.mlp.gate_proj.weight": Tensor(2432, 768)}
+    assert detect_shape(ours) == "mindsurf"
+    assert detect_shape(graft) == "graft"
+    assert OMNI_PARAMETERS["mindsurf"] != OMNI_PARAMETERS["graft"]
+
+    # A text-only checkpoint is refused here rather than at the first missing
+    # key, and an unrecognised width is refused rather than guessed.
+    with pytest.raises(ConfigurationError, match="no Talker"):
+        detect_shape({"model.layers.0.mlp.gate_proj.weight": Tensor(3584, 768)})
+    with pytest.raises(ConfigurationError, match="neither ours"):
+        detect_shape({"talker.layers.0.mlp.gate_proj.weight": Tensor(999, 768)})

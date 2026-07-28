@@ -390,7 +390,36 @@ def prepare_output(pcm: bytes, sample_rate: int, target_rate: int, trim: bool) -
 
 
 # Thinker plus Talker plus the projections, as the training reports it.
-OMNI_PARAMETERS = 152_059_650
+# Our shape on both halves, and the graft: our Thinker beside upstream's
+# narrower Talker. Which one a checkpoint needs is read off the checkpoint --
+# a shape passed by configuration is a shape someone can get wrong, and the
+# way it goes wrong is a Talker left at random initialisation that still emits
+# codes.
+OMNI_PARAMETERS = {"mindsurf": 152_059_650, "graft": 139_083_522}
+TALKER_WIDTH = {"mindsurf": 3584, "graft": 2432}
+
+
+def detect_shape(state: dict[str, Any]) -> str:
+    """Which shape this checkpoint's Talker was trained at.
+
+    Read rather than configured. The graft carries upstream's Talker beside
+    our Thinker, so its Talker feed-forward is 2432 wide where ours is 3584,
+    and building the wrong one does not produce a helpful error at serving
+    time -- it produces twenty size mismatches, or worse, silence.
+    """
+    for key, tensor in state.items():
+        if key.startswith("talker.") and key.endswith("mlp.gate_proj.weight"):
+            width = int(tensor.shape[0])
+            for name, expected in TALKER_WIDTH.items():
+                if width == expected:
+                    return name
+            raise ConfigurationError(
+                f"the Talker's feed-forward is {width} wide, which is neither ours "
+                f"({TALKER_WIDTH['mindsurf']}) nor upstream's ({TALKER_WIDTH['graft']})"
+            )
+    # No Talker tensors at all: a text-only checkpoint, which the native path
+    # cannot serve. Say so here rather than at the first missing key.
+    raise ConfigurationError("this checkpoint has no Talker; the native path needs one")
 
 
 def load_omni(
@@ -425,11 +454,21 @@ def load_omni(
         sys.path.insert(0, str(minimind_root))
     from model import model_minimind, model_omni  # type: ignore[import-not-found]
 
+    state = torch.load(str(checkpoint), map_location="cpu", weights_only=True)
+    shape = detect_shape(state)
+
     original = model_minimind.MiniMindConfig.__init__
+    # On a graft the override goes to the Thinker alone. OmniConfig is the
+    # Thinker's config; the Talker builds a plain MiniMindConfig and has to
+    # keep the library defaults upstream trained it with. Widening it here
+    # would make its twenty tensors mismatch, which is how this failed before
+    # the detection existed.
+    thinker_only = shape == "graft"
 
     def patched(self: Any, *args: Any, **kwargs: Any) -> None:
-        kwargs.setdefault("intermediate_size", 3584)
-        kwargs.setdefault("num_key_value_heads", 8)
+        if not (thinker_only and type(self) is model_minimind.MiniMindConfig):
+            kwargs.setdefault("intermediate_size", 3584)
+            kwargs.setdefault("num_key_value_heads", 8)
         original(self, *args, **kwargs)
 
     model_minimind.MiniMindConfig.__init__ = patched
@@ -446,13 +485,12 @@ def load_omni(
         model_minimind.MiniMindConfig.__init__ = original
 
     count = sum(parameter.numel() for parameter in model.parameters())
-    if count != OMNI_PARAMETERS:
+    if count != OMNI_PARAMETERS[shape]:
         raise ConfigurationError(
-            f"the omni model built to {count:,} parameters, but training reported "
-            f"{OMNI_PARAMETERS:,} -- the config does not match the checkpoint"
+            f"the omni model built to {count:,} parameters, but a {shape!r} checkpoint "
+            f"should give {OMNI_PARAMETERS[shape]:,} -- the config does not match it"
         )
 
-    state = torch.load(str(checkpoint), map_location="cpu", weights_only=True)
     incompatible = model.load_state_dict(state, strict=False)
     missing = [key for key in incompatible.missing_keys if key != "lm_head.weight"]
     if missing:
