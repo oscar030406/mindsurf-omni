@@ -1,0 +1,35 @@
+{
+  "holdout": "pretrain_strict_val_2k.jsonl",
+  "holdout_sha256": "664772d3a8420fe49104c6c531c7eebeeaf92290dd4ab3d5bb34fe88a2fc1f34",
+  "max_length": 384,
+  "packing": "token-weighted, contiguous",
+  "baseline_checkpoint_strict_val": 1.7267999999999999,
+  "thinker_provenance": {
+    "graft_thinker_is_bitwise": "sft_mindsurf_768.pth",
+    "tensors_identical": "91/91",
+    "note": "the graft replaced the Talker, not the Thinker: the Thinker carried the whole first round into this one"
+  },
+  "strict_val": {
+    "llm_mindsurf_768": 1.7267999999999999,
+    "sft_mindsurf_768": 3.329,
+    "t2a_graft_768": 3.1993,
+    "sft_graft_768": 4.717345447251291
+  },
+  "thinker_relative_l2_from_text_base": {
+    "sft_mindsurf_768": 0.646341,
+    "t2a_graft_768": 0.646358,
+    "sft_graft_768": 0.649636
+  },
+  "relative_l2_by_stage": {
+    "t2a": {"thinker": 0.043471, "talker": 0.030523, "audio_proj": 0.010821},
+    "a2a": {"thinker": 0.122283, "talker": 0.059007, "audio_proj": 0.287071},
+    "whole_chain": {"thinker": 0.124345, "talker": 0.068367, "audio_proj": 0.285677}
+  },
+  "verdicts": {
+    "t2a_prose_cost_nat": -0.1297,
+    "a2a_prose_cost_nat": 1.518,
+    "threshold_nat": 0.05,
+    "comparison": "t2a_graft vs sft_graft -- both audio-tuned, same lineage, same holdout and recipe; the base-vs-SFT caveat does not apply to this pair",
+    "not_measured": "chat-format ability; the only chat corpus on disk is the training set"
+  }
+}
