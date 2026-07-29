@@ -67,6 +67,19 @@ A2A_SEQ="${A2A_SEQ:-1024}"   # upstream's value; ours were 640 and 768
 PROJ_BS="${PROJ_BS:-16}"
 FULL_BS="${FULL_BS:-10}"
 SKIP_PROJ="${SKIP_PROJ:-0}"
+# FREEZE=all holds the Thinker still and trains only the Talker and audio_proj.
+#
+# The reason is measured rather than aesthetic. A2A moves the Thinker 0.1223
+# against the Talker's 0.0590 -- more than twice as much, for an audio
+# objective -- and that displacement buys nothing on CER and nothing on UTMOS
+# while costing 1.52 nat of prose and a blind-judged 74% loss on conversation
+# quality. The cloning it does buy is carried by the Talker and audio_proj,
+# which are exactly what this leaves trainable.
+#
+# Checked rather than assumed: with freeze_backbone=all the trainable set is
+# talker 47,050,754 plus audio_proj 985,600, and all 89,864,448 of the Thinker
+# are frozen including lm_head, which is the same tensor as embed_tokens.
+FREEZE="${FREEZE:-none}"
 
 cd "$ROOT/trainer" || exit 1
 
@@ -105,7 +118,7 @@ run() {
   [ "$status" -eq 0 ] || exit "$status"
 }
 
-echo "seq $A2A_SEQ, proj bs $PROJ_BS, full bs $FULL_BS, skip_proj $SKIP_PROJ" | tee -a "$LOG"
+echo "seq $A2A_SEQ, proj bs $PROJ_BS, full bs $FULL_BS, skip_proj $SKIP_PROJ, freeze $FREEZE" | tee -a "$LOG"
 
 # Upstream line 2.
 if [ "$SKIP_PROJ" -eq 0 ]; then
@@ -123,6 +136,7 @@ fi
 run "a2a_full" \
   --data_path "$DATA_A2A" --epochs 3 --batch_size "$FULL_BS" --max_seq_len "$A2A_SEQ" \
   --learning_rate 5e-5 --from_weight "$NEXT_FROM" --save_weight "$SAVE" \
+  --freeze_backbone "$FREEZE" \
   --num_workers 8 --use_moe 0 --log_interval 50
 
 # Upstream line 6, which we had never run. In its pipeline the two I2T passes
@@ -131,6 +145,7 @@ run "a2a_full" \
 run "a2a_tail" \
   --data_path "$DATA_A2A" --epochs 1 --batch_size "$FULL_BS" --max_seq_len "$A2A_SEQ" \
   --learning_rate 5e-6 --from_weight "$SAVE" --save_weight "$SAVE" \
+  --freeze_backbone "$FREEZE" \
   --num_workers 8 --use_moe 0 --log_interval 50
 
 echo "===== a2a from $FROM done $(date -Is) =====" >>"$LOG"
