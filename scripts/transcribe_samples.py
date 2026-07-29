@@ -128,6 +128,25 @@ def load_paraformer() -> tuple[Any, str, str]:
     return transcribe, "paraformer", "paraformer-zh"
 
 
+def refuse_if_the_judge_never_ran(rows: list[dict[str, Any]]) -> None:
+    """Zero transcripts is the recogniser failing, not the model going silent.
+
+    Counting a failure as silence is right for a handful of clips and wrong for
+    all of them: a judge that never loaded produces a perfect CER of 1.0 and a
+    file that looks exactly like a measurement. That happened -- whisper could
+    not find ffmpeg on the server, wrote 158 empty transcripts, and said so only
+    by setting transcribed:false on every row.
+    """
+    if not rows or any(row.get("transcribed") for row in rows):
+        return
+    errors = sorted({str(row.get("error")) for row in rows if row.get("error")})
+    raise SystemExit(
+        f"nothing transcribed at all ({len(rows)} clips): the judge failed to run rather "
+        f"than the model failing to speak, and this output would score as total silence. "
+        f"First error: {errors[:1]}"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True, type=Path)
@@ -163,6 +182,8 @@ def main() -> None:
     if transcribed < len(rows):
         print(f"未能转写 {len(rows) - transcribed} 条——它们以空转写计入，不被丢弃")
     print(f"输出 {args.output}")
+
+    refuse_if_the_judge_never_ran(rows)
 
 
 if __name__ == "__main__":

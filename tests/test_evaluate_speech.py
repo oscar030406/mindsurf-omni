@@ -330,3 +330,38 @@ def test_the_shape_line_names_the_failure_pattern() -> None:
     )
 
     assert "普遍念不准" in shape_lines(widespread)[0]
+
+
+def test_a_judge_that_never_ran_refuses_rather_than_scoring_silence() -> None:
+    """Zero transcripts is the judge failing, not the model failing to speak.
+
+    Counting failures as silence is right for a few clips and wrong for all of
+    them: a recogniser that could not load produces a perfect CER of 1.0 and a
+    report that looks like a measurement. This happened -- whisper could not
+    find ffmpeg on the server, wrote 158 empty transcripts, and only set
+    transcribed:false on each row.
+    """
+    import pytest
+    from scripts.transcribe_samples import refuse_if_the_judge_never_ran
+
+    with pytest.raises(SystemExit, match="the judge failed to run"):
+        refuse_if_the_judge_never_ran(
+            [
+                {"id": "a", "transcribed": False, "error": "[Errno 2] ... 'ffmpeg'"},
+                {"id": "b", "transcribed": False, "error": "[Errno 2] ... 'ffmpeg'"},
+            ]
+        )
+
+
+def test_some_failures_are_still_counted_as_silence() -> None:
+    """The all-or-nothing distinction is the whole point of the guard.
+
+    A model that goes silent on a few hard prompts is a real result and must
+    keep scoring; only a clean sweep means the instrument, not the subject.
+    """
+    from scripts.transcribe_samples import refuse_if_the_judge_never_ran
+
+    refuse_if_the_judge_never_ran(
+        [{"id": "a", "transcribed": True}, {"id": "b", "transcribed": False}]
+    )
+    refuse_if_the_judge_never_ran([])
