@@ -1,0 +1,89 @@
+{
+  "candidate": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.01582602611045672,
+        "note": "",
+        "sample_size": 158,
+        "value": 0.08566130728813157
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 158,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.05056222292441359,
+        "note": "",
+        "sample_size": 158,
+        "value": 2.435653454140772
+      }
+    },
+    "name": "candidate",
+    "not_claimed": [],
+    "sample_size": 158,
+    "shape": {
+      "cer_median": 0.05771365149833518,
+      "cer_over_0_3": 5.0,
+      "sample_size": 158.0
+    }
+  },
+  "comparison": {
+    "cer": "cer: indistinguishable (+0.0141, within ±0.0648)",
+    "silent_rate": "silent_rate: indistinguishable (+0.0000, within ±0.0000)",
+    "utmos": "utmos: indistinguishable (+0.0132, within ±0.2168)"
+  },
+  "judge": {
+    "candidate": [
+      "paraformer-zh"
+    ],
+    "reference": [
+      "paraformer-zh"
+    ]
+  },
+  "normalisation": {
+    "fold_numerals": false
+  },
+  "paired_comparison": {
+    "cer": "cer: indistinguishable (+0.0141, within ±0.0400, paired n=158)",
+    "utmos": "utmos: indistinguishable (+0.0132, within ±0.1054, paired n=158)"
+  },
+  "reference": {
+    "measurements": {
+      "cer": {
+        "gating_eligible": true,
+        "noise_floor": 0.014713054797275797,
+        "note": "",
+        "sample_size": 158,
+        "value": 0.0715592957820746
+      },
+      "silent_rate": {
+        "gating_eligible": true,
+        "noise_floor": 0.0,
+        "note": "",
+        "sample_size": 158,
+        "value": 0.0
+      },
+      "utmos": {
+        "gating_eligible": true,
+        "noise_floor": 0.051635336649568764,
+        "note": "",
+        "sample_size": 158,
+        "value": 2.422488686404651
+      }
+    },
+    "name": "reference",
+    "not_claimed": [],
+    "sample_size": 158,
+    "shape": {
+      "cer_median": 0.04499443263488207,
+      "cer_over_0_3": 9.0,
+      "sample_size": 158.0
+    }
+  },
+  "text_regression": null
+}
