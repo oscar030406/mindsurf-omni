@@ -123,3 +123,22 @@ def test_an_empty_branch_drops_the_pair_rather_than_scoring_an_empty_span() -> N
     perfectly likely reply rather than as a missing one."""
     assert encode_pair(_Tokeniser(), "问题", "回答", "") is None
     assert encode_pair(_Tokeniser(), "问题", "", "回答") is None
+
+
+def test_the_floor_tracks_the_checkpoint_scale_rather_than_being_a_constant() -> None:
+    """An absolute threshold would be wrong for any other model.
+
+    fp16's spacing is relative, so the same displacement is decisive on small
+    weights and invisible on large ones. This project's Thinker sits near
+    per-parameter RMS 0.13, where the spacing is about 1.2e-4 -- which is the
+    number the first default's whole update budget fell under.
+    """
+    from scripts.train_dpo import storage_resolution
+
+    ours = storage_resolution(0.1287)
+    smaller = storage_resolution(0.001)
+
+    assert ours == pytest.approx(1.22e-4, rel=0.05)
+    assert smaller < ours
+    # The old default's entire budget across the run.
+    assert ours > 2.5e-5

@@ -49,6 +49,12 @@ from scripts.measure_chat_loss import reply_span  # noqa: E402
 # starting point, and small data is the reason to start conservative.
 BETA = 0.1
 
+# An update smaller than a few times the fp16 spacing at the checkpoint's own
+# weight scale cannot be told from no update by anything downstream -- every
+# other checkpoint here is stored at that precision. Four is arbitrary but the
+# order of magnitude is not: at one ULP a save would round it away entirely.
+MINIMUM_ULPS = 4.0
+
 
 def encode_pair(
     tokeniser: Any, prompt: str, chosen: str, rejected: str
@@ -109,6 +115,20 @@ def dpo_loss(
     return -torch.nn.functional.logsigmoid(BETA * margin), margin
 
 
+def storage_resolution(scale: float) -> float:
+    """The fp16 spacing at a given weight magnitude.
+
+    Every checkpoint in this project is stored at fp16, so an update smaller
+    than this is not merely small -- it is unrepresentable in the format the
+    comparison will be made in, and reads downstream as no effect at all.
+    """
+    import torch
+
+    step = torch.tensor(scale, dtype=torch.float16)
+    above = torch.nextafter(step, torch.tensor(float("inf"), dtype=torch.float16))
+    return float(above - step)
+
+
 def evaluate(
     policy: Any, reference: Any, pairs: list[Any], args: argparse.Namespace
 ) -> dict[str, float]:
@@ -132,8 +152,8 @@ def evaluate(
                 sequence_logprob(reference, chosen, chosen_span),
                 sequence_logprob(reference, rejected, rejected_span),
             )
-            total += float(loss)
-            wins += int(float(margin) > 0)
+            total += float(loss.detach())
+            wins += int(float(margin.detach()) > 0)
     return {"heldout_loss": total / len(pairs), "heldout_ordered": wins / len(pairs)}
 
 
@@ -180,6 +200,12 @@ def main() -> None:
         "in-sample and held-out curves separate fast and that is the signal",
     )
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--allow-tiny-update",
+        action="store_true",
+        help="write the checkpoint even when the update is below the storage resolution; "
+        "for smoke runs, where producing a null is the point",
+    )
     parser.add_argument("--output", type=Path, required=True, help="omni checkpoint to write")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
@@ -250,16 +276,16 @@ def main() -> None:
                 policy_chosen, policy_rejected, reference_chosen, reference_rejected
             )
             (loss / args.accumulate).backward()
-            total += float(loss)
+            total += float(loss.detach())
             # Ordering by margin, not by the raw log-probability difference --
             # see dpo_loss. At step zero this is 0% by construction, because
             # policy and reference are the same weights; anything else on the
             # first screen means they are not, which is worth knowing early.
-            wins += int(float(margin) > 0)
+            wins += int(float(margin.detach()) > 0)
             # DPO's characteristic collapse pushes BOTH branches down while the
             # margin still grows. Tracking only the margin cannot see it.
-            chosen_logp += float(policy_chosen)
-            rejected_logp += float(policy_rejected)
+            chosen_logp += float(policy_chosen.detach())
+            rejected_logp += float(policy_rejected.detach())
 
             if step % args.accumulate == 0 or step == len(order):
                 torch.nn.utils.clip_grad_norm_(policy.parameters(), 1.0)
@@ -312,18 +338,25 @@ def main() -> None:
             f"only {replaced} of {len(wanted)} Thinker tensors were replaced; "
             "writing a half-tuned checkpoint would look exactly like a tuned one"
         )
-    # Counting tensors proves nothing: 91 of 91 replaced by the parent's own
-    # numbers passes that check and writes a file identical to its input. This
-    # counts the ones whose values actually moved.
+    # Counting tensors proves nothing, and counting *changed* tensors proves
+    # nearly as little once the write-out is fp32: any nonzero gradient makes
+    # every tensor differ by something. What matters is whether the update is
+    # larger than the resolution the rest of this project's checkpoints are
+    # stored at -- an update that would not survive being written as fp16 is at
+    # the noise floor of everything it will be compared against.
     moved = sum(1 for key in wanted if not torch.equal(merged[key], parent[key].float()))
-    if moved < replaced:
+    scale = float(torch.cat([parent[key].float().flatten() for key in wanted]).pow(2).mean().sqrt())
+    ulp = storage_resolution(scale)
+    if displacement < MINIMUM_ULPS * ulp and not args.allow_tiny_update:
         raise SystemExit(
-            f"only {moved} of {replaced} Thinker tensors changed value: the update is at or "
-            f"below the storage resolution (max |dw| {displacement:.2e}). Raise "
-            "--learning-rate or --epochs; a run that trains nothing writes the same file "
-            "as a run that trains something."
+            f"max |dw| is {displacement:.2e}, under {MINIMUM_ULPS} times the fp16 spacing "
+            f"({ulp:.2e}) at this checkpoint's weight scale ({scale:.4f}). An update this "
+            "small is indistinguishable from no update once stored, and every downstream "
+            "comparison would read it as 'no measurable effect' for a reason that is not "
+            "about preference. Raise --learning-rate or --epochs, or pass --allow-tiny-update "
+            "if a null run is what you meant to produce."
         )
-    print(f"最大权重位移 {displacement:.3e}")
+    print(f"最大权重位移 {displacement:.3e}（fp16 间距的 {displacement / ulp:.1f} 倍）")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     torch.save(merged, str(args.output))
     print(f"替换 {replaced} 个 Thinker 张量，写入 {args.output}")
@@ -339,6 +372,7 @@ def main() -> None:
         "thinker_tensors_replaced": replaced,
         "thinker_tensors_changed": moved,
         "max_weight_displacement": displacement,
+        "fp16_ulp_at_weight_scale": ulp,
         "heldout_pairs": len(heldout),
     }
     if args.report:
