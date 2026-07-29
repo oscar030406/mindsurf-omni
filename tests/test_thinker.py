@@ -286,7 +286,7 @@ def test_an_unknown_variant_is_refused_by_name() -> None:
         minimind_root=Path("unused"),
         variant="whatever-upstream-calls-it",
     )
-    # Asserting on the message, because every path out of load() raises this
-    # type: without it the test would pass on the missing checkout instead.
+    # Asserting on the message. Every path out of load() raises ConfigurationError,
+    # so without it this would pass on the missing checkout instead.
     with pytest.raises(ConfigurationError, match="unknown Thinker variant"):
         generator.load()
