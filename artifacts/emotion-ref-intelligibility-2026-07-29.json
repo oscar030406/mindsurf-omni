@@ -1,0 +1,181 @@
+{
+ "raw": {
+  "dylan": {
+   "control_text": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 吹 秋 吹 过 树 梢 鸟 毛 在 直 播 歌 唱 让 我 们 一 起 出 发 去 探 索 这 个 美 丽 的 世 界 吧",
+   "variants": {
+    "happy": {
+     "text": "按 好 然 后 呢 开 出 然 后 点 打 开 为 什 么 最 是 这 个 呢 方 两 后 两 两 两 后 拳"
+    },
+    "care": {
+     "text": "晚 上 好 欢 迎 收 看 新 闻 新 目 南 猫 TV 的 早 晨 天 猫 精 灵 声 音 你 报 然 后 让 我 一 喜 欢 去 探 索 最 美 逼 的 视 频"
+    },
+    "fast": {
+     "text": "大 家 好 欢 迎 走 到 今 日 直 供 阳 光 普 通 早 晨 微 风 金 丝 金 子 萌 我 花 好 是 我 您 球 欢 去 探 索 最 本 地 视 野"
+    },
+    "slow": {
+     "text": "大 家 好 欢 迎 做 客 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 飞 过 树 梢 鸟 儿 在 这 如 歌 唱 让 我 们 一 起 出 发 去 探 索 这 美 丽 之 点"
+    }
+   }
+  },
+  "eric": {
+   "control_text": "大 家 好 欢 迎 收 听 今 天 的 节 目 南 光 明 媚 的 早 船 微 风 轻 轻 吹 落 树 沙 鸟 儿 在 这 首 歌 唱 让 我 们 一 起 出 发 去 探 索 我 听 的 每 一 个 世 界 吧",
+   "variants": {
+    "happy": {
+     "text": ""
+    },
+    "care": {
+     "text": ""
+    },
+    "fast": {
+     "text": ""
+    },
+    "slow": {
+     "text": "大 家 好 欢 迎 聆 听 今 天 礼 物 南 弯 明 月 的 早 晨 五 一 红 蜻 蜓 飞 过 石 高 鸟 绕 的 这 首 歌 上 让 我 一 起 去 玩 阿 里 探 索 美 丽 的 世 界 啊"
+    }
+   }
+  },
+  "serena": {
+   "control_text": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 梢 鸟 儿 在 这 不 对 哈 让 我 们 一 起 出 发 去 探 索 这 个 美 丽 的 世 界 吧",
+   "variants": {
+    "happy": {
+     "text": "大 家 好 欢 迎 收 看 今 天 今 闻 节 目"
+    },
+    "care": {
+     "text": "大 家 好 欢 迎 收 听 今 天 新 闻 节 目"
+    },
+    "fast": {
+     "text": "大 家 好 欢 迎 收 看 今 天 的 节 目 阳 光 你 未 来 很 多 东 西 鲜 富 士 生 买 开 这 个 味 道 让 我 们 现 在 只 带 着 这 种 一 乐"
+    },
+    "slow": {
+     "text": "大 家 好 欢 迎 收 听 今 天 的 节 目 来 光 明 丽 早 晨 我 同 情 心 岁 过 之 中 哪 也 是 个 非 常 让 我 们 的 喜 欢 只 看 走 这 个 眼 睛 是 在 哪"
+    }
+   }
+  },
+  "uncle_fu": {
+   "control_text": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 窗 鸟 儿 在 枝 头 歌 唱 那 我 们 一 起 出 发 去 探 索 这 个 美 丽 世 界 吧",
+   "variants": {
+    "happy": {
+     "text": "大 家 好 我 是 c 统"
+    },
+    "care": {
+     "text": "大 家 好 来 头 一 经 念 出 阳 光 明 媚 总 是 微 望 清 清 真 是 愁 鸟 儿 来 天 无 常 那 我 一 起 吧 孩 子 会 离 失 了"
+    },
+    "fast": {
+     "text": "大 家 好 欢 迎 收 听 新 点 说 唐 龙 暮 早 晨 微 风 轻 轻 吹 不 出 招 鸟 儿 本 节 头 歌 藏 那 我 是 秋 秋 就 欢 所 有 的 新 世 界 了"
+    },
+    "slow": {
+     "text": "大 家 好 哎 走 进 今 天 节 目 韩 国 明 天 的 早 晨 微 光 星 星 飞 舞 石 头 鸟 儿 呃 这 路 路 上 那 我 的 一 出 去 拍 自 这 位 异 世 界 吧"
+    }
+   }
+  },
+  "vivian": {
+   "control_text": "大 家 好 欢 迎 收 听 金 赛 玲 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 梢 鸟 儿 在 这 首 歌 唱 让 我 一 起 出 发 去 探 服 这 个 美 丽 的 世 界 吧",
+   "variants": {
+    "happy": {
+     "text": "大 家 好 二 零 一 零 后 面 有 很 冰 叫 什 么 哪 位 顾 客 让 我 一 起 画 一 看 对 是 这 个"
+    },
+    "care": {
+     "text": ""
+    },
+    "fast": {
+     "text": "哎 好 那 只 能 是 音 乐 屏 然 后 你 用 进 是 这 个 个 标 手 手 好 吃 饭 不 准 备 不 是 这 个"
+    },
+    "slow": {
+     "text": "大 家 好 关 于 我 庭 今 天 理 由 原 告 与 被 告 人 未 托 清 清 税 务 诉 求 每 个 世 界 的"
+    }
+   }
+  }
+ },
+ "scored": {
+  "dylan": {
+   "happy": {
+    "cer_against_control": 0.9807692307692307,
+    "empty": false
+   },
+   "care": {
+    "cer_against_control": 0.6923076923076923,
+    "empty": false
+   },
+   "fast": {
+    "cer_against_control": 0.6923076923076923,
+    "empty": false
+   },
+   "slow": {
+    "cer_against_control": 0.25,
+    "empty": false
+   }
+  },
+  "eric": {
+   "happy": {
+    "cer_against_control": 1.0,
+    "empty": true
+   },
+   "care": {
+    "cer_against_control": 1.0,
+    "empty": true
+   },
+   "fast": {
+    "cer_against_control": 1.0,
+    "empty": true
+   },
+   "slow": {
+    "cer_against_control": 0.5660377358490566,
+    "empty": false
+   }
+  },
+  "serena": {
+   "happy": {
+    "cer_against_control": 0.8269230769230769,
+    "empty": false
+   },
+   "care": {
+    "cer_against_control": 0.8076923076923077,
+    "empty": false
+   },
+   "fast": {
+    "cer_against_control": 0.6538461538461539,
+    "empty": false
+   },
+   "slow": {
+    "cer_against_control": 0.5769230769230769,
+    "empty": false
+   }
+  },
+  "uncle_fu": {
+   "happy": {
+    "cer_against_control": 0.9215686274509803,
+    "empty": false
+   },
+   "care": {
+    "cer_against_control": 0.7254901960784313,
+    "empty": false
+   },
+   "fast": {
+    "cer_against_control": 0.5686274509803921,
+    "empty": false
+   },
+   "slow": {
+    "cer_against_control": 0.5490196078431373,
+    "empty": false
+   }
+  },
+  "vivian": {
+   "happy": {
+    "cer_against_control": 0.8163265306122449,
+    "empty": false
+   },
+   "care": {
+    "cer_against_control": 1.0,
+    "empty": true
+   },
+   "fast": {
+    "cer_against_control": 0.9387755102040817,
+    "empty": false
+   },
+   "slow": {
+    "cer_against_control": 0.8775510204081632,
+    "empty": false
+   }
+  }
+ }
+}
