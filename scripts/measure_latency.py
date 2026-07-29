@@ -40,8 +40,20 @@ def speech_like(seconds: float, rate: int = 16_000) -> bytes:
     return struct.pack(f"<{len(samples)}h", *samples)
 
 
-async def one_turn(client: httpx.AsyncClient, prompt: str, audio: bytes) -> TurnTimings:
-    """One request through the HTTP path, timed at the stages it exposes."""
+async def one_turn(
+    client: httpx.AsyncClient, prompt: str, audio: bytes, skip_synthesis: bool = False
+) -> TurnTimings:
+    """One request through the HTTP path, timed at the stages it exposes.
+
+    ``skip_synthesis`` stops after the first clause. The cascade's speech stage
+    is a third-party synthesiser the operator picks -- hosted or local, each
+    with its own latency and its own network -- so measuring the two stages
+    this project actually wrote is a different question from measuring a
+    product with one particular synthesiser bolted on. It also makes the
+    measurement possible at all where no synthesiser is configured, which
+    otherwise fails every turn and reports nothing rather than reporting the
+    part that ran.
+    """
     timings = TurnTimings()
 
     started = time.perf_counter()
@@ -86,6 +98,9 @@ async def one_turn(client: httpx.AsyncClient, prompt: str, audio: bytes) -> Turn
         clause = text.strip()
         if first_token_at is not None:
             timings.stages["first_clause"] = (time.perf_counter() - first_token_at) * 1000
+
+    if skip_synthesis:
+        return timings
 
     started = time.perf_counter()
     audio_reply = await client.post("/v1/audio/speech", json={"input": clause or "好的"})
@@ -172,7 +187,22 @@ async def measure_realtime(
     return report, errors
 
 
-async def measure(base: str, turns: int, timeout: float) -> tuple[LatencyReport, list[str]]:
+async def measure(
+    base: str,
+    turns: int,
+    timeout: float,
+    skip_synthesis: bool = False,
+    prompt: str | None = None,
+) -> tuple[LatencyReport, list[str]]:
+    """Turns through the HTTP path.
+
+    ``prompt`` holds the question still across turns. A different question every
+    turn means a different reply length, and time-to-first-clause tracks reply
+    length, so the spread stops being a property of the service and becomes a
+    property of the question set -- the same confound the fixed-text protocol
+    removes on the accuracy axis. Varying is the more realistic mix and gives
+    the honest median; fixing it is what makes a 200 ms effect resolvable.
+    """
     report = LatencyReport()
     errors: list[str] = []
     audio = speech_like(1.5)
@@ -180,7 +210,8 @@ async def measure(base: str, turns: int, timeout: float) -> tuple[LatencyReport,
     async with httpx.AsyncClient(base_url=base, timeout=timeout) as client:
         for index in range(turns):
             try:
-                report.add(await one_turn(client, f"第{index}个问题", audio))
+                asked = prompt if prompt is not None else f"第{index}个问题"
+                report.add(await one_turn(client, asked, audio, skip_synthesis))
             except Exception as error:  # noqa: BLE001 - a failed turn is data
                 errors.append(f"turn {index}: {type(error).__name__}: {error}")
     return report, errors
@@ -202,6 +233,17 @@ def main() -> None:
     )
     parser.add_argument("--stimulus", type=Path, help="spoken probes, for --via realtime")
     parser.add_argument("--probes", type=Path, default=Path("configs/speech_probes_zh_v1.jsonl"))
+    parser.add_argument(
+        "--skip-synthesis",
+        action="store_true",
+        help="stop after the first clause: measures the stages this project wrote, "
+        "not whichever synthesiser an operator bolted on",
+    )
+    parser.add_argument(
+        "--prompt",
+        help="ask the same question every turn, so reply-length variance leaves the "
+        "reading and a 200 ms effect becomes resolvable",
+    )
     args = parser.parse_args()
 
     print(f"测 {args.turns} 轮，对 {args.base}")
@@ -217,7 +259,9 @@ def main() -> None:
             measure_realtime(args.base, args.turns, args.timeout, args.stimulus, ids)
         )
     else:
-        report, errors = asyncio.run(measure(args.base, args.turns, args.timeout))
+        report, errors = asyncio.run(
+            measure(args.base, args.turns, args.timeout, args.skip_synthesis, args.prompt)
+        )
 
     if not report.turns:
         print("没有一轮成功：")

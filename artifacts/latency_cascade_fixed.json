@@ -1,0 +1,13 @@
+{
+  "failed": [],
+  "gating_eligible": true,
+  "note": "",
+  "p50_ms": 110.60357897076756,
+  "p95_ms": 273.0987959948834,
+  "stage_medians_ms": {
+    "encode": 57.6120370242279,
+    "first_clause": 41.23796700150706,
+    "first_text_token": 5.665050004608929
+  },
+  "turns": 40
+}

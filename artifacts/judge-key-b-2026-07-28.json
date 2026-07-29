@@ -1,0 +1,634 @@
+{
+ "zh001": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh002": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh003": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh004": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh005": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh006": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh008": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh009": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh010": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh011": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh012": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh013": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh014": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh015": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh016": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh017": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh018": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh019": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh020": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh021": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh022": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh023": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh024": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh025": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh026": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh027": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh028": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh029": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh030": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh031": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh032": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh033": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh034": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh035": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh036": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh037": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh038": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh039": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh040": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh041": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh042": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh043": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh044": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh045": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh046": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh047": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh048": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh049": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh050": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh051": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh052": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh053": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh054": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh055": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh056": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh057": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh058": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh059": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh060": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh061": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh062": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh063": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh064": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh065": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh066": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh067": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh068": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh069": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh070": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh071": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh072": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh073": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh074": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh075": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh076": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh077": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh078": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh079": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh080": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh081": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh082": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh083": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh084": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh085": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh086": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh087": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh088": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh089": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh090": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh091": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh092": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh093": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh094": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh095": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh096": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh097": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh098": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh099": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh100": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh101": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh102": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh103": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh104": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh105": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh106": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh107": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh108": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh109": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh110": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh111": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh112": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh113": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh114": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh115": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh116": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh117": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh118": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh119": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh120": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh121": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh122": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh123": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh124": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh125": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh126": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh127": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh128": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh129": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh130": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh131": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh132": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh133": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh134": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh135": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh136": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh137": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh138": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh139": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh140": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh141": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh142": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh143": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh144": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh145": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh146": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh147": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh148": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh149": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh150": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh151": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh152": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh153": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh154": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh155": {
+  "left": "t2a_graft",
+  "right": "sft_mindsurf"
+ },
+ "zh156": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh157": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh158": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ },
+ "zh159": {
+  "left": "sft_mindsurf",
+  "right": "t2a_graft"
+ }
+}

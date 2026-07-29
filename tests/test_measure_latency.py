@@ -6,7 +6,7 @@ import asyncio
 import json
 
 import httpx
-from scripts.measure_latency import measure, speech_like
+from scripts.measure_latency import measure, one_turn, speech_like
 
 
 def test_the_probe_audio_is_not_silence() -> None:
@@ -166,3 +166,25 @@ def test_the_native_turn_reports_only_the_stages_it_can_see() -> None:
 
     assert timings.time_to_first_audio_ms == 296.0
     assert timings.missing_stages() == ["vad_endpoint", "encode", "first_clause", "transport"]
+
+
+def test_skipping_synthesis_stops_before_the_speech_call() -> None:
+    """The speech stage belongs to whichever synthesiser an operator picked.
+
+    Without this the two stages this project wrote cannot be measured at all
+    where no synthesiser is configured: every turn fails on the speech call and
+    the report says nothing, rather than saying what the part that ran cost.
+    """
+    service = _Service()
+    transport = httpx.MockTransport(service.handler)
+
+    async def run() -> object:
+        async with httpx.AsyncClient(transport=transport, base_url="http://svc") as client:
+            return await one_turn(client, "问", speech_like(0.05), skip_synthesis=True)
+
+    timings = asyncio.run(run())
+
+    assert "first_clause" in timings.stages
+    assert "synthesis" not in timings.stages
+    # The speech endpoint records what it was asked to say; nothing reached it.
+    assert service.spoken == []

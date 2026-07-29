@@ -260,3 +260,33 @@ def test_a_consumer_that_stops_stops_the_generation() -> None:
 
     assert asyncio.run(read_two()) == 2
     assert steps < 200, "generation ran to completion after the consumer stopped"
+
+
+def test_shape_and_parameter_count_cannot_drift_apart() -> None:
+    """The guard works only because the count belongs to the shape.
+
+    Two independent settings would let a caller widen the expected count until
+    the wrong config passed, which is the exact failure this check exists to
+    catch -- a model that loads, runs, answers, and is not the one trained.
+    """
+    from mindsurf_omni.service.thinker import VARIANTS
+
+    assert VARIANTS["mindsurf"] == (THINKER_SHAPE, THINKER_PARAMETERS)
+    for name, (shape, count) in VARIANTS.items():
+        assert isinstance(shape, dict), name
+        assert count > 0, name
+    # Upstream's defaults are a different model, not a relabelling of ours.
+    assert VARIANTS["upstream-default"][1] != THINKER_PARAMETERS
+
+
+def test_an_unknown_variant_is_refused_by_name() -> None:
+    generator = ThinkerGenerator(
+        checkpoint=Path("unused"),
+        tokenizer_dir=Path("unused"),
+        minimind_root=Path("unused"),
+        variant="whatever-upstream-calls-it",
+    )
+    # Asserting on the message, because every path out of load() raises this
+    # type: without it the test would pass on the missing checkout instead.
+    with pytest.raises(ConfigurationError, match="unknown Thinker variant"):
+        generator.load()

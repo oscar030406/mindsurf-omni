@@ -84,6 +84,7 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
         tokenizer_dir=args.tokenizer,
         minimind_root=args.minimind_root,
         device=args.device,
+        variant=args.variant,
     )
     generator.load()
     model, tokeniser = generator._model, generator._tokenizer  # noqa: SLF001
@@ -91,6 +92,7 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
     rows: list[dict[str, Any]] = []
     dropped: list[str] = []
     total_nll = 0.0
+    total_entropy = 0.0
     total_tokens = 0
 
     for probe in probes:
@@ -113,11 +115,27 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
         targets = ids[0, span]
         predictions = logits[0, span.start - 1 : span.stop - 1]
         nll = torch.nn.functional.cross_entropy(predictions, targets, reduction="sum")
+        # The model's own entropy at the same positions, which is the control
+        # for the reading this number invites. A checkpoint whose distribution
+        # has sharpened pays more for every token it did not itself favour, so
+        # it scores worse on ANY foreign text while being better on its own --
+        # which looks exactly like "it got worse at conversation" and is not
+        # the same claim. Reported beside the loss so the two can be told apart.
+        logp = torch.nn.functional.log_softmax(predictions, dim=-1)
+        entropy = float(-(logp.exp() * logp).sum(dim=-1).sum())
 
         count = int(targets.numel())
         total_nll += float(nll)
+        total_entropy += entropy
         total_tokens += count
-        rows.append({"id": probe["id"], "nll": float(nll) / count, "tokens": count})
+        rows.append(
+            {
+                "id": probe["id"],
+                "nll": float(nll) / count,
+                "entropy": entropy / count,
+                "tokens": count,
+            }
+        )
 
     if args.generate:
         replies: list[dict[str, Any]] = []
@@ -164,6 +182,7 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
         # Token-weighted, the way strict_val is computed: long replies should
         # not count the same as short ones in the headline.
         "chat_nll": total_nll / total_tokens if total_tokens else float("nan"),
+        "entropy": total_entropy / total_tokens if total_tokens else float("nan"),
         "mean_of_samples": statistics.fmean(row["nll"] for row in rows) if rows else float("nan"),
         "samples": rows,
         "screen": screen,
@@ -186,6 +205,11 @@ def main() -> None:
     parser.add_argument("--tokenizer", type=Path, default=Path("assets/tokenizer"))
     parser.add_argument("--minimind-root", type=Path, required=True)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument(
+        "--variant",
+        default="mindsurf",
+        help="thinker shape+parameter pair; 'upstream-default' reads the released weights",
+    )
     parser.add_argument("--only", type=Path, help="JSON list of ids to keep, e.g. the clean 158")
     parser.add_argument("--reference", type=Path, help="a previous report, to pair against")
     parser.add_argument(
@@ -213,7 +237,10 @@ def main() -> None:
         raise SystemExit("no probes left after filtering")
 
     report = score(args.checkpoint, probes, args)
-    print(f"chat_nll {report['chat_nll']:.4f} over {report['scored']} replies")
+    print(
+        f"chat_nll {report['chat_nll']:.4f} entropy {report['entropy']:.4f} "
+        f"over {report['scored']} replies"
+    )
     if report["dropped_misaligned"]:
         dropped = report["dropped_misaligned"]
         print(f"  dropped {len(dropped)} for a prefix that did not line up: {dropped[:5]}")

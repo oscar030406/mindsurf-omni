@@ -1,0 +1,9 @@
+{
+  "author": "sft_mindsurf_768",
+  "authored": "2026-07-25",
+  "how": "generate_speech_samples.py against the cascade service, text_source 'model'; the manifest's thinker digest 1f5b6bf5... matches sft_mindsurf_768.pth byte for byte",
+  "established": "2026-07-28, by tracing the session transcript during acceptance review",
+  "usable_for": "the fixed-text CER and UTMOS benchmarks -- the text is forced, both arms speak the same string, so who wrote it does not enter the score",
+  "NOT_usable_for": "any likelihood comparison. sft_mindsurf_768 and its descendants score their own distribution here. The retracted chat-holdout finding rested on exactly this.",
+  "see": "docs/experiments/2026-07-28-chat-holdout.md"
+}

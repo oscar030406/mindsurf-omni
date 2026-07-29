@@ -48,6 +48,25 @@ THINKER_SHAPE = {
     "tie_word_embeddings": True,
 }
 THINKER_PARAMETERS = 89_864_448
+
+# Shape and parameter count travel together, never as two settings. The guard
+# below only works because the count belongs to the shape: a caller that could
+# set one without the other could silence the check by widening the number it
+# expects, which is the failure the check exists to catch.
+#
+# "upstream-default" is MiniMind's own defaults -- narrower feed-forward, four
+# key-value heads -- and it is here so evaluation can read the released weights
+# as a comparison arm. Serving it is not the point; being able to score against
+# text a foreign model wrote is, after a reference set turned out to have been
+# written by one of the arms being compared.
+VARIANTS: dict[str, tuple[dict[str, Any], int]] = {
+    "mindsurf": (THINKER_SHAPE, THINKER_PARAMETERS),
+    # 63,912,192 is what the build produces, not what the file's tensors sum to
+    # (68,827,392 -- that double-counts the tied embedding table, stored twice).
+    # Taken from the build and then confirmed the only way that means anything:
+    # the checkpoint loads into it with zero missing and zero unexpected keys.
+    "upstream-default": ({"hidden_size": 768, "num_hidden_layers": 8}, 63_912_192),
+}
 IM_END = 2
 
 
@@ -75,6 +94,7 @@ class ThinkerGenerator:
     tokenizer_dir: Path
     minimind_root: Path
     device: str = "cpu"
+    variant: str = "mindsurf"
     _model: Any = field(default=None)
     _tokenizer: Any = field(default=None)
 
@@ -85,7 +105,13 @@ class ThinkerGenerator:
         # Before the imports, deliberately. These answers need no torch, and
         # the environment most likely to be misconfigured is the container,
         # which has no torch -- "No module named 'torch'" would be a true
-        # statement about the wrong problem.
+        # statement about the wrong problem. The variant comes first of all:
+        # it needs no filesystem either, and a caller who mistyped it should
+        # not first be told about a checkout it was never going to reach.
+        if self.variant not in VARIANTS:
+            raise ConfigurationError(
+                f"unknown Thinker variant {self.variant!r}; known: {sorted(VARIANTS)}"
+            )
         definition = self.minimind_root / "model" / "model_minimind.py"
         if not definition.is_file():
             raise ConfigurationError(
@@ -110,17 +136,18 @@ class ThinkerGenerator:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        model = module.MiniMindForCausalLM(module.MiniMindConfig(**THINKER_SHAPE))
+        shape, expected = VARIANTS[self.variant]
+        model = module.MiniMindForCausalLM(module.MiniMindConfig(**shape))
         state = torch.load(str(self.checkpoint), map_location="cpu", weights_only=True)
         weights = thinker_weights(state)
 
         # The check that would have caught the silent 113.13M run: a wrong
         # config still loads and still generates, just not from our base.
         count = sum(parameter.numel() for parameter in model.parameters())
-        if count != THINKER_PARAMETERS:
+        if count != expected:
             raise ConfigurationError(
-                f"the Thinker built to {count:,} parameters, but our base is "
-                f"{THINKER_PARAMETERS:,} -- the config does not match the checkpoint"
+                f"the Thinker built to {count:,} parameters, but variant "
+                f"{self.variant!r} is {expected:,} -- the config does not match the checkpoint"
             )
 
         # And this is the other half of that failure, which the count alone
