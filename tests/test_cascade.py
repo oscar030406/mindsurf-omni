@@ -96,13 +96,17 @@ async def test_timings_attribute_each_stage() -> None:
 
     timings = engine.last_timings
     assert timings.first_clause_ms > 0
-    # The injected 10 ms lands on the synthesis stage and nowhere else. Not
-    # asserted as >= 10: the sleep is scheduled on the loop's monotonic clock,
-    # whose granularity on Windows is ~15.6 ms, while the bracket around it
-    # reads perf_counter -- so the loop can wake a fraction of a millisecond
-    # "early" and the measurement reads 9.7. Under load this flakes, and a
-    # test that fails for the platform's clock is measuring the clock.
-    assert timings.first_synthesis_ms >= 9
+    # The injected 10 ms lands on the synthesis stage and nowhere else, and
+    # that attribution is the claim. It is asserted against the other stages
+    # rather than against 10 ms: the sleep is scheduled on the loop's monotonic
+    # clock, whose granularity on Windows is ~15.6 ms, while the bracket around
+    # it reads perf_counter, so the loop can wake "early" and the measurement
+    # reads 9.7 -- or 7.97 on a busy machine, which is what an absolute bound
+    # caught here. Under load every stage inflates together, so the comparison
+    # survives what the constant does not, and a test that fails for the
+    # platform's clock is measuring the clock.
+    assert timings.first_synthesis_ms > timings.first_clause_ms
+    assert timings.first_synthesis_ms > 1
     assert timings.time_to_first_audio_ms >= timings.first_clause_ms
 
 
