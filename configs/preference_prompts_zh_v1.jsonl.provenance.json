@@ -1,0 +1,9 @@
+{
+  "author": "claude-fable-5",
+  "authored": "2026-07-29",
+  "how": "8 themed batches of 40 written in parallel, exact-deduplicated, then cross-reviewed for near-duplicates against the evaluation set",
+  "purpose": "sampling prompts for on-policy preference pairs (DPO). Prompts only -- the model's own drafts are what gets ranked.",
+  "why_not_the_evaluation_set": "configs/talker_texts_zh_v1.jsonl is the fixed 160 every gating comparison uses; tuning on it would mean judging a model on the questions it was tuned with",
+  "overlap_with_evaluation_set": 0,
+  "deliberate_category": "one of the eight themes is questions that need real-time or personal context, to probe whether the model admits it cannot answer -- a failure mode both paths have shown"
+}

@@ -96,6 +96,12 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
     total_tokens = 0
 
     for probe in probes:
+        # A prompt set with no reference replies is a legitimate input -- it is
+        # what preference sampling uses, where the model's own drafts are the
+        # point and there is nothing to score them against yet. Such a set can
+        # be generated from and not scored, rather than refused.
+        if not probe.get("text"):
+            continue
         messages = [{"role": "user", "content": probe["prompt"]}]
         prefix = str(
             tokeniser.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -140,6 +146,8 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
     if args.generate:
         replies: list[dict[str, Any]] = []
         for probe in probes:
+            # Generation needs only the prompt, so this loop covers every probe
+            # including the ones the scoring loop above skipped.
             messages = [{"role": "user", "content": probe["prompt"]}]
             torch.manual_seed(args.seed)
             text = ""
@@ -155,6 +163,7 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
             replies.append(
                 {
                     "id": probe["id"],
+                    "prompt": probe["prompt"],
                     "reply": text,
                     "chars": len(text),
                     "repetition": repetition(text),
@@ -181,6 +190,7 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
         "dropped_misaligned": dropped,
         # Token-weighted, the way strict_val is computed: long replies should
         # not count the same as short ones in the headline.
+        "scored_of": len(probes),
         "chat_nll": total_nll / total_tokens if total_tokens else float("nan"),
         "entropy": total_entropy / total_tokens if total_tokens else float("nan"),
         "mean_of_samples": statistics.fmean(row["nll"] for row in rows) if rows else float("nan"),

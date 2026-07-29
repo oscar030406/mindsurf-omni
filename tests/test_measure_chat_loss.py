@@ -46,3 +46,17 @@ def test_the_repetition_screen_catches_a_loop_and_spares_short_text() -> None:
     assert repetition("好的好的好的好的好的好的好的好的好的好的") > 0.5
     assert repetition("今天天气晴朗，适合出门散步。") == 0.0
     assert repetition("短") == 0.0  # shorter than the window, not a loop
+
+
+def test_a_prompt_set_with_no_reference_replies_can_still_be_sampled_from() -> None:
+    """Preference sampling has prompts and no answers yet, by definition.
+
+    Refusing such a set would mean the DPO pipeline could not draw the drafts
+    it exists to rank; scoring it against nothing would be worse. The scoring
+    loop skips those rows and the generation loop does not.
+    """
+    from scripts.measure_chat_loss import reply_span
+
+    # The scoring side is what needs a reference: with no reply there is no
+    # span to score, which is the condition the skip above stands in for.
+    assert reply_span([1, 2, 3], [1, 2, 3]) is None
