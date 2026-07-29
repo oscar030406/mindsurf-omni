@@ -120,12 +120,57 @@ def f0_median(wave: Any, rate: int) -> float:
     return float(numpy.median(voiced))
 
 
-def manipulate(wave: Any, rate: int, semitones: float, speed: float) -> Any:
-    """Move pitch and rate, leaving everything else alone."""
+def spectral_envelope(magnitude: Any, quefrency: int = 40) -> Any:
+    """The slow part of the log spectrum -- the vocal tract, not the harmonics.
+
+    Cepstral liftering: a log spectrum is the sum of a slowly varying envelope
+    (formants) and a fast-varying excitation (the harmonic comb). Keeping only
+    the low quefrency coefficients keeps the first and discards the second.
+    """
+    import numpy
+
+    log_magnitude = numpy.log(numpy.maximum(magnitude, 1e-8))
+    cepstrum = numpy.fft.irfft(log_magnitude, axis=0)
+    cepstrum[quefrency:-quefrency] = 0.0
+    return numpy.exp(numpy.real(numpy.fft.rfft(cepstrum, axis=0)))
+
+
+def manipulate(wave: Any, rate: int, semitones: float, speed: float, formants: bool = True) -> Any:
+    """Move pitch and rate, and by default leave the formants where they were.
+
+    librosa's pitch shift is resampling-based: it scales the whole frequency
+    axis, so the vocal tract moves with the pitch and a shift big enough to
+    carry emotion turns the speaker into someone else. That is not a theory --
+    the first build of this pack asked for four semitones and every one of ten
+    variants came back under the identity floor, 0.06 to 0.44.
+
+    The correction is standard and needs no new package. Shift as before, then
+    divide out the shifted envelope and multiply the original one back in.
+    Harmonics stay where the shift put them; formants return to where the
+    speaker's own vocal tract had them. Frames line up one to one because
+    pitch_shift preserves length.
+    """
     import librosa
+    import numpy
 
     shifted = librosa.effects.pitch_shift(wave, sr=rate, n_steps=semitones)
-    return librosa.effects.time_stretch(shifted, rate=speed)
+    if formants and semitones != 0.0:
+        # 1024 at 24 kHz is 42 ms: long enough to resolve a 110 Hz voice's
+        # harmonics, short enough not to smear the stops Chinese needs.
+        n_fft, hop = 1024, 256
+        before = librosa.stft(wave, n_fft=n_fft, hop_length=hop)
+        after = librosa.stft(shifted, n_fft=n_fft, hop_length=hop)
+        frames = min(before.shape[1], after.shape[1])
+        correction = spectral_envelope(numpy.abs(before[:, :frames])) / numpy.maximum(
+            spectral_envelope(numpy.abs(after[:, :frames])), 1e-8
+        )
+        # float32 all the way out: the correction is built from numpy defaults
+        # and would otherwise hand the codec a float64 waveform, which fails on
+        # the first convolution rather than anywhere informative.
+        shifted = librosa.istft(
+            after[:, :frames] * correction, hop_length=hop, length=len(wave)
+        ).astype("float32")
+    return librosa.effects.time_stretch(shifted, rate=speed).astype("float32")
 
 
 def build(args: argparse.Namespace) -> dict[str, Any]:
@@ -190,7 +235,9 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
 
         for emotion, move in EMOTIONS.items():
             semitones, capped = semitones_for(base_f0, move["hz"])
-            moved = manipulate(original, 24_000, semitones, move["rate"])
+            moved = manipulate(
+                original, 24_000, semitones, move["rate"], formants=not args.no_formant_correction
+            )
             new_codes, _, variant_f0, new_emb = through_pipeline(moved)
             identity = cosine(base_emb, new_emb)
             fraction = identity / control_cosine if control_cosine > 0 else 0.0
@@ -249,6 +296,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     torch.save(out, str(args.output))
     print(f"\n写入 {args.output}：{len(out)} 个条目")
     return {
+        "formant_correction": not args.no_formant_correction,
         "identity_fraction_required": IDENTITY_FRACTION,
         "max_semitones": MAX_SEMITONES,
         "codes_with_weak_identity": weak,
@@ -266,6 +314,12 @@ def main() -> None:
     parser.add_argument("--codec", type=Path, required=True, help="mimi directory")
     parser.add_argument("--minimind-root", type=Path, required=True)
     parser.add_argument("--only", nargs="*", help="limit to these voice names")
+    parser.add_argument(
+        "--no-formant-correction",
+        action="store_true",
+        help="shift by resampling alone, which moves the vocal tract with the pitch; "
+        "here to measure what the correction is worth, not to be used",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()

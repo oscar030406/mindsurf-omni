@@ -102,3 +102,61 @@ def test_too_little_voiced_audio_reports_nan_rather_than_a_number() -> None:
     import numpy
 
     assert math.isnan(f0_median(numpy.zeros(4_000, dtype="float32"), 24_000))
+
+
+def _vowel(f0: float = 150.0, formants=(700.0, 1200.0, 2600.0), rate: int = 24_000):
+    """A pulse train shaped by three formants -- the thing a vowel is."""
+    import librosa
+    import numpy
+
+    t = numpy.arange(int(rate * 1.0)) / rate
+    wave = sum(numpy.sin(2 * numpy.pi * f0 * k * t) / k for k in range(1, 60))
+    freqs = numpy.fft.rfftfreq(1024, 1 / rate)
+    envelope = sum(numpy.exp(-((freqs - f) ** 2) / (2 * 120.0**2)) for f in formants)
+    spectrum = librosa.stft(wave.astype("float32"), n_fft=1024, hop_length=256)
+    return librosa.istft(spectrum * envelope[:, None], hop_length=256).astype("float32")
+
+
+def _formant_peaks(wave, rate: int = 24_000):
+    import librosa
+    import numpy
+    from scripts.build_emotion_voices import spectral_envelope
+
+    envelope = spectral_envelope(numpy.abs(librosa.stft(wave, n_fft=1024, hop_length=256)))[
+        :, 20:60
+    ].mean(axis=1)
+    freqs = numpy.fft.rfftfreq(1024, 1 / rate)
+    peaks = [
+        i
+        for i in range(2, len(envelope) - 2)
+        if envelope[i] > envelope[i - 1]
+        and envelope[i] > envelope[i + 1]
+        and envelope[i] > envelope.max() * 0.25
+    ]
+    return [float(freqs[i]) for i in peaks[:3]]
+
+
+def test_the_correction_moves_pitch_and_leaves_the_vocal_tract_alone() -> None:
+    """The fix for the failure that refused all ten of the first build's variants.
+
+    Resampling-based shifting scales the whole frequency axis, so the formants
+    travel with the pitch and the speaker changes. Correcting the envelope back
+    keeps the harmonics where the shift put them and the formants where the
+    speaker's own vocal tract had them.
+    """
+    vowel = _vowel()
+    original = _formant_peaks(vowel)
+
+    naive = manipulate(vowel, 24_000, 4.0, 1.0, formants=False)
+    fixed = manipulate(vowel, 24_000, 4.0, 1.0, formants=True)
+
+    # Both raise the pitch by the same four semitones.
+    assert f0_median(naive, 24_000) == pytest.approx(f0_median(fixed, 24_000), rel=0.05)
+    assert f0_median(fixed, 24_000) > f0_median(vowel, 24_000) * 1.2
+
+    # Only one of them keeps the vocal tract. 5% is well inside the envelope
+    # estimator's own resolution and well outside the 26% a four-semitone
+    # resample moves them.
+    for was, now in zip(original, _formant_peaks(fixed), strict=False):
+        assert now == pytest.approx(was, rel=0.05), (original, _formant_peaks(fixed))
+    assert _formant_peaks(naive)[0] > original[0] * 1.15

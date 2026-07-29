@@ -1,0 +1,294 @@
+{
+  "identity_fraction_required": 0.85,
+  "max_semitones": 2.0,
+  "codes_with_weak_identity": [
+    "dylan_happy",
+    "dylan_care",
+    "dylan_fast",
+    "dylan_slow",
+    "eric_happy",
+    "eric_care",
+    "eric_fast",
+    "eric_slow",
+    "serena_happy",
+    "serena_care",
+    "serena_fast",
+    "serena_slow",
+    "uncle_fu_happy",
+    "uncle_fu_care",
+    "uncle_fu_fast",
+    "uncle_fu_slow",
+    "vivian_happy",
+    "vivian_care",
+    "vivian_fast",
+    "vivian_slow"
+  ],
+  "gate_not_applied_here": "the criterion that decides is the clone score of GENERATED audio against the base voice's stored embedding; this screen can reject, not pass",
+  "voices": {
+    "dylan": {
+      "reference_f0": 155.52596798465044,
+      "control": {
+        "identity_cosine": 0.9563515782356262,
+        "f0": 150.8755463509046
+      },
+      "variants": {
+        "happy": {
+          "f0": 172.76381270837516,
+          "f0_shift": 17.23784472372472,
+          "identity_cosine": 0.4538952708244324,
+          "fraction_of_control": 0.47461130525013,
+          "semitones": 2.0,
+          "semitone_cap_bit": true,
+          "rate": 1.16,
+          "seconds": 7.04,
+          "codebook_churn": null
+        },
+        "care": {
+          "f0": 141.18041420337443,
+          "f0_shift": -14.34555378127601,
+          "identity_cosine": 0.39025217294692993,
+          "fraction_of_control": 0.4080635007335968,
+          "semitones": -2.0,
+          "semitone_cap_bit": true,
+          "rate": 0.84,
+          "seconds": 9.68,
+          "codebook_churn": null
+        },
+        "fast": {
+          "f0": 144.5981193773281,
+          "f0_shift": -10.927848607322346,
+          "identity_cosine": 0.6053231954574585,
+          "fraction_of_control": 0.6329504851910421,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 1.2,
+          "seconds": 6.8,
+          "codebook_churn": null
+        },
+        "slow": {
+          "f0": 148.60994715802389,
+          "f0_shift": -6.91602082662655,
+          "identity_cosine": 0.5279616713523865,
+          "fraction_of_control": 0.5520581377890581,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 0.8,
+          "seconds": 10.16,
+          "codebook_churn": null
+        }
+      }
+    },
+    "eric": {
+      "reference_f0": 252.02218929606155,
+      "control": {
+        "identity_cosine": 0.9405261278152466,
+        "f0": 242.28052605945675
+      },
+      "variants": {
+        "happy": {
+          "f0": 271.40191725473056,
+          "f0_shift": 19.379727958669008,
+          "identity_cosine": 0.36903923749923706,
+          "fraction_of_control": 0.39237531694784533,
+          "semitones": 2.0,
+          "semitone_cap_bit": true,
+          "rate": 1.16,
+          "seconds": 5.28,
+          "codebook_churn": null
+        },
+        "care": {
+          "f0": 233.47713360559197,
+          "f0_shift": -18.54505569046958,
+          "identity_cosine": 0.3204413950443268,
+          "fraction_of_control": 0.34070440529778995,
+          "semitones": -1.431455738795798,
+          "semitone_cap_bit": false,
+          "rate": 0.84,
+          "seconds": 7.28,
+          "codebook_churn": null
+        },
+        "fast": {
+          "f0": 250.7144767928669,
+          "f0_shift": -1.307712503194665,
+          "identity_cosine": 0.5009080767631531,
+          "fraction_of_control": 0.5325828405498051,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 1.2,
+          "seconds": 5.12,
+          "codebook_churn": null
+        },
+        "slow": {
+          "f0": 246.67709216991636,
+          "f0_shift": -5.345097126145191,
+          "identity_cosine": 0.394662082195282,
+          "fraction_of_control": 0.419618414123215,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 0.8,
+          "seconds": 7.6,
+          "codebook_churn": null
+        }
+      }
+    },
+    "serena": {
+      "reference_f0": 238.46485246357017,
+      "control": {
+        "identity_cosine": 0.9599575400352478,
+        "f0": 234.47704557000628
+      },
+      "variants": {
+        "happy": {
+          "f0": 255.36769781746213,
+          "f0_shift": 16.902845353891962,
+          "identity_cosine": 0.5053473711013794,
+          "fraction_of_control": 0.5264267949630606,
+          "semitones": 2.0,
+          "semitone_cap_bit": true,
+          "rate": 1.16,
+          "seconds": 5.84,
+          "codebook_churn": null
+        },
+        "care": {
+          "f0": 214.05310408218085,
+          "f0_shift": -24.411748381389316,
+          "identity_cosine": 0.3618803322315216,
+          "fraction_of_control": 0.37697535269969756,
+          "semitones": -1.5165054030685667,
+          "semitone_cap_bit": false,
+          "rate": 0.84,
+          "seconds": 8.0,
+          "codebook_churn": null
+        },
+        "fast": {
+          "f0": 228.43595738645445,
+          "f0_shift": -10.02889507711572,
+          "identity_cosine": 0.6054672598838806,
+          "fraction_of_control": 0.6307229587067456,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 1.2,
+          "seconds": 5.6,
+          "codebook_churn": null
+        },
+        "slow": {
+          "f0": 234.9835832461585,
+          "f0_shift": -3.481269217411665,
+          "identity_cosine": 0.5510748624801636,
+          "fraction_of_control": 0.5740617053332684,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 0.8,
+          "seconds": 8.4,
+          "codebook_churn": null
+        }
+      }
+    },
+    "uncle_fu": {
+      "reference_f0": 116.88416829097557,
+      "control": {
+        "identity_cosine": 0.9559476375579834,
+        "f0": 111.80062624559159
+      },
+      "variants": {
+        "happy": {
+          "f0": 121.90057409368352,
+          "f0_shift": 5.016405802707951,
+          "identity_cosine": 0.6403170228004456,
+          "fraction_of_control": 0.6698243686612039,
+          "semitones": 2.0,
+          "semitone_cap_bit": true,
+          "rate": 1.16,
+          "seconds": 6.48,
+          "codebook_churn": null
+        },
+        "care": {
+          "f0": 108.69295527685398,
+          "f0_shift": -8.191213014121587,
+          "identity_cosine": 0.5963539481163025,
+          "fraction_of_control": 0.6238353699369129,
+          "semitones": -2.0,
+          "semitone_cap_bit": true,
+          "rate": 0.84,
+          "seconds": 8.88,
+          "codebook_churn": null
+        },
+        "fast": {
+          "f0": 114.02689822182101,
+          "f0_shift": -2.857270069154552,
+          "identity_cosine": 0.7727432250976562,
+          "fraction_of_control": 0.8083530883257036,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 1.2,
+          "seconds": 6.24,
+          "codebook_churn": null
+        },
+        "slow": {
+          "f0": 113.31869817719745,
+          "f0_shift": -3.565470113778119,
+          "identity_cosine": 0.6710178852081299,
+          "fraction_of_control": 0.7019400005237515,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 0.8,
+          "seconds": 9.36,
+          "codebook_churn": null
+        }
+      }
+    },
+    "vivian": {
+      "reference_f0": 260.5158429313005,
+      "control": {
+        "identity_cosine": 0.941554605960846,
+        "f0": 263.0710042836062
+      },
+      "variants": {
+        "happy": {
+          "f0": 297.9097996589304,
+          "f0_shift": 37.39395672762993,
+          "identity_cosine": 0.5172486305236816,
+          "fraction_of_control": 0.5493559558299173,
+          "semitones": 2.0,
+          "semitone_cap_bit": true,
+          "rate": 1.16,
+          "seconds": 5.76,
+          "codebook_churn": null
+        },
+        "care": {
+          "f0": 241.31210331173077,
+          "f0_shift": -19.203739619569717,
+          "identity_cosine": 0.4253593981266022,
+          "fraction_of_control": 0.45176285627377677,
+          "semitones": -1.3828701891077397,
+          "semitone_cap_bit": false,
+          "rate": 0.84,
+          "seconds": 7.92,
+          "codebook_churn": null
+        },
+        "fast": {
+          "f0": 262.165909425657,
+          "f0_shift": 1.6500664943565084,
+          "identity_cosine": 0.5362655520439148,
+          "fraction_of_control": 0.5695533202736147,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 1.2,
+          "seconds": 5.6,
+          "codebook_churn": null
+        },
+        "slow": {
+          "f0": 262.2574260185089,
+          "f0_shift": 1.7415830872084257,
+          "identity_cosine": 0.5150734782218933,
+          "fraction_of_control": 0.5470457846640414,
+          "semitones": 0.0,
+          "semitone_cap_bit": false,
+          "rate": 0.8,
+          "seconds": 8.32,
+          "codebook_churn": null
+        }
+      }
+    }
+  }
+}
