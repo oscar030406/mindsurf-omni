@@ -90,17 +90,51 @@ def sequence_logprob(model: Any, ids: Any, span: slice) -> Any:
 
 def dpo_loss(
     policy_chosen: Any, policy_rejected: Any, reference_chosen: Any, reference_rejected: Any
-) -> Any:
-    """The standard objective, with the reference differences detached.
+) -> tuple[Any, Any]:
+    """The standard objective and its margin, with the reference detached.
 
     Signs are the place this goes wrong silently: a flipped one trains the model
     to prefer the rejected branch and the loss still descends, because it is
     descending toward the wrong optimum.
+
+    The margin comes back because it is the only honest progress signal. The
+    raw difference of summed log-probabilities is not: two replies of different
+    lengths have systematically different sums, so a counter built on it tracks
+    which branch is shorter. The margin subtracts the reference, and the
+    reference has the same length bias, so it cancels.
     """
     import torch
 
     margin = (policy_chosen - policy_rejected) - (reference_chosen - reference_rejected)
-    return -torch.nn.functional.logsigmoid(BETA * margin)
+    return -torch.nn.functional.logsigmoid(BETA * margin), margin
+
+
+def evaluate(
+    policy: Any, reference: Any, pairs: list[Any], args: argparse.Namespace
+) -> dict[str, float]:
+    """Loss and ordering on pairs never backpropagated through.
+
+    With a few hundred pairs the in-sample and held-out numbers separate fast,
+    and that separation is the overfitting the groundwork note predicts. An
+    in-sample-only curve cannot show it.
+    """
+    import torch
+
+    total = 0.0
+    wins = 0
+    with torch.no_grad():
+        for chosen_ids, chosen_span, rejected_ids, rejected_span in pairs:
+            chosen = torch.tensor([chosen_ids], device=args.device)
+            rejected = torch.tensor([rejected_ids], device=args.device)
+            loss, margin = dpo_loss(
+                sequence_logprob(policy, chosen, chosen_span),
+                sequence_logprob(policy, rejected, rejected_span),
+                sequence_logprob(reference, chosen, chosen_span),
+                sequence_logprob(reference, rejected, rejected_span),
+            )
+            total += float(loss)
+            wins += int(float(margin) > 0)
+    return {"heldout_loss": total / len(pairs), "heldout_ordered": wins / len(pairs)}
 
 
 def load_thinker(checkpoint: Path, args: argparse.Namespace, trainable: bool) -> Any:
@@ -131,8 +165,20 @@ def main() -> None:
     parser.add_argument("--variant", default="mindsurf")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--epochs", type=int, default=1)
-    parser.add_argument("--learning-rate", type=float, default=5e-7)
-    parser.add_argument("--accumulate", type=int, default=8, help="pairs per optimiser step")
+    # 5e-7 was the first guess and it is below the noise: at ~50 optimiser
+    # steps AdamW's displacement is bounded by lr x steps = 2.5e-5, against a
+    # relative-L2 of 0.031 that this project has already measured as inert
+    # (2026-07-26-weight-scale.md). The guard at write-out enforces the floor;
+    # this default aims an order of magnitude above it.
+    parser.add_argument("--learning-rate", type=float, default=5e-6)
+    parser.add_argument("--accumulate", type=int, default=4, help="pairs per optimiser step")
+    parser.add_argument(
+        "--heldout",
+        type=float,
+        default=0.1,
+        help="share of pairs never trained on; with a few hundred pairs the "
+        "in-sample and held-out curves separate fast and that is the signal",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output", type=Path, required=True, help="omni checkpoint to write")
     parser.add_argument("--report", type=Path)
@@ -142,9 +188,20 @@ def main() -> None:
 
     from mindsurf_omni.service.thinker import thinker_weights
 
-    triples = json.loads(args.triples.read_text(encoding="utf-8"))["triples"]
+    payload = json.loads(args.triples.read_text(encoding="utf-8"))
+    triples = payload["triples"]
     if not triples:
         raise SystemExit(f"no triples in {args.triples}")
+    # The on-policy invariant, re-asserted here because it is enforced two files
+    # upstream and nothing in between carries it. Off-policy pairs make this a
+    # well-behaved imitation run: the loss descends, the margin grows, and the
+    # thing being learnt is not preference.
+    source = payload.get("checkpoint")
+    if source and source != args.checkpoint.name:
+        raise SystemExit(
+            f"the pairs were drawn from {source} and --checkpoint is {args.checkpoint.name}; "
+            "DPO on another model's drafts trains imitation of that model, not preference"
+        )
 
     policy, tokeniser = load_thinker(args.checkpoint, args, trainable=True)
     reference, _ = load_thinker(args.checkpoint, args, trainable=False)
@@ -159,10 +216,15 @@ def main() -> None:
         encoded.append(pair)
     if not encoded:
         raise SystemExit("every pair failed to encode; the prompt boundary never lined up")
-    print(f"{len(encoded)} 对可用，丢弃 {dropped} 对（前缀边界对不齐）")
+    rng = random.Random(args.seed)
+    rng.shuffle(encoded)
+    cut = int(len(encoded) * args.heldout)
+    heldout, encoded = encoded[:cut], encoded[cut:]
+    print(f"{len(encoded)} 对训练 + {len(heldout)} 对留出，丢弃 {dropped} 对（前缀边界对不齐）")
+    if not encoded:
+        raise SystemExit("held-out split left nothing to train on")
 
     optimiser = torch.optim.AdamW(policy.parameters(), lr=args.learning_rate)
-    rng = random.Random(args.seed)
     history: list[dict[str, float]] = []
 
     for epoch in range(args.epochs):
@@ -171,6 +233,8 @@ def main() -> None:
         optimiser.zero_grad(set_to_none=True)
         wins = 0
         total = 0.0
+        chosen_logp = 0.0
+        rejected_logp = 0.0
         for step, index in enumerate(order, start=1):
             chosen_ids, chosen_span, rejected_ids, rejected_span = encoded[index]
             chosen = torch.tensor([chosen_ids], device=args.device)
@@ -182,13 +246,20 @@ def main() -> None:
             policy_chosen = sequence_logprob(policy, chosen, chosen_span)
             policy_rejected = sequence_logprob(policy, rejected, rejected_span)
 
-            loss = dpo_loss(policy_chosen, policy_rejected, reference_chosen, reference_rejected)
+            loss, margin = dpo_loss(
+                policy_chosen, policy_rejected, reference_chosen, reference_rejected
+            )
             (loss / args.accumulate).backward()
             total += float(loss)
-            # The share of pairs the policy already orders correctly. It is the
-            # only progress signal that means anything here: the loss falls
-            # even when the ordering does not change.
-            wins += int(float(policy_chosen - policy_rejected) > 0)
+            # Ordering by margin, not by the raw log-probability difference --
+            # see dpo_loss. At step zero this is 0% by construction, because
+            # policy and reference are the same weights; anything else on the
+            # first screen means they are not, which is worth knowing early.
+            wins += int(float(margin) > 0)
+            # DPO's characteristic collapse pushes BOTH branches down while the
+            # margin still grows. Tracking only the margin cannot see it.
+            chosen_logp += float(policy_chosen)
+            rejected_logp += float(policy_rejected)
 
             if step % args.accumulate == 0 or step == len(order):
                 torch.nn.utils.clip_grad_norm_(policy.parameters(), 1.0)
@@ -197,9 +268,23 @@ def main() -> None:
             if step % 50 == 0:
                 print(
                     f"epoch {epoch} step {step}/{len(order)} loss {total / step:.4f} "
-                    f"ordered {wins / step:.1%}"
+                    f"ordered {wins / step:.1%} "
+                    f"logp chosen {chosen_logp / step:.1f} rejected {rejected_logp / step:.1f}"
                 )
-        history.append({"epoch": epoch, "loss": total / len(order), "ordered": wins / len(order)})
+        record = {
+            "epoch": epoch,
+            "loss": total / len(order),
+            "ordered": wins / len(order),
+            "mean_chosen_logp": chosen_logp / len(order),
+            "mean_rejected_logp": rejected_logp / len(order),
+        }
+        if heldout:
+            record.update(evaluate(policy, reference, heldout, args))
+            print(
+                f"epoch {epoch} 留出: loss {record['heldout_loss']:.4f} "
+                f"ordered {record['heldout_ordered']:.1%}"
+            )
+        history.append(record)
 
     # Write an omni checkpoint: the parent's tensors with the Thinker replaced,
     # so the Talker and audio_proj are bit-identical to what they were fitted
@@ -207,16 +292,38 @@ def main() -> None:
     parent = torch.load(str(args.checkpoint), map_location="cpu", weights_only=True)
     tuned = {key: value.detach().cpu() for key, value in policy.state_dict().items()}
     merged = dict(parent)
+    wanted = thinker_weights(parent)
     replaced = 0
-    for key in thinker_weights(parent):
+    displacement = 0.0
+    for key in wanted:
         if key in tuned:
-            merged[key] = tuned[key].half()
+            # Written at full precision, not cast back to the parent's fp16.
+            # The whole run's budget is lr x steps; at 5e-6 x a few hundred
+            # steps that is ~1e-3, while fp16's spacing at this weight scale
+            # (per-parameter RMS 0.1366) is 6.1e-5 to 1.2e-4 -- close enough
+            # that a cast eats a large share of it, and at smaller budgets all
+            # of it. Both readers build an fp32 model and load_state_dict casts,
+            # so a mixed-dtype checkpoint loads fine.
+            merged[key] = tuned[key]
+            displacement = max(displacement, float((tuned[key] - parent[key].float()).abs().max()))
             replaced += 1
-    if replaced != len(thinker_weights(parent)):
+    if replaced != len(wanted):
         raise SystemExit(
-            f"only {replaced} of {len(thinker_weights(parent))} Thinker tensors were replaced; "
+            f"only {replaced} of {len(wanted)} Thinker tensors were replaced; "
             "writing a half-tuned checkpoint would look exactly like a tuned one"
         )
+    # Counting tensors proves nothing: 91 of 91 replaced by the parent's own
+    # numbers passes that check and writes a file identical to its input. This
+    # counts the ones whose values actually moved.
+    moved = sum(1 for key in wanted if not torch.equal(merged[key], parent[key].float()))
+    if moved < replaced:
+        raise SystemExit(
+            f"only {moved} of {replaced} Thinker tensors changed value: the update is at or "
+            f"below the storage resolution (max |dw| {displacement:.2e}). Raise "
+            "--learning-rate or --epochs; a run that trains nothing writes the same file "
+            "as a run that trains something."
+        )
+    print(f"最大权重位移 {displacement:.3e}")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     torch.save(merged, str(args.output))
     print(f"替换 {replaced} 个 Thinker 张量，写入 {args.output}")
@@ -230,6 +337,9 @@ def main() -> None:
         "epochs": args.epochs,
         "history": history,
         "thinker_tensors_replaced": replaced,
+        "thinker_tensors_changed": moved,
+        "max_weight_displacement": displacement,
+        "heldout_pairs": len(heldout),
     }
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)

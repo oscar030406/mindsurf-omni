@@ -96,19 +96,28 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         if len(kept) < 2:
             reasons["too few usable drafts"] += 1
             continue
-        for left, right in draw_pairs(kept, args.pairs_per_prompt, rng):
+        for nth, (left, right) in enumerate(draw_pairs(kept, args.pairs_per_prompt, rng)):
             # Sides are shuffled here, once, and the key is kept separately --
             # a judge shown the same model's drafts always in the same order
             # would be ranking position.
             flip = rng.random() < 0.5
             items.append(
                 {
+                    # Unique per pair, not per prompt. A prompt contributes
+                    # several pairs, so keying by prompt id silently collapses
+                    # them and attaches a judgement to a pair the judge never
+                    # saw -- half the labels land on the wrong text.
+                    "key": f"{probe_id}#{nth}",
                     "id": probe_id,
                     "prompt": prompts[probe_id],
                     "left": kept[right] if flip else kept[left],
                     "right": kept[left] if flip else kept[right],
                 }
             )
+
+    keys = [item["key"] for item in items]
+    if len(set(keys)) != len(keys):
+        raise SystemExit("pair keys are not unique; judgements would attach to the wrong pair")
 
     return {
         "checkpoint": next(iter(checkpoints)),
@@ -120,15 +129,18 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
 
 def resolve(args: argparse.Namespace) -> dict[str, Any]:
     """Turn judged pairs into (prompt, chosen, rejected), dropping ties."""
-    formed = json.loads(args.pairs.read_text(encoding="utf-8"))["pairs"]
-    pairs = {item["id"]: item for item in formed}
+    payload = json.loads(args.pairs.read_text(encoding="utf-8"))
+    formed = payload["pairs"]
+    pairs = {item["key"]: item for item in formed}
+    if len(pairs) != len(formed):
+        raise SystemExit(f"{len(formed)} pairs collapsed to {len(pairs)} keys")
     judged = json.loads(args.judged.read_text(encoding="utf-8"))
 
     triples: list[dict[str, str]] = []
     ties = 0
     unmatched = 0
     for row in judged:
-        item = pairs.get(row["id"])
+        item = pairs.get(row.get("key", row.get("id")))
         if item is None:
             unmatched += 1
             continue
@@ -143,6 +155,11 @@ def resolve(args: argparse.Namespace) -> dict[str, Any]:
         triples.append({"prompt": item["prompt"], "chosen": chosen, "rejected": rejected})
 
     return {
+        # Carried through, not dropped. The on-policy invariant is enforced two
+        # files upstream and the trainer has no other way to re-assert it: with
+        # this missing, pointing --checkpoint at a different model turns the run
+        # into off-policy imitation and nothing anywhere notices.
+        "checkpoint": payload.get("checkpoint"),
         "triples": triples,
         "dropped_ties": ties,
         "unmatched_judgements": unmatched,

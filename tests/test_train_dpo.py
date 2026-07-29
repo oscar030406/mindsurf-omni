@@ -30,10 +30,11 @@ def test_the_loss_falls_when_the_policy_prefers_the_chosen_branch() -> None:
     """
     reference = (_scalar(-10.0), _scalar(-10.0))
 
-    better = dpo_loss(_scalar(-8.0), _scalar(-12.0), *reference)
-    worse = dpo_loss(_scalar(-12.0), _scalar(-8.0), *reference)
+    better, better_margin = dpo_loss(_scalar(-8.0), _scalar(-12.0), *reference)
+    worse, worse_margin = dpo_loss(_scalar(-12.0), _scalar(-8.0), *reference)
 
     assert float(better) < float(worse)
+    assert float(better_margin) > 0 > float(worse_margin)
 
 
 def test_matching_the_reference_exactly_costs_log_two() -> None:
@@ -43,9 +44,13 @@ def test_matching_the_reference_exactly_costs_log_two() -> None:
     would move.
     """
     reference = (_scalar(-5.0), _scalar(-9.0))
-    same = dpo_loss(_scalar(-5.0), _scalar(-9.0), *reference)
+    same, margin = dpo_loss(_scalar(-5.0), _scalar(-9.0), *reference)
 
     assert float(same) == pytest.approx(math.log(2.0), abs=1e-5)
+    # Zero margin at step zero is not a coincidence: policy and reference are
+    # the same weights, so a first screen showing anything else means they are
+    # not, which is a cheap self-check the training loop leans on.
+    assert float(margin) == pytest.approx(0.0, abs=1e-6)
 
 
 def test_the_reference_cancels_rather_than_being_ignored() -> None:
@@ -56,10 +61,10 @@ def test_the_reference_cancels_rather_than_being_ignored() -> None:
     """
     policy = (_scalar(-6.0), _scalar(-8.0))
 
-    against_neutral = dpo_loss(*policy, _scalar(-7.0), _scalar(-7.0))
-    against_a_reference_that_already_agreed = dpo_loss(*policy, _scalar(-6.0), _scalar(-8.0))
+    against_neutral, _ = dpo_loss(*policy, _scalar(-7.0), _scalar(-7.0))
+    against_agreed, _ = dpo_loss(*policy, _scalar(-6.0), _scalar(-8.0))
 
-    assert float(against_neutral) < float(against_a_reference_that_already_agreed)
+    assert float(against_neutral) < float(against_agreed)
 
 
 def test_beta_scales_the_margin_and_nothing_else() -> None:
@@ -68,9 +73,26 @@ def test_beta_scales_the_margin_and_nothing_else() -> None:
     margin = 4.0
     expected = -float(torch.nn.functional.logsigmoid(torch.tensor(BETA * margin)))
 
-    got = dpo_loss(_scalar(-6.0), _scalar(-10.0), _scalar(-7.0), _scalar(-7.0))
+    got, _ = dpo_loss(_scalar(-6.0), _scalar(-10.0), _scalar(-7.0), _scalar(-7.0))
 
     assert float(got) == pytest.approx(expected, abs=1e-6)
+
+
+def test_the_margin_cancels_the_length_bias_that_raw_sums_carry() -> None:
+    """Why the ordering counter uses the margin and not the log-prob difference.
+
+    Summed log-probability falls with length, so a longer chosen reply looks
+    worse under a raw comparison however good it is. The reference carries the
+    same bias, so subtracting it cancels -- and a counter built on the raw
+    difference would have been reporting which branch was shorter.
+    """
+    # A long chosen reply and a short rejected one, both exactly as likely as
+    # the reference finds them: no preference either way, margin zero.
+    _, margin = dpo_loss(_scalar(-40.0), _scalar(-4.0), _scalar(-40.0), _scalar(-4.0))
+
+    assert float(margin) == pytest.approx(0.0, abs=1e-6)
+    # The raw difference, which the first version counted, is hugely negative.
+    assert float(_scalar(-40.0) - _scalar(-4.0)) < -30
 
 
 class _Tokeniser:

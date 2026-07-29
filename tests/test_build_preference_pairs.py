@@ -65,23 +65,59 @@ def test_a_prompt_with_one_usable_draft_is_dropped_not_paired(tmp_path: Path) ->
     assert report["dropped_drafts"]["too few usable drafts"] == 1
 
 
+def test_several_pairs_from_one_prompt_keep_separate_keys(tmp_path: Path) -> None:
+    """The bug this replaced: keying by prompt id collapsed them.
+
+    A prompt contributes several pairs. Keyed by prompt id, the last one wins
+    the dictionary slot and every judgement for that prompt attaches to it --
+    so half the labels describe text the judge never saw, and nothing about the
+    resulting file looks wrong.
+    """
+    drafts = {
+        "x": "第一条回答，长度足够拿来比较，不会被短句筛掉。",
+        "y": "第二条回答，同样够长，内容不一样。",
+        "z": "第三条回答，也够长，还是不一样的内容。",
+    }
+    reports = [_report(tmp_path, f"{name}.json", "m", {"x": text}) for name, text in drafts.items()]
+
+    report = build(argparse.Namespace(samples=reports, pairs_per_prompt=3, seed=1))
+
+    keys = [item["key"] for item in report["pairs"]]
+    assert len(report["pairs"]) == 3
+    assert len(set(keys)) == 3, keys
+    assert all(key.startswith("x#") for key in keys)
+
+
 def test_ties_are_dropped_rather_than_counted_as_half(tmp_path: Path) -> None:
     """A pair the judge could not separate has no direction to train toward."""
     pairs = tmp_path / "pairs.json"
     pairs.write_text(
         json.dumps(
             {
+                "checkpoint": "m",
                 "pairs": [
-                    {"id": "a", "prompt": "问", "left": "甲的回答", "right": "乙的回答"},
-                    {"id": "b", "prompt": "问", "left": "丙的回答", "right": "丁的回答"},
-                ]
+                    {
+                        "key": "a#0",
+                        "id": "a",
+                        "prompt": "问",
+                        "left": "甲的回答",
+                        "right": "乙的回答",
+                    },
+                    {
+                        "key": "a#1",
+                        "id": "a",
+                        "prompt": "问",
+                        "left": "丙的回答",
+                        "right": "丁的回答",
+                    },
+                ],
             }
         ),
         encoding="utf-8",
     )
     judged = tmp_path / "judged.json"
     judged.write_text(
-        json.dumps([{"id": "a", "winner": "left"}, {"id": "b", "winner": "tie"}]),
+        json.dumps([{"key": "a#0", "winner": "left"}, {"key": "a#1", "winner": "tie"}]),
         encoding="utf-8",
     )
 
@@ -89,6 +125,8 @@ def test_ties_are_dropped_rather_than_counted_as_half(tmp_path: Path) -> None:
 
     assert out["dropped_ties"] == 1
     assert out["triples"] == [{"prompt": "问", "chosen": "甲的回答", "rejected": "乙的回答"}]
+    # Provenance survives the stage, so the trainer can re-assert on-policy.
+    assert out["checkpoint"] == "m"
 
 
 def test_pair_sampling_stays_linear_in_the_number_of_prompts() -> None:
