@@ -80,6 +80,24 @@ SKIP_PROJ="${SKIP_PROJ:-0}"
 # talker 47,050,754 plus audio_proj 985,600, and all 89,864,448 of the Thinker
 # are frozen including lm_head, which is the same tensor as embed_tokens.
 FREEZE="${FREEZE:-none}"
+# FROM_STAGE picks up a chain that stopped partway, and RESUME=1 picks up the
+# stage that stopped partway.
+#
+# Both come from one afternoon. The OOM killer took a2a_full at epoch 3 of 3
+# step 18800 -- my fault, a second job on a 23 GB box -- and neither knob
+# existed, so continuing meant hand-writing the stage's command line twice: once
+# to resume a2a_full and once for the a2a_tail this script would have run next.
+# Hand-copied training commands are how a chain quietly stops being the recipe
+# it is documented as.
+#
+#   FROM_STAGE=full RESUME=1 ...   # the interrupted stage, from its checkpoint
+#   FROM_STAGE=tail ...            # its successor, from the saved weight
+FROM_STAGE="${FROM_STAGE:-proj}"
+RESUME="${RESUME:-0}"
+case "$FROM_STAGE" in
+  proj|full|tail) ;;
+  *) echo "FROM_STAGE must be proj, full or tail, not '$FROM_STAGE'" >&2; exit 1 ;;
+esac
 
 cd "$ROOT/trainer" || exit 1
 
@@ -118,26 +136,40 @@ run() {
   [ "$status" -eq 0 ] || exit "$status"
 }
 
-echo "seq $A2A_SEQ, proj bs $PROJ_BS, full bs $FULL_BS, skip_proj $SKIP_PROJ, freeze $FREEZE" | tee -a "$LOG"
+echo "seq $A2A_SEQ, proj bs $PROJ_BS, full bs $FULL_BS, skip_proj $SKIP_PROJ," "freeze $FREEZE, from_stage $FROM_STAGE, resume $RESUME" | tee -a "$LOG"
+
+# --from_resume applies only to the stage being picked up. Carrying it into the
+# stages after would have them look for a checkpoint of their own and find the
+# previous stage's, which is a different run at a different learning rate.
+resume_for() {
+  if [ "$1" = "$FROM_STAGE" ] && [ "$RESUME" -eq 1 ]; then echo 1; else echo 0; fi
+}
 
 # Upstream line 2.
-if [ "$SKIP_PROJ" -eq 0 ]; then
+if [ "$SKIP_PROJ" -eq 0 ] && [ "$FROM_STAGE" = "proj" ]; then
   run "a2a_proj" \
     --data_path "$DATA_A2A" --epochs 1 --batch_size "$PROJ_BS" --max_seq_len "$A2A_SEQ" \
     --learning_rate 5e-4 --from_weight "$FROM" --save_weight "$SAVE" \
-    --mode audio_proj --num_workers 8 --use_moe 0 --log_interval 50
+    --mode audio_proj --from_resume "$(resume_for proj)" \
+    --num_workers 8 --use_moe 0 --log_interval 50
   NEXT_FROM="$SAVE"
-else
+elif [ "$FROM_STAGE" = "proj" ]; then
   echo "skipping a2a_proj: $FROM has had one" | tee -a "$LOG"
   NEXT_FROM="$FROM"
+else
+  # Starting later in the chain: the earlier stages already wrote into SAVE.
+  echo "starting at a2a_$FROM_STAGE, taking $SAVE as given" | tee -a "$LOG"
+  NEXT_FROM="$SAVE"
 fi
 
 # Upstream line 3.
-run "a2a_full" \
-  --data_path "$DATA_A2A" --epochs 3 --batch_size "$FULL_BS" --max_seq_len "$A2A_SEQ" \
-  --learning_rate 5e-5 --from_weight "$NEXT_FROM" --save_weight "$SAVE" \
-  --freeze_backbone "$FREEZE" \
-  --num_workers 8 --use_moe 0 --log_interval 50
+if [ "$FROM_STAGE" != "tail" ]; then
+  run "a2a_full" \
+    --data_path "$DATA_A2A" --epochs 3 --batch_size "$FULL_BS" --max_seq_len "$A2A_SEQ" \
+    --learning_rate 5e-5 --from_weight "$NEXT_FROM" --save_weight "$SAVE" \
+    --freeze_backbone "$FREEZE" --from_resume "$(resume_for full)" \
+    --num_workers 8 --use_moe 0 --log_interval 50
+fi
 
 # Upstream line 6, which we had never run. In its pipeline the two I2T passes
 # sit between this and the one above; we skip vision, so this follows directly.
@@ -145,7 +177,7 @@ run "a2a_full" \
 run "a2a_tail" \
   --data_path "$DATA_A2A" --epochs 1 --batch_size "$FULL_BS" --max_seq_len "$A2A_SEQ" \
   --learning_rate 5e-6 --from_weight "$SAVE" --save_weight "$SAVE" \
-  --freeze_backbone "$FREEZE" \
+  --freeze_backbone "$FREEZE" --from_resume "$(resume_for tail)" \
   --num_workers 8 --use_moe 0 --log_interval 50
 
 echo "===== a2a from $FROM done $(date -Is) =====" >>"$LOG"
