@@ -23,10 +23,27 @@ look like it worked and not have:
 * **Still intelligible.** The clips go through the same judge every gating
   comparison here uses. This is the check that killed the manufactured pack and
   it costs one CPU pass.
-* **The right language.** Corpus references include English, and a reference
-  conditions voice and prosody rather than content -- but an English reference
-  driving Chinese generation is an untested mismatch, so clusters whose clips
-  do not transcribe as Chinese are skipped rather than silently shipped.
+* **The right language.** A reference conditions voice and prosody rather than
+  content, but an English reference driving Chinese generation is an untested
+  mismatch, so clusters whose clips do not transcribe as Chinese are skipped.
+
+And one thing about *where* to read, which the first version got wrong twice.
+
+Reading from the start of the file returned four English clusters, and the first
+explanation -- that the corpus is mostly English -- was a sampling artifact.
+Sampling every fifth of the 102 row groups shows the English ones are scattered,
+not blocked: groups 0, 25, 60, 65 and 85 come back at a 0.00 Han share while
+the rest sit between 0.85 and 0.97. The head of the file happens to be English,
+which is the only reason the first run saw nothing else.
+
+The same scan turned up something worth knowing independently: only 73.2% of
+rows carry a speaker vector at all, and groups 60 through 80 carry none. With
+the dataset's own 50% dropout of reference codes on top, A2A saw speaker
+conditioning on roughly a third of its samples.
+
+So ``--row-groups`` is not a convenience. Reading the head of a structured file
+is the bug it fixes, and the groups that are both Chinese and conditioned are
+5, 10, 15, 20, 30 through 55, and 90 onward.
 """
 
 from __future__ import annotations
@@ -118,18 +135,21 @@ def harvest(args: argparse.Namespace) -> dict[str, Any]:
     codec = MimiModel.from_pretrained(str(args.codec)).eval()
     handle = pq.ParquetFile(str(args.parquet))
 
+    wanted = args.row_groups or list(range(handle.num_row_groups))
     rows: list[tuple[list[int], Any]] = []
-    for batch in handle.iter_batches(batch_size=512, columns=["ref_audios", "spk_emb"]):
+    for group in wanted:
+        table = handle.read_row_group(group, columns=["ref_audios", "spk_emb"])
         for ref, emb in zip(
-            batch.column("ref_audios").to_pylist(),
-            batch.column("spk_emb").to_pylist(),
+            table.column("ref_audios").to_pylist(),
+            table.column("spk_emb").to_pylist(),
             strict=False,
         ):
             if ref and emb and len(emb) == 192 and len(ref) >= 8 * MINIMUM_FRAMES:
                 rows.append((ref, torch.tensor(emb, dtype=torch.float32)))
         if len(rows) >= args.sample:
             break
-    print(f"取样 {len(rows)} 行", flush=True)
+    rows = rows[: args.sample]
+    print(f"取样 {len(rows)} 行（行组 {wanted[:4]}{'…' if len(wanted) > 4 else ''}）", flush=True)
 
     bank = torch.stack([emb / emb.norm() for _, emb in rows])
     clusters = cluster(bank, args.minimum_clips)
@@ -201,6 +221,13 @@ def main() -> None:
     parser.add_argument("--codec", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--sample", type=int, default=3000)
+    parser.add_argument(
+        "--row-groups",
+        type=int,
+        nargs="*",
+        help="which row groups to read. The file is blocked by language -- 0-25 are "
+        "English, 51 onward Chinese -- so reading from the start returns one language",
+    )
     parser.add_argument("--clusters", type=int, default=6)
     parser.add_argument("--minimum-clips", type=int, default=8)
     parser.add_argument("--clips-per-cluster", type=int, default=16)
