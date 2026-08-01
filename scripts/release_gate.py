@@ -35,6 +35,10 @@ EXEMPT = {
     "PROJECT_RULES.md",
     "scripts/release_gate.py",
     "tests/test_release_gate.py",
+    # Same reason one level down: the scrubber's test has to hold the personal
+    # paths it proves the scrubber rewrites, and a test that cannot state the
+    # shape it catches is not pinning anything.
+    "tests/test_scrub_artifact_paths.py",
     # An ignore file has to name the things it excludes, so it necessarily
     # contains the directory names the agent-state rule looks for.
     ".gitignore",

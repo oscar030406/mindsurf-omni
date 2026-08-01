@@ -107,3 +107,17 @@ def test_a_provenance_record_may_name_a_model_as_the_author() -> None:
     # And nowhere else: a plan or a transcript is still a trace.
     assert not exempt.search("docs/PLAN.md")
     assert not exempt.search("configs/chat_refs_external_v1.jsonl")
+
+
+def test_the_scrubber_test_may_hold_the_paths_it_catches() -> None:
+    """A test that cannot state the shape it detects pins nothing.
+
+    The gate already exempts its own test for this reason. The path scrubber's
+    test is one level down and needs the same room: it exists to prove that a
+    home directory in an archived row gets rewritten, which it cannot show
+    without writing one down.
+    """
+    from scripts.release_gate import EXEMPT
+
+    assert "tests/test_scrub_artifact_paths.py" in EXEMPT
+    assert "tests/test_release_gate.py" in EXEMPT
