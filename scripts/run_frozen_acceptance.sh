@@ -19,6 +19,18 @@ PY="${OMNI_PYTHON:-$HOME/.venvs/omni/bin/python}"
 SAVE="${1:-sft_graft_frozen}"
 OUT="${2:-$HOME/omni/frozen_eval}"
 LOG="$OUT/acceptance.log"
+
+# Never while the card is still training -- and gate 1 cannot catch that for
+# us. The Thinker is frozen for the whole run, so a checkpoint written at step
+# 12000 passes the bit-identity check exactly like a finished one does. Gates 2
+# and 3 would then spend an hour and a half producing real-looking numbers for
+# a model that is still moving. run_acceptance.sh has carried this guard since
+# the first retrain; this script was written without it.
+running=$(pgrep -f "python.*train_omni\.py --data_path" 2>/dev/null | wc -l)
+if [ "$running" -gt 0 ]; then
+  echo "training is still running ($running processes); the checkpoint is still being written" >&2
+  exit 1
+fi
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
 
