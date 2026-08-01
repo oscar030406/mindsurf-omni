@@ -45,6 +45,16 @@ EXEMPT = {
 # writes a server address into a lock file, so exempt that one rule there.
 RULE_EXEMPT_PATHS: dict[str, re.Pattern[str]] = {
     "internal_address": re.compile(r"(^|/)(uv|poetry|Cargo)\.lock$|-lock\.json$"),
+    # A provenance record names who wrote a reference set, and sometimes that
+    # author is a model. PROJECT_RULES section 6 requires the name to be there:
+    # authorship cannot be inferred after the fact -- measured, a model does not
+    # reproduce its own old replies, so the record is a declaration or it is
+    # nothing. That rule exists because a set one of the compared arms had
+    # written was once used as a holdout, and every arm scored best on its own
+    # text. Stripping the name to satisfy the agent-trace rule would hand back
+    # exactly that failure. These files are small and structured; the exemption
+    # is per file, not per rule.
+    "agent_process_record": re.compile(r"\.provenance\.json$"),
 }
 
 CONTENT_RULES: tuple[tuple[str, str, str], ...] = (

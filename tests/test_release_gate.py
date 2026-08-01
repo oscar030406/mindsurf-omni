@@ -85,3 +85,25 @@ def test_every_exempt_file_exists() -> None:
     missing = sorted(name for name in EXEMPT if not (ROOT / Path(name)).is_file())
 
     assert missing == []
+
+
+def test_a_provenance_record_may_name_a_model_as_the_author() -> None:
+    """Two project rules collide here, and this is which one wins.
+
+    Section 3 forbids shipping agent traces. Section 6 requires every reference
+    set to record its author, because authorship cannot be recovered later --
+    at sampling temperature a model does not reproduce its own old replies, so
+    the record is a declaration or there is none. That requirement was bought
+    with a whole round: a set written by one of the compared arms was used as a
+    holdout, and every arm then scored best on its own text.
+
+    Removing the name to satisfy the trace rule would restore that failure, so
+    the trace rule steps aside for these files and only these files.
+    """
+    from scripts.release_gate import RULE_EXEMPT_PATHS
+
+    exempt = RULE_EXEMPT_PATHS["agent_process_record"]
+    assert exempt.search("configs/chat_refs_external_v1.jsonl.provenance.json")
+    # And nowhere else: a plan or a transcript is still a trace.
+    assert not exempt.search("docs/PLAN.md")
+    assert not exempt.search("configs/chat_refs_external_v1.jsonl")

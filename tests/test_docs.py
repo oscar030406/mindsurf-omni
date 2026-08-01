@@ -371,7 +371,7 @@ def test_the_manifest_rewrite_survives_a_windows_path() -> None:
     assert basename("artifacts/tts_edge/zh000.wav") == "zh000.wav"
     assert basename("zh000.wav") == "zh000.wav"
 
-    target = Path("/home/oscar/omni/codec_out")
+    target = Path("/srv/omni/codec_out")
     manifest = repoint_manifest(
         {"samples": [{"audio_path": r"artifacts\tts_edge\zh000.wav"}]},
         Path("in"),
