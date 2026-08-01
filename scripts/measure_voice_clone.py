@@ -74,14 +74,31 @@ CAMPPLUS = {
 SEEN_PACK, UNSEEN_PACK = "voices.pt", "voices_unseen.pt"
 
 
-def load_voices(root: Path) -> dict[str, dict[str, Any]]:
-    """Every voice with the split it belongs to, seen first."""
+SPLITS = ("seen", "unseen", "external")
+
+
+def load_voices(root: Path, extra: tuple[Path, ...] = ()) -> dict[str, dict[str, Any]]:
+    """Every voice with the split it belongs to, seen first.
+
+    ``extra`` takes packs built outside upstream's speaker directory -- the
+    harvested emotional references are the first of them. They land in their
+    own split rather than joining ``unseen``: the certified bands were measured
+    on upstream's twelve voices, and a pack of three corpus speakers averaged
+    into that number would move it without anyone choosing to.
+    """
     import torch
 
+    packs = [(root / "model" / "speaker" / SEEN_PACK, "seen")]
+    packs.append((root / "model" / "speaker" / UNSEEN_PACK, "unseen"))
+    # A directory is the shape harvest_emotion_voices.py writes, a file is what
+    # someone types when they have one pack and no directory to put it in.
+    packs += [(path / SEEN_PACK if path.is_dir() else path, "external") for path in extra]
+
     voices: dict[str, dict[str, Any]] = {}
-    for pack, split in ((SEEN_PACK, "seen"), (UNSEEN_PACK, "unseen")):
-        path = root / "model" / "speaker" / pack
+    for path, split in packs:
         if not path.is_file():
+            if split == "external":
+                raise SystemExit(f"--voice-pack {path} 不存在")
             continue
         for name, entry in torch.load(str(path), map_location="cpu").items():
             voices[name] = {
@@ -138,7 +155,7 @@ def run_ceiling(args: argparse.Namespace) -> dict[str, Any]:
     from transformers import MimiModel
 
     root = args.minimind_root.expanduser().resolve()
-    voices = load_voices(root)
+    voices = load_voices(root, tuple(args.voice_pack or ()))
     embedder = Embedder(root, args.device)
     mimi = MimiModel.from_pretrained(str(root / "model" / "mimi")).eval().float().to(args.device)
     resample = torchaudio.transforms.Resample(24000, MEL["sample_rate"])
@@ -188,7 +205,7 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
     import torchaudio
 
     root = args.minimind_root.expanduser().resolve()
-    voices = load_voices(root)
+    voices = load_voices(root, tuple(args.voice_pack or ()))
     embedder = Embedder(root, args.device)
     pattern = re.compile(args.name_pattern)
 
@@ -250,7 +267,7 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
 
     rows = []
     for name, values in sorted(
-        by_voice.items(), key=lambda item: (voices[item[0]]["split"] != "seen", item[0])
+        by_voice.items(), key=lambda item: (SPLITS.index(voices[item[0]]["split"]), item[0])
     ):
         rows.append(
             {
@@ -270,7 +287,7 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
         "samples": samples,
         "unmatched": unmatched,
     }
-    for split in ("seen", "unseen"):
+    for split in SPLITS:
         values = [
             value for row in rows if row["split"] == split for value in by_voice[row["voice"]]
         ]
@@ -329,6 +346,14 @@ def main() -> None:
         default=r"clone-(?P<voice>[a-z_]+)-",
         help="regex with a 'voice' group, matched against each wav's stem. The "
         "default follows eval_omni.py's clone-<voice>-<index> naming",
+    )
+    parser.add_argument(
+        "--voice-pack",
+        type=Path,
+        nargs="+",
+        help="voices.pt built outside upstream's model/speaker -- a directory "
+        "or the file itself. Scored in its own 'external' split, because the "
+        "seen and unseen bands were certified on upstream's twelve voices",
     )
     parser.add_argument("--device", default="cpu")
     parser.add_argument(
