@@ -1,0 +1,489 @@
+{
+  "external": {
+    "gating_eligible": false,
+    "n": 72,
+    "noise_floor": 0.04385521676805282,
+    "note": "n=72 below the 100 required; resolves 0.1316 at best, but the effect of interest is 0.0500",
+    "value": 0.47820833283993935
+  },
+  "mode": "score",
+  "samples": [
+    {
+      "id": "calm/zh000",
+      "similarity": 0.35240474343299866,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh001",
+      "similarity": 0.3579957187175751,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh002",
+      "similarity": 0.34712332487106323,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh003",
+      "similarity": 0.34278714656829834,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh004",
+      "similarity": 0.33308303356170654,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh005",
+      "similarity": 0.30665645003318787,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh006",
+      "similarity": 0.3235916495323181,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh007",
+      "similarity": 0.31210336089134216,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh008",
+      "similarity": 0.3251086473464966,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh009",
+      "similarity": 0.34025683999061584,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh010",
+      "similarity": 0.32940560579299927,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh011",
+      "similarity": 0.3516486585140228,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "alpha050/zh000",
+      "similarity": 0.3098253309726715,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh001",
+      "similarity": 0.2886524498462677,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh002",
+      "similarity": 0.26953184604644775,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh003",
+      "similarity": 0.3130249083042145,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh004",
+      "similarity": 0.3219934403896332,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh005",
+      "similarity": 0.2934541404247284,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh006",
+      "similarity": 0.2905038297176361,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh007",
+      "similarity": 0.2766805589199066,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh008",
+      "similarity": 0.3095042109489441,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh009",
+      "similarity": 0.2817331850528717,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh010",
+      "similarity": 0.30255451798439026,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh011",
+      "similarity": 0.30832764506340027,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha075/zh000",
+      "similarity": 0.14520011842250824,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh001",
+      "similarity": 0.27930307388305664,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh002",
+      "similarity": 0.307706743478775,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh003",
+      "similarity": 0.2933623790740967,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh004",
+      "similarity": 0.2992386221885681,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh005",
+      "similarity": 0.2568407654762268,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh006",
+      "similarity": 0.23100247979164124,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh007",
+      "similarity": 0.24924986064434052,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh008",
+      "similarity": 0.29047203063964844,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh009",
+      "similarity": 0.2639814019203186,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh010",
+      "similarity": 0.2550655007362366,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh011",
+      "similarity": 0.2859734892845154,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "dylan_base/zh000",
+      "similarity": 0.6096639633178711,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh001",
+      "similarity": 0.6588531732559204,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh002",
+      "similarity": 0.7085673809051514,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh003",
+      "similarity": 0.699050784111023,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh004",
+      "similarity": 0.6861313581466675,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh005",
+      "similarity": 0.6221868991851807,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh006",
+      "similarity": 0.6743737459182739,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh007",
+      "similarity": 0.70259028673172,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh008",
+      "similarity": 0.7061724662780762,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh009",
+      "similarity": 0.7086887955665588,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh010",
+      "similarity": 0.7154598832130432,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh011",
+      "similarity": 0.6812249422073364,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_half/zh000",
+      "similarity": 0.646122395992279,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh001",
+      "similarity": 0.6765041351318359,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh002",
+      "similarity": 0.7261457443237305,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh003",
+      "similarity": 0.7238211035728455,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh004",
+      "similarity": 0.7050262689590454,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh005",
+      "similarity": 0.6868661642074585,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh006",
+      "similarity": 0.7036333084106445,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh007",
+      "similarity": 0.7144445776939392,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh008",
+      "similarity": 0.7263861894607544,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh009",
+      "similarity": 0.6948668956756592,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh010",
+      "similarity": 0.7214682698249817,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh011",
+      "similarity": 0.7110179662704468,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_full/zh000",
+      "similarity": 0.5301863551139832,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh001",
+      "similarity": 0.6182158589363098,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh002",
+      "similarity": 0.6377742290496826,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh003",
+      "similarity": 0.5981555581092834,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh004",
+      "similarity": 0.6069065928459167,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh005",
+      "similarity": 0.5881550908088684,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh006",
+      "similarity": 0.567720890045166,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh007",
+      "similarity": 0.6094843745231628,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh008",
+      "similarity": 0.6122589111328125,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh009",
+      "similarity": 0.5947656035423279,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh010",
+      "similarity": 0.5786115527153015,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh011",
+      "similarity": 0.5341505408287048,
+      "split": "external",
+      "voice": "dylan_full"
+    }
+  ],
+  "unmatched": [],
+  "voices": [
+    {
+      "n": 12,
+      "noise_floor": 0.009099098543326078,
+      "similarity": 0.29714883863925934,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.02430565034349759,
+      "similarity": 0.26311637212832767,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.008476287126541138,
+      "similarity": 0.3351804316043854,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.01935018847386044,
+      "similarity": 0.6810803065697352,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.018327154219150543,
+      "similarity": 0.58969879647096,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.013041076560815157,
+      "similarity": 0.7030252516269684,
+      "split": "external",
+      "voice": "dylan_half"
+    }
+  ]
+}

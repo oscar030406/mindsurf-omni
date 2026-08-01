@@ -1,0 +1,257 @@
+{
+  "baseline": "calm",
+  "arms": {
+    "calm": "/home/oscar/omni/emo_gate/sft_graft/speaker4/calm/manifest.json",
+    "lively": "/home/oscar/omni/emo_gate/sft_graft/speaker4/lively/manifest.json",
+    "control": "/home/oscar/omni/emo_gate/sft_graft/speaker4/control/manifest.json"
+  },
+  "paired": 12,
+  "dropped": [],
+  "verdicts": {
+    "lively": [
+      "f0_median_hz: indistinguishable (+0.8584, within ±12.8371, paired n=12)",
+      "f0_iqr_hz: indistinguishable (+1.1542, within ±17.8017, paired n=12)",
+      "seconds: indistinguishable (+0.8667, within ±3.2100, paired n=12)"
+    ],
+    "control": [
+      "f0_median_hz: indistinguishable (-1.2031, within ±10.0156, paired n=12)",
+      "f0_iqr_hz: indistinguishable (+3.5767, within ±21.8253, paired n=12)",
+      "seconds: indistinguishable (+0.9333, within ±2.7500, paired n=12)"
+    ]
+  },
+  "summary": {
+    "calm": {
+      "f0_median_hz": 114.98353848856856,
+      "f0_iqr_hz": 77.38189691970122,
+      "seconds": 24.233333333333334
+    },
+    "lively": {
+      "f0_median_hz": 115.84193438154479,
+      "f0_iqr_hz": 78.53604887333728,
+      "seconds": 25.099999999999998
+    },
+    "control": {
+      "f0_median_hz": 113.78046393924325,
+      "f0_iqr_hz": 80.95860526984828,
+      "seconds": 25.166666666666668
+    }
+  },
+  "rows": [
+    {
+      "id": "zh000",
+      "calm": {
+        "f0_median_hz": 108.00962400741071,
+        "f0_iqr_hz": 90.36721888074501,
+        "seconds": 3.6
+      },
+      "lively": {
+        "f0_median_hz": 112.13744413732508,
+        "f0_iqr_hz": 90.5230180381362,
+        "seconds": 4.08
+      },
+      "control": {
+        "f0_median_hz": 109.80416829334405,
+        "f0_iqr_hz": 80.56284444908417,
+        "seconds": 3.76
+      }
+    },
+    {
+      "id": "zh001",
+      "calm": {
+        "f0_median_hz": 109.90378285442992,
+        "f0_iqr_hz": 68.63721300585766,
+        "seconds": 10.0
+      },
+      "lively": {
+        "f0_median_hz": 109.64630980914153,
+        "f0_iqr_hz": 53.481946259658386,
+        "seconds": 10.0
+      },
+      "control": {
+        "f0_median_hz": 106.39438153563219,
+        "f0_iqr_hz": 72.06627597096974,
+        "seconds": 10.16
+      }
+    },
+    {
+      "id": "zh002",
+      "calm": {
+        "f0_median_hz": 113.6255026921959,
+        "f0_iqr_hz": 73.85638477202983,
+        "seconds": 16.48
+      },
+      "lively": {
+        "f0_median_hz": 125.61550016579967,
+        "f0_iqr_hz": 89.14492933911973,
+        "seconds": 16.4
+      },
+      "control": {
+        "f0_median_hz": 106.12546595354294,
+        "f0_iqr_hz": 57.581460602044814,
+        "seconds": 17.6
+      }
+    },
+    {
+      "id": "zh003",
+      "calm": {
+        "f0_median_hz": 128.69180320226724,
+        "f0_iqr_hz": 102.40738154478785,
+        "seconds": 38.32
+      },
+      "lively": {
+        "f0_median_hz": 123.38894536697892,
+        "f0_iqr_hz": 96.04067376754705,
+        "seconds": 41.68
+      },
+      "control": {
+        "f0_median_hz": 119.14320890470232,
+        "f0_iqr_hz": 89.07341717280131,
+        "seconds": 41.76
+      }
+    },
+    {
+      "id": "zh004",
+      "calm": {
+        "f0_median_hz": 118.03127323162015,
+        "f0_iqr_hz": 81.75936269072844,
+        "seconds": 16.32
+      },
+      "lively": {
+        "f0_median_hz": 109.52983004233221,
+        "f0_iqr_hz": 74.12737480884715,
+        "seconds": 19.68
+      },
+      "control": {
+        "f0_median_hz": 123.677149055067,
+        "f0_iqr_hz": 96.12867071175391,
+        "seconds": 16.48
+      }
+    },
+    {
+      "id": "zh005",
+      "calm": {
+        "f0_median_hz": 115.38133283565499,
+        "f0_iqr_hz": 89.96489542565912,
+        "seconds": 10.08
+      },
+      "lively": {
+        "f0_median_hz": 110.29131961969115,
+        "f0_iqr_hz": 88.49406915577045,
+        "seconds": 11.04
+      },
+      "control": {
+        "f0_median_hz": 110.0798991203244,
+        "f0_iqr_hz": 101.30243170943368,
+        "seconds": 11.68
+      }
+    },
+    {
+      "id": "zh006",
+      "calm": {
+        "f0_median_hz": 130.187623167853,
+        "f0_iqr_hz": 77.73159792299111,
+        "seconds": 14.88
+      },
+      "lively": {
+        "f0_median_hz": 131.60430748938984,
+        "f0_iqr_hz": 82.71345253930767,
+        "seconds": 14.96
+      },
+      "control": {
+        "f0_median_hz": 127.66764510187555,
+        "f0_iqr_hz": 81.37473224494673,
+        "seconds": 15.04
+      }
+    },
+    {
+      "id": "zh007",
+      "calm": {
+        "f0_median_hz": 98.61419177639661,
+        "f0_iqr_hz": 39.11777023718385,
+        "seconds": 39.52
+      },
+      "lively": {
+        "f0_median_hz": 103.16266770159912,
+        "f0_iqr_hz": 51.06627754549734,
+        "seconds": 38.48
+      },
+      "control": {
+        "f0_median_hz": 101.24911097585084,
+        "f0_iqr_hz": 54.53088402374382,
+        "seconds": 38.32
+      }
+    },
+    {
+      "id": "zh008",
+      "calm": {
+        "f0_median_hz": 109.4955329298121,
+        "f0_iqr_hz": 71.71659419081385,
+        "seconds": 46.56
+      },
+      "lively": {
+        "f0_median_hz": 117.63916318349054,
+        "f0_iqr_hz": 76.18452298003365,
+        "seconds": 50.56
+      },
+      "control": {
+        "f0_median_hz": 108.37320239736124,
+        "f0_iqr_hz": 74.41609042453041,
+        "seconds": 50.56
+      }
+    },
+    {
+      "id": "zh009",
+      "calm": {
+        "f0_median_hz": 105.44634767561887,
+        "f0_iqr_hz": 67.75325604221663,
+        "seconds": 13.92
+      },
+      "lively": {
+        "f0_median_hz": 119.25595792687001,
+        "f0_iqr_hz": 87.41085038123978,
+        "seconds": 12.96
+      },
+      "control": {
+        "f0_median_hz": 117.02803526146081,
+        "f0_iqr_hz": 101.48678575805727,
+        "seconds": 13.2
+      }
+    },
+    {
+      "id": "zh010",
+      "calm": {
+        "f0_median_hz": 132.59598936841869,
+        "f0_iqr_hz": 84.73264609503227,
+        "seconds": 37.52
+      },
+      "lively": {
+        "f0_median_hz": 123.85422044849348,
+        "f0_iqr_hz": 85.95488047059035,
+        "seconds": 40.56
+      },
+      "control": {
+        "f0_median_hz": 124.6597013010002,
+        "f0_iqr_hz": 86.95191426251151,
+        "seconds": 40.32
+      }
+    },
+    {
+      "id": "zh011",
+      "calm": {
+        "f0_median_hz": 109.81945812114455,
+        "f0_iqr_hz": 80.538442228369,
+        "seconds": 43.6
+      },
+      "lively": {
+        "f0_median_hz": 103.97754668742598,
+        "f0_iqr_hz": 67.29059119429958,
+        "seconds": 40.8
+      },
+      "control": {
+        "f0_median_hz": 111.16359937075744,
+        "f0_iqr_hz": 76.02775590830196,
+        "seconds": 43.12
+      }
+    }
+  ]
+}

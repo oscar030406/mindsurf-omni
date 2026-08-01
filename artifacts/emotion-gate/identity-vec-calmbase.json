@@ -1,0 +1,489 @@
+{
+  "external": {
+    "gating_eligible": false,
+    "n": 72,
+    "noise_floor": 0.025886224996712448,
+    "note": "n=72 below the 100 required; resolves 0.0777 at best, but the effect of interest is 0.0500",
+    "value": 0.5844259887105889
+  },
+  "mode": "score",
+  "samples": [
+    {
+      "id": "calm/zh000",
+      "similarity": 0.7484603524208069,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh001",
+      "similarity": 0.8091618418693542,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh002",
+      "similarity": 0.8300164341926575,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh003",
+      "similarity": 0.7615508437156677,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh004",
+      "similarity": 0.7682022452354431,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh005",
+      "similarity": 0.7423189282417297,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh006",
+      "similarity": 0.7283830642700195,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh007",
+      "similarity": 0.7264788746833801,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh008",
+      "similarity": 0.7376583814620972,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh009",
+      "similarity": 0.7666609287261963,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh010",
+      "similarity": 0.7651660442352295,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "calm/zh011",
+      "similarity": 0.7782282829284668,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "id": "alpha050/zh000",
+      "similarity": 0.5909494161605835,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh001",
+      "similarity": 0.7010219097137451,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh002",
+      "similarity": 0.6894939541816711,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh003",
+      "similarity": 0.616675853729248,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh004",
+      "similarity": 0.7160256505012512,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh005",
+      "similarity": 0.6672365069389343,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh006",
+      "similarity": 0.6300832629203796,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh007",
+      "similarity": 0.60971999168396,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh008",
+      "similarity": 0.6542261242866516,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh009",
+      "similarity": 0.6687700748443604,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh010",
+      "similarity": 0.6769444942474365,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha050/zh011",
+      "similarity": 0.6459823846817017,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "id": "alpha075/zh000",
+      "similarity": 0.3133135437965393,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh001",
+      "similarity": 0.5447303652763367,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh002",
+      "similarity": 0.6690922379493713,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh003",
+      "similarity": 0.6063019037246704,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh004",
+      "similarity": 0.616814136505127,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh005",
+      "similarity": 0.5691070556640625,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh006",
+      "similarity": 0.5364241600036621,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh007",
+      "similarity": 0.557970404624939,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh008",
+      "similarity": 0.652506411075592,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh009",
+      "similarity": 0.5282020568847656,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh010",
+      "similarity": 0.6247948408126831,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "alpha075/zh011",
+      "similarity": 0.5825939178466797,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "id": "dylan_base/zh000",
+      "similarity": 0.5539819598197937,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh001",
+      "similarity": 0.4550189673900604,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh002",
+      "similarity": 0.507941484451294,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh003",
+      "similarity": 0.4586705267429352,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh004",
+      "similarity": 0.49608686566352844,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh005",
+      "similarity": 0.4658360779285431,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh006",
+      "similarity": 0.49681323766708374,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh007",
+      "similarity": 0.42195191979408264,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh008",
+      "similarity": 0.4900801479816437,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh009",
+      "similarity": 0.5289841890335083,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh010",
+      "similarity": 0.4759100675582886,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_base/zh011",
+      "similarity": 0.4435715675354004,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "id": "dylan_half/zh000",
+      "similarity": 0.42763254046440125,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh001",
+      "similarity": 0.4856632649898529,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh002",
+      "similarity": 0.5045136213302612,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh003",
+      "similarity": 0.468557208776474,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh004",
+      "similarity": 0.47809383273124695,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh005",
+      "similarity": 0.45120030641555786,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh006",
+      "similarity": 0.48736873269081116,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh007",
+      "similarity": 0.481050968170166,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh008",
+      "similarity": 0.5047170519828796,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh009",
+      "similarity": 0.45186397433280945,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh010",
+      "similarity": 0.49478471279144287,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_half/zh011",
+      "similarity": 0.44500288367271423,
+      "split": "external",
+      "voice": "dylan_half"
+    },
+    {
+      "id": "dylan_full/zh000",
+      "similarity": 0.48997676372528076,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh001",
+      "similarity": 0.5755045413970947,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh002",
+      "similarity": 0.5767955780029297,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh003",
+      "similarity": 0.5504087805747986,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh004",
+      "similarity": 0.5455424785614014,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh005",
+      "similarity": 0.5714466571807861,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh006",
+      "similarity": 0.6230643391609192,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh007",
+      "similarity": 0.5677249431610107,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh008",
+      "similarity": 0.6455003023147583,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh009",
+      "similarity": 0.4872906804084778,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh010",
+      "similarity": 0.6006178855895996,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "id": "dylan_full/zh011",
+      "similarity": 0.5382352471351624,
+      "split": "external",
+      "voice": "dylan_full"
+    }
+  ],
+  "unmatched": [],
+  "voices": [
+    {
+      "n": 12,
+      "noise_floor": 0.020367046197255434,
+      "similarity": 0.6555941353241602,
+      "split": "external",
+      "voice": "alpha050"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.05094184974829352,
+      "similarity": 0.5668209195137024,
+      "split": "external",
+      "voice": "alpha075"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.016099274158477783,
+      "similarity": 0.7635238518317541,
+      "split": "external",
+      "voice": "calm"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.019516992072264344,
+      "similarity": 0.4829039176305135,
+      "split": "external",
+      "voice": "dylan_base"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.025363042950630188,
+      "similarity": 0.5643423497676849,
+      "split": "external",
+      "voice": "dylan_full"
+    },
+    {
+      "n": 12,
+      "noise_floor": 0.01348601902524632,
+      "similarity": 0.4733707581957181,
+      "split": "external",
+      "voice": "dylan_half"
+    }
+  ]
+}
