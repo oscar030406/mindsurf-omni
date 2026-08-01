@@ -1,33 +1,34 @@
 {
-  "rounds": 24,
-  "dropped_unpaired": 0,
-  "baseline_chunk_frames": 4,
-  "stimulus": "/home/oscar/omni/stimulus/zh000.wav",
-  "levels": {
-    "1": {
-      "mean_ms": 122.05432783412107,
-      "p50_ms": 107.05351499927929,
-      "note": "n=24 below the 100 required"
-    },
-    "2": {
-      "mean_ms": 114.37770720901123,
-      "p50_ms": 112.8803540050285,
-      "note": "n=24 below the 100 required"
-    },
-    "4": {
-      "mean_ms": 133.0778453769502,
-      "p50_ms": 131.0068080056226,
-      "note": "n=24 below the 100 required"
-    },
-    "8": {
-      "mean_ms": 163.9948672078996,
-      "p50_ms": 162.85755849821726,
-      "note": "n=24 below the 100 required"
-    }
+ "rounds": 24,
+ "dropped_unpaired": 0,
+ "baseline_chunk_frames": 4,
+ "stimulus": "zh000.wav",
+ "levels": {
+  "1": {
+   "mean_ms": 122.05432783412107,
+   "p50_ms": 107.05351499927929,
+   "note": "n=24 below the 100 required"
   },
-  "paired_verdicts": [
-    "chunk_frames 1 vs 4: indistinguishable (-11.0235, within ±70.9053, paired n=24)",
-    "chunk_frames 2 vs 4: improved (-18.7001 against ±13.7005, paired n=24)",
-    "chunk_frames 8 vs 4: regressed (+30.9170 against ±10.2411, paired n=24)"
-  ]
+  "2": {
+   "mean_ms": 114.37770720901123,
+   "p50_ms": 112.8803540050285,
+   "note": "n=24 below the 100 required"
+  },
+  "4": {
+   "mean_ms": 133.0778453769502,
+   "p50_ms": 131.0068080056226,
+   "note": "n=24 below the 100 required"
+  },
+  "8": {
+   "mean_ms": 163.9948672078996,
+   "p50_ms": 162.85755849821726,
+   "note": "n=24 below the 100 required"
+  }
+ },
+ "paired_verdicts": [
+  "chunk_frames 1 vs 4: indistinguishable (-11.0235, within ±70.9053, paired n=24)",
+  "chunk_frames 2 vs 4: improved (-18.7001 against ±13.7005, paired n=24)",
+  "chunk_frames 8 vs 4: regressed (+30.9170 against ±10.2411, paired n=24)"
+ ],
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
 }

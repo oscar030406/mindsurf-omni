@@ -1,257 +1,258 @@
 {
-  "baseline": "dylan_base",
-  "arms": {
-    "dylan_base": "/home/oscar/omni/emo_vec/dylan_base/manifest.json",
-    "dylan_half": "/home/oscar/omni/emo_vec/dylan_half/manifest.json",
-    "dylan_full": "/home/oscar/omni/emo_vec/dylan_full/manifest.json"
-  },
-  "paired": 12,
-  "dropped": [],
-  "verdicts": {
-    "dylan_half": [
-      "f0_median_hz: improved (+22.0412 against ±16.0214, paired n=12)",
-      "f0_iqr_hz: improved (+31.2361 against ±25.3037, paired n=12)",
-      "seconds: indistinguishable (-2.2733, within ±3.1400, paired n=12)"
-    ],
-    "dylan_full": [
-      "f0_median_hz: improved (+66.2243 against ±29.3896, paired n=12)",
-      "f0_iqr_hz: improved (+39.2555 against ±27.8151, paired n=12)",
-      "seconds: indistinguishable (-3.0667, within ±3.4100, paired n=12)"
-    ]
-  },
-  "summary": {
-    "dylan_base": {
-      "f0_median_hz": 113.06547084658602,
-      "f0_iqr_hz": 67.47678111190992,
-      "seconds": 22.64
-    },
-    "dylan_half": {
-      "f0_median_hz": 135.10671717306468,
-      "f0_iqr_hz": 98.71284090874923,
-      "seconds": 20.366666666666667
-    },
-    "dylan_full": {
-      "f0_median_hz": 179.28972189078482,
-      "f0_iqr_hz": 106.73226805497283,
-      "seconds": 19.573333333333334
-    }
-  },
-  "rows": [
-    {
-      "id": "zh000",
-      "dylan_base": {
-        "f0_median_hz": 122.5266440807811,
-        "f0_iqr_hz": 89.8693571350037,
-        "seconds": 3.12
-      },
-      "dylan_half": {
-        "f0_median_hz": 133.35107528239982,
-        "f0_iqr_hz": 153.22461874660098,
-        "seconds": 2.8
-      },
-      "dylan_full": {
-        "f0_median_hz": 181.94026214928684,
-        "f0_iqr_hz": 152.14240196784982,
-        "seconds": 2.64
-      }
-    },
-    {
-      "id": "zh001",
-      "dylan_base": {
-        "f0_median_hz": 104.41045194741218,
-        "f0_iqr_hz": 51.85854829829485,
-        "seconds": 8.08
-      },
-      "dylan_half": {
-        "f0_median_hz": 120.0255936447279,
-        "f0_iqr_hz": 105.55968899325764,
-        "seconds": 7.2
-      },
-      "dylan_full": {
-        "f0_median_hz": 181.18364037995934,
-        "f0_iqr_hz": 118.82061993761893,
-        "seconds": 7.12
-      }
-    },
-    {
-      "id": "zh002",
-      "dylan_base": {
-        "f0_median_hz": 115.05351443768714,
-        "f0_iqr_hz": 69.21924684730271,
-        "seconds": 15.28
-      },
-      "dylan_half": {
-        "f0_median_hz": 129.83585158480255,
-        "f0_iqr_hz": 79.87372741978244,
-        "seconds": 14.4
-      },
-      "dylan_full": {
-        "f0_median_hz": 164.29774293674657,
-        "f0_iqr_hz": 98.6044882042575,
-        "seconds": 12.4
-      }
-    },
-    {
-      "id": "zh003",
-      "dylan_base": {
-        "f0_median_hz": 122.51985578314694,
-        "f0_iqr_hz": 74.78598703832414,
-        "seconds": 36.16
-      },
-      "dylan_half": {
-        "f0_median_hz": 139.2241132086388,
-        "f0_iqr_hz": 100.0340971932749,
-        "seconds": 32.96
-      },
-      "dylan_full": {
-        "f0_median_hz": 192.88336280380693,
-        "f0_iqr_hz": 120.66134839676494,
-        "seconds": 29.2
-      }
-    },
-    {
-      "id": "zh004",
-      "dylan_base": {
-        "f0_median_hz": 108.7269502102348,
-        "f0_iqr_hz": 74.66958385215759,
-        "seconds": 14.24
-      },
-      "dylan_half": {
-        "f0_median_hz": 145.71350108997294,
-        "f0_iqr_hz": 104.19702391173726,
-        "seconds": 14.32
-      },
-      "dylan_full": {
-        "f0_median_hz": 211.7440075418788,
-        "f0_iqr_hz": 95.11678154043585,
-        "seconds": 12.0
-      }
-    },
-    {
-      "id": "zh005",
-      "dylan_base": {
-        "f0_median_hz": 110.68158360319855,
-        "f0_iqr_hz": 72.33925222292375,
-        "seconds": 8.64
-      },
-      "dylan_half": {
-        "f0_median_hz": 126.35438432927455,
-        "f0_iqr_hz": 91.81073195421087,
-        "seconds": 7.76
-      },
-      "dylan_full": {
-        "f0_median_hz": 172.584777402321,
-        "f0_iqr_hz": 104.34360051409307,
-        "seconds": 7.44
-      }
-    },
-    {
-      "id": "zh006",
-      "dylan_base": {
-        "f0_median_hz": 111.06837760140851,
-        "f0_iqr_hz": 47.68679971667578,
-        "seconds": 15.04
-      },
-      "dylan_half": {
-        "f0_median_hz": 150.61032827584765,
-        "f0_iqr_hz": 96.3784701592534,
-        "seconds": 12.8
-      },
-      "dylan_full": {
-        "f0_median_hz": 181.8622100527276,
-        "f0_iqr_hz": 112.44407924093358,
-        "seconds": 12.16
-      }
-    },
-    {
-      "id": "zh007",
-      "dylan_base": {
-        "f0_median_hz": 100.08282667865484,
-        "f0_iqr_hz": 39.848000248695584,
-        "seconds": 34.8
-      },
-      "dylan_half": {
-        "f0_median_hz": 117.64848730805913,
-        "f0_iqr_hz": 71.41875627344373,
-        "seconds": 33.2
-      },
-      "dylan_full": {
-        "f0_median_hz": 127.57775870280102,
-        "f0_iqr_hz": 72.56050651650844,
-        "seconds": 32.88
-      }
-    },
-    {
-      "id": "zh008",
-      "dylan_base": {
-        "f0_median_hz": 124.27511472831203,
-        "f0_iqr_hz": 74.22704536457533,
-        "seconds": 49.6
-      },
-      "dylan_half": {
-        "f0_median_hz": 143.04307307851414,
-        "f0_iqr_hz": 89.6820208208736,
-        "seconds": 43.6
-      },
-      "dylan_full": {
-        "f0_median_hz": 176.33729291375425,
-        "f0_iqr_hz": 108.94105621567442,
-        "seconds": 42.8
-      }
-    },
-    {
-      "id": "zh009",
-      "dylan_base": {
-        "f0_median_hz": 108.2120337865103,
-        "f0_iqr_hz": 75.869725966419,
-        "seconds": 12.8
-      },
-      "dylan_half": {
-        "f0_median_hz": 124.41673149287676,
-        "f0_iqr_hz": 99.49319353834443,
-        "seconds": 10.24
-      },
-      "dylan_full": {
-        "f0_median_hz": 186.67360169572547,
-        "f0_iqr_hz": 91.31770815056268,
-        "seconds": 8.88
-      }
-    },
-    {
-      "id": "zh010",
-      "dylan_base": {
-        "f0_median_hz": 127.27608131029916,
-        "f0_iqr_hz": 86.73696425431737,
-        "seconds": 34.32
-      },
-      "dylan_half": {
-        "f0_median_hz": 166.94160475415953,
-        "f0_iqr_hz": 111.99564503232824,
-        "seconds": 30.88
-      },
-      "dylan_full": {
-        "f0_median_hz": 198.0522739029351,
-        "f0_iqr_hz": 109.69950416173037,
-        "seconds": 31.04
-      }
-    },
-    {
-      "id": "zh011",
-      "dylan_base": {
-        "f0_median_hz": 101.9522159913866,
-        "f0_iqr_hz": 52.61086239822917,
-        "seconds": 39.6
-      },
-      "dylan_half": {
-        "f0_median_hz": 124.11586202750242,
-        "f0_iqr_hz": 80.88611686188325,
-        "seconds": 34.24
-      },
-      "dylan_full": {
-        "f0_median_hz": 176.33973220747515,
-        "f0_iqr_hz": 96.13512181324438,
-        "seconds": 36.32
-      }
-    }
+ "baseline": "dylan_base",
+ "arms": {
+  "dylan_base": "manifest.json",
+  "dylan_half": "manifest.json",
+  "dylan_full": "manifest.json"
+ },
+ "paired": 12,
+ "dropped": [],
+ "verdicts": {
+  "dylan_half": [
+   "f0_median_hz: improved (+22.0412 against ±16.0214, paired n=12)",
+   "f0_iqr_hz: improved (+31.2361 against ±25.3037, paired n=12)",
+   "seconds: indistinguishable (-2.2733, within ±3.1400, paired n=12)"
+  ],
+  "dylan_full": [
+   "f0_median_hz: improved (+66.2243 against ±29.3896, paired n=12)",
+   "f0_iqr_hz: improved (+39.2555 against ±27.8151, paired n=12)",
+   "seconds: indistinguishable (-3.0667, within ±3.4100, paired n=12)"
   ]
+ },
+ "summary": {
+  "dylan_base": {
+   "f0_median_hz": 113.06547084658602,
+   "f0_iqr_hz": 67.47678111190992,
+   "seconds": 22.64
+  },
+  "dylan_half": {
+   "f0_median_hz": 135.10671717306468,
+   "f0_iqr_hz": 98.71284090874923,
+   "seconds": 20.366666666666667
+  },
+  "dylan_full": {
+   "f0_median_hz": 179.28972189078482,
+   "f0_iqr_hz": 106.73226805497283,
+   "seconds": 19.573333333333334
+  }
+ },
+ "rows": [
+  {
+   "id": "zh000",
+   "dylan_base": {
+    "f0_median_hz": 122.5266440807811,
+    "f0_iqr_hz": 89.8693571350037,
+    "seconds": 3.12
+   },
+   "dylan_half": {
+    "f0_median_hz": 133.35107528239982,
+    "f0_iqr_hz": 153.22461874660098,
+    "seconds": 2.8
+   },
+   "dylan_full": {
+    "f0_median_hz": 181.94026214928684,
+    "f0_iqr_hz": 152.14240196784982,
+    "seconds": 2.64
+   }
+  },
+  {
+   "id": "zh001",
+   "dylan_base": {
+    "f0_median_hz": 104.41045194741218,
+    "f0_iqr_hz": 51.85854829829485,
+    "seconds": 8.08
+   },
+   "dylan_half": {
+    "f0_median_hz": 120.0255936447279,
+    "f0_iqr_hz": 105.55968899325764,
+    "seconds": 7.2
+   },
+   "dylan_full": {
+    "f0_median_hz": 181.18364037995934,
+    "f0_iqr_hz": 118.82061993761893,
+    "seconds": 7.12
+   }
+  },
+  {
+   "id": "zh002",
+   "dylan_base": {
+    "f0_median_hz": 115.05351443768714,
+    "f0_iqr_hz": 69.21924684730271,
+    "seconds": 15.28
+   },
+   "dylan_half": {
+    "f0_median_hz": 129.83585158480255,
+    "f0_iqr_hz": 79.87372741978244,
+    "seconds": 14.4
+   },
+   "dylan_full": {
+    "f0_median_hz": 164.29774293674657,
+    "f0_iqr_hz": 98.6044882042575,
+    "seconds": 12.4
+   }
+  },
+  {
+   "id": "zh003",
+   "dylan_base": {
+    "f0_median_hz": 122.51985578314694,
+    "f0_iqr_hz": 74.78598703832414,
+    "seconds": 36.16
+   },
+   "dylan_half": {
+    "f0_median_hz": 139.2241132086388,
+    "f0_iqr_hz": 100.0340971932749,
+    "seconds": 32.96
+   },
+   "dylan_full": {
+    "f0_median_hz": 192.88336280380693,
+    "f0_iqr_hz": 120.66134839676494,
+    "seconds": 29.2
+   }
+  },
+  {
+   "id": "zh004",
+   "dylan_base": {
+    "f0_median_hz": 108.7269502102348,
+    "f0_iqr_hz": 74.66958385215759,
+    "seconds": 14.24
+   },
+   "dylan_half": {
+    "f0_median_hz": 145.71350108997294,
+    "f0_iqr_hz": 104.19702391173726,
+    "seconds": 14.32
+   },
+   "dylan_full": {
+    "f0_median_hz": 211.7440075418788,
+    "f0_iqr_hz": 95.11678154043585,
+    "seconds": 12.0
+   }
+  },
+  {
+   "id": "zh005",
+   "dylan_base": {
+    "f0_median_hz": 110.68158360319855,
+    "f0_iqr_hz": 72.33925222292375,
+    "seconds": 8.64
+   },
+   "dylan_half": {
+    "f0_median_hz": 126.35438432927455,
+    "f0_iqr_hz": 91.81073195421087,
+    "seconds": 7.76
+   },
+   "dylan_full": {
+    "f0_median_hz": 172.584777402321,
+    "f0_iqr_hz": 104.34360051409307,
+    "seconds": 7.44
+   }
+  },
+  {
+   "id": "zh006",
+   "dylan_base": {
+    "f0_median_hz": 111.06837760140851,
+    "f0_iqr_hz": 47.68679971667578,
+    "seconds": 15.04
+   },
+   "dylan_half": {
+    "f0_median_hz": 150.61032827584765,
+    "f0_iqr_hz": 96.3784701592534,
+    "seconds": 12.8
+   },
+   "dylan_full": {
+    "f0_median_hz": 181.8622100527276,
+    "f0_iqr_hz": 112.44407924093358,
+    "seconds": 12.16
+   }
+  },
+  {
+   "id": "zh007",
+   "dylan_base": {
+    "f0_median_hz": 100.08282667865484,
+    "f0_iqr_hz": 39.848000248695584,
+    "seconds": 34.8
+   },
+   "dylan_half": {
+    "f0_median_hz": 117.64848730805913,
+    "f0_iqr_hz": 71.41875627344373,
+    "seconds": 33.2
+   },
+   "dylan_full": {
+    "f0_median_hz": 127.57775870280102,
+    "f0_iqr_hz": 72.56050651650844,
+    "seconds": 32.88
+   }
+  },
+  {
+   "id": "zh008",
+   "dylan_base": {
+    "f0_median_hz": 124.27511472831203,
+    "f0_iqr_hz": 74.22704536457533,
+    "seconds": 49.6
+   },
+   "dylan_half": {
+    "f0_median_hz": 143.04307307851414,
+    "f0_iqr_hz": 89.6820208208736,
+    "seconds": 43.6
+   },
+   "dylan_full": {
+    "f0_median_hz": 176.33729291375425,
+    "f0_iqr_hz": 108.94105621567442,
+    "seconds": 42.8
+   }
+  },
+  {
+   "id": "zh009",
+   "dylan_base": {
+    "f0_median_hz": 108.2120337865103,
+    "f0_iqr_hz": 75.869725966419,
+    "seconds": 12.8
+   },
+   "dylan_half": {
+    "f0_median_hz": 124.41673149287676,
+    "f0_iqr_hz": 99.49319353834443,
+    "seconds": 10.24
+   },
+   "dylan_full": {
+    "f0_median_hz": 186.67360169572547,
+    "f0_iqr_hz": 91.31770815056268,
+    "seconds": 8.88
+   }
+  },
+  {
+   "id": "zh010",
+   "dylan_base": {
+    "f0_median_hz": 127.27608131029916,
+    "f0_iqr_hz": 86.73696425431737,
+    "seconds": 34.32
+   },
+   "dylan_half": {
+    "f0_median_hz": 166.94160475415953,
+    "f0_iqr_hz": 111.99564503232824,
+    "seconds": 30.88
+   },
+   "dylan_full": {
+    "f0_median_hz": 198.0522739029351,
+    "f0_iqr_hz": 109.69950416173037,
+    "seconds": 31.04
+   }
+  },
+  {
+   "id": "zh011",
+   "dylan_base": {
+    "f0_median_hz": 101.9522159913866,
+    "f0_iqr_hz": 52.61086239822917,
+    "seconds": 39.6
+   },
+   "dylan_half": {
+    "f0_median_hz": 124.11586202750242,
+    "f0_iqr_hz": 80.88611686188325,
+    "seconds": 34.24
+   },
+   "dylan_full": {
+    "f0_median_hz": 176.33973220747515,
+    "f0_iqr_hz": 96.13512181324438,
+    "seconds": 36.32
+   }
+  }
+ ],
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
 }

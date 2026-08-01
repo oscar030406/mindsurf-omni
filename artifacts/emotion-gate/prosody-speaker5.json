@@ -1,257 +1,258 @@
 {
-  "baseline": "calm",
-  "arms": {
-    "calm": "/home/oscar/omni/emo_gate/sft_graft/speaker5/calm/manifest.json",
-    "lively": "/home/oscar/omni/emo_gate/sft_graft/speaker5/lively/manifest.json",
-    "control": "/home/oscar/omni/emo_gate/sft_graft/speaker5/control/manifest.json"
-  },
-  "paired": 12,
-  "dropped": [],
-  "verdicts": {
-    "lively": [
-      "f0_median_hz: indistinguishable (-2.9242, within ±14.3358, paired n=12)",
-      "f0_iqr_hz: indistinguishable (-11.8498, within ±18.4195, paired n=12)",
-      "seconds: indistinguishable (-0.6933, within ±1.8600, paired n=12)"
-    ],
-    "control": [
-      "f0_median_hz: indistinguishable (-1.7415, within ±14.9044, paired n=12)",
-      "f0_iqr_hz: indistinguishable (-6.3265, within ±21.9964, paired n=12)",
-      "seconds: indistinguishable (+0.3600, within ±1.3100, paired n=12)"
-    ]
-  },
-  "summary": {
-    "calm": {
-      "f0_median_hz": 132.19845148953712,
-      "f0_iqr_hz": 103.87663761195023,
-      "seconds": 21.400000000000002
-    },
-    "lively": {
-      "f0_median_hz": 129.27424634978806,
-      "f0_iqr_hz": 92.02684093648956,
-      "seconds": 20.706666666666667
-    },
-    "control": {
-      "f0_median_hz": 130.4569665574304,
-      "f0_iqr_hz": 97.55017662459979,
-      "seconds": 21.76
-    }
-  },
-  "rows": [
-    {
-      "id": "zh000",
-      "calm": {
-        "f0_median_hz": 118.58876940989013,
-        "f0_iqr_hz": 146.69870834164266,
-        "seconds": 2.72
-      },
-      "lively": {
-        "f0_median_hz": 121.07025135843367,
-        "f0_iqr_hz": 136.5577035166424,
-        "seconds": 2.64
-      },
-      "control": {
-        "f0_median_hz": 135.1616004951292,
-        "f0_iqr_hz": 138.97953875587092,
-        "seconds": 2.88
-      }
-    },
-    {
-      "id": "zh001",
-      "calm": {
-        "f0_median_hz": 129.361529156465,
-        "f0_iqr_hz": 103.2236635713384,
-        "seconds": 7.52
-      },
-      "lively": {
-        "f0_median_hz": 126.91291715078466,
-        "f0_iqr_hz": 97.16926226834093,
-        "seconds": 7.2
-      },
-      "control": {
-        "f0_median_hz": 120.09300292828132,
-        "f0_iqr_hz": 89.8627955548175,
-        "seconds": 7.68
-      }
-    },
-    {
-      "id": "zh002",
-      "calm": {
-        "f0_median_hz": 128.09528721008584,
-        "f0_iqr_hz": 85.64446287662935,
-        "seconds": 13.28
-      },
-      "lively": {
-        "f0_median_hz": 124.16539028307736,
-        "f0_iqr_hz": 74.73941460348905,
-        "seconds": 14.08
-      },
-      "control": {
-        "f0_median_hz": 134.99776139167582,
-        "f0_iqr_hz": 104.07573544812388,
-        "seconds": 14.56
-      }
-    },
-    {
-      "id": "zh003",
-      "calm": {
-        "f0_median_hz": 151.7905999096389,
-        "f0_iqr_hz": 110.53644666975572,
-        "seconds": 34.24
-      },
-      "lively": {
-        "f0_median_hz": 133.97513660620854,
-        "f0_iqr_hz": 80.5836326944824,
-        "seconds": 32.8
-      },
-      "control": {
-        "f0_median_hz": 151.18398389819345,
-        "f0_iqr_hz": 100.14322993733481,
-        "seconds": 34.56
-      }
-    },
-    {
-      "id": "zh004",
-      "calm": {
-        "f0_median_hz": 148.85724215263866,
-        "f0_iqr_hz": 103.26541217112428,
-        "seconds": 14.56
-      },
-      "lively": {
-        "f0_median_hz": 158.7207196693359,
-        "f0_iqr_hz": 103.84448370133416,
-        "seconds": 14.16
-      },
-      "control": {
-        "f0_median_hz": 137.59816108491648,
-        "f0_iqr_hz": 100.17097750270015,
-        "seconds": 14.48
-      }
-    },
-    {
-      "id": "zh005",
-      "calm": {
-        "f0_median_hz": 123.85245849370939,
-        "f0_iqr_hz": 106.47637148232853,
-        "seconds": 8.56
-      },
-      "lively": {
-        "f0_median_hz": 124.9819617752356,
-        "f0_iqr_hz": 78.04953341149557,
-        "seconds": 8.32
-      },
-      "control": {
-        "f0_median_hz": 129.75724762765893,
-        "f0_iqr_hz": 111.51410017370318,
-        "seconds": 8.72
-      }
-    },
-    {
-      "id": "zh006",
-      "calm": {
-        "f0_median_hz": 143.0979466097123,
-        "f0_iqr_hz": 98.23823357402489,
-        "seconds": 13.12
-      },
-      "lively": {
-        "f0_median_hz": 127.09996633507826,
-        "f0_iqr_hz": 78.56609190696929,
-        "seconds": 13.92
-      },
-      "control": {
-        "f0_median_hz": 125.55339713437459,
-        "f0_iqr_hz": 70.6453165414897,
-        "seconds": 13.68
-      }
-    },
-    {
-      "id": "zh007",
-      "calm": {
-        "f0_median_hz": 115.78592007666995,
-        "f0_iqr_hz": 89.33078389456472,
-        "seconds": 34.64
-      },
-      "lively": {
-        "f0_median_hz": 117.63159113715463,
-        "f0_iqr_hz": 89.71199638149399,
-        "seconds": 33.52
-      },
-      "control": {
-        "f0_median_hz": 115.74602401544729,
-        "f0_iqr_hz": 84.49928994711313,
-        "seconds": 33.28
-      }
-    },
-    {
-      "id": "zh008",
-      "calm": {
-        "f0_median_hz": 125.12721988510366,
-        "f0_iqr_hz": 99.19442023727422,
-        "seconds": 46.32
-      },
-      "lively": {
-        "f0_median_hz": 124.80552781548683,
-        "f0_iqr_hz": 94.79550347384465,
-        "seconds": 42.88
-      },
-      "control": {
-        "f0_median_hz": 124.66153340075796,
-        "f0_iqr_hz": 89.30442232833434,
-        "seconds": 48.24
-      }
-    },
-    {
-      "id": "zh009",
-      "calm": {
-        "f0_median_hz": 138.1709762542577,
-        "f0_iqr_hz": 92.82507578772788,
-        "seconds": 10.88
-      },
-      "lively": {
-        "f0_median_hz": 122.40231000118297,
-        "f0_iqr_hz": 74.26575581875912,
-        "seconds": 10.16
-      },
-      "control": {
-        "f0_median_hz": 131.90413535178644,
-        "f0_iqr_hz": 102.95341989428375,
-        "seconds": 11.36
-      }
-    },
-    {
-      "id": "zh010",
-      "calm": {
-        "f0_median_hz": 141.47489903318535,
-        "f0_iqr_hz": 120.65283484708755,
-        "seconds": 34.24
-      },
-      "lively": {
-        "f0_median_hz": 141.96295333473648,
-        "f0_iqr_hz": 101.6399469249119,
-        "seconds": 33.12
-      },
-      "control": {
-        "f0_median_hz": 134.83823259760675,
-        "f0_iqr_hz": 95.43616026424951,
-        "seconds": 33.92
-      }
-    },
-    {
-      "id": "zh011",
-      "calm": {
-        "f0_median_hz": 122.17856968308864,
-        "f0_iqr_hz": 90.43323788990466,
-        "seconds": 36.72
-      },
-      "lively": {
-        "f0_median_hz": 127.56223073074162,
-        "f0_iqr_hz": 94.39876653611117,
-        "seconds": 35.68
-      },
-      "control": {
-        "f0_median_hz": 123.98851876333671,
-        "f0_iqr_hz": 83.01713314717652,
-        "seconds": 37.76
-      }
-    }
+ "baseline": "calm",
+ "arms": {
+  "calm": "manifest.json",
+  "lively": "manifest.json",
+  "control": "manifest.json"
+ },
+ "paired": 12,
+ "dropped": [],
+ "verdicts": {
+  "lively": [
+   "f0_median_hz: indistinguishable (-2.9242, within ±14.3358, paired n=12)",
+   "f0_iqr_hz: indistinguishable (-11.8498, within ±18.4195, paired n=12)",
+   "seconds: indistinguishable (-0.6933, within ±1.8600, paired n=12)"
+  ],
+  "control": [
+   "f0_median_hz: indistinguishable (-1.7415, within ±14.9044, paired n=12)",
+   "f0_iqr_hz: indistinguishable (-6.3265, within ±21.9964, paired n=12)",
+   "seconds: indistinguishable (+0.3600, within ±1.3100, paired n=12)"
   ]
+ },
+ "summary": {
+  "calm": {
+   "f0_median_hz": 132.19845148953712,
+   "f0_iqr_hz": 103.87663761195023,
+   "seconds": 21.400000000000002
+  },
+  "lively": {
+   "f0_median_hz": 129.27424634978806,
+   "f0_iqr_hz": 92.02684093648956,
+   "seconds": 20.706666666666667
+  },
+  "control": {
+   "f0_median_hz": 130.4569665574304,
+   "f0_iqr_hz": 97.55017662459979,
+   "seconds": 21.76
+  }
+ },
+ "rows": [
+  {
+   "id": "zh000",
+   "calm": {
+    "f0_median_hz": 118.58876940989013,
+    "f0_iqr_hz": 146.69870834164266,
+    "seconds": 2.72
+   },
+   "lively": {
+    "f0_median_hz": 121.07025135843367,
+    "f0_iqr_hz": 136.5577035166424,
+    "seconds": 2.64
+   },
+   "control": {
+    "f0_median_hz": 135.1616004951292,
+    "f0_iqr_hz": 138.97953875587092,
+    "seconds": 2.88
+   }
+  },
+  {
+   "id": "zh001",
+   "calm": {
+    "f0_median_hz": 129.361529156465,
+    "f0_iqr_hz": 103.2236635713384,
+    "seconds": 7.52
+   },
+   "lively": {
+    "f0_median_hz": 126.91291715078466,
+    "f0_iqr_hz": 97.16926226834093,
+    "seconds": 7.2
+   },
+   "control": {
+    "f0_median_hz": 120.09300292828132,
+    "f0_iqr_hz": 89.8627955548175,
+    "seconds": 7.68
+   }
+  },
+  {
+   "id": "zh002",
+   "calm": {
+    "f0_median_hz": 128.09528721008584,
+    "f0_iqr_hz": 85.64446287662935,
+    "seconds": 13.28
+   },
+   "lively": {
+    "f0_median_hz": 124.16539028307736,
+    "f0_iqr_hz": 74.73941460348905,
+    "seconds": 14.08
+   },
+   "control": {
+    "f0_median_hz": 134.99776139167582,
+    "f0_iqr_hz": 104.07573544812388,
+    "seconds": 14.56
+   }
+  },
+  {
+   "id": "zh003",
+   "calm": {
+    "f0_median_hz": 151.7905999096389,
+    "f0_iqr_hz": 110.53644666975572,
+    "seconds": 34.24
+   },
+   "lively": {
+    "f0_median_hz": 133.97513660620854,
+    "f0_iqr_hz": 80.5836326944824,
+    "seconds": 32.8
+   },
+   "control": {
+    "f0_median_hz": 151.18398389819345,
+    "f0_iqr_hz": 100.14322993733481,
+    "seconds": 34.56
+   }
+  },
+  {
+   "id": "zh004",
+   "calm": {
+    "f0_median_hz": 148.85724215263866,
+    "f0_iqr_hz": 103.26541217112428,
+    "seconds": 14.56
+   },
+   "lively": {
+    "f0_median_hz": 158.7207196693359,
+    "f0_iqr_hz": 103.84448370133416,
+    "seconds": 14.16
+   },
+   "control": {
+    "f0_median_hz": 137.59816108491648,
+    "f0_iqr_hz": 100.17097750270015,
+    "seconds": 14.48
+   }
+  },
+  {
+   "id": "zh005",
+   "calm": {
+    "f0_median_hz": 123.85245849370939,
+    "f0_iqr_hz": 106.47637148232853,
+    "seconds": 8.56
+   },
+   "lively": {
+    "f0_median_hz": 124.9819617752356,
+    "f0_iqr_hz": 78.04953341149557,
+    "seconds": 8.32
+   },
+   "control": {
+    "f0_median_hz": 129.75724762765893,
+    "f0_iqr_hz": 111.51410017370318,
+    "seconds": 8.72
+   }
+  },
+  {
+   "id": "zh006",
+   "calm": {
+    "f0_median_hz": 143.0979466097123,
+    "f0_iqr_hz": 98.23823357402489,
+    "seconds": 13.12
+   },
+   "lively": {
+    "f0_median_hz": 127.09996633507826,
+    "f0_iqr_hz": 78.56609190696929,
+    "seconds": 13.92
+   },
+   "control": {
+    "f0_median_hz": 125.55339713437459,
+    "f0_iqr_hz": 70.6453165414897,
+    "seconds": 13.68
+   }
+  },
+  {
+   "id": "zh007",
+   "calm": {
+    "f0_median_hz": 115.78592007666995,
+    "f0_iqr_hz": 89.33078389456472,
+    "seconds": 34.64
+   },
+   "lively": {
+    "f0_median_hz": 117.63159113715463,
+    "f0_iqr_hz": 89.71199638149399,
+    "seconds": 33.52
+   },
+   "control": {
+    "f0_median_hz": 115.74602401544729,
+    "f0_iqr_hz": 84.49928994711313,
+    "seconds": 33.28
+   }
+  },
+  {
+   "id": "zh008",
+   "calm": {
+    "f0_median_hz": 125.12721988510366,
+    "f0_iqr_hz": 99.19442023727422,
+    "seconds": 46.32
+   },
+   "lively": {
+    "f0_median_hz": 124.80552781548683,
+    "f0_iqr_hz": 94.79550347384465,
+    "seconds": 42.88
+   },
+   "control": {
+    "f0_median_hz": 124.66153340075796,
+    "f0_iqr_hz": 89.30442232833434,
+    "seconds": 48.24
+   }
+  },
+  {
+   "id": "zh009",
+   "calm": {
+    "f0_median_hz": 138.1709762542577,
+    "f0_iqr_hz": 92.82507578772788,
+    "seconds": 10.88
+   },
+   "lively": {
+    "f0_median_hz": 122.40231000118297,
+    "f0_iqr_hz": 74.26575581875912,
+    "seconds": 10.16
+   },
+   "control": {
+    "f0_median_hz": 131.90413535178644,
+    "f0_iqr_hz": 102.95341989428375,
+    "seconds": 11.36
+   }
+  },
+  {
+   "id": "zh010",
+   "calm": {
+    "f0_median_hz": 141.47489903318535,
+    "f0_iqr_hz": 120.65283484708755,
+    "seconds": 34.24
+   },
+   "lively": {
+    "f0_median_hz": 141.96295333473648,
+    "f0_iqr_hz": 101.6399469249119,
+    "seconds": 33.12
+   },
+   "control": {
+    "f0_median_hz": 134.83823259760675,
+    "f0_iqr_hz": 95.43616026424951,
+    "seconds": 33.92
+   }
+  },
+  {
+   "id": "zh011",
+   "calm": {
+    "f0_median_hz": 122.17856968308864,
+    "f0_iqr_hz": 90.43323788990466,
+    "seconds": 36.72
+   },
+   "lively": {
+    "f0_median_hz": 127.56223073074162,
+    "f0_iqr_hz": 94.39876653611117,
+    "seconds": 35.68
+   },
+   "control": {
+    "f0_median_hz": 123.98851876333671,
+    "f0_iqr_hz": 83.01713314717652,
+    "seconds": 37.76
+   }
+  }
+ ],
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
 }

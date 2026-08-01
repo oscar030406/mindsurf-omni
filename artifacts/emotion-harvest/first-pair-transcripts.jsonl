@@ -1,2 +1,2 @@
-{"id": "calm", "audio_path": "/home/oscar/omni/harvest_refs/calm.wav", "judge": "paraformer-zh", "transcript": "wonder woman features a strong female lead played by galgado", "transcribed": true}
-{"id": "lively", "audio_path": "/home/oscar/omni/harvest_refs/lively.wav", "judge": "paraformer-zh", "transcript": "certainly five famous spanish restaurants in margry r 一 berbertin kazallusio 三 ver XO 四 sobreino d bertinn mmercdo disei girl enjoy exploring the rich colonary scene in margry", "transcribed": true}
+{"id": "calm", "audio_path": "calm.wav", "judge": "paraformer-zh", "transcript": "wonder woman features a strong female lead played by galgado", "transcribed": true}
+{"id": "lively", "audio_path": "lively.wav", "judge": "paraformer-zh", "transcript": "certainly five famous spanish restaurants in margry r 一 berbertin kazallusio 三 ver XO 四 sobreino d bertinn mmercdo disei girl enjoy exploring the rich colonary scene in margry", "transcribed": true}

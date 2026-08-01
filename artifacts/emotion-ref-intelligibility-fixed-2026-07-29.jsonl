@@ -1,25 +1,25 @@
-{"id": "dylan_control", "audio_path": "/home/oscar/omni/emo_ref_audio/dylan_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 吹 秋 吹 过 树 梢 鸟 毛 在 直 播 歌 唱 让 我 们 一 起 出 发 去 探 索 这 个 美 丽 的 世 界 吧", "transcribed": true}
-{"id": "dylan_happy", "audio_path": "/home/oscar/omni/emo_ref_audio/dylan_happy.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
-{"id": "dylan_care", "audio_path": "/home/oscar/omni/emo_ref_audio/dylan_care.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 收 看 今 天 的 节 目", "transcribed": true}
-{"id": "dylan_fast", "audio_path": "/home/oscar/omni/emo_ref_audio/dylan_fast.wav", "judge": "paraformer-zh", "transcript": "还 好 左 右 金 色 草 晨 微 光 皆 四 六 自 成", "transcribed": true}
-{"id": "dylan_slow", "audio_path": "/home/oscar/omni/emo_ref_audio/dylan_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 坐 客 今 彩 的 节 目 阳 光 明 媚 的 早 晨 微 光 渐 轻 渐 又 怎 么 着 鸟 儿 在 这 公 之 唱 让 我 们 一 起 同 发 去 探 索 这 美 黑 的 世 界", "transcribed": true}
-{"id": "eric_control", "audio_path": "/home/oscar/omni/emo_ref_audio/eric_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 南 光 明 媚 的 早 船 微 风 轻 轻 吹 落 树 沙 鸟 儿 在 这 首 歌 唱 让 我 们 一 起 出 发 去 探 索 我 天 的 每 一 个 世 界 吧", "transcribed": true}
-{"id": "eric_happy", "audio_path": "/home/oscar/omni/emo_ref_audio/eric_happy.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
-{"id": "eric_care", "audio_path": "/home/oscar/omni/emo_ref_audio/eric_care.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
-{"id": "eric_fast", "audio_path": "/home/oscar/omni/emo_ref_audio/eric_fast.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
-{"id": "eric_slow", "audio_path": "/home/oscar/omni/emo_ref_audio/eric_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 聆 听 听 水 部 南 方 明 月 早 晨 五 疑 红 心 青 山 有 树 高 一 二 在 狗 车 上 让 我 们 一 起 出 发 迎 带 走 进 美 丽 的 世 界 啊", "transcribed": true}
-{"id": "serena_control", "audio_path": "/home/oscar/omni/emo_ref_audio/serena_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 梢 鸟 儿 在 直 不 对 哈 让 我 们 一 起 出 发 去 探 索 这 个 美 丽 的 世 界 吧", "transcribed": true}
-{"id": "serena_happy", "audio_path": "/home/oscar/omni/emo_ref_audio/serena_happy.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
-{"id": "serena_care", "audio_path": "/home/oscar/omni/emo_ref_audio/serena_care.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 联 望 语 业 总 监 委 托 汽 车 副 士 康 老 安 在 这 头 唱 那 我 们 继 续 吧 请 他 走 进 每 日 时 间 吧", "transcribed": true}
-{"id": "serena_fast", "audio_path": "/home/oscar/omni/emo_ref_audio/serena_fast.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 目 目 我 方 为 你 来 听 我 能 新 心 说 物 说 生 哪 来 这 个 唱 让 我 们 今 得 吗 只 在 做 这 种 一 线", "transcribed": true}
-{"id": "serena_slow", "audio_path": "/home/oscar/omni/emo_ref_audio/serena_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 来 光 你 列 表 成 我 由 一 新 岁 的 出 生 那 也 也 是 非 常 在 我 们 一 起 出 发 习 快 走 进 美 丽 世 界 的", "transcribed": true}
-{"id": "uncle_fu_control", "audio_path": "/home/oscar/omni/emo_ref_audio/uncle_fu_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 窗 鸟 儿 在 枝 头 歌 唱 那 我 们 一 起 出 发 去 探 索 这 个 美 丽 世 界 吧", "transcribed": true}
-{"id": "uncle_fu_happy", "audio_path": "/home/oscar/omni/emo_ref_audio/uncle_fu_happy.wav", "judge": "paraformer-zh", "transcript": "爱 好 爱 人 一 次 源 王 国 国 民 养 师 生 微 轻 轻 轻 轻 手 指 哪 哪 短 短 身 多 少 带 我 一 吃 完 就 来 锁 定 美 丽 世 界 了", "transcribed": true}
-{"id": "uncle_fu_care", "audio_path": "/home/oscar/omni/emo_ref_audio/uncle_fu_care.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 走 进 纪 念 所 他 莫 名 的 内 考 神 微 风 轻 轻 追 逐 出 哪 儿 感 深 是 微 放 让 我 一 九 二 开 始 准 备 这 件 事 情 了", "transcribed": true}
-{"id": "uncle_fu_fast", "audio_path": "/home/oscar/omni/emo_ref_audio/uncle_fu_fast.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 抖 音 私 系 我 我 我 明 日 的 草 晨 风 轻 轻 轻 柳 树 梢 鸟 儿 的 这 首 歌 唱 来 我 一 q 八 去 看 所 有 的 新 世 界 吧", "transcribed": true}
-{"id": "uncle_fu_slow", "audio_path": "/home/oscar/omni/emo_ref_audio/uncle_fu_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 飞 舞 四 周 鸟 儿 啊 这 首 歌 唱 那 我 一 你 出 发 去 拍 所 这 美 丽 世 界 啊", "transcribed": true}
-{"id": "vivian_control", "audio_path": "/home/oscar/omni/emo_ref_audio/vivian_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 金 赛 玲 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 梢 鸟 儿 在 这 首 歌 唱 让 我 一 起 出 发 去 探 服 这 个 美 丽 的 世 界 吧", "transcribed": true}
-{"id": "vivian_happy", "audio_path": "/home/oscar/omni/emo_ref_audio/vivian_happy.wav", "judge": "paraformer-zh", "transcript": "快 好 快 手 音 乐 这 个 首 歌 给 你 读 啊 其 他 你 们 就 是 这 个", "transcribed": true}
-{"id": "vivian_care", "audio_path": "/home/oscar/omni/emo_ref_audio/vivian_care.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
-{"id": "vivian_fast", "audio_path": "/home/oscar/omni/emo_ref_audio/vivian_fast.wav", "judge": "paraformer-zh", "transcript": "哎 好 那 只 是 因 为 然 后 那 个 不 用 金 金 这 个 什 么 戴 手 那 那 我 就 说 实 他 不 准 就 是 这 个", "transcribed": true}
-{"id": "vivian_slow", "audio_path": "/home/oscar/omni/emo_ref_audio/vivian_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 每 望 一 位 早 晨 为 风 轻 轻 吹 过 暑 窗 那 投 资 号 带 我 一 起 出 发 去 看 昨 遍 美 丽 的 世 界 吧", "transcribed": true}
+{"id": "dylan_control", "audio_path": "dylan_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 吹 秋 吹 过 树 梢 鸟 毛 在 直 播 歌 唱 让 我 们 一 起 出 发 去 探 索 这 个 美 丽 的 世 界 吧", "transcribed": true}
+{"id": "dylan_happy", "audio_path": "dylan_happy.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
+{"id": "dylan_care", "audio_path": "dylan_care.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 收 看 今 天 的 节 目", "transcribed": true}
+{"id": "dylan_fast", "audio_path": "dylan_fast.wav", "judge": "paraformer-zh", "transcript": "还 好 左 右 金 色 草 晨 微 光 皆 四 六 自 成", "transcribed": true}
+{"id": "dylan_slow", "audio_path": "dylan_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 坐 客 今 彩 的 节 目 阳 光 明 媚 的 早 晨 微 光 渐 轻 渐 又 怎 么 着 鸟 儿 在 这 公 之 唱 让 我 们 一 起 同 发 去 探 索 这 美 黑 的 世 界", "transcribed": true}
+{"id": "eric_control", "audio_path": "eric_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 南 光 明 媚 的 早 船 微 风 轻 轻 吹 落 树 沙 鸟 儿 在 这 首 歌 唱 让 我 们 一 起 出 发 去 探 索 我 天 的 每 一 个 世 界 吧", "transcribed": true}
+{"id": "eric_happy", "audio_path": "eric_happy.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
+{"id": "eric_care", "audio_path": "eric_care.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
+{"id": "eric_fast", "audio_path": "eric_fast.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
+{"id": "eric_slow", "audio_path": "eric_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 聆 听 听 水 部 南 方 明 月 早 晨 五 疑 红 心 青 山 有 树 高 一 二 在 狗 车 上 让 我 们 一 起 出 发 迎 带 走 进 美 丽 的 世 界 啊", "transcribed": true}
+{"id": "serena_control", "audio_path": "serena_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 梢 鸟 儿 在 直 不 对 哈 让 我 们 一 起 出 发 去 探 索 这 个 美 丽 的 世 界 吧", "transcribed": true}
+{"id": "serena_happy", "audio_path": "serena_happy.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
+{"id": "serena_care", "audio_path": "serena_care.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 联 望 语 业 总 监 委 托 汽 车 副 士 康 老 安 在 这 头 唱 那 我 们 继 续 吧 请 他 走 进 每 日 时 间 吧", "transcribed": true}
+{"id": "serena_fast", "audio_path": "serena_fast.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 目 目 我 方 为 你 来 听 我 能 新 心 说 物 说 生 哪 来 这 个 唱 让 我 们 今 得 吗 只 在 做 这 种 一 线", "transcribed": true}
+{"id": "serena_slow", "audio_path": "serena_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 来 光 你 列 表 成 我 由 一 新 岁 的 出 生 那 也 也 是 非 常 在 我 们 一 起 出 发 习 快 走 进 美 丽 世 界 的", "transcribed": true}
+{"id": "uncle_fu_control", "audio_path": "uncle_fu_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 窗 鸟 儿 在 枝 头 歌 唱 那 我 们 一 起 出 发 去 探 索 这 个 美 丽 世 界 吧", "transcribed": true}
+{"id": "uncle_fu_happy", "audio_path": "uncle_fu_happy.wav", "judge": "paraformer-zh", "transcript": "爱 好 爱 人 一 次 源 王 国 国 民 养 师 生 微 轻 轻 轻 轻 手 指 哪 哪 短 短 身 多 少 带 我 一 吃 完 就 来 锁 定 美 丽 世 界 了", "transcribed": true}
+{"id": "uncle_fu_care", "audio_path": "uncle_fu_care.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 走 进 纪 念 所 他 莫 名 的 内 考 神 微 风 轻 轻 追 逐 出 哪 儿 感 深 是 微 放 让 我 一 九 二 开 始 准 备 这 件 事 情 了", "transcribed": true}
+{"id": "uncle_fu_fast", "audio_path": "uncle_fu_fast.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 抖 音 私 系 我 我 我 明 日 的 草 晨 风 轻 轻 轻 柳 树 梢 鸟 儿 的 这 首 歌 唱 来 我 一 q 八 去 看 所 有 的 新 世 界 吧", "transcribed": true}
+{"id": "uncle_fu_slow", "audio_path": "uncle_fu_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 节 目 阳 光 明 媚 的 早 晨 微 风 轻 轻 飞 舞 四 周 鸟 儿 啊 这 首 歌 唱 那 我 一 你 出 发 去 拍 所 这 美 丽 世 界 啊", "transcribed": true}
+{"id": "vivian_control", "audio_path": "vivian_control.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 金 赛 玲 阳 光 明 媚 的 早 晨 微 风 轻 轻 吹 过 树 梢 鸟 儿 在 这 首 歌 唱 让 我 一 起 出 发 去 探 服 这 个 美 丽 的 世 界 吧", "transcribed": true}
+{"id": "vivian_happy", "audio_path": "vivian_happy.wav", "judge": "paraformer-zh", "transcript": "快 好 快 手 音 乐 这 个 首 歌 给 你 读 啊 其 他 你 们 就 是 这 个", "transcribed": true}
+{"id": "vivian_care", "audio_path": "vivian_care.wav", "judge": "paraformer-zh", "transcript": "", "transcribed": true}
+{"id": "vivian_fast", "audio_path": "vivian_fast.wav", "judge": "paraformer-zh", "transcript": "哎 好 那 只 是 因 为 然 后 那 个 不 用 金 金 这 个 什 么 戴 手 那 那 我 就 说 实 他 不 准 就 是 这 个", "transcribed": true}
+{"id": "vivian_slow", "audio_path": "vivian_slow.wav", "judge": "paraformer-zh", "transcript": "大 家 好 欢 迎 收 听 今 天 的 节 目 每 望 一 位 早 晨 为 风 轻 轻 吹 过 暑 窗 那 投 资 号 带 我 一 起 出 发 去 看 昨 遍 美 丽 的 世 界 吧", "transcribed": true}
