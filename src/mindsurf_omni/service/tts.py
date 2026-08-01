@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import re
 import threading
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -79,6 +80,32 @@ class Utterance:
 
 class Synthesiser(Protocol):
     async def synthesise(self, utterance: Utterance) -> bytes: ...
+
+
+async def stream_utterance(synthesiser: Any, utterance: Utterance) -> AsyncIterator[bytes]:
+    """Audio as it becomes available, or the whole utterance once.
+
+    The cascade spends 94% of its budget waiting for a clause to finish
+    synthesising -- 2133.9 ms at the median against 126.0 ms for recognition
+    and the Thinker together, measured on the deployment card. Time to first
+    audio does not need the clause to be finished; it needs the first samples.
+
+    Not every synthesiser can do that, and the split is not about effort. The
+    hosted one pays a network round trip that cannot be divided, so chunking it
+    buys the tail and not the head. A local model pays compute, which can be
+    handed over as it is produced. So this asks, and falls back to one whole
+    piece for anything that cannot -- a caller written against it does not
+    branch.
+    """
+    streamer = getattr(synthesiser, "stream", None)
+    if streamer is None:
+        whole = await synthesiser.synthesise(utterance)
+        if whole:
+            yield whole
+        return
+    async for piece in streamer(utterance):
+        if piece:
+            yield piece
 
 
 @dataclass(slots=True)
@@ -264,6 +291,70 @@ class VoxCPMSynthesiser:
             "int16"
         )
         return resample(pcm.tobytes(), self.sample_rate, OUTPUT_SAMPLE_RATE)
+
+    async def stream(self, utterance: Utterance) -> AsyncIterator[bytes]:
+        """The same audio, handed over as the model produces it.
+
+        Worth the extra path only because the cost here is compute rather than
+        a round trip: the first samples exist long before the clause is done.
+        Measured on a laptop card at 93 ms to the first chunk against 6405 ms
+        for the whole clause, and the deployment card puts the whole clause at
+        2133.9 ms -- so this is where the cascade's P95 overrun lives.
+
+        The generator is synchronous and blocking, so it is drained on a worker
+        thread one piece at a time. Draining it into a list first would restore
+        exactly the wait this exists to remove.
+        """
+        import asyncio
+        import queue
+
+        import numpy
+
+        spoken = clean_for_speech(utterance.text)
+        if not spoken:
+            return
+
+        pieces: queue.Queue[Any] = queue.Queue()
+        done = object()
+
+        def produce() -> None:
+            try:
+                for piece in self.load().generate_streaming(
+                    text=spoken,
+                    prompt_wav_path=self.prompt_wav,
+                    prompt_text=self.prompt_text,
+                    normalize=self.normalise_text,
+                ):
+                    pieces.put(piece)
+            except BaseException as error:  # surfaced on the consumer side
+                pieces.put(error)
+            finally:
+                pieces.put(done)
+
+        worker = asyncio.create_task(asyncio.to_thread(produce))
+        spoke = False
+        try:
+            while True:
+                piece = await asyncio.to_thread(pieces.get)
+                if piece is done:
+                    break
+                if isinstance(piece, BaseException):
+                    raise piece
+                if piece is None or len(piece) == 0:
+                    continue
+                samples = (
+                    numpy.clip(numpy.asarray(piece, dtype="float32"), -1.0, 1.0) * 32767
+                ).astype("int16")
+                spoke = True
+                yield resample(samples.tobytes(), self.sample_rate, OUTPUT_SAMPLE_RATE)
+        finally:
+            await worker
+
+        if not spoke:
+            raise RuntimeError(
+                f"the synthesiser streamed no audio for {spoken[:20]!r}; a silent "
+                "sample would be scored as the model having said nothing"
+            )
 
 
 def instruction_leaked(spoken_text: str, transcript: str) -> bool:

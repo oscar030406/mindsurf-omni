@@ -118,3 +118,61 @@ async def test_an_empty_reply_produces_no_audio() -> None:
     chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
 
     assert chunks == []
+
+
+@pytest.mark.asyncio
+async def test_a_streaming_synthesiser_speaks_before_the_clause_is_finished() -> None:
+    """This is the whole point of the change, so it is what the test pins.
+
+    Measured on the deployment card, a clause takes 2133.9 ms to synthesise
+    while recognition and the Thinker together take 126.0 ms. Waiting for the
+    clause is 94% of the budget and the reason the cascade's P95 sits near
+    4695 ms against a 3000 ms target. Time to first audio has to be stamped on
+    the first piece, not the last.
+    """
+    pieces = [bytes([1, 0]) * 4, bytes([2, 0]) * 4, bytes([3, 0]) * 4]
+
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "你好", "zh"
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        for character in "今天天气很好。":
+            yield character
+
+    async def whole(text: str, settings: object) -> bytes:
+        raise AssertionError("the streaming path was available and was not used")
+
+    async def stream(text: str, settings: object) -> AsyncIterator[bytes]:
+        for piece in pieces:
+            yield piece
+
+    engine = CascadeEngine(
+        transcribe,
+        generate,
+        whole,
+        [],
+        SPEC,
+        stream_synthesiser=stream,
+    )
+
+    chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
+    audio = [chunk for chunk in chunks if chunk.pcm]
+
+    assert [chunk.pcm for chunk in audio] == pieces
+    # The clause's text rides on the first piece only: repeated, a client
+    # renders the sentence three times; dropped, it loses the alignment.
+    assert audio[0].text == "今天天气很好。"
+    assert [chunk.text for chunk in audio[1:]] == [None, None]
+    assert engine.last_timings.time_to_first_audio_ms > 0
+
+
+@pytest.mark.asyncio
+async def test_without_a_streaming_synthesiser_nothing_changes() -> None:
+    """A hosted synthesiser cannot divide its round trip, so it keeps the old path."""
+    engine = _engine("今天天气很好。")
+
+    chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
+    spoken = [chunk for chunk in chunks if chunk.pcm]
+
+    assert len(spoken) == 1
+    assert spoken[0].text == "今天天气很好。"

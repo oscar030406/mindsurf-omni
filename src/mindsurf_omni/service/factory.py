@@ -12,6 +12,7 @@ tries to read the log.
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 from mindsurf_omni.service.config import (
@@ -73,6 +74,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         transcriber=transcribe,
         generator=generate,  # type: ignore[arg-type]
         synthesiser=synthesise,
+        stream_synthesiser=getattr(synthesise, "streaming", None),
         components=describe_components(settings),
         token_spec=token_spec(),
         unwired=tuple(unwired),
@@ -143,6 +145,7 @@ def _build_synthesiser(settings: Settings) -> Any:
         Synthesiser,
         Utterance,
         VoxCPMSynthesiser,
+        stream_utterance,
     )
 
     if not settings.tts:
@@ -186,6 +189,20 @@ def _build_synthesiser(settings: Settings) -> Any:
         return await synthesiser.synthesise(
             Utterance(text=text, voice=generation.voice, emotion=generation.emotion)
         )
+
+    # Carried on the callable rather than returned separately: assembly hands
+    # the cascade one thing, and the streaming half is an attribute of the same
+    # synthesiser rather than a second wiring decision an operator could get
+    # half right.
+    if hasattr(synthesiser, "stream"):
+
+        def speak_streaming(text: str, generation: GenerationSettings) -> AsyncIterator[bytes]:
+            return stream_utterance(
+                synthesiser,
+                Utterance(text=text, voice=generation.voice, emotion=generation.emotion),
+            )
+
+        speak.streaming = speak_streaming  # type: ignore[attr-defined]
 
     return speak
 
