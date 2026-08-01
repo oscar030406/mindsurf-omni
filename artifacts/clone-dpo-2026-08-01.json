@@ -1,0 +1,1546 @@
+{
+  "mode": "score",
+  "samples": [
+    {
+      "id": "arthur/zh000",
+      "similarity": 0.608828067779541,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh001",
+      "similarity": 0.7334360480308533,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh002",
+      "similarity": 0.7311190962791443,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh003",
+      "similarity": 0.7380335330963135,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh004",
+      "similarity": 0.7370814085006714,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh005",
+      "similarity": 0.8038404583930969,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh006",
+      "similarity": 0.7624503970146179,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh007",
+      "similarity": 0.7417004704475403,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh008",
+      "similarity": 0.7490402460098267,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh009",
+      "similarity": 0.7537689208984375,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh010",
+      "similarity": 0.7793881893157959,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh011",
+      "similarity": 0.7849487662315369,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh012",
+      "similarity": 0.6924859285354614,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh013",
+      "similarity": 0.6970887184143066,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh014",
+      "similarity": 0.7206555008888245,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh015",
+      "similarity": 0.753861129283905,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh016",
+      "similarity": 0.743503749370575,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh017",
+      "similarity": 0.7428354620933533,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh018",
+      "similarity": 0.7201191782951355,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "arthur/zh019",
+      "similarity": 0.7054718136787415,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "id": "chelsie/zh000",
+      "similarity": 0.660737156867981,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh001",
+      "similarity": 0.649687647819519,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh002",
+      "similarity": 0.6736568808555603,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh003",
+      "similarity": 0.6464745402336121,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh004",
+      "similarity": 0.6756538152694702,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh005",
+      "similarity": 0.6667113900184631,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh006",
+      "similarity": 0.6446519494056702,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh007",
+      "similarity": 0.6624934077262878,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh008",
+      "similarity": 0.669093132019043,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh009",
+      "similarity": 0.6486693024635315,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh010",
+      "similarity": 0.6545374989509583,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh011",
+      "similarity": 0.6698148846626282,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh012",
+      "similarity": 0.6486864686012268,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh013",
+      "similarity": 0.5649772882461548,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh014",
+      "similarity": 0.6614634990692139,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh015",
+      "similarity": 0.6702959537506104,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh016",
+      "similarity": 0.6876012086868286,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh017",
+      "similarity": 0.6656143665313721,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh018",
+      "similarity": 0.6125071048736572,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "chelsie/zh019",
+      "similarity": 0.6725301742553711,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "id": "cherry/zh000",
+      "similarity": 0.5280215740203857,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh001",
+      "similarity": 0.4880446791648865,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh002",
+      "similarity": 0.5840045809745789,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh003",
+      "similarity": 0.5946219563484192,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh004",
+      "similarity": 0.5886960625648499,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh005",
+      "similarity": 0.5742093324661255,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh006",
+      "similarity": 0.5729811787605286,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh007",
+      "similarity": 0.5593630075454712,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh008",
+      "similarity": 0.5804643034934998,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh009",
+      "similarity": 0.5963134765625,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh010",
+      "similarity": 0.5726150274276733,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh011",
+      "similarity": 0.5546339750289917,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh012",
+      "similarity": 0.5644609928131104,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh013",
+      "similarity": 0.5174670815467834,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh014",
+      "similarity": 0.5435956716537476,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh015",
+      "similarity": 0.5426162481307983,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh016",
+      "similarity": 0.595339298248291,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh017",
+      "similarity": 0.5159404873847961,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh018",
+      "similarity": 0.5277412533760071,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "cherry/zh019",
+      "similarity": 0.5715773701667786,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "id": "dylan/zh000",
+      "similarity": 0.6680988669395447,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh001",
+      "similarity": 0.6724095940589905,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh002",
+      "similarity": 0.7217118740081787,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh003",
+      "similarity": 0.7168707847595215,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh004",
+      "similarity": 0.7055092453956604,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh005",
+      "similarity": 0.6673094034194946,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh006",
+      "similarity": 0.6901342868804932,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh007",
+      "similarity": 0.6750367879867554,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh008",
+      "similarity": 0.7199164628982544,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh009",
+      "similarity": 0.7315625548362732,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh010",
+      "similarity": 0.7190393209457397,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh011",
+      "similarity": 0.6951553225517273,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh012",
+      "similarity": 0.688880205154419,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh013",
+      "similarity": 0.6727727651596069,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh014",
+      "similarity": 0.7061655521392822,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh015",
+      "similarity": 0.6712834239006042,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh016",
+      "similarity": 0.6928107142448425,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh017",
+      "similarity": 0.676819920539856,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh018",
+      "similarity": 0.6819717288017273,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "dylan/zh019",
+      "similarity": 0.7284640073776245,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "id": "eric/zh000",
+      "similarity": 0.5288025140762329,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh001",
+      "similarity": 0.5114339590072632,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh002",
+      "similarity": 0.5358163118362427,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh003",
+      "similarity": 0.5717405676841736,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh004",
+      "similarity": 0.4976362884044647,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh005",
+      "similarity": 0.5322799682617188,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh006",
+      "similarity": 0.5328695178031921,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh007",
+      "similarity": 0.5622624754905701,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh008",
+      "similarity": 0.5505757331848145,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh009",
+      "similarity": 0.5544220209121704,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh010",
+      "similarity": 0.5434179306030273,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh011",
+      "similarity": 0.5554139018058777,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh012",
+      "similarity": 0.5760484337806702,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh013",
+      "similarity": 0.49126166105270386,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh014",
+      "similarity": 0.5492557287216187,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh015",
+      "similarity": 0.4958555996417999,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh016",
+      "similarity": 0.5309697985649109,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh017",
+      "similarity": 0.5325974225997925,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh018",
+      "similarity": 0.5394386649131775,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "eric/zh019",
+      "similarity": 0.5844475030899048,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "id": "ethan/zh000",
+      "similarity": 0.4999607503414154,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh001",
+      "similarity": 0.42746078968048096,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh002",
+      "similarity": 0.49642711877822876,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh003",
+      "similarity": 0.48252612352371216,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh004",
+      "similarity": 0.5280150771141052,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh005",
+      "similarity": 0.5336363315582275,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh006",
+      "similarity": 0.5200083255767822,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh007",
+      "similarity": 0.49555253982543945,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh008",
+      "similarity": 0.48211032152175903,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh009",
+      "similarity": 0.5272753834724426,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh010",
+      "similarity": 0.476978063583374,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh011",
+      "similarity": 0.4970549941062927,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh012",
+      "similarity": 0.4465458393096924,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh013",
+      "similarity": 0.47575512528419495,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh014",
+      "similarity": 0.46355658769607544,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh015",
+      "similarity": 0.477500319480896,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh016",
+      "similarity": 0.4754326045513153,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh017",
+      "similarity": 0.5084851384162903,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh018",
+      "similarity": 0.48634371161460876,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "ethan/zh019",
+      "similarity": 0.5157718062400818,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "id": "jennifer/zh000",
+      "similarity": 0.3535330295562744,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh001",
+      "similarity": 0.45037561655044556,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh002",
+      "similarity": 0.5085301399230957,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh003",
+      "similarity": 0.4418973922729492,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh004",
+      "similarity": 0.5053023099899292,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh005",
+      "similarity": 0.5193489789962769,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh006",
+      "similarity": 0.5596178770065308,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh007",
+      "similarity": 0.5195491313934326,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh008",
+      "similarity": 0.5071096420288086,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh009",
+      "similarity": 0.5562852621078491,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh010",
+      "similarity": 0.4891003370285034,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh011",
+      "similarity": 0.5020037293434143,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh012",
+      "similarity": 0.56898033618927,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh013",
+      "similarity": 0.5023057460784912,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh014",
+      "similarity": 0.441824734210968,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh015",
+      "similarity": 0.5297576189041138,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh016",
+      "similarity": 0.5633752942085266,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh017",
+      "similarity": 0.4955212473869324,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh018",
+      "similarity": 0.4577857255935669,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "jennifer/zh019",
+      "similarity": 0.5362625122070312,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "id": "momo/zh000",
+      "similarity": 0.6597322225570679,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh001",
+      "similarity": 0.536948561668396,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh002",
+      "similarity": 0.6038827300071716,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh003",
+      "similarity": 0.5793461799621582,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh004",
+      "similarity": 0.573040246963501,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh005",
+      "similarity": 0.618546724319458,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh006",
+      "similarity": 0.5681392550468445,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh007",
+      "similarity": 0.6086741089820862,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh008",
+      "similarity": 0.5719127655029297,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh009",
+      "similarity": 0.5579733848571777,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh010",
+      "similarity": 0.5425609350204468,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh011",
+      "similarity": 0.5744296312332153,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh012",
+      "similarity": 0.6238698959350586,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh013",
+      "similarity": 0.4473205804824829,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh014",
+      "similarity": 0.5970568060874939,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh015",
+      "similarity": 0.5696138739585876,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh016",
+      "similarity": 0.6079738140106201,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh017",
+      "similarity": 0.49851861596107483,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh018",
+      "similarity": 0.5575876235961914,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "momo/zh019",
+      "similarity": 0.6430822610855103,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "id": "moon/zh000",
+      "similarity": 0.6611108183860779,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh001",
+      "similarity": 0.7300719618797302,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh002",
+      "similarity": 0.7090594172477722,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh003",
+      "similarity": 0.7061105966567993,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh004",
+      "similarity": 0.7185463905334473,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh005",
+      "similarity": 0.7095061540603638,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh006",
+      "similarity": 0.7348271608352661,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh007",
+      "similarity": 0.7110309600830078,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh008",
+      "similarity": 0.723962664604187,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh009",
+      "similarity": 0.7229102253913879,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh010",
+      "similarity": 0.7279841303825378,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh011",
+      "similarity": 0.7308629155158997,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh012",
+      "similarity": 0.7132534384727478,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh013",
+      "similarity": 0.6651021838188171,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh014",
+      "similarity": 0.6985307335853577,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh015",
+      "similarity": 0.6698089838027954,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh016",
+      "similarity": 0.711603045463562,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh017",
+      "similarity": 0.7182450294494629,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh018",
+      "similarity": 0.7187902927398682,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "moon/zh019",
+      "similarity": 0.7599951028823853,
+      "split": "unseen",
+      "voice": "moon"
+    },
+    {
+      "id": "serena/zh000",
+      "similarity": 0.6864611506462097,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh001",
+      "similarity": 0.6320124268531799,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh002",
+      "similarity": 0.7077301144599915,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh003",
+      "similarity": 0.7131787538528442,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh004",
+      "similarity": 0.7112075090408325,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh005",
+      "similarity": 0.7328141927719116,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh006",
+      "similarity": 0.7454729080200195,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh007",
+      "similarity": 0.7574211359024048,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh008",
+      "similarity": 0.729762613773346,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh009",
+      "similarity": 0.7228184938430786,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh010",
+      "similarity": 0.7318845987319946,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh011",
+      "similarity": 0.7178529500961304,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh012",
+      "similarity": 0.7272210121154785,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh013",
+      "similarity": 0.6657695174217224,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh014",
+      "similarity": 0.7132662534713745,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh015",
+      "similarity": 0.656233549118042,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh016",
+      "similarity": 0.7474764585494995,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh017",
+      "similarity": 0.6087714433670044,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh018",
+      "similarity": 0.694371223449707,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "serena/zh019",
+      "similarity": 0.7451526522636414,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "id": "uncle_fu/zh000",
+      "similarity": 0.6450796723365784,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh001",
+      "similarity": 0.7374209761619568,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh002",
+      "similarity": 0.7357714772224426,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh003",
+      "similarity": 0.7292249202728271,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh004",
+      "similarity": 0.7220402956008911,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh005",
+      "similarity": 0.7112564444541931,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh006",
+      "similarity": 0.725540280342102,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh007",
+      "similarity": 0.7139512300491333,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh008",
+      "similarity": 0.7595255970954895,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh009",
+      "similarity": 0.7397215366363525,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh010",
+      "similarity": 0.7519739866256714,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh011",
+      "similarity": 0.7343647480010986,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh012",
+      "similarity": 0.7431621551513672,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh013",
+      "similarity": 0.6921894550323486,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh014",
+      "similarity": 0.7406696081161499,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh015",
+      "similarity": 0.7323326468467712,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh016",
+      "similarity": 0.7550883293151855,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh017",
+      "similarity": 0.6683341264724731,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh018",
+      "similarity": 0.7387778759002686,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "uncle_fu/zh019",
+      "similarity": 0.740538477897644,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "id": "vivian/zh000",
+      "similarity": 0.4666995406150818,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh001",
+      "similarity": 0.6043423414230347,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh002",
+      "similarity": 0.5873609185218811,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh003",
+      "similarity": 0.5665912628173828,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh004",
+      "similarity": 0.5578139424324036,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh005",
+      "similarity": 0.5913509726524353,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh006",
+      "similarity": 0.5952319502830505,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh007",
+      "similarity": 0.5627173781394958,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh008",
+      "similarity": 0.5867406129837036,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh009",
+      "similarity": 0.5536785125732422,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh010",
+      "similarity": 0.5735930800437927,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh011",
+      "similarity": 0.5930343866348267,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh012",
+      "similarity": 0.5577314496040344,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh013",
+      "similarity": 0.5344199538230896,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh014",
+      "similarity": 0.5790330171585083,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh015",
+      "similarity": 0.5753104090690613,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh016",
+      "similarity": 0.6142325401306152,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh017",
+      "similarity": 0.5566750764846802,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh018",
+      "similarity": 0.5581388473510742,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "id": "vivian/zh019",
+      "similarity": 0.5676170587539673,
+      "split": "seen",
+      "voice": "vivian"
+    }
+  ],
+  "seen": {
+    "gating_eligible": true,
+    "n": 100,
+    "noise_floor": 0.014849827587604558,
+    "note": "",
+    "value": 0.6472462487220764
+  },
+  "unmatched": [],
+  "unseen": {
+    "gating_eligible": true,
+    "n": 140,
+    "noise_floor": 0.016316068278891704,
+    "note": "",
+    "value": 0.6041757739015988
+  },
+  "voices": [
+    {
+      "n": 20,
+      "noise_floor": 0.009314002096653007,
+      "similarity": 0.6950961410999298,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.010912769287824642,
+      "similarity": 0.5388273000717163,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.016216765344142903,
+      "similarity": 0.7073439478874206,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.012365336716175068,
+      "similarity": 0.7258481919765473,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.013186174631118763,
+      "similarity": 0.5691156625747681,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.017748360335826885,
+      "similarity": 0.7349828541278839,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.011177615821361508,
+      "similarity": 0.655292883515358,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.012149916589260124,
+      "similarity": 0.5586353778839112,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.011779395490884803,
+      "similarity": 0.49081984758377073,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.022078418731689475,
+      "similarity": 0.5004233330488205,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.02119361758232119,
+      "similarity": 0.5770105108618736,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "n": 20,
+      "noise_floor": 0.009766347706317902,
+      "similarity": 0.7120656102895737,
+      "split": "unseen",
+      "voice": "moon"
+    }
+  ]
+}

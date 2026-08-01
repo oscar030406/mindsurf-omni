@@ -1,0 +1,42 @@
+{
+  "checkpoint": "sft_graft_frozen_768.pth",
+  "pairs": 450,
+  "dropped_pairs": 0,
+  "beta": 0.1,
+  "learning_rate": 5e-06,
+  "epochs": 3,
+  "history": [
+    {
+      "epoch": 0,
+      "loss": 0.6726243860854043,
+      "ordered": 0.6266666666666667,
+      "mean_chosen_logp": -58.49179410457611,
+      "mean_rejected_logp": -62.173209648662144,
+      "heldout_loss": 0.6513962894678116,
+      "heldout_ordered": 0.68
+    },
+    {
+      "epoch": 1,
+      "loss": 0.44641307199994723,
+      "ordered": 0.9733333333333334,
+      "mean_chosen_logp": -55.997766320440505,
+      "mean_rejected_logp": -65.54404899120331,
+      "heldout_loss": 0.6358949822187424,
+      "heldout_ordered": 0.66
+    },
+    {
+      "epoch": 2,
+      "loss": 0.30501238589071566,
+      "ordered": 0.9933333333333333,
+      "mean_chosen_logp": -53.84854248629676,
+      "mean_rejected_logp": -68.88335233529409,
+      "heldout_loss": 0.6290431180596352,
+      "heldout_ordered": 0.64
+    }
+  ],
+  "thinker_tensors_replaced": 91,
+  "thinker_tensors_changed": 91,
+  "max_weight_displacement": 0.000909656286239624,
+  "fp16_ulp_at_weight_scale": 0.0001220703125,
+  "heldout_pairs": 50
+}
