@@ -38,6 +38,7 @@ from mindsurf_omni.service.tts import (  # noqa: E402
     EdgeSynthesiser,
     Utterance,
     VoxCPMSynthesiser,
+    stream_utterance,
 )
 
 
@@ -63,6 +64,7 @@ async def speak_all(
     texts: list[dict[str, str]],
     output: Path,
     emotion: str,
+    stream: bool = False,
 ) -> list[dict[str, Any]]:
     """One at a time, because that is how the cascade calls it.
 
@@ -85,8 +87,20 @@ async def speak_all(
         started = time.perf_counter()
         failure = None
         pcm = b""
+        first_chunk_ms = None
         try:
-            pcm = await synthesiser.synthesise(Utterance(text=row["text"], emotion=emotion))
+            utterance = Utterance(text=row["text"], emotion=emotion)
+            if stream:
+                # The number this mode exists for is the first piece, not the
+                # last: a clause that takes two seconds to finish is audible
+                # long before it is done, and that gap is the whole reason the
+                # streaming path was written.
+                async for piece in stream_utterance(synthesiser, utterance):
+                    if first_chunk_ms is None:
+                        first_chunk_ms = (time.perf_counter() - started) * 1000
+                    pcm += piece
+            else:
+                pcm = await synthesiser.synthesise(utterance)
         except Exception as error:  # noqa: BLE001 - one bad sample is data, not the end
             failure = f"{type(error).__name__}: {error}"
         elapsed = (time.perf_counter() - started) * 1000
@@ -106,6 +120,7 @@ async def speak_all(
                 "audio_path": str(path) if pcm else None,
                 "elapsed_ms": elapsed,
                 "audio_seconds": len(pcm) / 2 / OUTPUT_SAMPLE_RATE,
+                **({} if first_chunk_ms is None else {"first_chunk_ms": first_chunk_ms}),
                 **({} if failure is None else {"error": failure}),
             }
         )
@@ -120,6 +135,13 @@ def main() -> None:
     parser.add_argument("--texts", type=Path, default=Path("configs/talker_texts_zh_v1.jsonl"))
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--limit", type=int, help="first N texts only, for a smoke run")
+    parser.add_argument(
+        "--stream",
+        action="store_true",
+        help="take the audio piece by piece and record when the first arrived. "
+        "The whole-clause time is what a caller waits for today; this is what "
+        "it would wait for once the cascade yields pieces",
+    )
     parser.add_argument("--device", default="cuda")
     parser.add_argument(
         "--emotion",
@@ -134,7 +156,7 @@ def main() -> None:
     print(f"合成 {len(texts)} 条，合成器 {args.synthesiser}")
     print("模型没有参与：参考文本就是固定文本，所以这一轮量的是合成器加判官的底噪")
 
-    samples = asyncio.run(speak_all(synthesiser, texts, args.output, args.emotion))
+    samples = asyncio.run(speak_all(synthesiser, texts, args.output, args.emotion, args.stream))
     spoken = [sample for sample in samples if sample.get("audio_path")]
     failed = [sample["id"] for sample in samples if not sample.get("audio_path")]
 
@@ -151,6 +173,23 @@ def main() -> None:
             "emotion_carried": args.synthesiser == "edge",
         },
         "efficiency": {
+            # Present only in streaming mode, and it is the number that decides
+            # whether the cascade fits its budget: the whole-clause figure is
+            # what a caller waits for today.
+            "first_chunk_ms_median": (
+                statistics.median(
+                    sample["first_chunk_ms"] for sample in spoken if "first_chunk_ms" in sample
+                )
+                if any("first_chunk_ms" in sample for sample in spoken)
+                else None
+            ),
+            "first_chunk_ms_p95": (
+                sorted(sample["first_chunk_ms"] for sample in spoken if "first_chunk_ms" in sample)[
+                    int(0.95 * sum("first_chunk_ms" in sample for sample in spoken)) - 1
+                ]
+                if sum("first_chunk_ms" in sample for sample in spoken) >= 20
+                else None
+            ),
             "synthesis_ms_median": (
                 statistics.median(sample["elapsed_ms"] for sample in spoken) if spoken else None
             ),
