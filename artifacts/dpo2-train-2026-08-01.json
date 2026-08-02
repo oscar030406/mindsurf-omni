@@ -1,0 +1,24 @@
+{
+  "checkpoint": "sft_graft_frozen_768.pth",
+  "pairs": 1302,
+  "dropped_pairs": 0,
+  "beta": 0.1,
+  "learning_rate": 5e-06,
+  "epochs": 1,
+  "history": [
+    {
+      "epoch": 0,
+      "loss": 0.6623450965948185,
+      "ordered": 0.6566820276497696,
+      "mean_chosen_logp": -67.86250410339983,
+      "mean_rejected_logp": -71.63516324593724,
+      "heldout_loss": 0.6235112676190006,
+      "heldout_ordered": 0.6805555555555556
+    }
+  ],
+  "thinker_tensors_replaced": 91,
+  "thinker_tensors_changed": 91,
+  "max_weight_displacement": 0.000618666410446167,
+  "fp16_ulp_at_weight_scale": 0.0001220703125,
+  "heldout_pairs": 144
+}

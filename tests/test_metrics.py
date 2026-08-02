@@ -8,7 +8,10 @@ from mindsurf_omni.evaluation.metrics import (
     assess,
     bootstrap_noise_floor,
     character_error_rate,
+    cluster_bootstrap_noise_floor,
     compare,
+    compare_paired,
+    compare_paired_clustered,
     edit_distance,
     normalise_for_cer,
 )
@@ -138,6 +141,46 @@ def test_a_single_sample_admits_it_cannot_estimate_noise() -> None:
     assert bootstrap_noise_floor([0.1]) == float("inf")
 
 
+def test_clustered_rows_get_a_wider_floor_than_pretending_they_are_independent() -> None:
+    """The voice-identification shape: twenty clips of a voice are almost all
+    right or almost all wrong together, so the unit that varies is the voice.
+    Resampling rows counts 240 independent draws where there are only 12."""
+    all_right = [1.0] * 20
+    all_wrong = [0.0] * 20
+    groups = [all_right] * 6 + [all_wrong] * 6
+    rows = [value for group in groups for value in group]
+
+    assert cluster_bootstrap_noise_floor(groups) > bootstrap_noise_floor(rows) * 2
+
+
+def test_one_cluster_cannot_estimate_between_cluster_noise() -> None:
+    """Twenty clips of a single voice say nothing about how the next voice
+    behaves, and a finite floor here would invite exactly that claim."""
+    assert cluster_bootstrap_noise_floor([[1.0] * 20]) == float("inf")
+
+
+def test_empty_clusters_do_not_count_toward_the_unit_of_variation() -> None:
+    assert cluster_bootstrap_noise_floor([[1.0] * 5, []]) == float("inf")
+
+
+def test_a_clustered_effect_can_read_improved_per_row_and_indistinguishable_per_cluster() -> None:
+    """The verdict this function exists to correct, in miniature.
+
+    A small mean carried by a few clusters looks solid when every row counts as
+    its own evidence, and stops looking solid when the clusters do. Reporting
+    the first is how a project publishes a direction it has not earned.
+    """
+    groups = [[0.05] * 20 for _ in range(9)] + [[-0.02] * 20 for _ in range(3)]
+    rows = [value for group in groups for value in group]
+
+    assert "improved" in compare_paired("m", rows, lower_is_better=False)
+    assert "indistinguishable" in compare_paired_clustered("m", groups, lower_is_better=False)
+
+
+def test_a_clustered_comparison_needs_more_than_one_cluster() -> None:
+    assert "reported only" in compare_paired_clustered("m", [[0.5] * 40])
+
+
 def test_an_instrument_too_coarse_for_the_effect_is_refused() -> None:
     """The multiple-choice failure, stated as arithmetic.
 
@@ -225,3 +268,62 @@ def test_an_ineligible_instrument_reports_but_never_judges() -> None:
 
     assert "reported only" in verdict
     assert "improved" not in verdict and "regressed" not in verdict
+
+
+def test_two_reference_sets_that_disagree_may_not_gate() -> None:
+    """The failure this exists for: the length-tuned arm read `regressed` on one
+    neutral author and `improved` on the other, and per probe the two agreed in
+    sign 20% of the time -- worse than a coin."""
+    from mindsurf_omni.evaluation.metrics import cross_reference_agreement
+
+    rising = [0.1] * 40 + [-0.1] * 10
+    falling = [-0.1] * 40 + [0.1] * 10
+
+    verdict = cross_reference_agreement(rising, falling)
+
+    assert verdict["agreement"] == 0.0
+    assert not verdict["gating_eligible"]
+
+
+def test_two_reference_sets_that_agree_may_gate() -> None:
+    from mindsurf_omni.evaluation.metrics import cross_reference_agreement
+
+    one = [0.1] * 45 + [-0.1] * 5
+    two = [0.1] * 43 + [-0.1] * 7
+
+    verdict = cross_reference_agreement(one, two)
+
+    assert verdict["agreement"] > 0.8
+    assert verdict["gating_eligible"]
+
+
+def test_the_round_that_agreed_only_just_clears_the_bar() -> None:
+    """59% on 158 probes is what the DPO round whose aggregates agreed actually
+    scored. It passes -- by 0.012 over a noise band of 0.078 -- and recording
+    that here is the point: the check separates that round from the length arm's
+    20%, but it does not call it comfortable."""
+    from mindsurf_omni.evaluation.metrics import cross_reference_agreement
+
+    n = 158
+    agree = round(0.59 * n)
+    one = [0.1] * n
+    two = [0.1] * agree + [-0.1] * (n - agree)
+
+    verdict = cross_reference_agreement(one, two)
+
+    assert 0.58 < verdict["agreement"] < 0.60
+    assert verdict["gating_eligible"]
+    assert verdict["agreement"] - 0.5 - verdict["noise"] < 0.02
+
+
+def test_a_few_probes_fewer_and_the_same_rate_would_not_clear() -> None:
+    """The margin above depends on the set size, so a smaller probe set at the
+    same agreement is not eligible -- which is the honest reading of 59%."""
+    from mindsurf_omni.evaluation.metrics import cross_reference_agreement
+
+    n = 80
+    agree = round(0.59 * n)
+    one = [0.1] * n
+    two = [0.1] * agree + [-0.1] * (n - agree)
+
+    assert not cross_reference_agreement(one, two)["gating_eligible"]

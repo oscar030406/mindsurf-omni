@@ -46,7 +46,12 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from mindsurf_omni.evaluation.metrics import assess, bootstrap_noise_floor  # noqa: E402
+from mindsurf_omni.evaluation.metrics import (  # noqa: E402
+    assess,
+    bootstrap_noise_floor,
+    cluster_bootstrap_noise_floor,
+    resolvable_effect,
+)
 
 # Upstream's front-end, value for value. A different mel window or a missing
 # mean subtraction would still produce plausible cosines, which is exactly why
@@ -143,6 +148,43 @@ def cosine(left: Any, right: Any) -> float:
     return float(torch.nn.functional.cosine_similarity(left, right, dim=0))
 
 
+def identify(
+    embedding: Any, voice: str, voices: dict[str, dict[str, Any]]
+) -> dict[str, Any] | None:
+    """Which of the pack's voices this clip sounds most like, and by how much.
+
+    The similarity to a clip's own voice is a number on a scale nobody set: a
+    voice whose codec ceiling is 0.79 and one whose ceiling is 0.90 cannot be
+    held to the same line, and a band drawn at "the tier mean minus the mean's
+    own noise" rejects half the tier by construction -- see section 15 of
+    docs/experiments/2026-07-30-emotion-harvest-gate.md, which is what this
+    exists to replace.
+
+    Asking instead which voice the clip is closest to needs no chosen
+    threshold: the boundary comes from the other voices in the pack. The
+    margin over the nearest impostor is what is left of the continuous
+    quantity, and unlike the raw similarity it is comparable across voices.
+
+    Candidates are upstream's twelve. An external pack joins ``voices`` for
+    scoring but must not join the line-up -- adding candidates makes the task
+    harder without anyone choosing that -- so a clip conditioned on an external
+    voice has no identification to report.
+    """
+    candidates = {name: entry for name, entry in voices.items() if entry["split"] != "external"}
+    if voice not in candidates:
+        return None
+    scores = {name: cosine(embedding, entry["spk_emb"]) for name, entry in candidates.items()}
+    nearest = max(scores, key=lambda name: scores[name])
+    others = [score for name, score in scores.items() if name != voice]
+    impostor = max(others, default=float("-inf"))
+    return {
+        "nearest": nearest,
+        "hit": nearest == voice,
+        "margin": scores[voice] - impostor,
+        "candidates": len(candidates),
+    }
+
+
 def run_ceiling(args: argparse.Namespace) -> dict[str, Any]:
     """What a perfect cloner would score, which is not 1.0.
 
@@ -168,7 +210,8 @@ def run_ceiling(args: argparse.Namespace) -> dict[str, Any]:
             decoded = mimi.decode(
                 voice["ref_codes"].unsqueeze(0).to(args.device)
             ).audio_values.squeeze()
-        similarity = cosine(embedder(resample(decoded.cpu())), voice["spk_emb"])
+        embedding = embedder(resample(decoded.cpu()))
+        similarity = cosine(embedding, voice["spk_emb"])
         rows.append(
             {
                 "voice": name,
@@ -177,6 +220,15 @@ def run_ceiling(args: argparse.Namespace) -> dict[str, Any]:
                 "ceiling": similarity,
             }
         )
+        # Whether a perfect cloner would even be identified. If the round trip
+        # of a voice's own reference lands nearer some other voice, then a low
+        # hit rate on generated audio is the line-up's property and not the
+        # model's, and no verdict may be read from it.
+        recognised = identify(embedding, name, voices)
+        if recognised is not None:
+            rows[-1]["ceiling_nearest"] = recognised["nearest"]
+            rows[-1]["ceiling_hit"] = recognised["hit"]
+            rows[-1]["ceiling_margin"] = recognised["margin"]
         seconds = rows[-1]["reference_seconds"]
         print(f"  {name:<10} {voice['split']:<6} ref {seconds:>5.2f}s  上限 {similarity:.4f}")
 
@@ -186,7 +238,20 @@ def run_ceiling(args: argparse.Namespace) -> dict[str, Any]:
         f"{min(rows, key=lambda row: row['ceiling'])['voice']}）  最高 {max(values):.4f}"
     )
     print("  这是「完美克隆」能拿到的分，不是 1.0——差额是 Mimi 8 码本 12.5 Hz 对说话人身份的损耗")
-    return {"mode": "ceiling", "voices": rows, "mean": statistics.mean(values)}
+
+    payload = {"mode": "ceiling", "voices": rows, "mean": statistics.mean(values)}
+    judged = [row for row in rows if "ceiling_hit" in row]
+    if judged:
+        hits = sum(1 for row in judged if row["ceiling_hit"])
+        payload["identification_ceiling"] = {"n": len(judged), "hits": hits}
+        print(f"\n上限臂的 rank-1 认人 {hits}/{len(judged)}")
+        for row in judged:
+            if not row["ceiling_hit"]:
+                nearest, margin = row["ceiling_nearest"], row["ceiling_margin"]
+                print(f"  连完美克隆都认错 {row['voice']} → {nearest}（裕度 {margin:+.4f}）")
+        if hits < len(judged):
+            print("  **认错的那些音色，生成侧的认人率读不出模型的好坏**——线阵本身分不开它们")
+    return payload
 
 
 def run_score(args: argparse.Namespace) -> dict[str, Any]:
@@ -248,16 +313,21 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
                 if rate not in resamplers:
                     resamplers[rate] = torchaudio.transforms.Resample(rate, MEL["sample_rate"])
                 audio = resamplers[rate](audio)
-            similarity = cosine(embedder(audio), voices[name]["spk_emb"])
+            embedding = embedder(audio)
+            similarity = cosine(embedding, voices[name]["spk_emb"])
             by_voice.setdefault(name, []).append(similarity)
-            samples.append(
-                {
-                    "id": f"{name}/{path.stem}",
-                    "voice": name,
-                    "split": voices[name]["split"],
-                    "similarity": similarity,
-                }
-            )
+            row = {
+                "id": f"{name}/{path.stem}",
+                "voice": name,
+                "split": voices[name]["split"],
+                "similarity": similarity,
+            }
+            recognised = identify(embedding, name, voices)
+            if recognised is not None:
+                row["nearest"] = recognised["nearest"]
+                row["hit"] = recognised["hit"]
+                row["margin"] = recognised["margin"]
+            samples.append(row)
 
     if not by_voice:
         raise SystemExit(
@@ -287,6 +357,50 @@ def run_score(args: argparse.Namespace) -> dict[str, Any]:
         "samples": samples,
         "unmatched": unmatched,
     }
+
+    identified = [sample for sample in samples if "hit" in sample]
+    if identified:
+        hits = sum(1 for sample in identified if sample["hit"])
+        # Clustered by voice, because that is the unit that varies: a voice is
+        # almost all right or almost all wrong, so twelve voices carry twelve
+        # units of information and not two hundred and forty. Resampling rows
+        # would report a floor the data does not support.
+        by_name: dict[str, list[float]] = {}
+        for sample in identified:
+            by_name.setdefault(sample["voice"], []).append(float(sample["hit"]))
+        floor = cluster_bootstrap_noise_floor(list(by_name.values()))
+        resolvable = resolvable_effect(floor)
+        eligible = resolvable <= args.identification_effect
+        payload["identification"] = {
+            "n": len(identified),
+            "voices": len(by_name),
+            "hits": hits,
+            "rank1": hits / len(identified),
+            "noise_floor": floor,
+            "resolves": resolvable,
+            "effect_of_interest": args.identification_effect,
+            "gating_eligible": eligible,
+            "margin_mean": statistics.mean(sample["margin"] for sample in identified),
+            "misses": [
+                {"id": sample["id"], "nearest": sample["nearest"], "margin": sample["margin"]}
+                for sample in identified
+                if not sample["hit"]
+            ],
+        }
+        summary = payload["identification"]
+        mark = (
+            "有门控资格"
+            if eligible
+            else f"仅报告（按音色重抽只分辨得了 {resolvable:.4f}，"
+            f"关心的是 {args.identification_effect:.4f}）"
+        )
+        print(
+            f"\nrank-1 认人 {hits}/{len(identified)} = {summary['rank1']:.4f} "
+            f"± {floor:.4f}（按音色重抽，{len(by_name)} 个音色）  {mark}"
+        )
+        print(f"  裕度均值 {summary['margin_mean']:.4f}")
+        for miss in summary["misses"][:5]:
+            print(f"  认错 {miss['id']} → {miss['nearest']}（裕度 {miss['margin']:+.4f}）")
     for split in SPLITS:
         values = [
             value for row in rows if row["split"] == split for value in by_voice[row["voice"]]
@@ -363,6 +477,14 @@ def main() -> None:
         help="cores on CPU. Not all of them: this runs beside training more often than not",
     )
     parser.add_argument("--effect", type=float, default=0.05)
+    parser.add_argument(
+        "--identification-effect",
+        type=float,
+        default=0.10,
+        help="the rank-1 difference the identification axis has to resolve to be "
+        "allowed to gate. Written down before the first cluster-bootstrap run, in "
+        "the fourth-round queue of docs/ACTION_PLAN.md; do not tune it to a result",
+    )
     parser.add_argument(
         "--ceiling-report",
         type=Path,

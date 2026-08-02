@@ -60,3 +60,18 @@ def test_a_prompt_set_with_no_reference_replies_can_still_be_sampled_from() -> N
     # The scoring side is what needs a reference: with no reply there is no
     # span to score, which is the condition the skip above stands in for.
     assert reply_span([1, 2, 3], [1, 2, 3]) is None
+
+
+def test_the_spoken_rate_is_the_one_measured_on_the_fixed_texts() -> None:
+    """A reply's length in characters says nothing a listener cares about.
+
+    140 characters reads as a normal chat answer and as half a minute of
+    talking, and only the second number is a product fact. The rate is pinned
+    here because it was measured on this project's own synthesiser rather than
+    guessed, and a silent drift would change every reported duration.
+    """
+    from scripts.measure_chat_loss import SPOKEN_CHARS_PER_SECOND
+
+    assert SPOKEN_CHARS_PER_SECOND == 4.67
+    # the product's own median reply is over half a minute of speech
+    assert 140 / SPOKEN_CHARS_PER_SECOND > 25

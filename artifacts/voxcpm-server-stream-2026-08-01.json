@@ -1,0 +1,74 @@
+{
+  "audio_location": "clips stay on the training host under the run's output directory; only the timings are archived here",
+  "efficiency": {
+    "first_chunk_ms_median": 34.64909497415647,
+    "first_chunk_ms_p95": 47.40200599189848,
+    "rtf": 0.4246891888366005,
+    "synthesis_ms_median": 2520.8274489850737,
+    "synthesis_ms_p95": 4889.637762971688
+  },
+  "failed": [],
+  "first_chunk_ms": [
+    1440.367,
+    33.738,
+    30.969,
+    32.903,
+    32.769,
+    33.423,
+    34.381,
+    32.384,
+    32.887,
+    31.082,
+    32.313,
+    32.802,
+    41.01,
+    34.825,
+    35.864,
+    40.446,
+    32.154,
+    41.485,
+    40.383,
+    41.552,
+    43.92,
+    36.287,
+    35.018,
+    33.647,
+    40.874,
+    45.278,
+    32.279,
+    40.572,
+    34.473,
+    38.754,
+    35.358,
+    36.349,
+    47.958,
+    33.988,
+    47.402,
+    32.699,
+    33.732,
+    32.572,
+    33.581,
+    35.105
+  ],
+  "generated": 40,
+  "generated_by": {
+    "components": [
+      {
+        "name": "tts-voxcpm"
+      }
+    ],
+    "emotion": "neutral",
+    "emotion_carried": false,
+    "model": "tts-voxcpm",
+    "path": "synthesiser-only",
+    "text_source": "fixed",
+    "texts_sha256": "8680d13a3479a5e09cff47be7057c4dbe3941fde5f4fffff55932b7e6dc72b53"
+  },
+  "probe_count": 40,
+  "realtime_factor": {
+    "clauses_slower_than_playback": 0,
+    "max": 0.9806,
+    "median": 0.4201
+  },
+  "streaming": true
+}

@@ -1,0 +1,11 @@
+{
+  "dpo": 62,
+  "dpo_share": 0.5794392523364486,
+  "n_decided": 107,
+  "noise": 0.09474017592647502,
+  "position_right_share": 0.4766355140186916,
+  "pre": 45,
+  "prompts": 158,
+  "tie": 51,
+  "verdict": "未胜出"
+}

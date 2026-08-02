@@ -59,6 +59,15 @@
       "note": "read 2026-07-26. The README shipped in model/campplus, the upstream card at huggingface.co/funasr/campplus and the 3D-Speaker project it came from all say Apache-2.0. Commercial use is permitted; the copyright and licence notices travel with any redistribution.",
       "verified": true,
       "what": "frozen speaker embedding"
+    },
+    {
+      "commercial_use": null,
+      "licence": "FunASR Model Open Source License Agreement v1.1",
+      "licence_link": "https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE",
+      "name": "emotion2vec_plus_large",
+      "note": "read 2026-08-01, before installing anything. The Hugging Face card declares license: other with license_name: model-license and license_link pointing at the FunASR repository -- which is the same agreement sensevoice_small resolves to, so the same null applies for the same reason. TRAP AVOIDED: the FunASR repository's top-level LICENSE file is MIT, and reading only that would have recorded this as commercially usable. MIT covers the code; the weights carry MODEL_LICENSE. This is the SenseVoice mistake in a new place, and the only reason it was caught is that the earlier one was written down. What matters for the use we intend: the agreement places no restriction on the model's outputs, so emotion labels it produces do not inherit it, and the annotator itself never enters the delivery package. Attribution is required for derivative works of the model -- we make none.",
+      "verified": false,
+      "what": "speech emotion recogniser, used only to LABEL our corpus; not shipped and not part of any deliverable"
     }
   ],
   "attribution_required": [

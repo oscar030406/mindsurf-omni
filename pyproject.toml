@@ -43,6 +43,11 @@ evaluate = ["openai-whisper>=20231117", "zhconv>=1.4", "cn2an>=0.5"]
 # The cascade path's recogniser. Separate from the runtime set because the
 # native path does not need it, and funasr pulls in torch.
 asr = ["funasr>=1.3", "librosa>=0.10"]
+# Column widths, a frozen header and a dropdown for the listening packs. Its
+# own set because it exists only to make a spreadsheet fillable by a person --
+# nothing in the service or the metrics touches it, and the packs still build
+# without it (repack_listening falls back to the CSV alone and says so).
+listening = ["openpyxl>=3.1"]
 # The cascade path's hosted synthesiser. Its own set because it reaches a
 # hosted endpoint: an image that carries it is an image that can be configured
 # to send replies off the machine, so the choice is made when installing rather

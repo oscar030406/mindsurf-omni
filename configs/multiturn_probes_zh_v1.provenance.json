@@ -1,0 +1,11 @@
+{
+  "EVALUATION_ONLY": "never use this set for training of any kind, including preference data",
+  "author": "this project, written for the first multi-turn measurement",
+  "name": "multiturn_probes_zh_v1",
+  "overlap_with_other_sets": {
+    "measured": "29 of 50 turn-1 prompts match configs/talker_texts_zh_v1.jsonl or configs/preference_prompts_zh_all.jsonl at difflib ratio > 0.8, 17 of them exactly",
+    "why_it_is_left_as_is": "nothing is trained on this set, so the contamination rule that applies to preference data does not apply here. The overlap is in fact a small control: turn 1 asks a question this project already has standalone answers to, so a difference at turn 1 is variance rather than history. If this set is ever repurposed for training, it must be rebuilt from scratch first."
+  },
+  "shape": "three turns; turns 2 and 3 use a pronoun, an ellipsis or a comparative with no referent outside the conversation, so a model ignoring history cannot answer them",
+  "size": 50
+}

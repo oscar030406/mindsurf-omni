@@ -1,0 +1,16 @@
+{
+  "chosen_median_chars": 99.0,
+  "decided": 1446,
+  "dropped_drafts": {
+    "looping": 10
+  },
+  "left": 752,
+  "pairs_judged": 1676,
+  "prompts": 838,
+  "rejected_median_chars": 108.0,
+  "right": 694,
+  "right_share_of_decided": 0.47994467496542187,
+  "seeds": 4,
+  "ties": 230,
+  "triples": 1446
+}

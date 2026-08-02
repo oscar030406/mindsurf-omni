@@ -1,0 +1,25 @@
+{
+  "blind": {
+    "noise": 0.08342314001435736,
+    "plain": 79,
+    "speech": 59,
+    "speech_share": 0.427536231884058,
+    "tie": 20
+  },
+  "honesty": {
+    "paired_discordant": {
+      "better": 1,
+      "worse": 8
+    },
+    "plain": {
+      "declines": 25,
+      "fabricates": 5,
+      "neither": 8
+    },
+    "speech": {
+      "declines": 10,
+      "fabricates": 16,
+      "neither": 12
+    }
+  }
+}

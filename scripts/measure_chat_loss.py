@@ -44,6 +44,12 @@ from mindsurf_omni.evaluation.metrics import compare_paired  # noqa: E402
 EFFECT_OF_INTEREST = 0.05
 
 
+# Measured, not assumed: edge-tts over the 160 fixed texts reads Chinese at
+# this rate (median of len(text) / audio_seconds, n=160, from
+# artifacts/tts_edge/manifest.json). Recompute it if the synthesiser changes.
+SPOKEN_CHARS_PER_SECOND = 4.67
+
+
 def repetition(text: str, window: int = 8) -> float:
     """Share of `window`-grams that have appeared before, 0 when the text is short.
 
@@ -143,12 +149,22 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
             }
         )
 
+    # Only the generation half takes it. Scoring compares likelihood against a
+    # reference set that was written without any system prompt, so prepending
+    # one there would change the conditioning on one side of a paired
+    # comparison and the difference would read as a model change.
+    system_prompt = (
+        args.system_prompt.read_text(encoding="utf-8").strip() if args.system_prompt else ""
+    )
+
     if args.generate:
         replies: list[dict[str, Any]] = []
         for probe in probes:
             # Generation needs only the prompt, so this loop covers every probe
             # including the ones the scoring loop above skipped.
             messages = [{"role": "user", "content": probe["prompt"]}]
+            if system_prompt:
+                messages.insert(0, {"role": "system", "content": system_prompt})
             torch.manual_seed(args.seed)
             text = ""
             import asyncio
@@ -170,15 +186,29 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
                     "empty": not text.strip(),
                 }
             )
+        lengths = sorted(int(r["chars"]) for r in replies)
         screen = {
             "empty": sum(1 for r in replies if r["empty"]),
             "looping": sum(1 for r in replies if r["repetition"] > 0.5),
-            "median_chars": statistics.median(int(r["chars"]) for r in replies),
+            "median_chars": statistics.median(lengths),
             "at_token_cap": sum(1 for r in replies if int(r["chars"]) >= args.max_tokens),
+            # Characters are the wrong unit for a product nobody can skim. A
+            # listener takes the reply at the synthesiser's pace, and 140
+            # characters is half a minute of talking -- which no chat metric
+            # here would have shown. The divisor is measured, not assumed:
+            # edge-tts over the 160 fixed texts reads 4.67 characters a second
+            # (artifacts/tts_edge/manifest.json). It is a rate for this
+            # synthesiser, so treat the seconds as an estimate that moves if
+            # the synthesiser does -- and remember characters only proxy
+            # duration, since syllable count and prosody both move it.
+            "median_spoken_seconds": statistics.median(lengths) / SPOKEN_CHARS_PER_SECOND,
+            "p90_spoken_seconds": lengths[int(0.9 * len(lengths))] / SPOKEN_CHARS_PER_SECOND,
         }
         print(
             f"  生成筛查: 空 {screen['empty']}  疑似循环 {screen['looping']}  "
             f"中位长度 {screen['median_chars']:.0f} 字"
+            f"（念出来约 {screen['median_spoken_seconds']:.0f} s，"
+            f"P90 {screen['p90_spoken_seconds']:.0f} s）"
         )
     else:
         replies, screen = [], {}
@@ -231,6 +261,12 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument("--max-tokens", type=int, default=512)
+    parser.add_argument(
+        "--system-prompt",
+        type=Path,
+        help="file whose text is prepended as a system turn, generation only. "
+        "The speech-friendly prompt is configs/system_prompt_speech_zh.txt",
+    )
     parser.add_argument("--seed", type=int, default=1000)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()

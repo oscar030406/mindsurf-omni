@@ -1,0 +1,53 @@
+{
+  "arms": {
+    "clean": {
+      "above_0_5": 0,
+      "cer": 0.010610830393917099,
+      "gating_eligible": true,
+      "median": 0.0072203107079553755,
+      "n": 160,
+      "noise_floor": 0.0025099588345988723
+    },
+    "snr0": {
+      "above_0_5": 4,
+      "cer": 0.1215457840347596,
+      "gating_eligible": false,
+      "median": 0.09294745935757481,
+      "n": 160,
+      "noise_floor": 0.02301791800402879
+    },
+    "snr10": {
+      "above_0_5": 0,
+      "cer": 0.01118648422769298,
+      "gating_eligible": true,
+      "median": 0.007272823442293451,
+      "n": 160,
+      "noise_floor": 0.0026476261428254157
+    },
+    "snr15": {
+      "above_0_5": 0,
+      "cer": 0.010694972832015088,
+      "gating_eligible": true,
+      "median": 0.00709362579866177,
+      "n": 160,
+      "noise_floor": 0.0026681127667894638
+    },
+    "snr20": {
+      "above_0_5": 0,
+      "cer": 0.011569417207558923,
+      "gating_eligible": true,
+      "median": 0.007246376811594203,
+      "n": 160,
+      "noise_floor": 0.0027193498541012526
+    },
+    "snr5": {
+      "above_0_5": 0,
+      "cer": 0.014352291711561294,
+      "gating_eligible": true,
+      "median": 0.008696309739866908,
+      "n": 160,
+      "noise_floor": 0.0030546087776713105
+    }
+  },
+  "noise": "synthetic babble (six overlaid excerpts of the same synthesiser)"
+}

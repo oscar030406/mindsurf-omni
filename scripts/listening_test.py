@@ -222,19 +222,32 @@ def score(args: argparse.Namespace) -> None:
     key_blob = json.loads((args.pack / "key.json").read_text(encoding="utf-8"))
     by_token = {entry["token"]: entry for entry in key_blob["entries"]}
 
+    # Sheets live one per rater folder, and the first column is that rater's
+    # play order rather than the clip's identity -- the clips are numbered so a
+    # rater can play them straight through instead of hunting a hash. The key
+    # holds the position-to-token map, per rater, because the three orders
+    # differ on purpose.
+    layout = key_blob.get("raters") or {}
     ratings: dict[str, list[tuple[int, float, bool, str]]] = {}
-    for rater, path in enumerate(sorted(args.pack.glob("rater*.csv")), start=1):
+    sheets = sorted(args.pack.glob("rater*/rater*.csv")) or sorted(args.pack.glob("rater*.csv"))
+    for path in sheets:
+        rater = path.stem.replace("rater", "")
+        positions = {row["position"]: row["token"] for row in layout.get(rater, [])}
         with path.open(encoding="utf-8-sig") as handle:
             for row in csv.DictReader(handle):
                 raw = (row.get("mos_1_to_5") or "").strip()
                 if not raw:
                     continue
-                token = row["token"].split("#")[0]
+                key_cell = (row.get("音频文件") or next(iter(row.values())) or "").strip()
+                position = key_cell.removesuffix(".wav")
+                token = positions.get(position, "") or position.split("#")[0]
                 if token not in by_token:
-                    raise SystemExit(f"{path.name}: token {token} is not in this pack's key")
+                    raise SystemExit(
+                        f"{path.name}: {key_cell} does not resolve to a clip in the key"
+                    )
                 defect = (row.get("defect") or "").strip() not in ("", "0")
                 ratings.setdefault(token, []).append(
-                    (rater, float(raw), defect, (row.get("note") or "").strip())
+                    (int(rater), float(raw), defect, (row.get("note") or "").strip())
                 )
     if not ratings:
         raise SystemExit(f"no filled sheets in {args.pack}; the mos_1_to_5 column is empty")
@@ -266,7 +279,7 @@ def score(args: argparse.Namespace) -> None:
         for token in key_blob["repeats"]
         for rater in {r for r, _, _, _ in ratings.get(token, [])}
         for a, b in [
-            tuple(v for r, v, _, _ in ratings[token] if r == rater)[:2]  # type: ignore[misc]
+            tuple(v for r, v, _, _ in ratings[token] if r == rater)[:2]
         ]
         if len([v for r, v, _, _ in ratings[token] if r == rater]) >= 2
     ]

@@ -27,7 +27,10 @@ OUT="${3:-$HOME/omni/emo_pack_eval/$SAVE/alpha$ALPHA}"
 TEXTS="${EMOTION_TEXTS:-configs/talker_texts_zh_v1.jsonl}"
 LIMIT="${EMOTION_LIMIT:-20}"
 SEED="${EMOTION_SEED:-20260725}"
-VOICES="dylan eric serena uncle_fu vivian arthur chelsie cherry ethan jennifer momo moon"
+# Twelve is the protocol. The override is for the positive control, which only
+# has to show the instrument can see identity being destroyed -- four voices do
+# that, and the other eight would be twenty-six minutes of card proving it again.
+VOICES="${EMOTION_VOICES:-dylan eric serena uncle_fu vivian arthur chelsie cherry ethan jennifer momo moon}"
 
 # Never beside training. Anchored on the interpreter and on an argument only a
 # real run carries -- a bare pgrep -f has produced a false positive here twice.

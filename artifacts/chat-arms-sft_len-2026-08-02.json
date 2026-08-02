@@ -1,0 +1,31 @@
+{
+  "authors": {
+    "ext": {
+      "candidate": "sft_len_768.pth",
+      "candidate_chat_nll": 3.8203306880295016,
+      "candidate_entropy": 2.5049180758579137,
+      "n": 158,
+      "reference": "sft_graft_frozen_768.pth",
+      "reference_chat_nll": 3.859594164623692,
+      "reference_entropy": 2.3762186963017387,
+      "verdict": "chat_nll[ext]: improved (-0.0392 against ±0.0114, paired n=158)"
+    },
+    "up": {
+      "candidate": "sft_len_768.pth",
+      "candidate_chat_nll": 1.5671835605065871,
+      "candidate_entropy": 1.6436638632835356,
+      "n": 158,
+      "reference": "sft_graft_frozen_768.pth",
+      "reference_chat_nll": 1.485453976668257,
+      "reference_entropy": 1.4846197040009752,
+      "verdict": "chat_nll[up]: regressed (+0.0479 against ±0.0356, paired n=158)"
+    }
+  },
+  "cross_reference_agreement": {
+    "agreement": 0.20253164556962025,
+    "gating_eligible": false,
+    "n": 158,
+    "noise": 0.07796461384922154,
+    "note": "the two reference sets do not agree per probe beyond chance; report both, let neither decide"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "identification_ceiling": {
+    "hits": 12,
+    "n": 12
+  },
+  "mean": 0.8425578226645788,
+  "mode": "ceiling",
+  "voices": [
+    {
+      "ceiling": 0.8419650197029114,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.19706350564956665,
+      "ceiling_nearest": "dylan",
+      "reference_seconds": 8.08,
+      "split": "seen",
+      "voice": "dylan"
+    },
+    {
+      "ceiling": 0.8328568935394287,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.30415910482406616,
+      "ceiling_nearest": "eric",
+      "reference_seconds": 6.08,
+      "split": "seen",
+      "voice": "eric"
+    },
+    {
+      "ceiling": 0.8975143432617188,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.12139385938644409,
+      "ceiling_nearest": "serena",
+      "reference_seconds": 6.72,
+      "split": "seen",
+      "voice": "serena"
+    },
+    {
+      "ceiling": 0.8947536945343018,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.17225569486618042,
+      "ceiling_nearest": "uncle_fu",
+      "reference_seconds": 7.44,
+      "split": "seen",
+      "voice": "uncle_fu"
+    },
+    {
+      "ceiling": 0.8215141892433167,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.17496556043624878,
+      "ceiling_nearest": "vivian",
+      "reference_seconds": 6.64,
+      "split": "seen",
+      "voice": "vivian"
+    },
+    {
+      "ceiling": 0.8983405828475952,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.17947328090667725,
+      "ceiling_nearest": "arthur",
+      "reference_seconds": 9.44,
+      "split": "unseen",
+      "voice": "arthur"
+    },
+    {
+      "ceiling": 0.8332411050796509,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.08520632982254028,
+      "ceiling_nearest": "chelsie",
+      "reference_seconds": 6.32,
+      "split": "unseen",
+      "voice": "chelsie"
+    },
+    {
+      "ceiling": 0.8310295343399048,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.062121033668518066,
+      "ceiling_nearest": "cherry",
+      "reference_seconds": 5.92,
+      "split": "unseen",
+      "voice": "cherry"
+    },
+    {
+      "ceiling": 0.8527353405952454,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.335227370262146,
+      "ceiling_nearest": "ethan",
+      "reference_seconds": 5.12,
+      "split": "unseen",
+      "voice": "ethan"
+    },
+    {
+      "ceiling": 0.8198506236076355,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.22225379943847656,
+      "ceiling_nearest": "jennifer",
+      "reference_seconds": 5.76,
+      "split": "unseen",
+      "voice": "jennifer"
+    },
+    {
+      "ceiling": 0.7947089076042175,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.15635979175567627,
+      "ceiling_nearest": "momo",
+      "reference_seconds": 6.32,
+      "split": "unseen",
+      "voice": "momo"
+    },
+    {
+      "ceiling": 0.7921836376190186,
+      "ceiling_hit": true,
+      "ceiling_margin": 0.1213790774345398,
+      "ceiling_nearest": "moon",
+      "reference_seconds": 7.28,
+      "split": "unseen",
+      "voice": "moon"
+    }
+  ]
+}

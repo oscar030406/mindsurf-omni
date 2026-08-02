@@ -6,6 +6,7 @@ import array
 import struct
 
 from mindsurf_omni.service.audio import (
+    clipping_ratio,
     peak_normalise,
     resample,
     to_wav,
@@ -123,6 +124,42 @@ def test_a_margin_is_kept_so_the_first_syllable_is_not_clipped() -> None:
 def test_an_entirely_silent_clip_trims_to_nothing_not_to_itself() -> None:
     """Returning it unchanged would play dead air the model never meant to emit."""
     assert trim_silence(pcm([0] * 4800)) == b""
+
+
+def test_the_negative_rail_counts_as_clipped_too() -> None:
+    """int16 runs to -32768 and only +32767, so a symmetric test has to reach
+    the deeper side; missing it would report a fully rectified fault as clean."""
+    ratio, longest = clipping_ratio(pcm([-32768] * 4 + [0] * 6))
+
+    assert ratio == 0.4
+    assert longest == 4
+
+
+def test_the_longest_run_is_reported_not_the_last_one() -> None:
+    """A single long square edge is the audible pop; scattered single samples
+    at the rail are ordinary plosives. The two must not read the same."""
+    scattered = pcm([32767, 0, 32767, 0, 32767, 0])
+    edge = pcm([32767, 32767, 32767, 0, 0, 0])
+
+    assert clipping_ratio(scattered) == (0.5, 1)
+    assert clipping_ratio(edge) == (0.5, 3)
+
+
+def test_normalising_first_hides_the_clipping_this_is_meant_to_find() -> None:
+    """The reason the measurement has to run before peak_normalise: the scale
+    factor moves every sample off the rail while leaving the square edge."""
+    clipped = pcm([32767] * 8 + [100] * 8)
+
+    assert clipping_ratio(clipped)[0] > 0
+    assert clipping_ratio(peak_normalise(clipped))[0] == 0.0
+
+
+def test_ordinary_speech_levels_are_not_flagged() -> None:
+    assert clipping_ratio(pcm([12000, -9000, 3000, 0])) == (0.0, 0)
+
+
+def test_an_empty_clip_reports_nothing_rather_than_dividing_by_zero() -> None:
+    assert clipping_ratio(b"") == (0.0, 0)
 
 
 def test_audio_with_no_silence_survives_intact() -> None:

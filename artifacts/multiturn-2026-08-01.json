@@ -1,0 +1,50 @@
+{
+  "by_turn": {
+    "1": {
+      "empty": 0,
+      "looping": 0,
+      "median_chars": 150.5,
+      "median_spoken_seconds": 32.226980728051394,
+      "n": 50
+    },
+    "2": {
+      "empty": 0,
+      "looping": 0,
+      "median_chars": 115.5,
+      "median_spoken_seconds": 24.73233404710921,
+      "n": 50
+    },
+    "3": {
+      "empty": 0,
+      "looping": 0,
+      "median_chars": 97.0,
+      "median_spoken_seconds": 20.77087794432548,
+      "n": 50
+    }
+  },
+  "caveat": "turn 1 was not judged on the answers axis, so the 24%/14% cannot be read as a drop from turn 1 -- turns 2 and 3 ask deliberately elliptical follow-ups and are harder by construction",
+  "checkpoint": "sft_graft_frozen_768.pth",
+  "judged": {
+    "t2": {
+      "binomial_noise": 0.13859292911256332,
+      "contradicts": 1,
+      "ignores": 8,
+      "n": 50,
+      "usable_answer": 12,
+      "usable_rate": 0.24,
+      "uses_history": 41,
+      "uses_history_rate": 0.82
+    },
+    "t3": {
+      "binomial_noise": 0.13859292911256332,
+      "contradicts": 1,
+      "ignores": 8,
+      "n": 50,
+      "usable_answer": 7,
+      "usable_rate": 0.14,
+      "uses_history": 41,
+      "uses_history_rate": 0.82
+    }
+  },
+  "probes": "configs/multiturn_probes_zh_v1.jsonl"
+}

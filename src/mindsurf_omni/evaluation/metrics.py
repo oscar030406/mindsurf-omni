@@ -18,6 +18,7 @@ from __future__ import annotations
 import math
 import unicodedata
 from dataclasses import dataclass
+from typing import Any
 
 
 def fold_numerals(text: str) -> str:
@@ -164,6 +165,40 @@ def bootstrap_noise_floor(
     return (high - low) / 2
 
 
+def cluster_bootstrap_noise_floor(
+    groups: list[list[float]], resamples: int = 1000, seed: int = 0, confidence: float = 0.95
+) -> float:
+    """Half-width for a mean whose samples are not independent, by resampling groups.
+
+    Resampling individual rows assumes each row carries its own information.
+    When rows cluster -- twenty clips of one voice that are almost all correct
+    or almost all wrong together -- that assumption inflates the effective
+    sample size and shrinks the floor to a number the data does not support.
+    The unit that varies is the voice, so the voice is what gets resampled.
+
+    This is the difference between "240 clips" and "12 voices", and on the
+    identification measurement it is an order of magnitude: see section 16.7 of
+    docs/experiments/2026-07-30-emotion-harvest-gate.md, where a per-row floor
+    of +/-0.1750 was already too wide to gate and the honest one is wider still.
+    """
+    populated = [group for group in groups if group]
+    if len(populated) < 2:
+        return float("inf")
+    import random
+
+    rng = random.Random(seed)
+    means = []
+    for _ in range(resamples):
+        drawn = [populated[rng.randrange(len(populated))] for _ in range(len(populated))]
+        rows = [value for group in drawn for value in group]
+        means.append(sum(rows) / len(rows))
+    means.sort()
+    tail = (1.0 - confidence) / 2
+    low = means[int(tail * resamples)]
+    high = means[min(int((1 - tail) * resamples), resamples - 1)]
+    return (high - low) / 2
+
+
 def resolvable_effect(noise_floor: float, tolerance_multiple: float = 3.0) -> float:
     """The smallest difference this instrument may claim a direction for."""
     return noise_floor * tolerance_multiple
@@ -239,6 +274,42 @@ def compare_paired(
     return f"{name}: {verdict} ({difference:+.4f} against ±{threshold:.4f}, paired n={len(deltas)})"
 
 
+def compare_paired_clustered(
+    name: str,
+    groups: dict[str, list[float]] | list[list[float]],
+    lower_is_better: bool = True,
+    seed: int = 0,
+) -> str:
+    """``compare_paired`` where the pairs are not independent of each other.
+
+    Same three verdicts, same threshold rule, but the floor comes from
+    resampling groups rather than rows. Use it whenever one label produces many
+    rows that move together -- twenty clips of a voice, several turns of one
+    conversation -- because the per-row floor there is an artefact of counting
+    correlated rows as independent evidence.
+
+    This is not a stricter version of ``compare_paired`` for the cautious. It
+    is the correct one for clustered data, and the difference is large enough
+    to change verdicts: the voice-identification margin reads ``improved``
+    against a per-row threshold and ``indistinguishable`` against this one.
+    """
+    values = list(groups.values()) if isinstance(groups, dict) else groups
+    populated = [group for group in values if group]
+    rows = [value for group in populated for value in group]
+    if len(populated) < 2:
+        return f"{name}: reported only (only {len(populated)} clusters)"
+
+    difference = sum(rows) / len(rows)
+    threshold = resolvable_effect(cluster_bootstrap_noise_floor(populated, seed=seed))
+
+    tail = f"paired n={len(rows)} in {len(populated)} clusters"
+    if abs(difference) <= threshold:
+        return f"{name}: indistinguishable ({difference:+.4f}, within ±{threshold:.4f}, {tail})"
+    improved = difference < 0 if lower_is_better else difference > 0
+    verdict = "improved" if improved else "regressed"
+    return f"{name}: {verdict} ({difference:+.4f} against ±{threshold:.4f}, {tail})"
+
+
 def compare(
     name: str, candidate: Measurement, reference: Measurement, lower_is_better: bool = True
 ) -> str:
@@ -259,3 +330,49 @@ def compare(
     improved = difference < 0 if lower_is_better else difference > 0
     verdict = "improved" if improved else "regressed"
     return f"{name}: {verdict} ({difference:+.4f} against ±{threshold:.4f})"
+
+
+def cross_reference_agreement(
+    first: list[float], second: list[float], confidence: float = 1.96
+) -> dict[str, Any]:
+    """Do two reference sets rank the same probes the same way?
+
+    `chat_nll` scores how likely a checkpoint finds one author's replies, and
+    this project runs it against two neutral authors so that neither one's style
+    decides the verdict. That guard only works if the two agree about individual
+    probes -- and nobody checked until an intervention came along that made them
+    disagree outright.
+
+    The length-tuned DPO arm reads `regressed` on one author and `improved` on
+    the other, and per probe the two deltas agree in sign only 20% of the time,
+    which is worse than a coin. The mechanism is that the metric is sensitive to
+    the reference's own length (r = +0.62 within one author), so any change to
+    how long the model's replies are moves the score in whichever direction that
+    particular reference happens to sit. Even the round where the two authors
+    agreed on the aggregate agreed on only 59% of probes.
+
+    So this is the eligibility check the metric was missing: agreement must beat
+    chance by more than sampling noise before either author's verdict may gate.
+    Below that, both numbers are reported and neither decides -- the same rule
+    `assess` applies to resolution, one axis over.
+    """
+    paired = list(zip(first, second, strict=True))
+    if len(paired) < 2:
+        return {"n": len(paired), "agreement": None, "gating_eligible": False}
+
+    agree = sum(1 for a, b in paired if (a > 0) == (b > 0))
+    share = agree / len(paired)
+    noise = confidence * math.sqrt(0.25 / len(paired))
+    eligible = share - 0.5 > noise
+    return {
+        "n": len(paired),
+        "agreement": share,
+        "noise": noise,
+        "gating_eligible": eligible,
+        "note": (
+            "the two reference sets rank probes alike often enough to gate"
+            if eligible
+            else "the two reference sets do not agree per probe beyond chance; "
+            "report both, let neither decide"
+        ),
+    }

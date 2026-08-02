@@ -1,0 +1,67 @@
+{
+  "audio_seconds_median": 11.28,
+  "corpus_rows": 414024,
+  "emotional_fraction": 0.316,
+  "f0_median_by_label": {
+    "<unk>": {
+      "f0": 204.3408425554765,
+      "n": 2
+    },
+    "中立/neutral": {
+      "f0": 190.44152564409345,
+      "n": 681
+    },
+    "其他/other": {
+      "f0": 167.29254514576633,
+      "n": 1
+    },
+    "厌恶/disgusted": {
+      "f0": 181.81300417832725,
+      "n": 3
+    },
+    "吃惊/surprised": {
+      "f0": 196.42820690104816,
+      "n": 63
+    },
+    "开心/happy": {
+      "f0": 216.53197055948786,
+      "n": 137
+    },
+    "恐惧/fearful": {
+      "f0": 236.35505374887006,
+      "n": 3
+    },
+    "生气/angry": {
+      "f0": 186.16561438328083,
+      "n": 72
+    },
+    "难过/sad": {
+      "f0": 206.8815732813614,
+      "n": 38
+    }
+  },
+  "full_pass_hours": 6.183011057962241,
+  "gate": {
+    "verdict": "pass",
+    "written_before_the_run": "emotional_fraction below 0.10 kills the route"
+  },
+  "labels": {
+    "<unk>": 2,
+    "中立/neutral": 681,
+    "其他/other": 1,
+    "厌恶/disgusted": 3,
+    "吃惊/surprised": 63,
+    "开心/happy": 137,
+    "恐惧/fearful": 3,
+    "生气/angry": 72,
+    "难过/sad": 38
+  },
+  "neutral_fraction": 0.681,
+  "sampled": 1000,
+  "seconds_per_clip": {
+    "decode": 0.017535121828434058,
+    "label": 0.036227075069968126,
+    "total": 0.053762196898402184
+  },
+  "unusable_fraction": 0.003
+}

@@ -1,0 +1,33 @@
+{
+  "author": "this project (hand-written for the second DPO round)",
+  "combined_file": "configs/preference_prompts_zh_all.jsonl",
+  "combined_size": 838,
+  "deduplication": {
+    "against": [
+      "configs/preference_prompts_zh_v1.jsonl",
+      "configs/talker_texts_zh_v1.jsonl"
+    ],
+    "exact_collisions": 0,
+    "max_similarity_after_fix": 0.783,
+    "method": "exact match plus difflib SequenceMatcher over characters, threshold 0.72 reviewed by hand",
+    "removed": "one prompt at 0.875 against the evaluation probe 怎么给植物换盆 was rewritten"
+  },
+  "name": "preference_prompts_zh_v2",
+  "size": 540,
+  "themes": [
+    "人际与家常沟通",
+    "养宠与花草",
+    "出行与交通",
+    "季节与生活应对",
+    "安全与应急",
+    "情绪与状态",
+    "文娱与创作",
+    "消费与办事",
+    "生活法律与办事常识",
+    "算术与逻辑",
+    "育儿与教育",
+    "语言文字"
+  ],
+  "why_new_themes": "the v1 set covers home/cooking/health/science/geography/study/digital/realtime. These twelve were chosen to miss both v1 and the 160 fixed evaluation probes, and three of them (safety, law, emotion) deliberately probe the failure shapes the first round observed: refusal boilerplate, dangerous advice, and fabrication.",
+  "written_for": "DPO preference sampling; never for evaluation"
+}

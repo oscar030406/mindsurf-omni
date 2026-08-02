@@ -121,6 +121,51 @@ def peak_normalise(pcm: bytes, target_peak: float = 0.95) -> bytes:
     return array.array("h", [int(sample * gain) for sample in samples]).tobytes()
 
 
+# Full scale is 32767 positive and -32768 negative, so a symmetric test has to
+# sit below the smaller of the two. Eight counts of headroom is under a
+# thousandth of a decibel -- a sample this close to the rail was either clipped
+# or was going to be.
+CLIPPED_AMPLITUDE = 32_760
+
+
+def clipping_ratio(pcm: bytes, threshold: int = CLIPPED_AMPLITUDE) -> tuple[float, int]:
+    """How much of a clip is pinned at the rail, and the longest stretch of it.
+
+    Two numbers rather than one because they describe different faults. A high
+    ratio spread thinly is a clip that was mastered too hot and will sound
+    harsh; a single long run is a decoder that produced a square edge, which is
+    the audible pop. One sample at full scale is neither -- speech legitimately
+    touches the rail on a plosive -- so the run length is what a threshold
+    should eventually be set on, and this returns both rather than deciding.
+
+    Measure before ``peak_normalise``. Normalisation scales the peak down to
+    0.95 of full scale, so every clipped sample stops looking clipped while the
+    square edge it left in the waveform stays exactly where it was.
+
+    Deliberately not a verdict. The threshold that separates "a plosive" from
+    "a fault" is not knowable from first principles here; it comes from the
+    distribution over clips we already have. See section 2.4 of the group OKR
+    for where the requirement comes from, and scripts/measure_clipping.py for
+    the measurement that is meant to set the line.
+    """
+    samples = array.array("h")
+    samples.frombytes(pcm[: len(pcm) // 2 * 2])
+    if not samples:
+        return 0.0, 0
+
+    pinned = 0
+    longest = 0
+    run = 0
+    for sample in samples:
+        if abs(sample) >= threshold:
+            pinned += 1
+            run += 1
+            longest = max(longest, run)
+        else:
+            run = 0
+    return pinned / len(samples), longest
+
+
 def trim_silence(
     pcm: bytes, threshold: float = 0.01, keep_ms: int = 50, rate: int = 24_000
 ) -> bytes:
