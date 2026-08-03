@@ -1,0 +1,13 @@
+{
+  "n": 608,
+  "collapsed_rate": 0.1924342105263158,
+  "intact_rate": 0.27960526315789475,
+  "verdict": "answerable_rate[intact vs collapsed]: indistinguishable (+0.0872, within ±0.1061, paired n=608) —— 仅报告：只分辨得了 0.1061，而关心的是 0.0500，读不出这么小的劣化",
+  "judge": {
+    "model": "deepseek-ai/DeepSeek-V3.2",
+    "endpoint": "https://api.siliconflow.cn/v1",
+    "prompt_sha256": "8031f57fbb09e7195aa6ee6845c14b81f4590052438c4ab11e310a1b2fe64d35",
+    "seed": 20260803,
+    "votes": 3
+  }
+}
