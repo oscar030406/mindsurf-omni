@@ -55,7 +55,9 @@ class Judge:
     it arguing toward whichever label it mentioned first.
     """
 
-    def __init__(self, credentials: Path | None = None, workers: int = 8) -> None:
+    def __init__(
+        self, credentials: Path | None = None, workers: int = 8, model: str | None = None
+    ) -> None:
         settings = load_credentials(credentials)
         if not settings.get("api_key"):
             raise SystemExit(
@@ -64,7 +66,10 @@ class Judge:
             )
         self.key = settings["api_key"]
         self.base_url = settings.get("base_url") or DEFAULT_BASE_URL
-        self.model = settings.get("model") or DEFAULT_MODEL
+        # An override exists so one task can use a different model from another
+        # against the same endpoint. Writing evaluation probes and judging
+        # replies should not be the same model where it can be avoided.
+        self.model = model or settings.get("model") or DEFAULT_MODEL
         self.workers = workers
 
     def provenance(self, prompt_template: str, **extra: Any) -> dict[str, Any]:
