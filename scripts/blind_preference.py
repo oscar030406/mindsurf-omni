@@ -151,6 +151,44 @@ def tally(pairs: list[dict[str, Any]], second_arm: str) -> dict[str, Any]:
         return {"n": len(pairs), "tie": ties, "verdict": "全部平局，判不了"}
     share = second_wins / len(decided)
     noise = 1.96 * math.sqrt(0.25 / len(decided))
+
+    # A side preference and a distorted estimate are different things, and the
+    # first version of this conflated them. Reporting only the share of wins
+    # landing on the right flags a property of the judge -- real, worth knowing
+    # -- but says nothing about whether the headline number is contaminated,
+    # because sides are assigned by a seeded coin. Randomisation cancels a side
+    # bias out of the pooled estimate to the extent the seats came out even.
+    #
+    # So both are reported. ``side_bias`` is how much the judge favours the left
+    # seat, estimated from the two seatings; ``residual_bias`` is what actually
+    # leaks into the share, which is the side bias times the seat imbalance.
+    # Measured once at 608 probes: a side bias of +0.0726 with seats at 0.4775
+    # left moved the estimate by -0.0033, three tenths of a point, while the
+    # share-of-right test read as a failure. Gate on the residual.
+    left = [p for p in decided if p["second_side"] == "left"]
+    right = [p for p in decided if p["second_side"] == "right"]
+    if left and right:
+        won_left = sum(1 for p in left if p["winner"] == "left") / len(left)
+        won_right = sum(1 for p in right if p["winner"] == "right") / len(right)
+        side_bias = (won_left - won_right) / 2
+        left_share = len(left) / len(decided)
+        residual = side_bias * (2 * left_share - 1)
+        seating = {
+            "side_bias": side_bias,
+            "left_seat_share": left_share,
+            "residual_bias": residual,
+            "seat_balanced_share": (won_left + won_right) / 2,
+        }
+    else:
+        # Every pair on one seat: the coin cannot cancel what it never varied,
+        # so the share carries the whole side bias and none of it is estimable.
+        seating = {
+            "side_bias": None,
+            "left_seat_share": 1.0 if left else 0.0,
+            "residual_bias": None,
+            "seat_balanced_share": None,
+            "note": "所有对都在同一边，位置偏好无法与胜率分开",
+        }
     return {
         "n_pairs": len(pairs),
         "tie": ties,
@@ -158,9 +196,9 @@ def tally(pairs: list[dict[str, Any]], second_arm: str) -> dict[str, Any]:
         f"{second_arm}_wins": second_wins,
         f"{second_arm}_share": share,
         "noise": noise,
-        # A judge that prefers whichever reply sits second is a side preference,
-        # not a preference between the arms. Near 0.5 is what a clean run looks like.
+        # Kept because it is the raw observation, but it is not the gate.
         "position_right_share": right_wins / len(decided),
+        "seating": seating,
         "verdict": "赢" if share - 0.5 > noise else ("输" if 0.5 - share > noise else "未胜出"),
     }
 
@@ -227,6 +265,15 @@ def main() -> int:
     if args.pairs:
         args.pairs.write_text(json.dumps(pairs, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    seat = summary.get("seating", {})
+    if seat.get("residual_bias") is not None:
+        print(
+            f"  座位: 左偏 {seat['side_bias']:+.4f}，左座占比 {seat['left_seat_share']:.4f}"
+            f" -> 残余偏倚 {seat['residual_bias']:+.5f}"
+            f"（座位平衡估计 {seat['seat_balanced_share']:.4f}）"
+        )
+    elif seat:
+        print(f"  座位: {seat.get('note', '无法估计')}")
     for field in ("n_pairs", "tie", "n_decided", "position_right_share", "noise", "verdict"):
         if field in summary:
             print(f"  {field}: {summary[field]}")

@@ -56,3 +56,40 @@ def test_a_win_has_to_clear_the_noise_floor() -> None:
     result = tally(pairs, "cand")
     assert result["cand_share"] == 0.6
     assert result["verdict"] == "未胜出"
+
+
+def test_a_side_preference_that_randomisation_cancels_is_not_a_contaminated_estimate() -> None:
+    """The first rule flagged the judge; the estimate it protects was fine.
+
+    A judge that always picks left, with seats exactly even, leaves a pooled
+    share of 0.5 -- no leak at all -- while share-of-right reads 0.0.
+    """
+    pairs = [{"winner": "left", "second_side": s} for s in ("left", "right") * 50]
+    result = tally(pairs, "cand")
+
+    assert result["position_right_share"] == 0.0
+    assert result["seating"]["side_bias"] == 0.5
+    assert result["seating"]["residual_bias"] == 0.0
+    assert result["cand_share"] == 0.5
+
+
+def test_the_leak_is_the_side_bias_times_the_seat_imbalance() -> None:
+    """Uneven seats are what turn a judge's preference into a wrong number."""
+    pairs = [{"winner": "left", "second_side": "left"} for _ in range(75)]
+    pairs += [{"winner": "left", "second_side": "right"} for _ in range(25)]
+    seat = tally(pairs, "cand")["seating"]
+
+    # Always-left judge, 75% of candidates seated left: the share is inflated
+    # by the whole imbalance rather than by nothing.
+    assert seat["side_bias"] == 0.5
+    assert seat["left_seat_share"] == 0.75
+    assert round(seat["residual_bias"], 4) == 0.25
+    assert seat["seat_balanced_share"] == 0.5
+
+
+def test_one_sided_seating_reports_that_it_cannot_be_estimated() -> None:
+    """A coin that never varied cannot cancel anything, and says so."""
+    seat = tally([{"winner": "left", "second_side": "left"} for _ in range(20)], "cand")["seating"]
+
+    assert seat["side_bias"] is None
+    assert "无法" in seat["note"]
