@@ -10,7 +10,9 @@ arrives.
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import contextlib
 import json
 import time
 import uuid
@@ -291,9 +293,17 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
 
         conversation = Conversation()
 
+        # An event heard while a response was streaming but not consumed there.
+        # Cancelling the listener races its completion, and a message that
+        # arrived in that gap must be handled, not dropped.
+        pending: dict[str, Any] | None = None
+
         try:
             while True:
-                event = await websocket.receive_json()
+                if pending is not None:
+                    event, pending = pending, None
+                else:
+                    event = await websocket.receive_json()
                 kind = event.get("type")
 
                 if kind == "input_audio_buffer.append":
@@ -309,9 +319,10 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                         {"type": "session.created", "context": conversation.summary()}
                     )
                 elif kind == "response.cancel":
-                    # Barge-in. Generation is driven from this loop, so there is
-                    # nothing running to interrupt between events; the buffer is
-                    # dropped so the cancelled turn cannot leak into the next.
+                    # Cancel with no response streaming: a turn that never
+                    # started. The buffer is dropped so it cannot leak into the
+                    # next turn. (Cancel DURING streaming is handled inside the
+                    # commit branch, and keeps the buffer -- see there for why.)
                     buffer.clear()
                     await websocket.send_json({"type": "response.done", "cancelled": True})
                 elif kind == "input_audio_buffer.commit":
@@ -322,31 +333,115 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                         continue
                     await websocket.send_json({"type": "response.created"})
                     spoken_seconds = len(buffer) / 2 / INPUT_SAMPLE_RATE
-                    reply = ""
-                    async for chunk in engine.respond(bytes(buffer), INPUT_SAMPLE_RATE, settings):
-                        if chunk.text:
-                            reply += chunk.text
-                            await websocket.send_json(
-                                {"type": "response.text.delta", "delta": chunk.text}
-                            )
-                        # Split rather than sent whole: a clause of speech can
-                        # exceed the peer's frame limit, and the peer's answer
-                        # to that is to close the connection, which the caller
-                        # sees as the reply stopping rather than as a fault.
-                        for frame in frames(chunk.pcm):
+                    turn_pcm = bytes(buffer)
+                    # Cleared before streaming, not after: anything appended
+                    # while the reply is playing is the user's interjection,
+                    # and it belongs to the next turn rather than to this one.
+                    buffer.clear()
+                    parts: list[str] = []
+
+                    async def stream(pcm: bytes, texts: list[str]) -> None:
+                        async for chunk in engine.respond(pcm, INPUT_SAMPLE_RATE, settings):
+                            if chunk.text:
+                                texts.append(chunk.text)
+                                await websocket.send_json(
+                                    {"type": "response.text.delta", "delta": chunk.text}
+                                )
+                            # Split rather than sent whole: a clause of speech
+                            # can exceed the peer's frame limit, and the peer's
+                            # answer to that is to close the connection, which
+                            # the caller sees as the reply stopping rather than
+                            # as a fault.
+                            for frame in frames(chunk.pcm):
+                                await websocket.send_json(
+                                    {
+                                        "type": "response.audio.delta",
+                                        "audio": base64.b64encode(frame).decode("ascii"),
+                                    }
+                                )
+
+                    # Generation runs as a task so this loop can keep hearing
+                    # the socket. The previous version drove the async-for
+                    # right here, which meant a response.cancel sent mid-reply
+                    # sat unread until the whole turn had streamed -- barge-in
+                    # could only cancel turns that had not started. Cancelling
+                    # the task abandons the generator, and the engine's
+                    # producer watches for exactly that (the leak fix), so the
+                    # GPU stops with it.
+                    speaking = asyncio.create_task(stream(turn_pcm, parts))
+                    cancelled = False
+                    while not speaking.done():
+                        listener = asyncio.create_task(websocket.receive_json())
+                        await asyncio.wait(
+                            {speaking, listener}, return_when=asyncio.FIRST_COMPLETED
+                        )
+                        if not listener.done():
+                            listener.cancel()
+                            try:
+                                pending = await listener
+                            except asyncio.CancelledError:
+                                pass
+                            except WebSocketDisconnect:
+                                # Completed with a disconnect in the race gap.
+                                speaking.cancel()
+                                with contextlib.suppress(asyncio.CancelledError):
+                                    await speaking
+                                raise
+                            continue
+                        try:
+                            heard = listener.result()
+                        except WebSocketDisconnect:
+                            speaking.cancel()
+                            with contextlib.suppress(asyncio.CancelledError):
+                                await speaking
+                            raise
+                        told = heard.get("type")
+                        if told == "response.cancel":
+                            # Barge-in. The buffer is KEPT, unlike the idle
+                            # cancel above: audio appended during the reply is
+                            # the interjection that caused this cancel, and
+                            # dropping it would eat the user's next words.
+                            speaking.cancel()
+                            with contextlib.suppress(asyncio.CancelledError):
+                                await speaking
+                            cancelled = True
+                        elif told == "input_audio_buffer.append":
+                            buffer.extend(base64.b64decode(heard.get("audio", "")))
+                        elif told == "input_audio_buffer.clear":
+                            buffer.clear()
+                        else:
                             await websocket.send_json(
                                 {
-                                    "type": "response.audio.delta",
-                                    "audio": base64.b64encode(frame).decode("ascii"),
+                                    "type": "error",
+                                    "error": {
+                                        "message": "a response is streaming; only "
+                                        "response.cancel and buffer events are "
+                                        f"accepted now, not {told!r}"
+                                    },
                                 }
                             )
-                    buffer.clear()
+                    if not cancelled and (failure := speaking.exception()) is not None:
+                        raise failure
+
+                    reply = "".join(parts)
                     conversation.append(Turn(role="user", text="", audio_seconds=spoken_seconds))
+                    # The partial reply enters history as what was actually
+                    # said: the model spoke those words before it was cut off,
+                    # and the next turn's context should not pretend otherwise.
                     conversation.append(Turn(role="assistant", text=reply))
-                    await websocket.send_json({"type": "response.audio.done"})
-                    await websocket.send_json(
-                        {"type": "response.done", "context": conversation.summary()}
-                    )
+                    if cancelled:
+                        await websocket.send_json(
+                            {
+                                "type": "response.done",
+                                "cancelled": True,
+                                "context": conversation.summary(),
+                            }
+                        )
+                    else:
+                        await websocket.send_json({"type": "response.audio.done"})
+                        await websocket.send_json(
+                            {"type": "response.done", "context": conversation.summary()}
+                        )
                 else:
                     # Answered rather than ignored: a silent no-op leaves the
                     # client waiting for a reply that will never come.

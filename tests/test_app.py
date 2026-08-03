@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import struct
 from collections.abc import AsyncIterator
@@ -413,3 +414,99 @@ def test_an_engine_that_cannot_speak_arbitrary_text_answers_503() -> None:
 
     assert response.status_code == 503
     assert "text-to-speech" in response.json()["detail"]
+
+
+class SlowEngine(FakeEngine):
+    """Streams for a long time unless abandoned, and records the abandonment.
+
+    The waits are real but only run to completion when nobody cancels; a
+    cancelled turn abandons the generator at the first await, so the test's
+    duration does not depend on them.
+    """
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def respond(  # type: ignore[override]
+        self, pcm: bytes, sample_rate: int, settings: GenerationSettings
+    ) -> AsyncIterator[SpeechChunk]:
+        try:
+            for index in range(50):
+                yield SpeechChunk(pcm=b"\x00\x01" * 8, text=f"第{index}句。", is_final=False)
+                await asyncio.sleep(0.05)
+        finally:
+            # What the leak fix watches for: the consumer leaving must reach
+            # the producer. In the real engine this stops the GPU.
+            self.closed = True
+
+
+def test_cancel_lands_mid_stream_not_after_the_turn() -> None:
+    """The old loop drove generation inline, so cancel waited out the whole turn."""
+    engine = SlowEngine()
+    with TestClient(create_app(engine)).websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        assert socket.receive_json()["type"] == "response.created"
+        # One delta proves streaming started; fifty more would prove it ended.
+        first = socket.receive_json()
+        assert first["type"] in ("response.text.delta", "response.audio.delta")
+
+        socket.send_json({"type": "response.cancel"})
+        while True:
+            event = socket.receive_json()
+            if event["type"] == "response.done":
+                break
+        assert event["cancelled"] is True
+        # 沒有 audio.done：被打断的回合没有说完，装作说完就是谎报。
+        assert engine.closed, "取消没有传到引擎——真机上这就是 GPU 泄漏"
+
+
+def test_barge_in_audio_appended_during_the_reply_survives_the_cancel() -> None:
+    """The interjection that caused the cancel must not be eaten by it."""
+    engine = SlowEngine()
+    with TestClient(create_app(engine)).websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        assert socket.receive_json()["type"] == "response.created"
+        socket.receive_json()
+
+        # The user starts talking over the reply, then the client cancels.
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x01" * 8).decode()}
+        )
+        socket.send_json({"type": "response.cancel"})
+        while True:
+            event = socket.receive_json()
+            if event["type"] == "response.done":
+                break
+        assert event["cancelled"] is True
+
+        # Committing now must answer from the interjection, not error on an
+        # empty buffer -- which is what the idle-cancel semantics would give.
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        assert socket.receive_json()["type"] == "response.created"
+
+
+def test_the_partial_reply_enters_history_as_what_was_said() -> None:
+    engine = SlowEngine()
+    with TestClient(create_app(engine)).websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        socket.receive_json()
+        socket.receive_json()
+        socket.send_json({"type": "response.cancel"})
+        while True:
+            event = socket.receive_json()
+            if event["type"] == "response.done":
+                break
+
+    assert event["context"]["turns"] >= 2
