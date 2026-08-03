@@ -57,6 +57,29 @@ PROMPT = """你在做一次盲评。下面是同一个问题的两个回答，�
 只回一个词：A、B 或 平局。"""
 
 
+def load_credentials(path: Path) -> dict[str, str]:
+    """The local file first, then the environment.
+
+    A key belongs in neither the source nor a global environment variable: the
+    source is tracked and the gate rejects it on the way out, and a machine-wide
+    variable hands it to every process on the box. A file next to the project
+    that .gitignore already excludes is the narrow option -- one place to paste
+    it, one place to delete it, and it cannot be committed by accident.
+    """
+    settings: dict[str, str] = {}
+    if path.exists():
+        blob = json.loads(path.read_text(encoding="utf-8"))
+        settings = {k: v for k, v in blob.items() if isinstance(v, str) and v.strip()}
+    for field, variable in (
+        ("api_key", "JUDGE_API_KEY"),
+        ("base_url", "JUDGE_BASE_URL"),
+        ("model", "JUDGE_MODEL"),
+    ):
+        settings.setdefault(field, os.environ.get(variable, ""))
+    placeholder = settings.get("api_key", "").startswith("<")
+    return {k: v for k, v in settings.items() if v and not (k == "api_key" and placeholder)}
+
+
 def load_replies(path: Path) -> dict[str, dict[str, Any]]:
     blob = json.loads(path.read_text(encoding="utf-8"))
     replies = blob.get("replies")
@@ -145,6 +168,7 @@ def main() -> int:
     parser.add_argument("--arm", action="append", required=True, metavar="LABEL=PATH")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pairs", type=Path, help="write every judged pair here too")
+    parser.add_argument("--credentials", type=Path, default=Path("configs/judge.local.json"))
     parser.add_argument("--seed", type=int, default=20260803)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--limit", type=int, help="first N pairs, for a smoke run")
@@ -152,13 +176,15 @@ def main() -> int:
 
     if len(args.arm) != 2:
         raise SystemExit("要正好两个 --arm")
-    key = os.environ.get("JUDGE_API_KEY")
+    settings = load_credentials(args.credentials)
+    key = settings.get("api_key")
     if not key:
         raise SystemExit(
-            "没有 JUDGE_API_KEY。在你自己的 shell 里设它，脚本从环境读，不写进任何文件。"
+            f"没有判官凭据。把 key 填进 {args.credentials} 的 api_key 字段"
+            "（.gitignore 已经挡住那个文件），或者设 JUDGE_API_KEY 环境变量。"
         )
-    base = os.environ.get("JUDGE_BASE_URL", "https://api.deepseek.com/v1")
-    model = os.environ.get("JUDGE_MODEL", "deepseek-chat")
+    base = settings.get("base_url") or "https://api.deepseek.com/v1"
+    model = settings.get("model") or "deepseek-chat"
 
     arms = []
     for spec in args.arm:

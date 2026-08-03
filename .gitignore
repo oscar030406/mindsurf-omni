@@ -67,3 +67,6 @@ coverage.xml
 .vscode/
 .DS_Store
 Thumbs.db
+
+# 判官凭据。本地一份，永不入库——密钥不进源码，也不该进全局环境变量。
+configs/judge.local.json
