@@ -36,6 +36,7 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
@@ -168,10 +169,61 @@ def parse_lines(reply: str) -> list[str]:
     return out
 
 
+def verify(new: Path, existing: Path, excluded: list[Path], themes: Path) -> dict[str, Any]:
+    """The checks registered in the plan, run against what was actually produced.
+
+    A generated set can fail in ways its own generator cannot see: it can drift
+    longer than the set it extends, land in a different theme mix, or repeat the
+    training prompts it was told to avoid. None of those raise, and all three
+    make the two halves unreadable as one set.
+    """
+    rows = [json.loads(line) for line in new.read_text(encoding="utf-8").splitlines() if line]
+    fresh = [row["prompt"] for row in rows]
+    old = load_prompts(existing)
+    banned: set[str] = set()
+    for path in excluded:
+        banned |= set(load_prompts(path))
+
+    old_labels = json.loads(themes.read_text(encoding="utf-8"))["labels"]
+    old_mix = Counter(t for t in old_labels.values() if t in THEMES)
+    new_mix = Counter(row["theme"] for row in rows)
+
+    def share(mix: Counter[str]) -> dict[str, float]:
+        total = sum(mix.values()) or 1
+        return {theme: mix.get(theme, 0) / total for theme in THEMES}
+
+    old_share, new_share = share(old_mix), share(new_mix)
+    drift = {t: new_share[t] - old_share[t] for t in THEMES}
+
+    seen: list[set[str]] = []
+    internal = 0
+    for prompt in fresh:
+        if too_similar(prompt, seen):
+            internal += 1
+        seen.append(bigrams(prompt))
+
+    lengths = sorted(len(p) for p in fresh)
+    old_lengths = sorted(len(p) for p in old)
+    return {
+        "n": len(fresh),
+        "unique": len(set(fresh)),
+        "overlap_with_existing": len(set(fresh) & set(old)),
+        "overlap_with_training": len(set(fresh) & banned),
+        "internal_near_duplicates": internal,
+        "length_median": lengths[len(lengths) // 2] if lengths else 0,
+        "length_range": [lengths[0], lengths[-1]] if lengths else [0, 0],
+        "existing_length_median": old_lengths[len(old_lengths) // 2],
+        "existing_length_range": [old_lengths[0], old_lengths[-1]],
+        "theme_share_max_drift": max(abs(d) for d in drift.values()),
+        "theme_drift": drift,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--classify", type=Path)
     parser.add_argument("--generate", type=int)
+    parser.add_argument("--verify", type=Path, help="a generated probe file to check")
     parser.add_argument("--themes", type=Path, help="output of --classify")
     parser.add_argument(
         "--existing", type=Path, default=Path("configs/chat_refs_external_v1.jsonl")
@@ -183,10 +235,27 @@ def main() -> int:
     parser.add_argument("--credentials", type=Path)
     parser.add_argument("--model", help="who writes or classifies; not the blind judge")
     parser.add_argument("--max-chars", type=int, default=13)
-    parser.add_argument("--rounds", type=int, default=6)
+    parser.add_argument("--rounds", type=int, default=10)
+    parser.add_argument("--batch", type=int, default=40, help="lines per call")
+    parser.add_argument("--max-tokens", type=int, default=1200)
+    parser.add_argument("--timeout", type=float, default=600.0)
     args = parser.parse_args()
 
-    judge = Judge(credentials=args.credentials, model=args.model)
+    if args.verify:
+        if not args.themes:
+            raise SystemExit("--verify 要 --themes（现有集的分类结果）才能比主题分布")
+        report = verify(args.verify, args.existing, list(args.exclude), args.themes)
+        for key, value in report.items():
+            if key != "theme_drift":
+                print(f"  {key}: {value}")
+        worst = max(report["theme_drift"].items(), key=lambda kv: abs(kv[1]))
+        print(f"  最偏的主题: {worst[0]} {worst[1]:+.3f}")
+        args.output.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        return 0
+
+    judge = Judge(credentials=args.credentials, model=args.model, timeout=args.timeout)
     print(f"模型 {judge.model} @ {judge.base_url}")
 
     if args.classify:
@@ -217,6 +286,26 @@ def main() -> int:
 
     kept: dict[str, list[str]] = {theme: [] for theme in wanted}
     seen_grams = [bigrams(prompt) for prompt in banned]
+
+    def flush() -> int:
+        """Write what exists so far, after every theme.
+
+        The first attempt asked for every theme and wrote once at the end. It
+        died on a read timeout partway through and left nothing at all -- a run
+        of calls for an empty file. Partial output beats clean all-or-nothing.
+        """
+        rows = [
+            {"id": f"zx{index:03d}", "prompt": prompt, "theme": theme}
+            for index, (theme, prompt) in enumerate(
+                (theme, prompt) for theme in sorted(kept) for prompt in kept[theme]
+            )
+        ]
+        args.output.write_text(
+            "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+            encoding="utf-8",
+        )
+        return len(rows)
+
     for theme, need in sorted(wanted.items(), key=lambda item: -item[1]):
         samples = [p for p, t in labelled.items() if t == theme][:8]
         examples = "\n".join(samples) or "\n".join(existing[:8])
@@ -227,9 +316,14 @@ def main() -> int:
             # variables reads whatever they hold when it runs, which is correct
             # only because run() happens to consume within the iteration. That
             # is a coincidence, not a design.
-            question = GENERATE.format(count=max(need * 2, 20), theme=theme, examples=examples)
+            #
+            # Asked in batches rather than all at once. One call for a hundred
+            # lines is one call that can time out and take the theme with it,
+            # and the first run lost everything to exactly that.
+            batch = min(max((need - len(kept[theme])) * 2, 12), args.batch)
+            question = GENERATE.format(count=batch, theme=theme, examples=examples)
             reply = judge.run(
-                [None], lambda _, q=question: q, label=f"造 {theme}", max_tokens=2048
+                [None], lambda _, q=question: q, label=f"造 {theme}", max_tokens=args.max_tokens
             )[0]
             for line in parse_lines(reply):
                 if len(line) > args.max_chars or line in banned:
@@ -241,15 +335,9 @@ def main() -> int:
                 seen_grams.append(bigrams(line))
                 if len(kept[theme]) >= need:
                     break
-        print(f"  {theme}: {len(kept[theme])}/{need}")
+        print(f"  {theme}: {len(kept[theme])}/{need}（累计写出 {flush()}）", flush=True)
 
-    rows = []
-    for theme in sorted(kept):
-        for prompt in kept[theme]:
-            rows.append({"id": f"zx{len(rows):03d}", "prompt": prompt, "theme": theme})
-    args.output.write_text(
-        "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n", encoding="utf-8"
-    )
+    total = flush()
     sidecar = args.output.with_suffix(args.output.suffix + ".provenance.json")
     sidecar.write_text(
         json.dumps(
@@ -271,7 +359,7 @@ def main() -> int:
         ),
         encoding="utf-8",
     )
-    print(f"写出 {len(rows)} 条 -> {args.output}，出处 -> {sidecar}")
+    print(f"写出 {total} 条 -> {args.output}，出处 -> {sidecar}")
     return 0
 
 

@@ -56,7 +56,11 @@ class Judge:
     """
 
     def __init__(
-        self, credentials: Path | None = None, workers: int = 8, model: str | None = None
+        self,
+        credentials: Path | None = None,
+        workers: int = 8,
+        model: str | None = None,
+        timeout: float = 120.0,
     ) -> None:
         settings = load_credentials(credentials)
         if not settings.get("api_key"):
@@ -71,6 +75,11 @@ class Judge:
         # replies should not be the same model where it can be avoided.
         self.model = model or settings.get("model") or DEFAULT_MODEL
         self.workers = workers
+        # Two minutes is plenty for a one-word verdict and nowhere near enough for
+        # a model asked to write a hundred lines. A caller that wants prose has
+        # to raise this, and the first one that forgot lost a whole run to a
+        # read timeout.
+        self.timeout = timeout
 
     def provenance(self, prompt_template: str, **extra: Any) -> dict[str, Any]:
         """What judged, never what authenticated."""
@@ -123,7 +132,7 @@ class Judge:
         with (
             httpx.Client(
                 base_url=self.base_url,
-                timeout=120.0,
+                timeout=self.timeout,
                 headers={"Authorization": f"Bearer {self.key}"},
             ) as client,
             concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as pool,
