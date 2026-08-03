@@ -1,0 +1,7995 @@
+{
+ "baseline": "neutral",
+ "arms": {
+  "neutral": "neutral-merged.json",
+  "control": "neutral_ctrl-merged.json",
+  "happy": "happy-merged.json",
+  "sad": "sad-merged.json",
+  "angry": "angry-merged.json",
+  "surprised": "surprised-merged.json"
+ },
+ "paired": 240,
+ "dropped": [],
+ "verdicts": {
+  "control": [
+   "f0_median_hz: indistinguishable (-0.6828, within ±4.6936, paired n=240)",
+   "f0_iqr_hz: indistinguishable (+0.8768, within ±11.1879, paired n=240)",
+   "seconds: indistinguishable (+0.0540, within ±0.6965, paired n=240)"
+  ],
+  "happy": [
+   "f0_median_hz: indistinguishable (+0.6306, within ±4.1398, paired n=240)",
+   "f0_iqr_hz: indistinguishable (+0.0865, within ±7.8076, paired n=240)",
+   "seconds: indistinguishable (-0.0003, within ±0.5555, paired n=240)"
+  ],
+  "sad": [
+   "f0_median_hz: indistinguishable (+1.2345, within ±4.1161, paired n=240)",
+   "f0_iqr_hz: indistinguishable (+1.2445, within ±7.8102, paired n=240)",
+   "seconds: indistinguishable (+0.0487, within ±0.5785, paired n=240)"
+  ],
+  "angry": [
+   "f0_median_hz: indistinguishable (+1.1627, within ±3.7049, paired n=240)",
+   "f0_iqr_hz: indistinguishable (+0.3349, within ±7.9667, paired n=240)",
+   "seconds: indistinguishable (+0.0640, within ±0.5930, paired n=240)"
+  ],
+  "surprised": [
+   "f0_median_hz: indistinguishable (+1.1423, within ±4.2367, paired n=240)",
+   "f0_iqr_hz: indistinguishable (-0.8385, within ±7.2725, paired n=240)",
+   "seconds: indistinguishable (+0.0837, within ±0.6365, paired n=240)"
+  ]
+ },
+ "summary": {
+  "neutral": {
+   "f0_median_hz": 196.72338885592495,
+   "f0_iqr_hz": 83.68766231335657,
+   "seconds": 17.353333333333335
+  },
+  "control": {
+   "f0_median_hz": 196.04063255901605,
+   "f0_iqr_hz": 84.56450857432684,
+   "seconds": 17.407333333333334
+  },
+  "happy": {
+   "f0_median_hz": 197.35396658815912,
+   "f0_iqr_hz": 83.77415037686451,
+   "seconds": 17.353
+  },
+  "sad": {
+   "f0_median_hz": 197.95793220657717,
+   "f0_iqr_hz": 84.93213059300523,
+   "seconds": 17.401999999999997
+  },
+  "angry": {
+   "f0_median_hz": 197.8860554385392,
+   "f0_iqr_hz": 84.02259124830555,
+   "seconds": 17.417333333333332
+  },
+  "surprised": {
+   "f0_median_hz": 197.86569407224826,
+   "f0_iqr_hz": 82.84920486888431,
+   "seconds": 17.437
+  }
+ },
+ "rows": [
+  {
+   "id": "arthur/zh000",
+   "neutral": {
+    "f0_median_hz": 106.48444695734369,
+    "f0_iqr_hz": 39.833130819141815,
+    "seconds": 2.32
+   },
+   "control": {
+    "f0_median_hz": 119.6626003310374,
+    "f0_iqr_hz": 44.460834372255135,
+    "seconds": 2.48
+   },
+   "happy": {
+    "f0_median_hz": 111.15798504971309,
+    "f0_iqr_hz": 39.46133963651681,
+    "seconds": 2.32
+   },
+   "sad": {
+    "f0_median_hz": 100.81384231507636,
+    "f0_iqr_hz": 30.975072699721665,
+    "seconds": 2.4
+   },
+   "angry": {
+    "f0_median_hz": 121.89465636668754,
+    "f0_iqr_hz": 39.279768338504695,
+    "seconds": 2.4
+   },
+   "surprised": {
+    "f0_median_hz": 113.32650559984478,
+    "f0_iqr_hz": 51.43095447701373,
+    "seconds": 2.56
+   }
+  },
+  {
+   "id": "arthur/zh001",
+   "neutral": {
+    "f0_median_hz": 102.84740409083533,
+    "f0_iqr_hz": 48.477409389081586,
+    "seconds": 7.52
+   },
+   "control": {
+    "f0_median_hz": 93.3752268282939,
+    "f0_iqr_hz": 55.85511813907911,
+    "seconds": 7.44
+   },
+   "happy": {
+    "f0_median_hz": 103.62700470890806,
+    "f0_iqr_hz": 45.1481827677251,
+    "seconds": 7.28
+   },
+   "sad": {
+    "f0_median_hz": 105.7992015809537,
+    "f0_iqr_hz": 34.49999041262744,
+    "seconds": 7.36
+   },
+   "angry": {
+    "f0_median_hz": 103.76635376020597,
+    "f0_iqr_hz": 45.43167847083954,
+    "seconds": 7.76
+   },
+   "surprised": {
+    "f0_median_hz": 113.19869659633426,
+    "f0_iqr_hz": 52.93229828388603,
+    "seconds": 7.04
+   }
+  },
+  {
+   "id": "arthur/zh002",
+   "neutral": {
+    "f0_median_hz": 102.10992581361742,
+    "f0_iqr_hz": 47.45746439765014,
+    "seconds": 12.4
+   },
+   "control": {
+    "f0_median_hz": 101.20546691138597,
+    "f0_iqr_hz": 29.048039033213044,
+    "seconds": 12.96
+   },
+   "happy": {
+    "f0_median_hz": 100.3421133332879,
+    "f0_iqr_hz": 29.850998110453858,
+    "seconds": 12.56
+   },
+   "sad": {
+    "f0_median_hz": 97.07294687004327,
+    "f0_iqr_hz": 29.779406195649983,
+    "seconds": 13.28
+   },
+   "angry": {
+    "f0_median_hz": 103.05757477358299,
+    "f0_iqr_hz": 44.157102931779434,
+    "seconds": 12.88
+   },
+   "surprised": {
+    "f0_median_hz": 108.59562535998609,
+    "f0_iqr_hz": 37.73439428709936,
+    "seconds": 13.04
+   }
+  },
+  {
+   "id": "arthur/zh003",
+   "neutral": {
+    "f0_median_hz": 116.00168189776412,
+    "f0_iqr_hz": 58.64612898748025,
+    "seconds": 29.68
+   },
+   "control": {
+    "f0_median_hz": 114.6094501887138,
+    "f0_iqr_hz": 59.02639463600133,
+    "seconds": 32.4
+   },
+   "happy": {
+    "f0_median_hz": 130.20458746811892,
+    "f0_iqr_hz": 72.68039007238406,
+    "seconds": 28.8
+   },
+   "sad": {
+    "f0_median_hz": 117.00056521499371,
+    "f0_iqr_hz": 68.15511955036379,
+    "seconds": 30.08
+   },
+   "angry": {
+    "f0_median_hz": 117.60583648376696,
+    "f0_iqr_hz": 50.389643096931934,
+    "seconds": 29.76
+   },
+   "surprised": {
+    "f0_median_hz": 125.69550549100792,
+    "f0_iqr_hz": 76.47933390170589,
+    "seconds": 31.44
+   }
+  },
+  {
+   "id": "arthur/zh004",
+   "neutral": {
+    "f0_median_hz": 98.835797235097,
+    "f0_iqr_hz": 31.092207567161196,
+    "seconds": 13.52
+   },
+   "control": {
+    "f0_median_hz": 100.44287140492877,
+    "f0_iqr_hz": 39.712979180683206,
+    "seconds": 12.96
+   },
+   "happy": {
+    "f0_median_hz": 100.05834701073881,
+    "f0_iqr_hz": 38.6700598868112,
+    "seconds": 13.52
+   },
+   "sad": {
+    "f0_median_hz": 107.96760287945382,
+    "f0_iqr_hz": 45.69596144826535,
+    "seconds": 12.64
+   },
+   "angry": {
+    "f0_median_hz": 111.06672310130217,
+    "f0_iqr_hz": 45.260663981099,
+    "seconds": 13.12
+   },
+   "surprised": {
+    "f0_median_hz": 102.31830850531006,
+    "f0_iqr_hz": 33.15185120945645,
+    "seconds": 13.36
+   }
+  },
+  {
+   "id": "arthur/zh005",
+   "neutral": {
+    "f0_median_hz": 99.73236867864475,
+    "f0_iqr_hz": 29.739693468469838,
+    "seconds": 7.36
+   },
+   "control": {
+    "f0_median_hz": 112.1175700896515,
+    "f0_iqr_hz": 54.17321672289066,
+    "seconds": 7.2
+   },
+   "happy": {
+    "f0_median_hz": 100.29808633798389,
+    "f0_iqr_hz": 34.16195795073611,
+    "seconds": 7.44
+   },
+   "sad": {
+    "f0_median_hz": 104.52071156986773,
+    "f0_iqr_hz": 32.0189160144686,
+    "seconds": 7.36
+   },
+   "angry": {
+    "f0_median_hz": 103.20420034575339,
+    "f0_iqr_hz": 43.94030386063801,
+    "seconds": 7.28
+   },
+   "surprised": {
+    "f0_median_hz": 106.9524951336907,
+    "f0_iqr_hz": 53.967717628839154,
+    "seconds": 7.2
+   }
+  },
+  {
+   "id": "arthur/zh006",
+   "neutral": {
+    "f0_median_hz": 103.56936649777477,
+    "f0_iqr_hz": 52.70871603416617,
+    "seconds": 11.68
+   },
+   "control": {
+    "f0_median_hz": 105.79735602879451,
+    "f0_iqr_hz": 49.7727051752335,
+    "seconds": 11.68
+   },
+   "happy": {
+    "f0_median_hz": 126.96148638401259,
+    "f0_iqr_hz": 53.274878380295306,
+    "seconds": 11.44
+   },
+   "sad": {
+    "f0_median_hz": 109.6190287637419,
+    "f0_iqr_hz": 33.01814973722598,
+    "seconds": 11.6
+   },
+   "angry": {
+    "f0_median_hz": 112.48964364306701,
+    "f0_iqr_hz": 49.91720063772833,
+    "seconds": 10.64
+   },
+   "surprised": {
+    "f0_median_hz": 105.5669627693152,
+    "f0_iqr_hz": 39.99206019526747,
+    "seconds": 12.48
+   }
+  },
+  {
+   "id": "arthur/zh007",
+   "neutral": {
+    "f0_median_hz": 99.67849358582805,
+    "f0_iqr_hz": 28.71124232793032,
+    "seconds": 27.36
+   },
+   "control": {
+    "f0_median_hz": 100.01234315304924,
+    "f0_iqr_hz": 24.82051471919496,
+    "seconds": 36.08
+   },
+   "happy": {
+    "f0_median_hz": 93.71041461812132,
+    "f0_iqr_hz": 19.41276769745585,
+    "seconds": 23.04
+   },
+   "sad": {
+    "f0_median_hz": 99.94352565507262,
+    "f0_iqr_hz": 29.735304751712846,
+    "seconds": 23.92
+   },
+   "angry": {
+    "f0_median_hz": 97.29793677862003,
+    "f0_iqr_hz": 21.103849639371873,
+    "seconds": 35.2
+   },
+   "surprised": {
+    "f0_median_hz": 101.29865773738796,
+    "f0_iqr_hz": 31.3644309797005,
+    "seconds": 36.72
+   }
+  },
+  {
+   "id": "arthur/zh008",
+   "neutral": {
+    "f0_median_hz": 105.43938483935376,
+    "f0_iqr_hz": 48.47901976137116,
+    "seconds": 41.2
+   },
+   "control": {
+    "f0_median_hz": 96.19535540433495,
+    "f0_iqr_hz": 27.477690461034413,
+    "seconds": 43.52
+   },
+   "happy": {
+    "f0_median_hz": 100.00735969150709,
+    "f0_iqr_hz": 39.98746838064518,
+    "seconds": 41.12
+   },
+   "sad": {
+    "f0_median_hz": 100.48840530785239,
+    "f0_iqr_hz": 47.474570706785215,
+    "seconds": 42.8
+   },
+   "angry": {
+    "f0_median_hz": 101.80048470311294,
+    "f0_iqr_hz": 46.94846738795553,
+    "seconds": 43.04
+   },
+   "surprised": {
+    "f0_median_hz": 99.93552997279791,
+    "f0_iqr_hz": 29.01994970789781,
+    "seconds": 46.56
+   }
+  },
+  {
+   "id": "arthur/zh009",
+   "neutral": {
+    "f0_median_hz": 108.30708106335076,
+    "f0_iqr_hz": 51.57344336838136,
+    "seconds": 9.76
+   },
+   "control": {
+    "f0_median_hz": 101.98453277972068,
+    "f0_iqr_hz": 36.46065856537628,
+    "seconds": 9.68
+   },
+   "happy": {
+    "f0_median_hz": 122.78988926968049,
+    "f0_iqr_hz": 64.05078813877991,
+    "seconds": 9.84
+   },
+   "sad": {
+    "f0_median_hz": 102.08748159796656,
+    "f0_iqr_hz": 42.53006880748208,
+    "seconds": 10.0
+   },
+   "angry": {
+    "f0_median_hz": 101.10801781330495,
+    "f0_iqr_hz": 50.227009223138154,
+    "seconds": 10.48
+   },
+   "surprised": {
+    "f0_median_hz": 106.45210191753807,
+    "f0_iqr_hz": 58.51532137365804,
+    "seconds": 10.4
+   }
+  },
+  {
+   "id": "arthur/zh010",
+   "neutral": {
+    "f0_median_hz": 103.14487125386755,
+    "f0_iqr_hz": 48.2042726621208,
+    "seconds": 34.24
+   },
+   "control": {
+    "f0_median_hz": 115.87516507889846,
+    "f0_iqr_hz": 64.90980960105156,
+    "seconds": 32.64
+   },
+   "happy": {
+    "f0_median_hz": 99.26324430270128,
+    "f0_iqr_hz": 35.64313741918471,
+    "seconds": 32.08
+   },
+   "sad": {
+    "f0_median_hz": 118.53961302454184,
+    "f0_iqr_hz": 64.40104460804432,
+    "seconds": 32.8
+   },
+   "angry": {
+    "f0_median_hz": 97.02534213833968,
+    "f0_iqr_hz": 29.098850071580856,
+    "seconds": 33.52
+   },
+   "surprised": {
+    "f0_median_hz": 109.8747478725522,
+    "f0_iqr_hz": 52.810365808869676,
+    "seconds": 32.48
+   }
+  },
+  {
+   "id": "arthur/zh011",
+   "neutral": {
+    "f0_median_hz": 95.42429955841732,
+    "f0_iqr_hz": 26.13475182089087,
+    "seconds": 35.44
+   },
+   "control": {
+    "f0_median_hz": 101.23019051364466,
+    "f0_iqr_hz": 45.31594148174433,
+    "seconds": 32.8
+   },
+   "happy": {
+    "f0_median_hz": 98.53874191024968,
+    "f0_iqr_hz": 51.676359533340275,
+    "seconds": 34.16
+   },
+   "sad": {
+    "f0_median_hz": 103.31269835953948,
+    "f0_iqr_hz": 40.652830853181044,
+    "seconds": 33.68
+   },
+   "angry": {
+    "f0_median_hz": 97.9673184494884,
+    "f0_iqr_hz": 39.87939954238067,
+    "seconds": 35.04
+   },
+   "surprised": {
+    "f0_median_hz": 101.41102810970364,
+    "f0_iqr_hz": 51.61102900837378,
+    "seconds": 32.64
+   }
+  },
+  {
+   "id": "arthur/zh012",
+   "neutral": {
+    "f0_median_hz": 109.13182313871874,
+    "f0_iqr_hz": 39.01562821998209,
+    "seconds": 8.0
+   },
+   "control": {
+    "f0_median_hz": 98.88514670532895,
+    "f0_iqr_hz": 29.09422306936841,
+    "seconds": 7.84
+   },
+   "happy": {
+    "f0_median_hz": 108.47851092408644,
+    "f0_iqr_hz": 39.56664480838975,
+    "seconds": 7.44
+   },
+   "sad": {
+    "f0_median_hz": 107.81504846195878,
+    "f0_iqr_hz": 38.85627445667133,
+    "seconds": 7.6
+   },
+   "angry": {
+    "f0_median_hz": 111.78736108717021,
+    "f0_iqr_hz": 35.08725081212843,
+    "seconds": 7.52
+   },
+   "surprised": {
+    "f0_median_hz": 122.78683754501003,
+    "f0_iqr_hz": 77.70528725375996,
+    "seconds": 7.44
+   }
+  },
+  {
+   "id": "arthur/zh013",
+   "neutral": {
+    "f0_median_hz": 116.79134738047821,
+    "f0_iqr_hz": 68.17785450998258,
+    "seconds": 4.88
+   },
+   "control": {
+    "f0_median_hz": 121.89869414864864,
+    "f0_iqr_hz": 83.54842778691109,
+    "seconds": 4.4
+   },
+   "happy": {
+    "f0_median_hz": 134.3843005478973,
+    "f0_iqr_hz": 72.81064308106512,
+    "seconds": 5.28
+   },
+   "sad": {
+    "f0_median_hz": 117.3471218299999,
+    "f0_iqr_hz": 75.1910756268768,
+    "seconds": 4.8
+   },
+   "angry": {
+    "f0_median_hz": 127.81512933396786,
+    "f0_iqr_hz": 78.25988154628367,
+    "seconds": 4.72
+   },
+   "surprised": {
+    "f0_median_hz": 118.25161471194774,
+    "f0_iqr_hz": 71.55351167491091,
+    "seconds": 4.96
+   }
+  },
+  {
+   "id": "arthur/zh014",
+   "neutral": {
+    "f0_median_hz": 100.03003493336729,
+    "f0_iqr_hz": 49.98207341888235,
+    "seconds": 32.72
+   },
+   "control": {
+    "f0_median_hz": 107.25216396970089,
+    "f0_iqr_hz": 59.842906933494675,
+    "seconds": 34.56
+   },
+   "happy": {
+    "f0_median_hz": 100.92126273441622,
+    "f0_iqr_hz": 43.253919360879266,
+    "seconds": 34.56
+   },
+   "sad": {
+    "f0_median_hz": 107.13867119073582,
+    "f0_iqr_hz": 74.48616629957696,
+    "seconds": 30.56
+   },
+   "angry": {
+    "f0_median_hz": 103.96516157026412,
+    "f0_iqr_hz": 62.61204634500103,
+    "seconds": 33.76
+   },
+   "surprised": {
+    "f0_median_hz": 102.97359503342759,
+    "f0_iqr_hz": 63.8752721994059,
+    "seconds": 23.36
+   }
+  },
+  {
+   "id": "arthur/zh015",
+   "neutral": {
+    "f0_median_hz": 107.79183667367815,
+    "f0_iqr_hz": 54.53450083419719,
+    "seconds": 5.92
+   },
+   "control": {
+    "f0_median_hz": 103.90530901163108,
+    "f0_iqr_hz": 59.8775359725699,
+    "seconds": 6.64
+   },
+   "happy": {
+    "f0_median_hz": 105.03011012965567,
+    "f0_iqr_hz": 42.38382148769077,
+    "seconds": 5.6
+   },
+   "sad": {
+    "f0_median_hz": 104.27918417754236,
+    "f0_iqr_hz": 42.5298154775915,
+    "seconds": 6.08
+   },
+   "angry": {
+    "f0_median_hz": 104.34115834706262,
+    "f0_iqr_hz": 53.73467953471673,
+    "seconds": 6.48
+   },
+   "surprised": {
+    "f0_median_hz": 110.1587819097965,
+    "f0_iqr_hz": 75.54021679942431,
+    "seconds": 6.08
+   }
+  },
+  {
+   "id": "arthur/zh016",
+   "neutral": {
+    "f0_median_hz": 109.63938517531696,
+    "f0_iqr_hz": 58.845207230421494,
+    "seconds": 9.36
+   },
+   "control": {
+    "f0_median_hz": 103.6555688382516,
+    "f0_iqr_hz": 38.69088539508574,
+    "seconds": 9.84
+   },
+   "happy": {
+    "f0_median_hz": 112.21207995249345,
+    "f0_iqr_hz": 55.80755822132613,
+    "seconds": 9.6
+   },
+   "sad": {
+    "f0_median_hz": 110.00059971683578,
+    "f0_iqr_hz": 55.341175608991506,
+    "seconds": 9.36
+   },
+   "angry": {
+    "f0_median_hz": 103.48667854175739,
+    "f0_iqr_hz": 40.813581139422595,
+    "seconds": 9.68
+   },
+   "surprised": {
+    "f0_median_hz": 112.55404274348741,
+    "f0_iqr_hz": 42.111199880754924,
+    "seconds": 9.52
+   }
+  },
+  {
+   "id": "arthur/zh017",
+   "neutral": {
+    "f0_median_hz": 105.73839622382843,
+    "f0_iqr_hz": 31.536060108309016,
+    "seconds": 3.6
+   },
+   "control": {
+    "f0_median_hz": 105.23646971406107,
+    "f0_iqr_hz": 24.31062615070681,
+    "seconds": 3.76
+   },
+   "happy": {
+    "f0_median_hz": 124.27122712964854,
+    "f0_iqr_hz": 46.46049638853165,
+    "seconds": 3.68
+   },
+   "sad": {
+    "f0_median_hz": 114.3195326111385,
+    "f0_iqr_hz": 37.20936822739948,
+    "seconds": 3.52
+   },
+   "angry": {
+    "f0_median_hz": 111.8800431411369,
+    "f0_iqr_hz": 37.235153806412086,
+    "seconds": 3.52
+   },
+   "surprised": {
+    "f0_median_hz": 123.48797243254076,
+    "f0_iqr_hz": 39.230413174750794,
+    "seconds": 3.68
+   }
+  },
+  {
+   "id": "arthur/zh018",
+   "neutral": {
+    "f0_median_hz": 104.82651424249002,
+    "f0_iqr_hz": 41.5652923213334,
+    "seconds": 24.64
+   },
+   "control": {
+    "f0_median_hz": 101.45702450732193,
+    "f0_iqr_hz": 28.15761216056285,
+    "seconds": 24.56
+   },
+   "happy": {
+    "f0_median_hz": 111.82107636844277,
+    "f0_iqr_hz": 52.224617455842974,
+    "seconds": 24.16
+   },
+   "sad": {
+    "f0_median_hz": 100.04396830155642,
+    "f0_iqr_hz": 26.04149399580298,
+    "seconds": 25.28
+   },
+   "angry": {
+    "f0_median_hz": 104.09782781124616,
+    "f0_iqr_hz": 36.95548026532218,
+    "seconds": 24.8
+   },
+   "surprised": {
+    "f0_median_hz": 102.14110432154101,
+    "f0_iqr_hz": 49.93503663121467,
+    "seconds": 25.84
+   }
+  },
+  {
+   "id": "arthur/zh019",
+   "neutral": {
+    "f0_median_hz": 123.14353292532564,
+    "f0_iqr_hz": 65.11673901091694,
+    "seconds": 20.16
+   },
+   "control": {
+    "f0_median_hz": 98.52067237918877,
+    "f0_iqr_hz": 37.392002231962564,
+    "seconds": 20.88
+   },
+   "happy": {
+    "f0_median_hz": 116.30873298705944,
+    "f0_iqr_hz": 62.77073165045802,
+    "seconds": 19.44
+   },
+   "sad": {
+    "f0_median_hz": 99.2005806008608,
+    "f0_iqr_hz": 42.79293546376263,
+    "seconds": 21.44
+   },
+   "angry": {
+    "f0_median_hz": 126.53793220524996,
+    "f0_iqr_hz": 62.144260060345715,
+    "seconds": 19.52
+   },
+   "surprised": {
+    "f0_median_hz": 108.72076929554683,
+    "f0_iqr_hz": 47.79759770136458,
+    "seconds": 20.96
+   }
+  },
+  {
+   "id": "chelsie/zh000",
+   "neutral": {
+    "f0_median_hz": 198.68768931942026,
+    "f0_iqr_hz": 75.88210554609074,
+    "seconds": 2.48
+   },
+   "control": {
+    "f0_median_hz": 191.25859408357752,
+    "f0_iqr_hz": 73.48402644601305,
+    "seconds": 2.48
+   },
+   "happy": {
+    "f0_median_hz": 191.90777645458593,
+    "f0_iqr_hz": 68.44740582281204,
+    "seconds": 2.24
+   },
+   "sad": {
+    "f0_median_hz": 217.3546178233649,
+    "f0_iqr_hz": 71.45208105442595,
+    "seconds": 2.4
+   },
+   "angry": {
+    "f0_median_hz": 196.85510737741362,
+    "f0_iqr_hz": 73.90263191198181,
+    "seconds": 2.4
+   },
+   "surprised": {
+    "f0_median_hz": 205.8066031077259,
+    "f0_iqr_hz": 88.508000530582,
+    "seconds": 2.48
+   }
+  },
+  {
+   "id": "chelsie/zh001",
+   "neutral": {
+    "f0_median_hz": 219.17226689430305,
+    "f0_iqr_hz": 67.52264375732636,
+    "seconds": 6.4
+   },
+   "control": {
+    "f0_median_hz": 219.6429737170912,
+    "f0_iqr_hz": 83.50097213091667,
+    "seconds": 6.56
+   },
+   "happy": {
+    "f0_median_hz": 213.40359802968595,
+    "f0_iqr_hz": 52.96946969351279,
+    "seconds": 6.56
+   },
+   "sad": {
+    "f0_median_hz": 205.71915567285888,
+    "f0_iqr_hz": 94.13059323844402,
+    "seconds": 6.48
+   },
+   "angry": {
+    "f0_median_hz": 214.1090878149945,
+    "f0_iqr_hz": 78.5361942981794,
+    "seconds": 6.0
+   },
+   "surprised": {
+    "f0_median_hz": 213.1282881892902,
+    "f0_iqr_hz": 75.77536561441406,
+    "seconds": 6.72
+   }
+  },
+  {
+   "id": "chelsie/zh002",
+   "neutral": {
+    "f0_median_hz": 196.60977790367252,
+    "f0_iqr_hz": 69.65802407565585,
+    "seconds": 11.36
+   },
+   "control": {
+    "f0_median_hz": 205.4426954115121,
+    "f0_iqr_hz": 77.57708222477771,
+    "seconds": 11.12
+   },
+   "happy": {
+    "f0_median_hz": 203.38531623459363,
+    "f0_iqr_hz": 84.94791567396899,
+    "seconds": 12.64
+   },
+   "sad": {
+    "f0_median_hz": 203.25270161580895,
+    "f0_iqr_hz": 84.33914933713808,
+    "seconds": 11.28
+   },
+   "angry": {
+    "f0_median_hz": 206.7271162566949,
+    "f0_iqr_hz": 78.5184847408905,
+    "seconds": 11.36
+   },
+   "surprised": {
+    "f0_median_hz": 199.36372479996012,
+    "f0_iqr_hz": 70.45189517502914,
+    "seconds": 11.76
+   }
+  },
+  {
+   "id": "chelsie/zh003",
+   "neutral": {
+    "f0_median_hz": 220.53634375759074,
+    "f0_iqr_hz": 96.75214598074604,
+    "seconds": 28.08
+   },
+   "control": {
+    "f0_median_hz": 229.70691614721406,
+    "f0_iqr_hz": 101.92067550419452,
+    "seconds": 29.36
+   },
+   "happy": {
+    "f0_median_hz": 234.05375407431566,
+    "f0_iqr_hz": 85.31018105468686,
+    "seconds": 28.88
+   },
+   "sad": {
+    "f0_median_hz": 221.29827348292366,
+    "f0_iqr_hz": 113.38360455047581,
+    "seconds": 28.64
+   },
+   "angry": {
+    "f0_median_hz": 207.5057841654591,
+    "f0_iqr_hz": 102.41012020575792,
+    "seconds": 30.96
+   },
+   "surprised": {
+    "f0_median_hz": 240.21805634734721,
+    "f0_iqr_hz": 113.6731680881303,
+    "seconds": 28.96
+   }
+  },
+  {
+   "id": "chelsie/zh004",
+   "neutral": {
+    "f0_median_hz": 224.37863832419038,
+    "f0_iqr_hz": 74.48304513579404,
+    "seconds": 11.44
+   },
+   "control": {
+    "f0_median_hz": 229.6900501121291,
+    "f0_iqr_hz": 88.09094511120884,
+    "seconds": 10.96
+   },
+   "happy": {
+    "f0_median_hz": 218.52306119425776,
+    "f0_iqr_hz": 73.6103428673897,
+    "seconds": 11.44
+   },
+   "sad": {
+    "f0_median_hz": 222.90990234257768,
+    "f0_iqr_hz": 90.05482005935528,
+    "seconds": 11.12
+   },
+   "angry": {
+    "f0_median_hz": 229.76862704051732,
+    "f0_iqr_hz": 87.22061198634438,
+    "seconds": 11.68
+   },
+   "surprised": {
+    "f0_median_hz": 233.50277961520243,
+    "f0_iqr_hz": 74.4528071747404,
+    "seconds": 11.36
+   }
+  },
+  {
+   "id": "chelsie/zh005",
+   "neutral": {
+    "f0_median_hz": 222.7878721568507,
+    "f0_iqr_hz": 71.23248524184874,
+    "seconds": 6.96
+   },
+   "control": {
+    "f0_median_hz": 204.0636639230721,
+    "f0_iqr_hz": 63.49467162311811,
+    "seconds": 6.56
+   },
+   "happy": {
+    "f0_median_hz": 209.3464039584007,
+    "f0_iqr_hz": 51.74876511781329,
+    "seconds": 6.8
+   },
+   "sad": {
+    "f0_median_hz": 211.75621731631898,
+    "f0_iqr_hz": 60.49186248759489,
+    "seconds": 6.88
+   },
+   "angry": {
+    "f0_median_hz": 220.70689906118093,
+    "f0_iqr_hz": 62.12895597915673,
+    "seconds": 6.88
+   },
+   "surprised": {
+    "f0_median_hz": 224.4969296081467,
+    "f0_iqr_hz": 61.548898933266884,
+    "seconds": 6.8
+   }
+  },
+  {
+   "id": "chelsie/zh006",
+   "neutral": {
+    "f0_median_hz": 234.8539412548721,
+    "f0_iqr_hz": 78.99834316673696,
+    "seconds": 10.56
+   },
+   "control": {
+    "f0_median_hz": 221.39125674942505,
+    "f0_iqr_hz": 70.82177208246958,
+    "seconds": 10.16
+   },
+   "happy": {
+    "f0_median_hz": 231.3383723965332,
+    "f0_iqr_hz": 70.32902021765312,
+    "seconds": 10.16
+   },
+   "sad": {
+    "f0_median_hz": 240.26520474058282,
+    "f0_iqr_hz": 82.88652744631219,
+    "seconds": 11.12
+   },
+   "angry": {
+    "f0_median_hz": 242.64689361846035,
+    "f0_iqr_hz": 71.86346496697581,
+    "seconds": 10.48
+   },
+   "surprised": {
+    "f0_median_hz": 216.70096468085416,
+    "f0_iqr_hz": 70.28453559792177,
+    "seconds": 10.64
+   }
+  },
+  {
+   "id": "chelsie/zh007",
+   "neutral": {
+    "f0_median_hz": 236.56687676238803,
+    "f0_iqr_hz": 87.30188651333009,
+    "seconds": 27.6
+   },
+   "control": {
+    "f0_median_hz": 215.0334879685977,
+    "f0_iqr_hz": 134.55416815067346,
+    "seconds": 33.44
+   },
+   "happy": {
+    "f0_median_hz": 234.48919517040414,
+    "f0_iqr_hz": 81.69817164934784,
+    "seconds": 28.24
+   },
+   "sad": {
+    "f0_median_hz": 215.59611870187263,
+    "f0_iqr_hz": 90.41038932188303,
+    "seconds": 25.68
+   },
+   "angry": {
+    "f0_median_hz": 202.81343630803883,
+    "f0_iqr_hz": 97.49272975111063,
+    "seconds": 32.56
+   },
+   "surprised": {
+    "f0_median_hz": 219.27624880849203,
+    "f0_iqr_hz": 88.43211966165109,
+    "seconds": 33.28
+   }
+  },
+  {
+   "id": "chelsie/zh008",
+   "neutral": {
+    "f0_median_hz": 223.61839055849222,
+    "f0_iqr_hz": 86.9806719701981,
+    "seconds": 37.6
+   },
+   "control": {
+    "f0_median_hz": 224.0578618580987,
+    "f0_iqr_hz": 93.58490521869498,
+    "seconds": 38.16
+   },
+   "happy": {
+    "f0_median_hz": 229.48323644596127,
+    "f0_iqr_hz": 98.15279664994677,
+    "seconds": 37.12
+   },
+   "sad": {
+    "f0_median_hz": 239.92047248190207,
+    "f0_iqr_hz": 99.31012362642699,
+    "seconds": 43.04
+   },
+   "angry": {
+    "f0_median_hz": 215.76267858006312,
+    "f0_iqr_hz": 94.02243048729702,
+    "seconds": 37.44
+   },
+   "surprised": {
+    "f0_median_hz": 230.3649070635837,
+    "f0_iqr_hz": 98.41990524118845,
+    "seconds": 36.56
+   }
+  },
+  {
+   "id": "chelsie/zh009",
+   "neutral": {
+    "f0_median_hz": 214.93362884163867,
+    "f0_iqr_hz": 69.79733248500622,
+    "seconds": 8.72
+   },
+   "control": {
+    "f0_median_hz": 204.88144173346717,
+    "f0_iqr_hz": 89.2507880639842,
+    "seconds": 8.88
+   },
+   "happy": {
+    "f0_median_hz": 198.5037280959598,
+    "f0_iqr_hz": 91.72467886454044,
+    "seconds": 9.44
+   },
+   "sad": {
+    "f0_median_hz": 204.3493113208554,
+    "f0_iqr_hz": 82.47565163146481,
+    "seconds": 9.44
+   },
+   "angry": {
+    "f0_median_hz": 229.37027481199982,
+    "f0_iqr_hz": 71.01028215243815,
+    "seconds": 8.48
+   },
+   "surprised": {
+    "f0_median_hz": 220.76270032026662,
+    "f0_iqr_hz": 78.21258231157492,
+    "seconds": 8.48
+   }
+  },
+  {
+   "id": "chelsie/zh010",
+   "neutral": {
+    "f0_median_hz": 228.1641326279722,
+    "f0_iqr_hz": 79.37689913731853,
+    "seconds": 28.16
+   },
+   "control": {
+    "f0_median_hz": 221.92201350016865,
+    "f0_iqr_hz": 90.5390196436338,
+    "seconds": 29.28
+   },
+   "happy": {
+    "f0_median_hz": 219.50679333130253,
+    "f0_iqr_hz": 86.67366051662873,
+    "seconds": 28.8
+   },
+   "sad": {
+    "f0_median_hz": 216.37566360727882,
+    "f0_iqr_hz": 74.27702255242212,
+    "seconds": 28.0
+   },
+   "angry": {
+    "f0_median_hz": 229.8723927029938,
+    "f0_iqr_hz": 90.21067962759463,
+    "seconds": 27.92
+   },
+   "surprised": {
+    "f0_median_hz": 224.35450085779763,
+    "f0_iqr_hz": 83.02347666308458,
+    "seconds": 28.4
+   }
+  },
+  {
+   "id": "chelsie/zh011",
+   "neutral": {
+    "f0_median_hz": 208.82808060177027,
+    "f0_iqr_hz": 94.13403232742564,
+    "seconds": 31.6
+   },
+   "control": {
+    "f0_median_hz": 219.68358399223956,
+    "f0_iqr_hz": 87.87025097121509,
+    "seconds": 31.12
+   },
+   "happy": {
+    "f0_median_hz": 201.91905620234755,
+    "f0_iqr_hz": 110.10919455557044,
+    "seconds": 32.64
+   },
+   "sad": {
+    "f0_median_hz": 206.2657360978385,
+    "f0_iqr_hz": 100.987944859057,
+    "seconds": 32.56
+   },
+   "angry": {
+    "f0_median_hz": 210.33971320627745,
+    "f0_iqr_hz": 87.62836658890384,
+    "seconds": 33.04
+   },
+   "surprised": {
+    "f0_median_hz": 210.82143467346995,
+    "f0_iqr_hz": 90.22089319834578,
+    "seconds": 33.2
+   }
+  },
+  {
+   "id": "chelsie/zh012",
+   "neutral": {
+    "f0_median_hz": 209.40216079796573,
+    "f0_iqr_hz": 85.45758591117072,
+    "seconds": 7.12
+   },
+   "control": {
+    "f0_median_hz": 208.56152100291348,
+    "f0_iqr_hz": 84.47346411987058,
+    "seconds": 6.72
+   },
+   "happy": {
+    "f0_median_hz": 209.76768816385413,
+    "f0_iqr_hz": 67.76842372112526,
+    "seconds": 7.2
+   },
+   "sad": {
+    "f0_median_hz": 206.56480060585838,
+    "f0_iqr_hz": 77.82067326591283,
+    "seconds": 6.72
+   },
+   "angry": {
+    "f0_median_hz": 214.67076324854224,
+    "f0_iqr_hz": 70.82576737236968,
+    "seconds": 6.72
+   },
+   "surprised": {
+    "f0_median_hz": 218.66178742102514,
+    "f0_iqr_hz": 88.87015407128274,
+    "seconds": 6.8
+   }
+  },
+  {
+   "id": "chelsie/zh013",
+   "neutral": {
+    "f0_median_hz": 210.0931343111655,
+    "f0_iqr_hz": 72.15001558546575,
+    "seconds": 4.8
+   },
+   "control": {
+    "f0_median_hz": 206.1785395726843,
+    "f0_iqr_hz": 69.5180840363931,
+    "seconds": 4.96
+   },
+   "happy": {
+    "f0_median_hz": 221.17990652310326,
+    "f0_iqr_hz": 66.56590165515428,
+    "seconds": 4.8
+   },
+   "sad": {
+    "f0_median_hz": 225.5928985271454,
+    "f0_iqr_hz": 65.65243032408998,
+    "seconds": 4.4
+   },
+   "angry": {
+    "f0_median_hz": 219.83823025361255,
+    "f0_iqr_hz": 54.60680375951287,
+    "seconds": 4.48
+   },
+   "surprised": {
+    "f0_median_hz": 226.14561335114226,
+    "f0_iqr_hz": 87.32520842173972,
+    "seconds": 4.72
+   }
+  },
+  {
+   "id": "chelsie/zh014",
+   "neutral": {
+    "f0_median_hz": 202.13282743819923,
+    "f0_iqr_hz": 105.3458584281766,
+    "seconds": 33.28
+   },
+   "control": {
+    "f0_median_hz": 227.67505331979217,
+    "f0_iqr_hz": 101.8707602347865,
+    "seconds": 32.24
+   },
+   "happy": {
+    "f0_median_hz": 217.9790697241342,
+    "f0_iqr_hz": 96.58981325186508,
+    "seconds": 31.44
+   },
+   "sad": {
+    "f0_median_hz": 215.7305640452611,
+    "f0_iqr_hz": 84.54897620846947,
+    "seconds": 34.0
+   },
+   "angry": {
+    "f0_median_hz": 230.7791427326138,
+    "f0_iqr_hz": 95.35642204904042,
+    "seconds": 29.04
+   },
+   "surprised": {
+    "f0_median_hz": 218.6214138858765,
+    "f0_iqr_hz": 94.38086759915078,
+    "seconds": 34.96
+   }
+  },
+  {
+   "id": "chelsie/zh015",
+   "neutral": {
+    "f0_median_hz": 184.0914156548843,
+    "f0_iqr_hz": 77.2714506295809,
+    "seconds": 5.36
+   },
+   "control": {
+    "f0_median_hz": 191.7866041252681,
+    "f0_iqr_hz": 64.37004675565092,
+    "seconds": 5.12
+   },
+   "happy": {
+    "f0_median_hz": 186.32595037876067,
+    "f0_iqr_hz": 112.41823900578058,
+    "seconds": 5.36
+   },
+   "sad": {
+    "f0_median_hz": 183.44644259698194,
+    "f0_iqr_hz": 80.98925214209333,
+    "seconds": 5.36
+   },
+   "angry": {
+    "f0_median_hz": 184.5280774079501,
+    "f0_iqr_hz": 85.39079493774227,
+    "seconds": 5.52
+   },
+   "surprised": {
+    "f0_median_hz": 184.79216851092124,
+    "f0_iqr_hz": 79.02325770424324,
+    "seconds": 5.28
+   }
+  },
+  {
+   "id": "chelsie/zh016",
+   "neutral": {
+    "f0_median_hz": 216.63287296096792,
+    "f0_iqr_hz": 80.74193062094142,
+    "seconds": 8.88
+   },
+   "control": {
+    "f0_median_hz": 212.35423026941598,
+    "f0_iqr_hz": 70.97586966161873,
+    "seconds": 9.12
+   },
+   "happy": {
+    "f0_median_hz": 216.03324842134438,
+    "f0_iqr_hz": 73.53265508191333,
+    "seconds": 8.88
+   },
+   "sad": {
+    "f0_median_hz": 226.44197915421694,
+    "f0_iqr_hz": 74.6960331003759,
+    "seconds": 8.88
+   },
+   "angry": {
+    "f0_median_hz": 217.08525241960234,
+    "f0_iqr_hz": 71.8446287523006,
+    "seconds": 8.72
+   },
+   "surprised": {
+    "f0_median_hz": 212.31349318344022,
+    "f0_iqr_hz": 79.45505823249178,
+    "seconds": 8.96
+   }
+  },
+  {
+   "id": "chelsie/zh017",
+   "neutral": {
+    "f0_median_hz": 243.01355849085428,
+    "f0_iqr_hz": 89.24730643092136,
+    "seconds": 3.28
+   },
+   "control": {
+    "f0_median_hz": 250.76048389271114,
+    "f0_iqr_hz": 94.15876802571898,
+    "seconds": 3.52
+   },
+   "happy": {
+    "f0_median_hz": 246.49553323128424,
+    "f0_iqr_hz": 80.15897959288901,
+    "seconds": 3.52
+   },
+   "sad": {
+    "f0_median_hz": 252.35841348299695,
+    "f0_iqr_hz": 92.32935814928246,
+    "seconds": 3.44
+   },
+   "angry": {
+    "f0_median_hz": 249.2789437508604,
+    "f0_iqr_hz": 70.14945231207517,
+    "seconds": 3.44
+   },
+   "surprised": {
+    "f0_median_hz": 225.76692987205814,
+    "f0_iqr_hz": 91.56644924596225,
+    "seconds": 3.52
+   }
+  },
+  {
+   "id": "chelsie/zh018",
+   "neutral": {
+    "f0_median_hz": 216.6287552791331,
+    "f0_iqr_hz": 94.34010198220105,
+    "seconds": 23.28
+   },
+   "control": {
+    "f0_median_hz": 215.49586080619707,
+    "f0_iqr_hz": 91.4484661745974,
+    "seconds": 23.6
+   },
+   "happy": {
+    "f0_median_hz": 219.29300495718488,
+    "f0_iqr_hz": 87.63834833951506,
+    "seconds": 23.68
+   },
+   "sad": {
+    "f0_median_hz": 206.01749281808992,
+    "f0_iqr_hz": 90.08963231811492,
+    "seconds": 24.24
+   },
+   "angry": {
+    "f0_median_hz": 207.62275293676927,
+    "f0_iqr_hz": 118.38831803540634,
+    "seconds": 16.0
+   },
+   "surprised": {
+    "f0_median_hz": 209.9319581724431,
+    "f0_iqr_hz": 109.25627504541444,
+    "seconds": 24.16
+   }
+  },
+  {
+   "id": "chelsie/zh019",
+   "neutral": {
+    "f0_median_hz": 224.51129858184424,
+    "f0_iqr_hz": 58.44347612990356,
+    "seconds": 18.0
+   },
+   "control": {
+    "f0_median_hz": 216.31456368564318,
+    "f0_iqr_hz": 65.92035247513635,
+    "seconds": 17.76
+   },
+   "happy": {
+    "f0_median_hz": 231.03383497842773,
+    "f0_iqr_hz": 75.34368022925068,
+    "seconds": 18.4
+   },
+   "sad": {
+    "f0_median_hz": 225.23840836684337,
+    "f0_iqr_hz": 70.9762984708957,
+    "seconds": 17.76
+   },
+   "angry": {
+    "f0_median_hz": 228.99133322287733,
+    "f0_iqr_hz": 68.14394173646104,
+    "seconds": 18.56
+   },
+   "surprised": {
+    "f0_median_hz": 218.87181064559232,
+    "f0_iqr_hz": 67.78746213013912,
+    "seconds": 18.0
+   }
+  },
+  {
+   "id": "cherry/zh000",
+   "neutral": {
+    "f0_median_hz": 287.3565687098337,
+    "f0_iqr_hz": 125.11223078772349,
+    "seconds": 2.48
+   },
+   "control": {
+    "f0_median_hz": 258.1751940122897,
+    "f0_iqr_hz": 155.01201772855066,
+    "seconds": 2.64
+   },
+   "happy": {
+    "f0_median_hz": 282.202753969916,
+    "f0_iqr_hz": 137.0620296789141,
+    "seconds": 2.56
+   },
+   "sad": {
+    "f0_median_hz": 284.7282426563497,
+    "f0_iqr_hz": 114.93801490943815,
+    "seconds": 2.56
+   },
+   "angry": {
+    "f0_median_hz": 300.00976116377484,
+    "f0_iqr_hz": 132.8140957690033,
+    "seconds": 2.4
+   },
+   "surprised": {
+    "f0_median_hz": 269.3083071682176,
+    "f0_iqr_hz": 106.89950483596567,
+    "seconds": 2.8
+   }
+  },
+  {
+   "id": "cherry/zh001",
+   "neutral": {
+    "f0_median_hz": 272.30764045273685,
+    "f0_iqr_hz": 87.61477327043144,
+    "seconds": 6.4
+   },
+   "control": {
+    "f0_median_hz": 264.6966763092198,
+    "f0_iqr_hz": 80.92776454479005,
+    "seconds": 7.12
+   },
+   "happy": {
+    "f0_median_hz": 277.4789652672375,
+    "f0_iqr_hz": 100.23713933455963,
+    "seconds": 7.12
+   },
+   "sad": {
+    "f0_median_hz": 266.4468057486673,
+    "f0_iqr_hz": 92.06345549671579,
+    "seconds": 6.8
+   },
+   "angry": {
+    "f0_median_hz": 273.1580804849968,
+    "f0_iqr_hz": 89.43813675736195,
+    "seconds": 6.72
+   },
+   "surprised": {
+    "f0_median_hz": 279.54608077174146,
+    "f0_iqr_hz": 91.65758877620351,
+    "seconds": 6.72
+   }
+  },
+  {
+   "id": "cherry/zh002",
+   "neutral": {
+    "f0_median_hz": 258.60624255210655,
+    "f0_iqr_hz": 113.27740409156797,
+    "seconds": 11.28
+   },
+   "control": {
+    "f0_median_hz": 246.7033853158043,
+    "f0_iqr_hz": 108.50060171518254,
+    "seconds": 11.52
+   },
+   "happy": {
+    "f0_median_hz": 265.07362738548693,
+    "f0_iqr_hz": 134.2011255412874,
+    "seconds": 11.92
+   },
+   "sad": {
+    "f0_median_hz": 252.8271669519445,
+    "f0_iqr_hz": 118.90964542421497,
+    "seconds": 11.92
+   },
+   "angry": {
+    "f0_median_hz": 257.46790792091224,
+    "f0_iqr_hz": 118.08536115483662,
+    "seconds": 11.68
+   },
+   "surprised": {
+    "f0_median_hz": 255.32524285608406,
+    "f0_iqr_hz": 122.21921940234427,
+    "seconds": 12.08
+   }
+  },
+  {
+   "id": "cherry/zh003",
+   "neutral": {
+    "f0_median_hz": 287.5263657738169,
+    "f0_iqr_hz": 109.52053262864302,
+    "seconds": 27.04
+   },
+   "control": {
+    "f0_median_hz": 282.2005411421011,
+    "f0_iqr_hz": 122.12166890072643,
+    "seconds": 27.36
+   },
+   "happy": {
+    "f0_median_hz": 266.70290284319896,
+    "f0_iqr_hz": 105.07314085475511,
+    "seconds": 27.36
+   },
+   "sad": {
+    "f0_median_hz": 277.2800601124744,
+    "f0_iqr_hz": 121.10592792236244,
+    "seconds": 28.0
+   },
+   "angry": {
+    "f0_median_hz": 275.5051268754477,
+    "f0_iqr_hz": 109.44691449114885,
+    "seconds": 27.04
+   },
+   "surprised": {
+    "f0_median_hz": 270.83221251290126,
+    "f0_iqr_hz": 116.7060006783932,
+    "seconds": 25.84
+   }
+  },
+  {
+   "id": "cherry/zh004",
+   "neutral": {
+    "f0_median_hz": 274.3172383375777,
+    "f0_iqr_hz": 106.803071606379,
+    "seconds": 11.36
+   },
+   "control": {
+    "f0_median_hz": 251.2047217793961,
+    "f0_iqr_hz": 87.9600352749222,
+    "seconds": 11.36
+   },
+   "happy": {
+    "f0_median_hz": 266.5305881348238,
+    "f0_iqr_hz": 98.73332295686413,
+    "seconds": 11.28
+   },
+   "sad": {
+    "f0_median_hz": 266.7612432475409,
+    "f0_iqr_hz": 89.97445548402183,
+    "seconds": 11.68
+   },
+   "angry": {
+    "f0_median_hz": 268.1630110659132,
+    "f0_iqr_hz": 110.34356557631426,
+    "seconds": 11.36
+   },
+   "surprised": {
+    "f0_median_hz": 253.85364259732836,
+    "f0_iqr_hz": 86.65161120996225,
+    "seconds": 11.6
+   }
+  },
+  {
+   "id": "cherry/zh005",
+   "neutral": {
+    "f0_median_hz": 260.5629214120155,
+    "f0_iqr_hz": 86.24720380266024,
+    "seconds": 6.88
+   },
+   "control": {
+    "f0_median_hz": 287.9939351732811,
+    "f0_iqr_hz": 87.15214525406259,
+    "seconds": 6.48
+   },
+   "happy": {
+    "f0_median_hz": 274.024007483318,
+    "f0_iqr_hz": 70.6519252177369,
+    "seconds": 6.8
+   },
+   "sad": {
+    "f0_median_hz": 265.3481302352495,
+    "f0_iqr_hz": 79.39074097587127,
+    "seconds": 6.8
+   },
+   "angry": {
+    "f0_median_hz": 273.3053826980756,
+    "f0_iqr_hz": 82.98486820898793,
+    "seconds": 6.64
+   },
+   "surprised": {
+    "f0_median_hz": 290.3998430994301,
+    "f0_iqr_hz": 66.31226553235837,
+    "seconds": 6.32
+   }
+  },
+  {
+   "id": "cherry/zh006",
+   "neutral": {
+    "f0_median_hz": 270.0721208699628,
+    "f0_iqr_hz": 84.54668946985004,
+    "seconds": 10.88
+   },
+   "control": {
+    "f0_median_hz": 277.95529853842345,
+    "f0_iqr_hz": 82.5692463246886,
+    "seconds": 10.8
+   },
+   "happy": {
+    "f0_median_hz": 276.17327046523354,
+    "f0_iqr_hz": 76.15856518437056,
+    "seconds": 10.32
+   },
+   "sad": {
+    "f0_median_hz": 268.8440781078749,
+    "f0_iqr_hz": 75.78205496273003,
+    "seconds": 10.72
+   },
+   "angry": {
+    "f0_median_hz": 272.18814433438126,
+    "f0_iqr_hz": 87.79745810862869,
+    "seconds": 11.04
+   },
+   "surprised": {
+    "f0_median_hz": 274.78347099076274,
+    "f0_iqr_hz": 83.05458189789027,
+    "seconds": 10.88
+   }
+  },
+  {
+   "id": "cherry/zh007",
+   "neutral": {
+    "f0_median_hz": 273.03242942645954,
+    "f0_iqr_hz": 98.31230108054328,
+    "seconds": 27.92
+   },
+   "control": {
+    "f0_median_hz": 280.3387010919731,
+    "f0_iqr_hz": 91.5425957654175,
+    "seconds": 25.68
+   },
+   "happy": {
+    "f0_median_hz": 277.8040880203928,
+    "f0_iqr_hz": 98.25999291542544,
+    "seconds": 26.96
+   },
+   "sad": {
+    "f0_median_hz": 280.5953000247931,
+    "f0_iqr_hz": 96.09609932922763,
+    "seconds": 27.2
+   },
+   "angry": {
+    "f0_median_hz": 277.50467519638585,
+    "f0_iqr_hz": 84.62291127757956,
+    "seconds": 26.56
+   },
+   "surprised": {
+    "f0_median_hz": 283.4555798128849,
+    "f0_iqr_hz": 97.94861498178804,
+    "seconds": 27.92
+   }
+  },
+  {
+   "id": "cherry/zh008",
+   "neutral": {
+    "f0_median_hz": 277.63327246985534,
+    "f0_iqr_hz": 111.32144689442597,
+    "seconds": 39.36
+   },
+   "control": {
+    "f0_median_hz": 265.7870020147814,
+    "f0_iqr_hz": 100.20336386955671,
+    "seconds": 37.36
+   },
+   "happy": {
+    "f0_median_hz": 272.37721218963577,
+    "f0_iqr_hz": 113.74401670266698,
+    "seconds": 37.04
+   },
+   "sad": {
+    "f0_median_hz": 270.36685784612547,
+    "f0_iqr_hz": 109.54397321926646,
+    "seconds": 36.88
+   },
+   "angry": {
+    "f0_median_hz": 278.60643630121234,
+    "f0_iqr_hz": 105.14317043496567,
+    "seconds": 36.4
+   },
+   "surprised": {
+    "f0_median_hz": 274.41604965922767,
+    "f0_iqr_hz": 117.11940565395093,
+    "seconds": 42.16
+   }
+  },
+  {
+   "id": "cherry/zh009",
+   "neutral": {
+    "f0_median_hz": 279.457547760465,
+    "f0_iqr_hz": 101.91987672127226,
+    "seconds": 9.36
+   },
+   "control": {
+    "f0_median_hz": 268.2583224785053,
+    "f0_iqr_hz": 90.18900396823676,
+    "seconds": 9.2
+   },
+   "happy": {
+    "f0_median_hz": 259.90650737575953,
+    "f0_iqr_hz": 93.03602584849563,
+    "seconds": 9.6
+   },
+   "sad": {
+    "f0_median_hz": 275.785078114875,
+    "f0_iqr_hz": 95.28838279097039,
+    "seconds": 9.52
+   },
+   "angry": {
+    "f0_median_hz": 276.58509940124014,
+    "f0_iqr_hz": 103.44991964866392,
+    "seconds": 9.28
+   },
+   "surprised": {
+    "f0_median_hz": 272.9051132470291,
+    "f0_iqr_hz": 101.56419785267389,
+    "seconds": 9.36
+   }
+  },
+  {
+   "id": "cherry/zh010",
+   "neutral": {
+    "f0_median_hz": 274.2054973732487,
+    "f0_iqr_hz": 97.98379709868223,
+    "seconds": 29.36
+   },
+   "control": {
+    "f0_median_hz": 260.6997748032536,
+    "f0_iqr_hz": 106.88594647911688,
+    "seconds": 30.16
+   },
+   "happy": {
+    "f0_median_hz": 266.8694567805976,
+    "f0_iqr_hz": 102.81402206293424,
+    "seconds": 28.32
+   },
+   "sad": {
+    "f0_median_hz": 275.63377654044916,
+    "f0_iqr_hz": 108.14551346195935,
+    "seconds": 29.52
+   },
+   "angry": {
+    "f0_median_hz": 263.27212004915566,
+    "f0_iqr_hz": 100.75977534530034,
+    "seconds": 30.72
+   },
+   "surprised": {
+    "f0_median_hz": 262.3431163036723,
+    "f0_iqr_hz": 98.19968772029193,
+    "seconds": 29.84
+   }
+  },
+  {
+   "id": "cherry/zh011",
+   "neutral": {
+    "f0_median_hz": 284.5197900796571,
+    "f0_iqr_hz": 105.31944083762588,
+    "seconds": 32.08
+   },
+   "control": {
+    "f0_median_hz": 262.21683346611894,
+    "f0_iqr_hz": 97.59764747947133,
+    "seconds": 30.32
+   },
+   "happy": {
+    "f0_median_hz": 278.56244676875303,
+    "f0_iqr_hz": 96.96272037330618,
+    "seconds": 32.88
+   },
+   "sad": {
+    "f0_median_hz": 276.6699506210433,
+    "f0_iqr_hz": 122.04729225442298,
+    "seconds": 32.72
+   },
+   "angry": {
+    "f0_median_hz": 282.37811689658804,
+    "f0_iqr_hz": 103.13273766705632,
+    "seconds": 31.92
+   },
+   "surprised": {
+    "f0_median_hz": 275.41339176249846,
+    "f0_iqr_hz": 95.99856453700352,
+    "seconds": 31.84
+   }
+  },
+  {
+   "id": "cherry/zh012",
+   "neutral": {
+    "f0_median_hz": 285.2522401799648,
+    "f0_iqr_hz": 112.39343670613843,
+    "seconds": 7.2
+   },
+   "control": {
+    "f0_median_hz": 274.10467781738424,
+    "f0_iqr_hz": 128.58407928947872,
+    "seconds": 6.96
+   },
+   "happy": {
+    "f0_median_hz": 293.2959856751526,
+    "f0_iqr_hz": 112.90667787243146,
+    "seconds": 7.2
+   },
+   "sad": {
+    "f0_median_hz": 291.89652118280617,
+    "f0_iqr_hz": 114.6011661621342,
+    "seconds": 6.88
+   },
+   "angry": {
+    "f0_median_hz": 282.70522944561213,
+    "f0_iqr_hz": 110.7227665704381,
+    "seconds": 6.88
+   },
+   "surprised": {
+    "f0_median_hz": 283.769716819459,
+    "f0_iqr_hz": 128.42416225862178,
+    "seconds": 7.2
+   }
+  },
+  {
+   "id": "cherry/zh013",
+   "neutral": {
+    "f0_median_hz": 287.0942495132235,
+    "f0_iqr_hz": 92.66749979184311,
+    "seconds": 4.8
+   },
+   "control": {
+    "f0_median_hz": 279.9686087032765,
+    "f0_iqr_hz": 96.67794467040213,
+    "seconds": 4.8
+   },
+   "happy": {
+    "f0_median_hz": 289.55593116453156,
+    "f0_iqr_hz": 118.88476164567797,
+    "seconds": 5.04
+   },
+   "sad": {
+    "f0_median_hz": 289.9999952587801,
+    "f0_iqr_hz": 98.0890221502431,
+    "seconds": 4.8
+   },
+   "angry": {
+    "f0_median_hz": 281.09194457542173,
+    "f0_iqr_hz": 115.12904871527186,
+    "seconds": 4.96
+   },
+   "surprised": {
+    "f0_median_hz": 296.21217724278483,
+    "f0_iqr_hz": 104.48344431132921,
+    "seconds": 5.12
+   }
+  },
+  {
+   "id": "cherry/zh014",
+   "neutral": {
+    "f0_median_hz": 280.45463655331343,
+    "f0_iqr_hz": 130.48598902384197,
+    "seconds": 30.08
+   },
+   "control": {
+    "f0_median_hz": 293.6300848998731,
+    "f0_iqr_hz": 108.46830338761373,
+    "seconds": 30.64
+   },
+   "happy": {
+    "f0_median_hz": 288.3627527107784,
+    "f0_iqr_hz": 119.02271166666281,
+    "seconds": 30.48
+   },
+   "sad": {
+    "f0_median_hz": 270.3590004536583,
+    "f0_iqr_hz": 116.7858387187502,
+    "seconds": 32.4
+   },
+   "angry": {
+    "f0_median_hz": 284.8828993005842,
+    "f0_iqr_hz": 119.25087214302931,
+    "seconds": 31.52
+   },
+   "surprised": {
+    "f0_median_hz": 277.111583566214,
+    "f0_iqr_hz": 119.01905011864784,
+    "seconds": 30.88
+   }
+  },
+  {
+   "id": "cherry/zh015",
+   "neutral": {
+    "f0_median_hz": 246.21619623501957,
+    "f0_iqr_hz": 126.60788791681003,
+    "seconds": 5.36
+   },
+   "control": {
+    "f0_median_hz": 247.47328743457382,
+    "f0_iqr_hz": 107.34453507540064,
+    "seconds": 5.28
+   },
+   "happy": {
+    "f0_median_hz": 245.4746842599901,
+    "f0_iqr_hz": 118.32611334711098,
+    "seconds": 5.2
+   },
+   "sad": {
+    "f0_median_hz": 250.15302679911957,
+    "f0_iqr_hz": 110.09326670805262,
+    "seconds": 4.8
+   },
+   "angry": {
+    "f0_median_hz": 265.8782092222009,
+    "f0_iqr_hz": 99.26542266843012,
+    "seconds": 5.04
+   },
+   "surprised": {
+    "f0_median_hz": 236.31391308341375,
+    "f0_iqr_hz": 127.48202564780664,
+    "seconds": 5.52
+   }
+  },
+  {
+   "id": "cherry/zh016",
+   "neutral": {
+    "f0_median_hz": 262.62140533502156,
+    "f0_iqr_hz": 89.89837114503734,
+    "seconds": 9.28
+   },
+   "control": {
+    "f0_median_hz": 274.9445673464662,
+    "f0_iqr_hz": 94.09921772288737,
+    "seconds": 8.96
+   },
+   "happy": {
+    "f0_median_hz": 266.0554999902855,
+    "f0_iqr_hz": 106.1345442237064,
+    "seconds": 8.96
+   },
+   "sad": {
+    "f0_median_hz": 268.29936073181517,
+    "f0_iqr_hz": 95.96923772804547,
+    "seconds": 9.12
+   },
+   "angry": {
+    "f0_median_hz": 251.0178838908809,
+    "f0_iqr_hz": 95.86601079458,
+    "seconds": 9.28
+   },
+   "surprised": {
+    "f0_median_hz": 262.2612139856622,
+    "f0_iqr_hz": 90.62359409497833,
+    "seconds": 8.72
+   }
+  },
+  {
+   "id": "cherry/zh017",
+   "neutral": {
+    "f0_median_hz": 295.1707600663487,
+    "f0_iqr_hz": 134.23947516301862,
+    "seconds": 3.68
+   },
+   "control": {
+    "f0_median_hz": 298.34935311819174,
+    "f0_iqr_hz": 138.10556582802332,
+    "seconds": 4.08
+   },
+   "happy": {
+    "f0_median_hz": 296.13579609243885,
+    "f0_iqr_hz": 149.51544386639972,
+    "seconds": 3.68
+   },
+   "sad": {
+    "f0_median_hz": 308.7382594609522,
+    "f0_iqr_hz": 117.55079894102397,
+    "seconds": 3.44
+   },
+   "angry": {
+    "f0_median_hz": 281.59732929509266,
+    "f0_iqr_hz": 132.9506496645884,
+    "seconds": 3.68
+   },
+   "surprised": {
+    "f0_median_hz": 294.72533007203714,
+    "f0_iqr_hz": 141.49603186250494,
+    "seconds": 3.6
+   }
+  },
+  {
+   "id": "cherry/zh018",
+   "neutral": {
+    "f0_median_hz": 294.8363308105244,
+    "f0_iqr_hz": 129.36106961540906,
+    "seconds": 23.84
+   },
+   "control": {
+    "f0_median_hz": 291.1001672986913,
+    "f0_iqr_hz": 121.11168998003183,
+    "seconds": 23.04
+   },
+   "happy": {
+    "f0_median_hz": 274.65258489349003,
+    "f0_iqr_hz": 122.70687924682991,
+    "seconds": 23.84
+   },
+   "sad": {
+    "f0_median_hz": 283.58400102558096,
+    "f0_iqr_hz": 120.6583239670176,
+    "seconds": 22.56
+   },
+   "angry": {
+    "f0_median_hz": 279.60781258325665,
+    "f0_iqr_hz": 122.87736893898645,
+    "seconds": 22.96
+   },
+   "surprised": {
+    "f0_median_hz": 296.63658402151043,
+    "f0_iqr_hz": 114.44851277721784,
+    "seconds": 14.96
+   }
+  },
+  {
+   "id": "cherry/zh019",
+   "neutral": {
+    "f0_median_hz": 283.43710206471343,
+    "f0_iqr_hz": 93.85327556666948,
+    "seconds": 18.88
+   },
+   "control": {
+    "f0_median_hz": 286.15615147953076,
+    "f0_iqr_hz": 85.42321476689119,
+    "seconds": 17.84
+   },
+   "happy": {
+    "f0_median_hz": 281.8298787624916,
+    "f0_iqr_hz": 98.57685146102722,
+    "seconds": 18.56
+   },
+   "sad": {
+    "f0_median_hz": 282.44053776581205,
+    "f0_iqr_hz": 87.26580333490747,
+    "seconds": 18.56
+   },
+   "angry": {
+    "f0_median_hz": 278.36889447428064,
+    "f0_iqr_hz": 95.32735664972398,
+    "seconds": 18.72
+   },
+   "surprised": {
+    "f0_median_hz": 271.4741283273602,
+    "f0_iqr_hz": 95.17765469182532,
+    "seconds": 18.24
+   }
+  },
+  {
+   "id": "dylan/zh000",
+   "neutral": {
+    "f0_median_hz": 112.14396301831826,
+    "f0_iqr_hz": 102.90096090733061,
+    "seconds": 2.88
+   },
+   "control": {
+    "f0_median_hz": 112.0764797229078,
+    "f0_iqr_hz": 102.46255298527838,
+    "seconds": 3.44
+   },
+   "happy": {
+    "f0_median_hz": 108.35927283345534,
+    "f0_iqr_hz": 87.48745673069884,
+    "seconds": 3.04
+   },
+   "sad": {
+    "f0_median_hz": 104.14922355895614,
+    "f0_iqr_hz": 93.93750800060899,
+    "seconds": 2.96
+   },
+   "angry": {
+    "f0_median_hz": 103.99766766589946,
+    "f0_iqr_hz": 90.5946305203779,
+    "seconds": 2.8
+   },
+   "surprised": {
+    "f0_median_hz": 103.60317193659165,
+    "f0_iqr_hz": 97.97295594478916,
+    "seconds": 2.96
+   }
+  },
+  {
+   "id": "dylan/zh001",
+   "neutral": {
+    "f0_median_hz": 104.71110230855638,
+    "f0_iqr_hz": 65.52279493526548,
+    "seconds": 7.6
+   },
+   "control": {
+    "f0_median_hz": 103.60627955623593,
+    "f0_iqr_hz": 67.47140617561188,
+    "seconds": 8.24
+   },
+   "happy": {
+    "f0_median_hz": 100.66607401449205,
+    "f0_iqr_hz": 62.21536638944474,
+    "seconds": 8.0
+   },
+   "sad": {
+    "f0_median_hz": 98.40625359063525,
+    "f0_iqr_hz": 37.60600007629127,
+    "seconds": 8.0
+   },
+   "angry": {
+    "f0_median_hz": 99.74796588127347,
+    "f0_iqr_hz": 44.137978884062406,
+    "seconds": 8.4
+   },
+   "surprised": {
+    "f0_median_hz": 109.58341684330627,
+    "f0_iqr_hz": 71.32039846136975,
+    "seconds": 8.0
+   }
+  },
+  {
+   "id": "dylan/zh002",
+   "neutral": {
+    "f0_median_hz": 125.59314595084108,
+    "f0_iqr_hz": 95.47224395773101,
+    "seconds": 14.24
+   },
+   "control": {
+    "f0_median_hz": 123.60057301996872,
+    "f0_iqr_hz": 86.80265840944094,
+    "seconds": 15.76
+   },
+   "happy": {
+    "f0_median_hz": 120.04202010348774,
+    "f0_iqr_hz": 83.85101300581644,
+    "seconds": 15.28
+   },
+   "sad": {
+    "f0_median_hz": 123.10251054888832,
+    "f0_iqr_hz": 89.57243565156064,
+    "seconds": 14.48
+   },
+   "angry": {
+    "f0_median_hz": 127.3958483723102,
+    "f0_iqr_hz": 98.7129073769538,
+    "seconds": 15.2
+   },
+   "surprised": {
+    "f0_median_hz": 112.55233201650577,
+    "f0_iqr_hz": 71.6986107235888,
+    "seconds": 16.32
+   }
+  },
+  {
+   "id": "dylan/zh003",
+   "neutral": {
+    "f0_median_hz": 122.2730171074584,
+    "f0_iqr_hz": 82.86362796391066,
+    "seconds": 35.84
+   },
+   "control": {
+    "f0_median_hz": 130.38985496362668,
+    "f0_iqr_hz": 101.294734880998,
+    "seconds": 34.64
+   },
+   "happy": {
+    "f0_median_hz": 121.87724248849771,
+    "f0_iqr_hz": 90.99300199246944,
+    "seconds": 34.16
+   },
+   "sad": {
+    "f0_median_hz": 123.70432532279368,
+    "f0_iqr_hz": 79.17340430051065,
+    "seconds": 34.32
+   },
+   "angry": {
+    "f0_median_hz": 133.7827944130097,
+    "f0_iqr_hz": 96.75306776338127,
+    "seconds": 36.08
+   },
+   "surprised": {
+    "f0_median_hz": 117.32688429931598,
+    "f0_iqr_hz": 79.790483767551,
+    "seconds": 35.12
+   }
+  },
+  {
+   "id": "dylan/zh004",
+   "neutral": {
+    "f0_median_hz": 128.39112598811957,
+    "f0_iqr_hz": 102.96083416081414,
+    "seconds": 14.16
+   },
+   "control": {
+    "f0_median_hz": 134.44781346890574,
+    "f0_iqr_hz": 97.67648650710483,
+    "seconds": 15.28
+   },
+   "happy": {
+    "f0_median_hz": 139.0975683181073,
+    "f0_iqr_hz": 95.66886516692438,
+    "seconds": 14.32
+   },
+   "sad": {
+    "f0_median_hz": 137.2860194047362,
+    "f0_iqr_hz": 100.38458385116105,
+    "seconds": 14.0
+   },
+   "angry": {
+    "f0_median_hz": 124.68741925795767,
+    "f0_iqr_hz": 86.18908233785983,
+    "seconds": 14.08
+   },
+   "surprised": {
+    "f0_median_hz": 128.75672999524807,
+    "f0_iqr_hz": 91.56376705041802,
+    "seconds": 14.08
+   }
+  },
+  {
+   "id": "dylan/zh005",
+   "neutral": {
+    "f0_median_hz": 116.42604238994123,
+    "f0_iqr_hz": 70.9938772802,
+    "seconds": 8.88
+   },
+   "control": {
+    "f0_median_hz": 114.20989897382225,
+    "f0_iqr_hz": 85.81952338372152,
+    "seconds": 8.72
+   },
+   "happy": {
+    "f0_median_hz": 117.35002600139168,
+    "f0_iqr_hz": 74.65344561433349,
+    "seconds": 9.12
+   },
+   "sad": {
+    "f0_median_hz": 110.0337079207034,
+    "f0_iqr_hz": 89.36906312622125,
+    "seconds": 8.8
+   },
+   "angry": {
+    "f0_median_hz": 113.74663005977091,
+    "f0_iqr_hz": 62.96425228734121,
+    "seconds": 8.96
+   },
+   "surprised": {
+    "f0_median_hz": 124.95860007307769,
+    "f0_iqr_hz": 102.40935420214154,
+    "seconds": 9.04
+   }
+  },
+  {
+   "id": "dylan/zh006",
+   "neutral": {
+    "f0_median_hz": 133.74436426884702,
+    "f0_iqr_hz": 75.56538289637271,
+    "seconds": 13.84
+   },
+   "control": {
+    "f0_median_hz": 127.11226061708007,
+    "f0_iqr_hz": 68.75606724376335,
+    "seconds": 14.0
+   },
+   "happy": {
+    "f0_median_hz": 145.78507738502378,
+    "f0_iqr_hz": 85.40264637933285,
+    "seconds": 13.2
+   },
+   "sad": {
+    "f0_median_hz": 117.98525079241901,
+    "f0_iqr_hz": 71.3102148451827,
+    "seconds": 14.08
+   },
+   "angry": {
+    "f0_median_hz": 133.56561169328984,
+    "f0_iqr_hz": 83.61043735939997,
+    "seconds": 13.44
+   },
+   "surprised": {
+    "f0_median_hz": 118.82138113628977,
+    "f0_iqr_hz": 73.08381746599898,
+    "seconds": 14.0
+   }
+  },
+  {
+   "id": "dylan/zh007",
+   "neutral": {
+    "f0_median_hz": 100.07801841351241,
+    "f0_iqr_hz": 37.59472224329873,
+    "seconds": 36.8
+   },
+   "control": {
+    "f0_median_hz": 97.48677546345093,
+    "f0_iqr_hz": 37.307583188315874,
+    "seconds": 34.88
+   },
+   "happy": {
+    "f0_median_hz": 100.02645412636532,
+    "f0_iqr_hz": 38.59370256362284,
+    "seconds": 35.04
+   },
+   "sad": {
+    "f0_median_hz": 102.38539793282155,
+    "f0_iqr_hz": 34.8871655151751,
+    "seconds": 38.08
+   },
+   "angry": {
+    "f0_median_hz": 101.04024982437596,
+    "f0_iqr_hz": 39.906054560099534,
+    "seconds": 32.08
+   },
+   "surprised": {
+    "f0_median_hz": 101.63487217632262,
+    "f0_iqr_hz": 42.39980575981632,
+    "seconds": 36.0
+   }
+  },
+  {
+   "id": "dylan/zh008",
+   "neutral": {
+    "f0_median_hz": 120.10659657900156,
+    "f0_iqr_hz": 71.65130785440408,
+    "seconds": 42.4
+   },
+   "control": {
+    "f0_median_hz": 105.0911889247771,
+    "f0_iqr_hz": 64.66564356314362,
+    "seconds": 41.92
+   },
+   "happy": {
+    "f0_median_hz": 112.47615380171194,
+    "f0_iqr_hz": 71.2024152036505,
+    "seconds": 42.16
+   },
+   "sad": {
+    "f0_median_hz": 117.27650082593883,
+    "f0_iqr_hz": 84.68535674031014,
+    "seconds": 42.88
+   },
+   "angry": {
+    "f0_median_hz": 111.33551900896406,
+    "f0_iqr_hz": 77.22286529056572,
+    "seconds": 42.88
+   },
+   "surprised": {
+    "f0_median_hz": 108.49964322700707,
+    "f0_iqr_hz": 75.25405222886532,
+    "seconds": 41.68
+   }
+  },
+  {
+   "id": "dylan/zh009",
+   "neutral": {
+    "f0_median_hz": 128.89321099185594,
+    "f0_iqr_hz": 95.1558045461222,
+    "seconds": 11.68
+   },
+   "control": {
+    "f0_median_hz": 113.17949253397629,
+    "f0_iqr_hz": 75.06455144117093,
+    "seconds": 12.4
+   },
+   "happy": {
+    "f0_median_hz": 99.96214252932484,
+    "f0_iqr_hz": 52.62746749934438,
+    "seconds": 12.48
+   },
+   "sad": {
+    "f0_median_hz": 125.22325251691421,
+    "f0_iqr_hz": 87.64824976500103,
+    "seconds": 11.28
+   },
+   "angry": {
+    "f0_median_hz": 105.23195357113242,
+    "f0_iqr_hz": 72.93744478362478,
+    "seconds": 11.52
+   },
+   "surprised": {
+    "f0_median_hz": 104.3893589817652,
+    "f0_iqr_hz": 69.7060936109551,
+    "seconds": 13.6
+   }
+  },
+  {
+   "id": "dylan/zh010",
+   "neutral": {
+    "f0_median_hz": 122.84120076482118,
+    "f0_iqr_hz": 80.03788764833779,
+    "seconds": 35.76
+   },
+   "control": {
+    "f0_median_hz": 115.03731624467274,
+    "f0_iqr_hz": 72.7243076364725,
+    "seconds": 36.32
+   },
+   "happy": {
+    "f0_median_hz": 127.83928965536643,
+    "f0_iqr_hz": 86.76542563360422,
+    "seconds": 35.04
+   },
+   "sad": {
+    "f0_median_hz": 116.50785901461444,
+    "f0_iqr_hz": 83.84859384533065,
+    "seconds": 35.68
+   },
+   "angry": {
+    "f0_median_hz": 123.73322479009883,
+    "f0_iqr_hz": 85.14626585590825,
+    "seconds": 35.6
+   },
+   "surprised": {
+    "f0_median_hz": 112.50163524365041,
+    "f0_iqr_hz": 84.38801001093951,
+    "seconds": 36.48
+   }
+  },
+  {
+   "id": "dylan/zh011",
+   "neutral": {
+    "f0_median_hz": 102.95035694690641,
+    "f0_iqr_hz": 57.09719022046447,
+    "seconds": 38.08
+   },
+   "control": {
+    "f0_median_hz": 103.93809798967783,
+    "f0_iqr_hz": 58.376241445945524,
+    "seconds": 37.76
+   },
+   "happy": {
+    "f0_median_hz": 105.25970169148019,
+    "f0_iqr_hz": 71.63760498520537,
+    "seconds": 39.84
+   },
+   "sad": {
+    "f0_median_hz": 102.58023570675641,
+    "f0_iqr_hz": 61.59262873532279,
+    "seconds": 38.8
+   },
+   "angry": {
+    "f0_median_hz": 115.30550948459134,
+    "f0_iqr_hz": 75.01529597304281,
+    "seconds": 38.32
+   },
+   "surprised": {
+    "f0_median_hz": 108.93836255704576,
+    "f0_iqr_hz": 60.880827491372656,
+    "seconds": 37.04
+   }
+  },
+  {
+   "id": "dylan/zh012",
+   "neutral": {
+    "f0_median_hz": 122.57721534179029,
+    "f0_iqr_hz": 95.67063797729755,
+    "seconds": 8.72
+   },
+   "control": {
+    "f0_median_hz": 131.27146104899728,
+    "f0_iqr_hz": 95.0010865943614,
+    "seconds": 8.88
+   },
+   "happy": {
+    "f0_median_hz": 133.27224199699222,
+    "f0_iqr_hz": 104.74145858031514,
+    "seconds": 8.8
+   },
+   "sad": {
+    "f0_median_hz": 133.42401502927515,
+    "f0_iqr_hz": 105.27705979729512,
+    "seconds": 8.48
+   },
+   "angry": {
+    "f0_median_hz": 124.38947811522429,
+    "f0_iqr_hz": 95.23951337348274,
+    "seconds": 8.88
+   },
+   "surprised": {
+    "f0_median_hz": 121.42963249621127,
+    "f0_iqr_hz": 94.94497165992034,
+    "seconds": 8.88
+   }
+  },
+  {
+   "id": "dylan/zh013",
+   "neutral": {
+    "f0_median_hz": 120.20856025453668,
+    "f0_iqr_hz": 89.32238206865918,
+    "seconds": 6.72
+   },
+   "control": {
+    "f0_median_hz": 118.89284008799517,
+    "f0_iqr_hz": 91.26644677216146,
+    "seconds": 6.4
+   },
+   "happy": {
+    "f0_median_hz": 106.96256362282202,
+    "f0_iqr_hz": 87.6592685384381,
+    "seconds": 6.88
+   },
+   "sad": {
+    "f0_median_hz": 112.16951987365289,
+    "f0_iqr_hz": 66.04299333950641,
+    "seconds": 6.64
+   },
+   "angry": {
+    "f0_median_hz": 125.81396919293624,
+    "f0_iqr_hz": 92.54995788489796,
+    "seconds": 6.48
+   },
+   "surprised": {
+    "f0_median_hz": 119.38652172855993,
+    "f0_iqr_hz": 94.03480346747148,
+    "seconds": 6.64
+   }
+  },
+  {
+   "id": "dylan/zh014",
+   "neutral": {
+    "f0_median_hz": 112.4883273963613,
+    "f0_iqr_hz": 89.2792798321772,
+    "seconds": 38.16
+   },
+   "control": {
+    "f0_median_hz": 116.50892943892815,
+    "f0_iqr_hz": 89.98350420808924,
+    "seconds": 36.64
+   },
+   "happy": {
+    "f0_median_hz": 106.60425059486741,
+    "f0_iqr_hz": 93.1507946038089,
+    "seconds": 35.76
+   },
+   "sad": {
+    "f0_median_hz": 113.60645312969372,
+    "f0_iqr_hz": 86.6740978911536,
+    "seconds": 34.8
+   },
+   "angry": {
+    "f0_median_hz": 126.607063857508,
+    "f0_iqr_hz": 89.64410264378733,
+    "seconds": 35.28
+   },
+   "surprised": {
+    "f0_median_hz": 120.50219107339682,
+    "f0_iqr_hz": 98.29062044150868,
+    "seconds": 38.48
+   }
+  },
+  {
+   "id": "dylan/zh015",
+   "neutral": {
+    "f0_median_hz": 124.24715796691257,
+    "f0_iqr_hz": 81.84955078199256,
+    "seconds": 6.88
+   },
+   "control": {
+    "f0_median_hz": 113.31748609180889,
+    "f0_iqr_hz": 65.68861329598442,
+    "seconds": 7.04
+   },
+   "happy": {
+    "f0_median_hz": 134.62229309761483,
+    "f0_iqr_hz": 94.89621533021614,
+    "seconds": 6.72
+   },
+   "sad": {
+    "f0_median_hz": 119.82590107140877,
+    "f0_iqr_hz": 85.10559734635667,
+    "seconds": 6.8
+   },
+   "angry": {
+    "f0_median_hz": 118.46287795798256,
+    "f0_iqr_hz": 84.27135773343744,
+    "seconds": 7.44
+   },
+   "surprised": {
+    "f0_median_hz": 124.12038562693594,
+    "f0_iqr_hz": 87.45784415717247,
+    "seconds": 7.04
+   }
+  },
+  {
+   "id": "dylan/zh016",
+   "neutral": {
+    "f0_median_hz": 108.22310131797627,
+    "f0_iqr_hz": 45.03189877484894,
+    "seconds": 12.24
+   },
+   "control": {
+    "f0_median_hz": 124.63524943342256,
+    "f0_iqr_hz": 76.51766626609735,
+    "seconds": 11.76
+   },
+   "happy": {
+    "f0_median_hz": 112.936343744557,
+    "f0_iqr_hz": 56.926421950092475,
+    "seconds": 12.72
+   },
+   "sad": {
+    "f0_median_hz": 115.0144665084978,
+    "f0_iqr_hz": 73.16851475341707,
+    "seconds": 12.88
+   },
+   "angry": {
+    "f0_median_hz": 114.8516021615798,
+    "f0_iqr_hz": 58.65049807425282,
+    "seconds": 12.4
+   },
+   "surprised": {
+    "f0_median_hz": 117.06366206520131,
+    "f0_iqr_hz": 71.5692286070031,
+    "seconds": 11.84
+   }
+  },
+  {
+   "id": "dylan/zh017",
+   "neutral": {
+    "f0_median_hz": 128.39941569812316,
+    "f0_iqr_hz": 94.17181925172675,
+    "seconds": 4.64
+   },
+   "control": {
+    "f0_median_hz": 143.13217370674187,
+    "f0_iqr_hz": 100.22170463275154,
+    "seconds": 4.48
+   },
+   "happy": {
+    "f0_median_hz": 126.11536501732577,
+    "f0_iqr_hz": 91.12003901273957,
+    "seconds": 4.72
+   },
+   "sad": {
+    "f0_median_hz": 175.8030584649119,
+    "f0_iqr_hz": 101.37144991035773,
+    "seconds": 4.64
+   },
+   "angry": {
+    "f0_median_hz": 168.6768668584138,
+    "f0_iqr_hz": 98.47282686175569,
+    "seconds": 4.8
+   },
+   "surprised": {
+    "f0_median_hz": 116.52517427615464,
+    "f0_iqr_hz": 101.8724802881825,
+    "seconds": 4.96
+   }
+  },
+  {
+   "id": "dylan/zh018",
+   "neutral": {
+    "f0_median_hz": 109.56276630149478,
+    "f0_iqr_hz": 75.41784210044332,
+    "seconds": 29.2
+   },
+   "control": {
+    "f0_median_hz": 116.64276916254107,
+    "f0_iqr_hz": 76.8425308064707,
+    "seconds": 27.52
+   },
+   "happy": {
+    "f0_median_hz": 117.13979393465033,
+    "f0_iqr_hz": 87.1057981412286,
+    "seconds": 27.44
+   },
+   "sad": {
+    "f0_median_hz": 116.97728119131415,
+    "f0_iqr_hz": 77.76927072030425,
+    "seconds": 31.2
+   },
+   "angry": {
+    "f0_median_hz": 116.77482689254968,
+    "f0_iqr_hz": 69.40625435965859,
+    "seconds": 30.32
+   },
+   "surprised": {
+    "f0_median_hz": 119.50749059689882,
+    "f0_iqr_hz": 91.6050686665061,
+    "seconds": 27.68
+   }
+  },
+  {
+   "id": "dylan/zh019",
+   "neutral": {
+    "f0_median_hz": 119.74144758155693,
+    "f0_iqr_hz": 93.22462557829391,
+    "seconds": 22.96
+   },
+   "control": {
+    "f0_median_hz": 133.54807146936665,
+    "f0_iqr_hz": 86.25419382126718,
+    "seconds": 21.36
+   },
+   "happy": {
+    "f0_median_hz": 117.08222779054398,
+    "f0_iqr_hz": 77.70918345942827,
+    "seconds": 22.0
+   },
+   "sad": {
+    "f0_median_hz": 111.98162274101468,
+    "f0_iqr_hz": 92.40710933969635,
+    "seconds": 22.24
+   },
+   "angry": {
+    "f0_median_hz": 125.07820897353093,
+    "f0_iqr_hz": 88.0377492078465,
+    "seconds": 21.6
+   },
+   "surprised": {
+    "f0_median_hz": 119.05424747234566,
+    "f0_iqr_hz": 82.05124797346278,
+    "seconds": 22.64
+   }
+  },
+  {
+   "id": "eric/zh000",
+   "neutral": {
+    "f0_median_hz": 245.45321566273955,
+    "f0_iqr_hz": 74.33231412981561,
+    "seconds": 2.32
+   },
+   "control": {
+    "f0_median_hz": 208.45649738247823,
+    "f0_iqr_hz": 111.22326696316037,
+    "seconds": 2.64
+   },
+   "happy": {
+    "f0_median_hz": 244.53032769089597,
+    "f0_iqr_hz": 87.86617201073418,
+    "seconds": 2.16
+   },
+   "sad": {
+    "f0_median_hz": 236.63903170751524,
+    "f0_iqr_hz": 82.66415421539998,
+    "seconds": 2.72
+   },
+   "angry": {
+    "f0_median_hz": 253.6968276716862,
+    "f0_iqr_hz": 81.8784234249195,
+    "seconds": 2.48
+   },
+   "surprised": {
+    "f0_median_hz": 242.05138126154105,
+    "f0_iqr_hz": 90.89981157641162,
+    "seconds": 2.48
+   }
+  },
+  {
+   "id": "eric/zh001",
+   "neutral": {
+    "f0_median_hz": 245.58290130873067,
+    "f0_iqr_hz": 66.15386436497175,
+    "seconds": 7.6
+   },
+   "control": {
+    "f0_median_hz": 252.85433862160158,
+    "f0_iqr_hz": 66.65684690962215,
+    "seconds": 7.84
+   },
+   "happy": {
+    "f0_median_hz": 240.53502492650054,
+    "f0_iqr_hz": 70.69586995014157,
+    "seconds": 7.76
+   },
+   "sad": {
+    "f0_median_hz": 226.53574006812912,
+    "f0_iqr_hz": 74.86690985365692,
+    "seconds": 7.68
+   },
+   "angry": {
+    "f0_median_hz": 230.11878496169712,
+    "f0_iqr_hz": 96.47524600465346,
+    "seconds": 8.16
+   },
+   "surprised": {
+    "f0_median_hz": 236.04118272133186,
+    "f0_iqr_hz": 94.97093354756885,
+    "seconds": 8.32
+   }
+  },
+  {
+   "id": "eric/zh002",
+   "neutral": {
+    "f0_median_hz": 223.2159830173665,
+    "f0_iqr_hz": 101.22009169174959,
+    "seconds": 14.64
+   },
+   "control": {
+    "f0_median_hz": 227.78676459039843,
+    "f0_iqr_hz": 93.22564651760379,
+    "seconds": 13.84
+   },
+   "happy": {
+    "f0_median_hz": 239.5999694398948,
+    "f0_iqr_hz": 117.73540277681144,
+    "seconds": 14.48
+   },
+   "sad": {
+    "f0_median_hz": 239.2667376098364,
+    "f0_iqr_hz": 99.76581693165463,
+    "seconds": 13.84
+   },
+   "angry": {
+    "f0_median_hz": 236.33949347498583,
+    "f0_iqr_hz": 107.90769718168644,
+    "seconds": 12.72
+   },
+   "surprised": {
+    "f0_median_hz": 252.84251333914665,
+    "f0_iqr_hz": 92.73439332986021,
+    "seconds": 13.68
+   }
+  },
+  {
+   "id": "eric/zh003",
+   "neutral": {
+    "f0_median_hz": 268.5739280386091,
+    "f0_iqr_hz": 112.87391252407488,
+    "seconds": 33.2
+   },
+   "control": {
+    "f0_median_hz": 255.4880927262089,
+    "f0_iqr_hz": 91.40057249478298,
+    "seconds": 33.76
+   },
+   "happy": {
+    "f0_median_hz": 251.99939536351002,
+    "f0_iqr_hz": 111.22274533246451,
+    "seconds": 36.8
+   },
+   "sad": {
+    "f0_median_hz": 263.51311580009815,
+    "f0_iqr_hz": 113.08826639431982,
+    "seconds": 35.68
+   },
+   "angry": {
+    "f0_median_hz": 246.36069301311335,
+    "f0_iqr_hz": 109.05185852118814,
+    "seconds": 31.92
+   },
+   "surprised": {
+    "f0_median_hz": 275.9395204554101,
+    "f0_iqr_hz": 110.04934223178341,
+    "seconds": 31.68
+   }
+  },
+  {
+   "id": "eric/zh004",
+   "neutral": {
+    "f0_median_hz": 247.46561959878125,
+    "f0_iqr_hz": 95.41831409279865,
+    "seconds": 12.48
+   },
+   "control": {
+    "f0_median_hz": 233.9825292554882,
+    "f0_iqr_hz": 95.93774538206708,
+    "seconds": 13.2
+   },
+   "happy": {
+    "f0_median_hz": 240.0995498973753,
+    "f0_iqr_hz": 86.54091673597833,
+    "seconds": 12.4
+   },
+   "sad": {
+    "f0_median_hz": 239.77465761684994,
+    "f0_iqr_hz": 94.73734054419913,
+    "seconds": 13.52
+   },
+   "angry": {
+    "f0_median_hz": 241.93539555987462,
+    "f0_iqr_hz": 82.16154239655955,
+    "seconds": 11.68
+   },
+   "surprised": {
+    "f0_median_hz": 221.24386778301545,
+    "f0_iqr_hz": 92.23900588577379,
+    "seconds": 13.04
+   }
+  },
+  {
+   "id": "eric/zh005",
+   "neutral": {
+    "f0_median_hz": 238.17718310232533,
+    "f0_iqr_hz": 74.83279877365194,
+    "seconds": 7.52
+   },
+   "control": {
+    "f0_median_hz": 252.56841260249928,
+    "f0_iqr_hz": 68.29924510880906,
+    "seconds": 8.08
+   },
+   "happy": {
+    "f0_median_hz": 233.74500151926838,
+    "f0_iqr_hz": 62.20092171377465,
+    "seconds": 7.36
+   },
+   "sad": {
+    "f0_median_hz": 242.35107110011046,
+    "f0_iqr_hz": 91.64014582641553,
+    "seconds": 7.36
+   },
+   "angry": {
+    "f0_median_hz": 243.0888573813108,
+    "f0_iqr_hz": 65.55240567368332,
+    "seconds": 7.36
+   },
+   "surprised": {
+    "f0_median_hz": 243.8546967788112,
+    "f0_iqr_hz": 77.18154409098543,
+    "seconds": 7.6
+   }
+  },
+  {
+   "id": "eric/zh006",
+   "neutral": {
+    "f0_median_hz": 244.3830936790478,
+    "f0_iqr_hz": 84.25576529722807,
+    "seconds": 11.44
+   },
+   "control": {
+    "f0_median_hz": 245.5816967952933,
+    "f0_iqr_hz": 76.14075586732423,
+    "seconds": 10.72
+   },
+   "happy": {
+    "f0_median_hz": 249.95118148447435,
+    "f0_iqr_hz": 77.25568440770348,
+    "seconds": 11.44
+   },
+   "sad": {
+    "f0_median_hz": 255.19154839588842,
+    "f0_iqr_hz": 80.84515694878283,
+    "seconds": 11.52
+   },
+   "angry": {
+    "f0_median_hz": 251.29141485527026,
+    "f0_iqr_hz": 85.18350110347342,
+    "seconds": 11.68
+   },
+   "surprised": {
+    "f0_median_hz": 228.2707320150158,
+    "f0_iqr_hz": 77.00339644066179,
+    "seconds": 11.52
+   }
+  },
+  {
+   "id": "eric/zh007",
+   "neutral": {
+    "f0_median_hz": 228.21057591845502,
+    "f0_iqr_hz": 83.32090546331693,
+    "seconds": 29.76
+   },
+   "control": {
+    "f0_median_hz": 248.69402821293812,
+    "f0_iqr_hz": 80.86547945031793,
+    "seconds": 31.28
+   },
+   "happy": {
+    "f0_median_hz": 248.55145888327593,
+    "f0_iqr_hz": 87.99849002527594,
+    "seconds": 28.4
+   },
+   "sad": {
+    "f0_median_hz": 253.90895585549373,
+    "f0_iqr_hz": 83.78475194624718,
+    "seconds": 31.92
+   },
+   "angry": {
+    "f0_median_hz": 250.43450710609073,
+    "f0_iqr_hz": 92.98361997221406,
+    "seconds": 31.36
+   },
+   "surprised": {
+    "f0_median_hz": 231.45481726382974,
+    "f0_iqr_hz": 84.83176762658462,
+    "seconds": 27.28
+   }
+  },
+  {
+   "id": "eric/zh008",
+   "neutral": {
+    "f0_median_hz": 230.10385312500566,
+    "f0_iqr_hz": 95.71942241760144,
+    "seconds": 41.36
+   },
+   "control": {
+    "f0_median_hz": 235.94639649176628,
+    "f0_iqr_hz": 89.34566365167103,
+    "seconds": 40.64
+   },
+   "happy": {
+    "f0_median_hz": 240.17998730435016,
+    "f0_iqr_hz": 83.05222778018532,
+    "seconds": 41.76
+   },
+   "sad": {
+    "f0_median_hz": 231.06497020889572,
+    "f0_iqr_hz": 89.43876211189661,
+    "seconds": 40.88
+   },
+   "angry": {
+    "f0_median_hz": 242.02254130022345,
+    "f0_iqr_hz": 97.14690957960639,
+    "seconds": 40.88
+   },
+   "surprised": {
+    "f0_median_hz": 242.97964304510947,
+    "f0_iqr_hz": 88.8287559096027,
+    "seconds": 39.6
+   }
+  },
+  {
+   "id": "eric/zh009",
+   "neutral": {
+    "f0_median_hz": 238.6917538771139,
+    "f0_iqr_hz": 74.05012898886346,
+    "seconds": 9.52
+   },
+   "control": {
+    "f0_median_hz": 237.29010740088808,
+    "f0_iqr_hz": 86.2753497883946,
+    "seconds": 9.68
+   },
+   "happy": {
+    "f0_median_hz": 237.74170185321987,
+    "f0_iqr_hz": 84.25966913497459,
+    "seconds": 9.68
+   },
+   "sad": {
+    "f0_median_hz": 236.5132102410097,
+    "f0_iqr_hz": 74.09913131179277,
+    "seconds": 9.68
+   },
+   "angry": {
+    "f0_median_hz": 238.58310153531286,
+    "f0_iqr_hz": 74.5056445410302,
+    "seconds": 9.92
+   },
+   "surprised": {
+    "f0_median_hz": 252.38794341714683,
+    "f0_iqr_hz": 75.88557837432683,
+    "seconds": 10.56
+   }
+  },
+  {
+   "id": "eric/zh010",
+   "neutral": {
+    "f0_median_hz": 240.6809785492655,
+    "f0_iqr_hz": 97.77410264033668,
+    "seconds": 33.52
+   },
+   "control": {
+    "f0_median_hz": 258.8167706168826,
+    "f0_iqr_hz": 93.23155842056252,
+    "seconds": 31.92
+   },
+   "happy": {
+    "f0_median_hz": 246.11119720061822,
+    "f0_iqr_hz": 90.18136940678778,
+    "seconds": 32.88
+   },
+   "sad": {
+    "f0_median_hz": 245.3083102785011,
+    "f0_iqr_hz": 92.8203846644895,
+    "seconds": 32.32
+   },
+   "angry": {
+    "f0_median_hz": 244.9874727677829,
+    "f0_iqr_hz": 92.57472724040679,
+    "seconds": 31.92
+   },
+   "surprised": {
+    "f0_median_hz": 239.8381745575069,
+    "f0_iqr_hz": 76.50621458102319,
+    "seconds": 32.8
+   }
+  },
+  {
+   "id": "eric/zh011",
+   "neutral": {
+    "f0_median_hz": 237.547524680622,
+    "f0_iqr_hz": 96.47904635742432,
+    "seconds": 31.76
+   },
+   "control": {
+    "f0_median_hz": 255.69967730422516,
+    "f0_iqr_hz": 95.69178601162861,
+    "seconds": 33.92
+   },
+   "happy": {
+    "f0_median_hz": 243.2008686937176,
+    "f0_iqr_hz": 93.26254476319488,
+    "seconds": 33.52
+   },
+   "sad": {
+    "f0_median_hz": 230.1854779508087,
+    "f0_iqr_hz": 115.07573216084955,
+    "seconds": 34.08
+   },
+   "angry": {
+    "f0_median_hz": 238.2666884162325,
+    "f0_iqr_hz": 88.08615496035276,
+    "seconds": 35.28
+   },
+   "surprised": {
+    "f0_median_hz": 242.0767932304689,
+    "f0_iqr_hz": 94.78887050853137,
+    "seconds": 35.04
+   }
+  },
+  {
+   "id": "eric/zh012",
+   "neutral": {
+    "f0_median_hz": 255.6475068025414,
+    "f0_iqr_hz": 75.84013007559926,
+    "seconds": 8.88
+   },
+   "control": {
+    "f0_median_hz": 238.6410663458366,
+    "f0_iqr_hz": 92.17419554726735,
+    "seconds": 8.0
+   },
+   "happy": {
+    "f0_median_hz": 259.4227949547493,
+    "f0_iqr_hz": 111.55028702546187,
+    "seconds": 8.32
+   },
+   "sad": {
+    "f0_median_hz": 247.12988204229907,
+    "f0_iqr_hz": 76.72980019752859,
+    "seconds": 8.8
+   },
+   "angry": {
+    "f0_median_hz": 271.2574023767613,
+    "f0_iqr_hz": 103.16791359731343,
+    "seconds": 8.16
+   },
+   "surprised": {
+    "f0_median_hz": 245.51707928537263,
+    "f0_iqr_hz": 76.62797981862127,
+    "seconds": 9.04
+   }
+  },
+  {
+   "id": "eric/zh013",
+   "neutral": {
+    "f0_median_hz": 237.40615183880163,
+    "f0_iqr_hz": 99.68936356252206,
+    "seconds": 5.04
+   },
+   "control": {
+    "f0_median_hz": 242.5664716948874,
+    "f0_iqr_hz": 95.10575528939185,
+    "seconds": 5.2
+   },
+   "happy": {
+    "f0_median_hz": 256.98023157845734,
+    "f0_iqr_hz": 90.30937959874552,
+    "seconds": 4.96
+   },
+   "sad": {
+    "f0_median_hz": 252.48770684347437,
+    "f0_iqr_hz": 93.94768434168682,
+    "seconds": 5.2
+   },
+   "angry": {
+    "f0_median_hz": 247.4688029704094,
+    "f0_iqr_hz": 96.40512963188996,
+    "seconds": 5.12
+   },
+   "surprised": {
+    "f0_median_hz": 247.44626403109413,
+    "f0_iqr_hz": 86.33786494645682,
+    "seconds": 5.12
+   }
+  },
+  {
+   "id": "eric/zh014",
+   "neutral": {
+    "f0_median_hz": 285.73341112672466,
+    "f0_iqr_hz": 91.27153104517487,
+    "seconds": 33.76
+   },
+   "control": {
+    "f0_median_hz": 254.67732561844252,
+    "f0_iqr_hz": 100.38865708313,
+    "seconds": 30.08
+   },
+   "happy": {
+    "f0_median_hz": 254.03714678974828,
+    "f0_iqr_hz": 109.70359738288346,
+    "seconds": 31.52
+   },
+   "sad": {
+    "f0_median_hz": 272.7931997012772,
+    "f0_iqr_hz": 111.52442708685177,
+    "seconds": 30.56
+   },
+   "angry": {
+    "f0_median_hz": 267.5249052073962,
+    "f0_iqr_hz": 110.15075871487736,
+    "seconds": 32.8
+   },
+   "surprised": {
+    "f0_median_hz": 258.8565983975482,
+    "f0_iqr_hz": 105.42101039733171,
+    "seconds": 32.96
+   }
+  },
+  {
+   "id": "eric/zh015",
+   "neutral": {
+    "f0_median_hz": 234.97549478332212,
+    "f0_iqr_hz": 87.8130086882407,
+    "seconds": 6.64
+   },
+   "control": {
+    "f0_median_hz": 212.6729245255149,
+    "f0_iqr_hz": 103.40311361350166,
+    "seconds": 6.08
+   },
+   "happy": {
+    "f0_median_hz": 241.9493736338763,
+    "f0_iqr_hz": 98.55560767168475,
+    "seconds": 6.88
+   },
+   "sad": {
+    "f0_median_hz": 250.97873122844211,
+    "f0_iqr_hz": 78.94456449078194,
+    "seconds": 7.2
+   },
+   "angry": {
+    "f0_median_hz": 219.54633202850616,
+    "f0_iqr_hz": 82.38226889045308,
+    "seconds": 6.4
+   },
+   "surprised": {
+    "f0_median_hz": 254.7591849847401,
+    "f0_iqr_hz": 89.67421081053772,
+    "seconds": 6.96
+   }
+  },
+  {
+   "id": "eric/zh016",
+   "neutral": {
+    "f0_median_hz": 244.08725679666674,
+    "f0_iqr_hz": 82.92761217377517,
+    "seconds": 10.24
+   },
+   "control": {
+    "f0_median_hz": 240.89113577923513,
+    "f0_iqr_hz": 90.14413726854434,
+    "seconds": 10.08
+   },
+   "happy": {
+    "f0_median_hz": 240.30228315400794,
+    "f0_iqr_hz": 80.03875084491449,
+    "seconds": 10.08
+   },
+   "sad": {
+    "f0_median_hz": 240.16003004094188,
+    "f0_iqr_hz": 81.45860936145922,
+    "seconds": 10.32
+   },
+   "angry": {
+    "f0_median_hz": 238.01303365365985,
+    "f0_iqr_hz": 85.0461043229974,
+    "seconds": 11.12
+   },
+   "surprised": {
+    "f0_median_hz": 237.96173109585584,
+    "f0_iqr_hz": 84.96577881359411,
+    "seconds": 9.92
+   }
+  },
+  {
+   "id": "eric/zh017",
+   "neutral": {
+    "f0_median_hz": 261.91391890363764,
+    "f0_iqr_hz": 114.30527699869884,
+    "seconds": 4.08
+   },
+   "control": {
+    "f0_median_hz": 224.7556440819874,
+    "f0_iqr_hz": 130.94113918580325,
+    "seconds": 4.48
+   },
+   "happy": {
+    "f0_median_hz": 292.1127055104522,
+    "f0_iqr_hz": 106.83936467199976,
+    "seconds": 3.68
+   },
+   "sad": {
+    "f0_median_hz": 250.63397489090562,
+    "f0_iqr_hz": 86.54226553510213,
+    "seconds": 4.4
+   },
+   "angry": {
+    "f0_median_hz": 272.5645235585932,
+    "f0_iqr_hz": 117.34478451222589,
+    "seconds": 3.6
+   },
+   "surprised": {
+    "f0_median_hz": 277.9719021808083,
+    "f0_iqr_hz": 117.59889173713415,
+    "seconds": 4.0
+   }
+  },
+  {
+   "id": "eric/zh018",
+   "neutral": {
+    "f0_median_hz": 243.01749795209594,
+    "f0_iqr_hz": 93.85606637351057,
+    "seconds": 24.56
+   },
+   "control": {
+    "f0_median_hz": 239.1509065365674,
+    "f0_iqr_hz": 98.06632265677672,
+    "seconds": 25.2
+   },
+   "happy": {
+    "f0_median_hz": 264.5103962774846,
+    "f0_iqr_hz": 96.84151380188433,
+    "seconds": 24.56
+   },
+   "sad": {
+    "f0_median_hz": 258.7373477542063,
+    "f0_iqr_hz": 92.27734385786715,
+    "seconds": 23.6
+   },
+   "angry": {
+    "f0_median_hz": 256.30354885781844,
+    "f0_iqr_hz": 100.65390716213292,
+    "seconds": 28.24
+   },
+   "surprised": {
+    "f0_median_hz": 253.63231583865428,
+    "f0_iqr_hz": 92.31366296666741,
+    "seconds": 24.08
+   }
+  },
+  {
+   "id": "eric/zh019",
+   "neutral": {
+    "f0_median_hz": 241.19772204524492,
+    "f0_iqr_hz": 70.97399683727323,
+    "seconds": 19.84
+   },
+   "control": {
+    "f0_median_hz": 259.70218276341797,
+    "f0_iqr_hz": 84.64359657238259,
+    "seconds": 19.04
+   },
+   "happy": {
+    "f0_median_hz": 241.54881597874646,
+    "f0_iqr_hz": 68.67250825223334,
+    "seconds": 19.44
+   },
+   "sad": {
+    "f0_median_hz": 263.14596758279515,
+    "f0_iqr_hz": 90.17369603434733,
+    "seconds": 18.8
+   },
+   "angry": {
+    "f0_median_hz": 255.17241926158283,
+    "f0_iqr_hz": 82.93934225016272,
+    "seconds": 19.68
+   },
+   "surprised": {
+    "f0_median_hz": 258.1908436709105,
+    "f0_iqr_hz": 69.46854661463507,
+    "seconds": 19.52
+   }
+  },
+  {
+   "id": "ethan/zh000",
+   "neutral": {
+    "f0_median_hz": 126.98570349280153,
+    "f0_iqr_hz": 52.46291005532771,
+    "seconds": 2.88
+   },
+   "control": {
+    "f0_median_hz": 129.69520991247134,
+    "f0_iqr_hz": 58.41850546031765,
+    "seconds": 2.64
+   },
+   "happy": {
+    "f0_median_hz": 105.72262757413407,
+    "f0_iqr_hz": 29.401326385122942,
+    "seconds": 2.72
+   },
+   "sad": {
+    "f0_median_hz": 105.5324629512763,
+    "f0_iqr_hz": 29.156627809739717,
+    "seconds": 2.88
+   },
+   "angry": {
+    "f0_median_hz": 109.06010319339799,
+    "f0_iqr_hz": 23.207555090493884,
+    "seconds": 2.8
+   },
+   "surprised": {
+    "f0_median_hz": 127.05301423573839,
+    "f0_iqr_hz": 31.703133733711468,
+    "seconds": 2.88
+   }
+  },
+  {
+   "id": "ethan/zh001",
+   "neutral": {
+    "f0_median_hz": 117.29387151052777,
+    "f0_iqr_hz": 43.90755206451942,
+    "seconds": 8.4
+   },
+   "control": {
+    "f0_median_hz": 127.28372405172522,
+    "f0_iqr_hz": 64.9519089993519,
+    "seconds": 7.92
+   },
+   "happy": {
+    "f0_median_hz": 109.42225453095215,
+    "f0_iqr_hz": 54.00982974062782,
+    "seconds": 10.4
+   },
+   "sad": {
+    "f0_median_hz": 105.09889190011593,
+    "f0_iqr_hz": 48.458440095579135,
+    "seconds": 8.64
+   },
+   "angry": {
+    "f0_median_hz": 127.0385282832357,
+    "f0_iqr_hz": 44.53115938808784,
+    "seconds": 8.16
+   },
+   "surprised": {
+    "f0_median_hz": 130.9486868764035,
+    "f0_iqr_hz": 45.354641824641305,
+    "seconds": 8.72
+   }
+  },
+  {
+   "id": "ethan/zh002",
+   "neutral": {
+    "f0_median_hz": 152.81095332251954,
+    "f0_iqr_hz": 55.629679710053864,
+    "seconds": 15.04
+   },
+   "control": {
+    "f0_median_hz": 135.04770008416057,
+    "f0_iqr_hz": 49.54164839182941,
+    "seconds": 15.76
+   },
+   "happy": {
+    "f0_median_hz": 149.59216421251014,
+    "f0_iqr_hz": 61.96965983615796,
+    "seconds": 15.36
+   },
+   "sad": {
+    "f0_median_hz": 146.11478581166708,
+    "f0_iqr_hz": 61.617735242526635,
+    "seconds": 15.2
+   },
+   "angry": {
+    "f0_median_hz": 158.834180602973,
+    "f0_iqr_hz": 65.69849888164165,
+    "seconds": 16.16
+   },
+   "surprised": {
+    "f0_median_hz": 144.23323464342855,
+    "f0_iqr_hz": 60.88156515510012,
+    "seconds": 15.2
+   }
+  },
+  {
+   "id": "ethan/zh003",
+   "neutral": {
+    "f0_median_hz": 132.85827651975973,
+    "f0_iqr_hz": 62.408176712669444,
+    "seconds": 36.08
+   },
+   "control": {
+    "f0_median_hz": 117.42859356034629,
+    "f0_iqr_hz": 43.82428563076833,
+    "seconds": 36.64
+   },
+   "happy": {
+    "f0_median_hz": 155.05583969102213,
+    "f0_iqr_hz": 78.75165621180882,
+    "seconds": 38.0
+   },
+   "sad": {
+    "f0_median_hz": 132.94305301741352,
+    "f0_iqr_hz": 67.11700749595144,
+    "seconds": 36.8
+   },
+   "angry": {
+    "f0_median_hz": 133.03882919350144,
+    "f0_iqr_hz": 62.274626653303656,
+    "seconds": 38.64
+   },
+   "surprised": {
+    "f0_median_hz": 144.4535794523499,
+    "f0_iqr_hz": 78.5579564131031,
+    "seconds": 37.36
+   }
+  },
+  {
+   "id": "ethan/zh004",
+   "neutral": {
+    "f0_median_hz": 141.3688411352872,
+    "f0_iqr_hz": 61.070405564976596,
+    "seconds": 14.88
+   },
+   "control": {
+    "f0_median_hz": 148.66518643444826,
+    "f0_iqr_hz": 66.90309291512266,
+    "seconds": 14.32
+   },
+   "happy": {
+    "f0_median_hz": 153.25435568903168,
+    "f0_iqr_hz": 58.00883526132614,
+    "seconds": 14.88
+   },
+   "sad": {
+    "f0_median_hz": 154.78986453045945,
+    "f0_iqr_hz": 63.83411369206091,
+    "seconds": 15.2
+   },
+   "angry": {
+    "f0_median_hz": 138.0350149926702,
+    "f0_iqr_hz": 67.47504762671427,
+    "seconds": 14.72
+   },
+   "surprised": {
+    "f0_median_hz": 156.98546339450368,
+    "f0_iqr_hz": 55.900010640986935,
+    "seconds": 15.12
+   }
+  },
+  {
+   "id": "ethan/zh005",
+   "neutral": {
+    "f0_median_hz": 104.34133309310228,
+    "f0_iqr_hz": 51.52486198913623,
+    "seconds": 9.04
+   },
+   "control": {
+    "f0_median_hz": 141.78549430136286,
+    "f0_iqr_hz": 63.62052282105921,
+    "seconds": 8.48
+   },
+   "happy": {
+    "f0_median_hz": 116.7503255529,
+    "f0_iqr_hz": 48.80811631302399,
+    "seconds": 9.2
+   },
+   "sad": {
+    "f0_median_hz": 112.30858866484694,
+    "f0_iqr_hz": 41.96462538263674,
+    "seconds": 7.92
+   },
+   "angry": {
+    "f0_median_hz": 107.46808663922779,
+    "f0_iqr_hz": 52.641268362216124,
+    "seconds": 9.28
+   },
+   "surprised": {
+    "f0_median_hz": 131.38652153505697,
+    "f0_iqr_hz": 43.25698704984079,
+    "seconds": 8.24
+   }
+  },
+  {
+   "id": "ethan/zh006",
+   "neutral": {
+    "f0_median_hz": 124.17522924785341,
+    "f0_iqr_hz": 41.864483768687165,
+    "seconds": 14.32
+   },
+   "control": {
+    "f0_median_hz": 140.4815069758492,
+    "f0_iqr_hz": 66.35368548693637,
+    "seconds": 14.24
+   },
+   "happy": {
+    "f0_median_hz": 122.559553192193,
+    "f0_iqr_hz": 45.21057146480315,
+    "seconds": 14.72
+   },
+   "sad": {
+    "f0_median_hz": 121.4362930067225,
+    "f0_iqr_hz": 50.47490431751778,
+    "seconds": 13.28
+   },
+   "angry": {
+    "f0_median_hz": 125.16007961483096,
+    "f0_iqr_hz": 57.44708258533366,
+    "seconds": 14.16
+   },
+   "surprised": {
+    "f0_median_hz": 132.90103502325536,
+    "f0_iqr_hz": 58.706278966843115,
+    "seconds": 14.08
+   }
+  },
+  {
+   "id": "ethan/zh007",
+   "neutral": {
+    "f0_median_hz": 135.94456395593173,
+    "f0_iqr_hz": 56.429239138203855,
+    "seconds": 35.6
+   },
+   "control": {
+    "f0_median_hz": 111.50610706408034,
+    "f0_iqr_hz": 32.456071060770626,
+    "seconds": 30.96
+   },
+   "happy": {
+    "f0_median_hz": 124.19036596943037,
+    "f0_iqr_hz": 51.282635298368064,
+    "seconds": 35.44
+   },
+   "sad": {
+    "f0_median_hz": 115.8569619812935,
+    "f0_iqr_hz": 50.75773095929449,
+    "seconds": 41.44
+   },
+   "angry": {
+    "f0_median_hz": 144.86133391555109,
+    "f0_iqr_hz": 65.30721657717733,
+    "seconds": 37.44
+   },
+   "surprised": {
+    "f0_median_hz": 138.53831108928594,
+    "f0_iqr_hz": 57.5127160761743,
+    "seconds": 33.44
+   }
+  },
+  {
+   "id": "ethan/zh008",
+   "neutral": {
+    "f0_median_hz": 132.17646384368925,
+    "f0_iqr_hz": 59.495202252572,
+    "seconds": 46.8
+   },
+   "control": {
+    "f0_median_hz": 124.51521263615074,
+    "f0_iqr_hz": 61.2041472526132,
+    "seconds": 49.6
+   },
+   "happy": {
+    "f0_median_hz": 130.51710437659693,
+    "f0_iqr_hz": 62.69711981618386,
+    "seconds": 47.12
+   },
+   "sad": {
+    "f0_median_hz": 123.68314094573918,
+    "f0_iqr_hz": 55.33614175630882,
+    "seconds": 47.36
+   },
+   "angry": {
+    "f0_median_hz": 138.90636383821874,
+    "f0_iqr_hz": 64.06317448052393,
+    "seconds": 50.56
+   },
+   "surprised": {
+    "f0_median_hz": 115.21305942795004,
+    "f0_iqr_hz": 50.86829929833601,
+    "seconds": 46.32
+   }
+  },
+  {
+   "id": "ethan/zh009",
+   "neutral": {
+    "f0_median_hz": 148.3684066774436,
+    "f0_iqr_hz": 65.94899087477327,
+    "seconds": 12.08
+   },
+   "control": {
+    "f0_median_hz": 156.23893587328195,
+    "f0_iqr_hz": 53.423749211694386,
+    "seconds": 11.44
+   },
+   "happy": {
+    "f0_median_hz": 166.28880508619142,
+    "f0_iqr_hz": 63.905157037195224,
+    "seconds": 11.76
+   },
+   "sad": {
+    "f0_median_hz": 140.59346845904454,
+    "f0_iqr_hz": 60.2221920022355,
+    "seconds": 13.04
+   },
+   "angry": {
+    "f0_median_hz": 144.81733456641317,
+    "f0_iqr_hz": 55.472429418538184,
+    "seconds": 11.36
+   },
+   "surprised": {
+    "f0_median_hz": 171.78871677453515,
+    "f0_iqr_hz": 49.15429501297746,
+    "seconds": 11.36
+   }
+  },
+  {
+   "id": "ethan/zh010",
+   "neutral": {
+    "f0_median_hz": 148.73207135275118,
+    "f0_iqr_hz": 75.47373407127621,
+    "seconds": 35.68
+   },
+   "control": {
+    "f0_median_hz": 152.58135609485885,
+    "f0_iqr_hz": 64.81370508062986,
+    "seconds": 37.76
+   },
+   "happy": {
+    "f0_median_hz": 147.03382906471262,
+    "f0_iqr_hz": 69.49862386454828,
+    "seconds": 39.76
+   },
+   "sad": {
+    "f0_median_hz": 149.4800584392035,
+    "f0_iqr_hz": 73.01181010027993,
+    "seconds": 38.08
+   },
+   "angry": {
+    "f0_median_hz": 135.16859340035663,
+    "f0_iqr_hz": 71.04103305556364,
+    "seconds": 37.28
+   },
+   "surprised": {
+    "f0_median_hz": 131.39563534497762,
+    "f0_iqr_hz": 66.01500114472734,
+    "seconds": 37.2
+   }
+  },
+  {
+   "id": "ethan/zh011",
+   "neutral": {
+    "f0_median_hz": 152.41158517630697,
+    "f0_iqr_hz": 65.96922985817028,
+    "seconds": 39.04
+   },
+   "control": {
+    "f0_median_hz": 126.4565453902511,
+    "f0_iqr_hz": 68.60788016197243,
+    "seconds": 40.8
+   },
+   "happy": {
+    "f0_median_hz": 109.52260342000677,
+    "f0_iqr_hz": 38.5835484220369,
+    "seconds": 44.48
+   },
+   "sad": {
+    "f0_median_hz": 164.99900755702026,
+    "f0_iqr_hz": 81.6839640275445,
+    "seconds": 38.0
+   },
+   "angry": {
+    "f0_median_hz": 151.21865060308306,
+    "f0_iqr_hz": 62.35682667112977,
+    "seconds": 42.32
+   },
+   "surprised": {
+    "f0_median_hz": 146.74234816238257,
+    "f0_iqr_hz": 65.80757968731135,
+    "seconds": 43.52
+   }
+  },
+  {
+   "id": "ethan/zh012",
+   "neutral": {
+    "f0_median_hz": 142.84792177219347,
+    "f0_iqr_hz": 50.44669873126311,
+    "seconds": 9.2
+   },
+   "control": {
+    "f0_median_hz": 148.0023898690429,
+    "f0_iqr_hz": 59.10364500696649,
+    "seconds": 8.64
+   },
+   "happy": {
+    "f0_median_hz": 142.5860453971827,
+    "f0_iqr_hz": 53.52996232038912,
+    "seconds": 9.04
+   },
+   "sad": {
+    "f0_median_hz": 155.62986877972074,
+    "f0_iqr_hz": 59.251307180786114,
+    "seconds": 9.2
+   },
+   "angry": {
+    "f0_median_hz": 152.02588283620548,
+    "f0_iqr_hz": 62.409894970182464,
+    "seconds": 9.6
+   },
+   "surprised": {
+    "f0_median_hz": 151.63559994438947,
+    "f0_iqr_hz": 49.842096600356555,
+    "seconds": 9.04
+   }
+  },
+  {
+   "id": "ethan/zh013",
+   "neutral": {
+    "f0_median_hz": 157.58455022986394,
+    "f0_iqr_hz": 59.33700573741248,
+    "seconds": 5.84
+   },
+   "control": {
+    "f0_median_hz": 165.75636327644168,
+    "f0_iqr_hz": 63.022332878297576,
+    "seconds": 5.76
+   },
+   "happy": {
+    "f0_median_hz": 158.75882397289968,
+    "f0_iqr_hz": 59.0642111535188,
+    "seconds": 5.92
+   },
+   "sad": {
+    "f0_median_hz": 153.34470487529,
+    "f0_iqr_hz": 49.07557539261964,
+    "seconds": 5.76
+   },
+   "angry": {
+    "f0_median_hz": 157.65602666628433,
+    "f0_iqr_hz": 68.68885767777627,
+    "seconds": 6.16
+   },
+   "surprised": {
+    "f0_median_hz": 166.23255557750895,
+    "f0_iqr_hz": 54.33428863765823,
+    "seconds": 5.6
+   }
+  },
+  {
+   "id": "ethan/zh014",
+   "neutral": {
+    "f0_median_hz": 175.77138916637622,
+    "f0_iqr_hz": 77.16212330898028,
+    "seconds": 36.72
+   },
+   "control": {
+    "f0_median_hz": 143.90167012588526,
+    "f0_iqr_hz": 68.5775335395666,
+    "seconds": 36.88
+   },
+   "happy": {
+    "f0_median_hz": 124.25890902003002,
+    "f0_iqr_hz": 63.0596518008943,
+    "seconds": 37.92
+   },
+   "sad": {
+    "f0_median_hz": 192.38558741497883,
+    "f0_iqr_hz": 79.71837264457852,
+    "seconds": 36.32
+   },
+   "angry": {
+    "f0_median_hz": 200.93633462008773,
+    "f0_iqr_hz": 70.39814492203573,
+    "seconds": 35.92
+   },
+   "surprised": {
+    "f0_median_hz": 142.0732036388964,
+    "f0_iqr_hz": 74.99976672505905,
+    "seconds": 37.2
+   }
+  },
+  {
+   "id": "ethan/zh015",
+   "neutral": {
+    "f0_median_hz": 128.80551452017033,
+    "f0_iqr_hz": 41.645703707818114,
+    "seconds": 6.4
+   },
+   "control": {
+    "f0_median_hz": 122.60681325148619,
+    "f0_iqr_hz": 36.28314560307413,
+    "seconds": 7.04
+   },
+   "happy": {
+    "f0_median_hz": 119.94722891586483,
+    "f0_iqr_hz": 40.840151490553396,
+    "seconds": 6.4
+   },
+   "sad": {
+    "f0_median_hz": 137.57234893610365,
+    "f0_iqr_hz": 44.826911737957786,
+    "seconds": 7.12
+   },
+   "angry": {
+    "f0_median_hz": 121.33907500052446,
+    "f0_iqr_hz": 48.608938108030685,
+    "seconds": 6.72
+   },
+   "surprised": {
+    "f0_median_hz": 133.1358984686535,
+    "f0_iqr_hz": 51.693428963307255,
+    "seconds": 6.24
+   }
+  },
+  {
+   "id": "ethan/zh016",
+   "neutral": {
+    "f0_median_hz": 126.75849465152491,
+    "f0_iqr_hz": 64.57784613595787,
+    "seconds": 13.12
+   },
+   "control": {
+    "f0_median_hz": 145.7285801792661,
+    "f0_iqr_hz": 57.931981698372084,
+    "seconds": 11.76
+   },
+   "happy": {
+    "f0_median_hz": 138.4918367238369,
+    "f0_iqr_hz": 66.7446308485389,
+    "seconds": 11.76
+   },
+   "sad": {
+    "f0_median_hz": 132.8876590598154,
+    "f0_iqr_hz": 63.21723784933795,
+    "seconds": 12.88
+   },
+   "angry": {
+    "f0_median_hz": 131.55426983743712,
+    "f0_iqr_hz": 64.01885976177135,
+    "seconds": 12.72
+   },
+   "surprised": {
+    "f0_median_hz": 160.28309716399696,
+    "f0_iqr_hz": 87.71985175802432,
+    "seconds": 12.08
+   }
+  },
+  {
+   "id": "ethan/zh017",
+   "neutral": {
+    "f0_median_hz": 154.03048485621196,
+    "f0_iqr_hz": 63.52755703644701,
+    "seconds": 4.48
+   },
+   "control": {
+    "f0_median_hz": 146.88779613558572,
+    "f0_iqr_hz": 48.39476702907568,
+    "seconds": 4.8
+   },
+   "happy": {
+    "f0_median_hz": 146.26779253910428,
+    "f0_iqr_hz": 65.03494295752171,
+    "seconds": 4.24
+   },
+   "sad": {
+    "f0_median_hz": 141.51241759342676,
+    "f0_iqr_hz": 63.912893298249145,
+    "seconds": 4.24
+   },
+   "angry": {
+    "f0_median_hz": 154.22785940833697,
+    "f0_iqr_hz": 49.235615287959945,
+    "seconds": 4.72
+   },
+   "surprised": {
+    "f0_median_hz": 170.29650959672102,
+    "f0_iqr_hz": 89.79474079766155,
+    "seconds": 4.0
+   }
+  },
+  {
+   "id": "ethan/zh018",
+   "neutral": {
+    "f0_median_hz": 134.80642743638947,
+    "f0_iqr_hz": 54.82286637295755,
+    "seconds": 29.84
+   },
+   "control": {
+    "f0_median_hz": 125.59838411476693,
+    "f0_iqr_hz": 56.08373428409146,
+    "seconds": 28.64
+   },
+   "happy": {
+    "f0_median_hz": 139.26335570547343,
+    "f0_iqr_hz": 67.7008789281539,
+    "seconds": 29.44
+   },
+   "sad": {
+    "f0_median_hz": 129.37282799407117,
+    "f0_iqr_hz": 61.755329440510025,
+    "seconds": 29.28
+   },
+   "angry": {
+    "f0_median_hz": 133.90441198951396,
+    "f0_iqr_hz": 55.56954259131659,
+    "seconds": 27.76
+   },
+   "surprised": {
+    "f0_median_hz": 123.6697747692188,
+    "f0_iqr_hz": 48.33893421875082,
+    "seconds": 35.12
+   }
+  },
+  {
+   "id": "ethan/zh019",
+   "neutral": {
+    "f0_median_hz": 147.49882955656756,
+    "f0_iqr_hz": 61.96172334147536,
+    "seconds": 20.64
+   },
+   "control": {
+    "f0_median_hz": 128.80840898945667,
+    "f0_iqr_hz": 59.79153604346743,
+    "seconds": 26.16
+   },
+   "happy": {
+    "f0_median_hz": 149.5895814123468,
+    "f0_iqr_hz": 63.94461155033774,
+    "seconds": 22.48
+   },
+   "sad": {
+    "f0_median_hz": 137.31261325269293,
+    "f0_iqr_hz": 61.92346751091087,
+    "seconds": 22.32
+   },
+   "angry": {
+    "f0_median_hz": 141.09570182345288,
+    "f0_iqr_hz": 49.45658561883154,
+    "seconds": 24.64
+   },
+   "surprised": {
+    "f0_median_hz": 132.2704979261968,
+    "f0_iqr_hz": 49.97589424918472,
+    "seconds": 21.92
+   }
+  },
+  {
+   "id": "jennifer/zh000",
+   "neutral": {
+    "f0_median_hz": 250.0126607995254,
+    "f0_iqr_hz": 114.1776096228676,
+    "seconds": 2.72
+   },
+   "control": {
+    "f0_median_hz": 237.5943557384525,
+    "f0_iqr_hz": 90.66755589981022,
+    "seconds": 2.72
+   },
+   "happy": {
+    "f0_median_hz": 252.9391599267775,
+    "f0_iqr_hz": 93.3301658942548,
+    "seconds": 2.72
+   },
+   "sad": {
+    "f0_median_hz": 245.11194488471145,
+    "f0_iqr_hz": 106.98881799172008,
+    "seconds": 2.72
+   },
+   "angry": {
+    "f0_median_hz": 227.20665252371646,
+    "f0_iqr_hz": 104.1926379564255,
+    "seconds": 2.48
+   },
+   "surprised": {
+    "f0_median_hz": 244.88364248011388,
+    "f0_iqr_hz": 97.77805385959493,
+    "seconds": 2.64
+   }
+  },
+  {
+   "id": "jennifer/zh001",
+   "neutral": {
+    "f0_median_hz": 261.5135664796849,
+    "f0_iqr_hz": 78.23187923645861,
+    "seconds": 6.88
+   },
+   "control": {
+    "f0_median_hz": 254.34144112794837,
+    "f0_iqr_hz": 54.861152723889916,
+    "seconds": 7.28
+   },
+   "happy": {
+    "f0_median_hz": 255.51105279312227,
+    "f0_iqr_hz": 60.68571118160236,
+    "seconds": 7.36
+   },
+   "sad": {
+    "f0_median_hz": 261.4165614174173,
+    "f0_iqr_hz": 62.97765239743225,
+    "seconds": 7.04
+   },
+   "angry": {
+    "f0_median_hz": 255.24134983674386,
+    "f0_iqr_hz": 67.06441252027673,
+    "seconds": 7.28
+   },
+   "surprised": {
+    "f0_median_hz": 260.8585505998232,
+    "f0_iqr_hz": 76.93236238454736,
+    "seconds": 7.44
+   }
+  },
+  {
+   "id": "jennifer/zh002",
+   "neutral": {
+    "f0_median_hz": 238.11092979892385,
+    "f0_iqr_hz": 67.89564119618606,
+    "seconds": 11.92
+   },
+   "control": {
+    "f0_median_hz": 241.32319090036992,
+    "f0_iqr_hz": 77.31440414973133,
+    "seconds": 11.6
+   },
+   "happy": {
+    "f0_median_hz": 251.28594162572597,
+    "f0_iqr_hz": 73.8439727165019,
+    "seconds": 12.48
+   },
+   "sad": {
+    "f0_median_hz": 244.31129141955216,
+    "f0_iqr_hz": 74.3596466597227,
+    "seconds": 11.68
+   },
+   "angry": {
+    "f0_median_hz": 244.51478393899833,
+    "f0_iqr_hz": 73.70435923593698,
+    "seconds": 12.0
+   },
+   "surprised": {
+    "f0_median_hz": 243.38680182050697,
+    "f0_iqr_hz": 83.30822877835999,
+    "seconds": 12.48
+   }
+  },
+  {
+   "id": "jennifer/zh003",
+   "neutral": {
+    "f0_median_hz": 271.8891858480455,
+    "f0_iqr_hz": 80.85690563671912,
+    "seconds": 27.44
+   },
+   "control": {
+    "f0_median_hz": 252.261349677194,
+    "f0_iqr_hz": 85.54161439069006,
+    "seconds": 29.6
+   },
+   "happy": {
+    "f0_median_hz": 272.59829434245404,
+    "f0_iqr_hz": 96.0632475218745,
+    "seconds": 26.64
+   },
+   "sad": {
+    "f0_median_hz": 276.7379888692426,
+    "f0_iqr_hz": 96.82292237509228,
+    "seconds": 27.68
+   },
+   "angry": {
+    "f0_median_hz": 271.8222690438603,
+    "f0_iqr_hz": 91.10725871231438,
+    "seconds": 27.2
+   },
+   "surprised": {
+    "f0_median_hz": 260.4157716229703,
+    "f0_iqr_hz": 94.78828749567543,
+    "seconds": 28.4
+   }
+  },
+  {
+   "id": "jennifer/zh004",
+   "neutral": {
+    "f0_median_hz": 249.22588979131612,
+    "f0_iqr_hz": 67.81785804305076,
+    "seconds": 12.08
+   },
+   "control": {
+    "f0_median_hz": 262.8738301887447,
+    "f0_iqr_hz": 73.07390200528832,
+    "seconds": 11.76
+   },
+   "happy": {
+    "f0_median_hz": 267.6297440622353,
+    "f0_iqr_hz": 74.99926299518626,
+    "seconds": 12.48
+   },
+   "sad": {
+    "f0_median_hz": 250.74632413155584,
+    "f0_iqr_hz": 71.98865072962408,
+    "seconds": 13.04
+   },
+   "angry": {
+    "f0_median_hz": 271.1135773784052,
+    "f0_iqr_hz": 87.79542080408243,
+    "seconds": 11.84
+   },
+   "surprised": {
+    "f0_median_hz": 255.92961647635684,
+    "f0_iqr_hz": 83.05275226945943,
+    "seconds": 13.2
+   }
+  },
+  {
+   "id": "jennifer/zh005",
+   "neutral": {
+    "f0_median_hz": 247.68930041608516,
+    "f0_iqr_hz": 57.39032892062079,
+    "seconds": 6.96
+   },
+   "control": {
+    "f0_median_hz": 267.1337656997301,
+    "f0_iqr_hz": 61.24682070143615,
+    "seconds": 7.2
+   },
+   "happy": {
+    "f0_median_hz": 257.66682181457577,
+    "f0_iqr_hz": 55.34916900522725,
+    "seconds": 7.28
+   },
+   "sad": {
+    "f0_median_hz": 247.73842589450413,
+    "f0_iqr_hz": 48.37277411064133,
+    "seconds": 6.72
+   },
+   "angry": {
+    "f0_median_hz": 254.8601041172433,
+    "f0_iqr_hz": 59.845955687572484,
+    "seconds": 7.2
+   },
+   "surprised": {
+    "f0_median_hz": 252.1922070132744,
+    "f0_iqr_hz": 58.54346456297458,
+    "seconds": 7.44
+   }
+  },
+  {
+   "id": "jennifer/zh006",
+   "neutral": {
+    "f0_median_hz": 254.02501608507458,
+    "f0_iqr_hz": 59.512048796376774,
+    "seconds": 11.12
+   },
+   "control": {
+    "f0_median_hz": 253.09836888745957,
+    "f0_iqr_hz": 58.66997338648872,
+    "seconds": 11.28
+   },
+   "happy": {
+    "f0_median_hz": 251.85748358998228,
+    "f0_iqr_hz": 58.481487192717566,
+    "seconds": 10.64
+   },
+   "sad": {
+    "f0_median_hz": 250.7083687016273,
+    "f0_iqr_hz": 57.784123598288375,
+    "seconds": 11.44
+   },
+   "angry": {
+    "f0_median_hz": 252.72209943340954,
+    "f0_iqr_hz": 57.89978588804465,
+    "seconds": 11.44
+   },
+   "surprised": {
+    "f0_median_hz": 239.8501225978495,
+    "f0_iqr_hz": 50.90814922770835,
+    "seconds": 11.36
+   }
+  },
+  {
+   "id": "jennifer/zh007",
+   "neutral": {
+    "f0_median_hz": 250.69491647980354,
+    "f0_iqr_hz": 67.27172019506179,
+    "seconds": 29.44
+   },
+   "control": {
+    "f0_median_hz": 273.7604025789025,
+    "f0_iqr_hz": 67.10640931682832,
+    "seconds": 26.24
+   },
+   "happy": {
+    "f0_median_hz": 249.08630920919578,
+    "f0_iqr_hz": 73.0044934892154,
+    "seconds": 28.72
+   },
+   "sad": {
+    "f0_median_hz": 249.63600798790435,
+    "f0_iqr_hz": 77.31230477152519,
+    "seconds": 26.16
+   },
+   "angry": {
+    "f0_median_hz": 258.3123605945589,
+    "f0_iqr_hz": 74.63961838241124,
+    "seconds": 29.52
+   },
+   "surprised": {
+    "f0_median_hz": 247.79353051546553,
+    "f0_iqr_hz": 64.97491349599505,
+    "seconds": 29.12
+   }
+  },
+  {
+   "id": "jennifer/zh008",
+   "neutral": {
+    "f0_median_hz": 266.4448682958538,
+    "f0_iqr_hz": 94.65681943936511,
+    "seconds": 40.48
+   },
+   "control": {
+    "f0_median_hz": 254.99342053945938,
+    "f0_iqr_hz": 92.03956993943686,
+    "seconds": 46.48
+   },
+   "happy": {
+    "f0_median_hz": 258.9108665001852,
+    "f0_iqr_hz": 94.6948233316449,
+    "seconds": 41.76
+   },
+   "sad": {
+    "f0_median_hz": 258.7059485195234,
+    "f0_iqr_hz": 99.48587900550766,
+    "seconds": 40.64
+   },
+   "angry": {
+    "f0_median_hz": 248.12095963559443,
+    "f0_iqr_hz": 88.07801692433029,
+    "seconds": 38.48
+   },
+   "surprised": {
+    "f0_median_hz": 260.23153605345544,
+    "f0_iqr_hz": 94.83556793571978,
+    "seconds": 40.16
+   }
+  },
+  {
+   "id": "jennifer/zh009",
+   "neutral": {
+    "f0_median_hz": 263.76193724022744,
+    "f0_iqr_hz": 90.77462858665677,
+    "seconds": 10.16
+   },
+   "control": {
+    "f0_median_hz": 243.76768091444708,
+    "f0_iqr_hz": 68.39750656905898,
+    "seconds": 9.76
+   },
+   "happy": {
+    "f0_median_hz": 261.5356288644897,
+    "f0_iqr_hz": 94.45361697623824,
+    "seconds": 10.0
+   },
+   "sad": {
+    "f0_median_hz": 253.66275663472027,
+    "f0_iqr_hz": 85.47585123436969,
+    "seconds": 10.16
+   },
+   "angry": {
+    "f0_median_hz": 257.7472674836646,
+    "f0_iqr_hz": 68.8684272790496,
+    "seconds": 10.16
+   },
+   "surprised": {
+    "f0_median_hz": 249.59593147063356,
+    "f0_iqr_hz": 68.71292625345788,
+    "seconds": 10.16
+   }
+  },
+  {
+   "id": "jennifer/zh010",
+   "neutral": {
+    "f0_median_hz": 260.2695727483575,
+    "f0_iqr_hz": 79.72402531628256,
+    "seconds": 30.32
+   },
+   "control": {
+    "f0_median_hz": 255.5535780218779,
+    "f0_iqr_hz": 93.08228780636188,
+    "seconds": 30.64
+   },
+   "happy": {
+    "f0_median_hz": 246.13134436641403,
+    "f0_iqr_hz": 85.03377315798738,
+    "seconds": 32.64
+   },
+   "sad": {
+    "f0_median_hz": 253.13190674438147,
+    "f0_iqr_hz": 84.66198970925225,
+    "seconds": 32.24
+   },
+   "angry": {
+    "f0_median_hz": 256.30838183795345,
+    "f0_iqr_hz": 80.79846983345624,
+    "seconds": 30.96
+   },
+   "surprised": {
+    "f0_median_hz": 255.7191114065736,
+    "f0_iqr_hz": 86.39203721202244,
+    "seconds": 31.12
+   }
+  },
+  {
+   "id": "jennifer/zh011",
+   "neutral": {
+    "f0_median_hz": 251.4500496286493,
+    "f0_iqr_hz": 81.89240051352425,
+    "seconds": 34.48
+   },
+   "control": {
+    "f0_median_hz": 264.6273258294623,
+    "f0_iqr_hz": 83.69372936476515,
+    "seconds": 34.16
+   },
+   "happy": {
+    "f0_median_hz": 257.02133822563934,
+    "f0_iqr_hz": 89.36863184598263,
+    "seconds": 34.24
+   },
+   "sad": {
+    "f0_median_hz": 261.8198441715996,
+    "f0_iqr_hz": 87.08428797149114,
+    "seconds": 34.08
+   },
+   "angry": {
+    "f0_median_hz": 258.6493656900295,
+    "f0_iqr_hz": 88.24815843756167,
+    "seconds": 35.12
+   },
+   "surprised": {
+    "f0_median_hz": 260.1498493100496,
+    "f0_iqr_hz": 79.89559477017298,
+    "seconds": 34.24
+   }
+  },
+  {
+   "id": "jennifer/zh012",
+   "neutral": {
+    "f0_median_hz": 257.5481937276491,
+    "f0_iqr_hz": 81.0712955039159,
+    "seconds": 7.28
+   },
+   "control": {
+    "f0_median_hz": 249.23500444962804,
+    "f0_iqr_hz": 84.22302022904844,
+    "seconds": 7.12
+   },
+   "happy": {
+    "f0_median_hz": 262.7947834381075,
+    "f0_iqr_hz": 78.05268426242381,
+    "seconds": 7.2
+   },
+   "sad": {
+    "f0_median_hz": 238.1279240073775,
+    "f0_iqr_hz": 67.09521317297407,
+    "seconds": 7.92
+   },
+   "angry": {
+    "f0_median_hz": 257.2562486980353,
+    "f0_iqr_hz": 75.85096885713216,
+    "seconds": 7.28
+   },
+   "surprised": {
+    "f0_median_hz": 249.81339946298036,
+    "f0_iqr_hz": 85.12304150028064,
+    "seconds": 7.68
+   }
+  },
+  {
+   "id": "jennifer/zh013",
+   "neutral": {
+    "f0_median_hz": 264.81926035353,
+    "f0_iqr_hz": 74.22585958785908,
+    "seconds": 5.68
+   },
+   "control": {
+    "f0_median_hz": 261.75404799506623,
+    "f0_iqr_hz": 70.80167373902964,
+    "seconds": 5.6
+   },
+   "happy": {
+    "f0_median_hz": 265.4529742338887,
+    "f0_iqr_hz": 89.67097321492236,
+    "seconds": 5.84
+   },
+   "sad": {
+    "f0_median_hz": 261.2556350623862,
+    "f0_iqr_hz": 75.87171197758207,
+    "seconds": 5.52
+   },
+   "angry": {
+    "f0_median_hz": 255.06740474904532,
+    "f0_iqr_hz": 89.65153767406792,
+    "seconds": 5.6
+   },
+   "surprised": {
+    "f0_median_hz": 261.5048358549176,
+    "f0_iqr_hz": 83.95518762789297,
+    "seconds": 5.28
+   }
+  },
+  {
+   "id": "jennifer/zh014",
+   "neutral": {
+    "f0_median_hz": 261.55839088432367,
+    "f0_iqr_hz": 103.89014284497193,
+    "seconds": 31.76
+   },
+   "control": {
+    "f0_median_hz": 257.30946082615765,
+    "f0_iqr_hz": 92.04613464942983,
+    "seconds": 31.2
+   },
+   "happy": {
+    "f0_median_hz": 264.8945205494451,
+    "f0_iqr_hz": 89.03531708345963,
+    "seconds": 30.64
+   },
+   "sad": {
+    "f0_median_hz": 269.6395514116839,
+    "f0_iqr_hz": 101.40220369240711,
+    "seconds": 31.84
+   },
+   "angry": {
+    "f0_median_hz": 253.35547304550124,
+    "f0_iqr_hz": 90.553231542248,
+    "seconds": 30.64
+   },
+   "surprised": {
+    "f0_median_hz": 268.86989387338565,
+    "f0_iqr_hz": 93.38791567718661,
+    "seconds": 30.0
+   }
+  },
+  {
+   "id": "jennifer/zh015",
+   "neutral": {
+    "f0_median_hz": 238.87714792864463,
+    "f0_iqr_hz": 57.623947050930354,
+    "seconds": 5.92
+   },
+   "control": {
+    "f0_median_hz": 226.76536260719973,
+    "f0_iqr_hz": 69.77203950814624,
+    "seconds": 6.64
+   },
+   "happy": {
+    "f0_median_hz": 224.19463298773212,
+    "f0_iqr_hz": 71.92994591060346,
+    "seconds": 6.24
+   },
+   "sad": {
+    "f0_median_hz": 228.0377890900994,
+    "f0_iqr_hz": 81.46268226564374,
+    "seconds": 6.32
+   },
+   "angry": {
+    "f0_median_hz": 243.67472402797324,
+    "f0_iqr_hz": 72.93602742828725,
+    "seconds": 6.0
+   },
+   "surprised": {
+    "f0_median_hz": 233.58969921054967,
+    "f0_iqr_hz": 66.1163211739401,
+    "seconds": 5.68
+   }
+  },
+  {
+   "id": "jennifer/zh016",
+   "neutral": {
+    "f0_median_hz": 253.26980701826483,
+    "f0_iqr_hz": 75.3479090533778,
+    "seconds": 9.84
+   },
+   "control": {
+    "f0_median_hz": 241.65325818626758,
+    "f0_iqr_hz": 68.85066561139308,
+    "seconds": 9.68
+   },
+   "happy": {
+    "f0_median_hz": 241.17650747108206,
+    "f0_iqr_hz": 70.72768561269996,
+    "seconds": 10.0
+   },
+   "sad": {
+    "f0_median_hz": 239.5726225674419,
+    "f0_iqr_hz": 57.70199826458381,
+    "seconds": 9.84
+   },
+   "angry": {
+    "f0_median_hz": 240.8431199096667,
+    "f0_iqr_hz": 67.6152797922199,
+    "seconds": 10.08
+   },
+   "surprised": {
+    "f0_median_hz": 244.41800325313858,
+    "f0_iqr_hz": 75.57514285619607,
+    "seconds": 9.6
+   }
+  },
+  {
+   "id": "jennifer/zh017",
+   "neutral": {
+    "f0_median_hz": 255.21916474866183,
+    "f0_iqr_hz": 83.54310845742816,
+    "seconds": 4.48
+   },
+   "control": {
+    "f0_median_hz": 264.8824423100081,
+    "f0_iqr_hz": 76.02097765368745,
+    "seconds": 4.4
+   },
+   "happy": {
+    "f0_median_hz": 260.5760488326333,
+    "f0_iqr_hz": 77.67865672894473,
+    "seconds": 4.0
+   },
+   "sad": {
+    "f0_median_hz": 260.7290626597961,
+    "f0_iqr_hz": 88.97882825222692,
+    "seconds": 4.4
+   },
+   "angry": {
+    "f0_median_hz": 255.98196379518478,
+    "f0_iqr_hz": 87.81649236883231,
+    "seconds": 4.56
+   },
+   "surprised": {
+    "f0_median_hz": 248.9204404264232,
+    "f0_iqr_hz": 85.48771161049856,
+    "seconds": 4.16
+   }
+  },
+  {
+   "id": "jennifer/zh018",
+   "neutral": {
+    "f0_median_hz": 258.9002216561132,
+    "f0_iqr_hz": 86.34693510044676,
+    "seconds": 24.88
+   },
+   "control": {
+    "f0_median_hz": 259.3967815567263,
+    "f0_iqr_hz": 84.16519398168617,
+    "seconds": 23.6
+   },
+   "happy": {
+    "f0_median_hz": 264.130395748325,
+    "f0_iqr_hz": 76.0872502835266,
+    "seconds": 22.56
+   },
+   "sad": {
+    "f0_median_hz": 276.29715713493607,
+    "f0_iqr_hz": 85.0696624417343,
+    "seconds": 22.96
+   },
+   "angry": {
+    "f0_median_hz": 255.75359988671784,
+    "f0_iqr_hz": 78.81274240509242,
+    "seconds": 22.88
+   },
+   "surprised": {
+    "f0_median_hz": 264.1818504024944,
+    "f0_iqr_hz": 81.03242216649852,
+    "seconds": 24.48
+   }
+  },
+  {
+   "id": "jennifer/zh019",
+   "neutral": {
+    "f0_median_hz": 265.08903870622316,
+    "f0_iqr_hz": 66.58973143104797,
+    "seconds": 19.84
+   },
+   "control": {
+    "f0_median_hz": 260.1573447390841,
+    "f0_iqr_hz": 64.93249112637437,
+    "seconds": 19.84
+   },
+   "happy": {
+    "f0_median_hz": 273.40098062009207,
+    "f0_iqr_hz": 68.08255593030742,
+    "seconds": 20.64
+   },
+   "sad": {
+    "f0_median_hz": 265.85277075140175,
+    "f0_iqr_hz": 60.56705471073852,
+    "seconds": 19.84
+   },
+   "angry": {
+    "f0_median_hz": 267.5830470794165,
+    "f0_iqr_hz": 71.2330658525998,
+    "seconds": 19.52
+   },
+   "surprised": {
+    "f0_median_hz": 275.8503784920539,
+    "f0_iqr_hz": 70.38493142926751,
+    "seconds": 18.8
+   }
+  },
+  {
+   "id": "momo/zh000",
+   "neutral": {
+    "f0_median_hz": 285.2622462859789,
+    "f0_iqr_hz": 119.76131841700192,
+    "seconds": 2.48
+   },
+   "control": {
+    "f0_median_hz": 248.4477984568428,
+    "f0_iqr_hz": 75.26465137706464,
+    "seconds": 2.56
+   },
+   "happy": {
+    "f0_median_hz": 276.94642316502546,
+    "f0_iqr_hz": 91.68897042308305,
+    "seconds": 2.48
+   },
+   "sad": {
+    "f0_median_hz": 276.94642316502546,
+    "f0_iqr_hz": 86.04087698485938,
+    "seconds": 2.48
+   },
+   "angry": {
+    "f0_median_hz": 269.0205953050047,
+    "f0_iqr_hz": 120.10470283480703,
+    "seconds": 2.4
+   },
+   "surprised": {
+    "f0_median_hz": 278.37018393266317,
+    "f0_iqr_hz": 120.05992600209817,
+    "seconds": 2.4
+   }
+  },
+  {
+   "id": "momo/zh001",
+   "neutral": {
+    "f0_median_hz": 239.3370779454636,
+    "f0_iqr_hz": 76.11424388819094,
+    "seconds": 7.12
+   },
+   "control": {
+    "f0_median_hz": 244.93153754727058,
+    "f0_iqr_hz": 78.6768958423576,
+    "seconds": 7.12
+   },
+   "happy": {
+    "f0_median_hz": 265.30985591341454,
+    "f0_iqr_hz": 84.52173571454156,
+    "seconds": 6.48
+   },
+   "sad": {
+    "f0_median_hz": 246.94007086325854,
+    "f0_iqr_hz": 103.27261616306865,
+    "seconds": 7.04
+   },
+   "angry": {
+    "f0_median_hz": 256.3113331560967,
+    "f0_iqr_hz": 98.41465461130812,
+    "seconds": 7.12
+   },
+   "surprised": {
+    "f0_median_hz": 249.2158623671591,
+    "f0_iqr_hz": 82.13974418308158,
+    "seconds": 6.48
+   }
+  },
+  {
+   "id": "momo/zh002",
+   "neutral": {
+    "f0_median_hz": 229.49202694835205,
+    "f0_iqr_hz": 106.27702956709004,
+    "seconds": 12.4
+   },
+   "control": {
+    "f0_median_hz": 249.4216138137136,
+    "f0_iqr_hz": 98.65283262023837,
+    "seconds": 12.0
+   },
+   "happy": {
+    "f0_median_hz": 243.11229114887365,
+    "f0_iqr_hz": 108.91692944343322,
+    "seconds": 11.2
+   },
+   "sad": {
+    "f0_median_hz": 242.37189012381,
+    "f0_iqr_hz": 114.16860613138681,
+    "seconds": 11.52
+   },
+   "angry": {
+    "f0_median_hz": 238.19422377607057,
+    "f0_iqr_hz": 95.0891048207759,
+    "seconds": 11.76
+   },
+   "surprised": {
+    "f0_median_hz": 244.28461396808058,
+    "f0_iqr_hz": 91.92163771948225,
+    "seconds": 11.28
+   }
+  },
+  {
+   "id": "momo/zh003",
+   "neutral": {
+    "f0_median_hz": 250.742140003838,
+    "f0_iqr_hz": 126.4036037009273,
+    "seconds": 28.32
+   },
+   "control": {
+    "f0_median_hz": 250.6582849227675,
+    "f0_iqr_hz": 120.82811534503438,
+    "seconds": 30.72
+   },
+   "happy": {
+    "f0_median_hz": 254.69073545125752,
+    "f0_iqr_hz": 128.8473196176349,
+    "seconds": 31.28
+   },
+   "sad": {
+    "f0_median_hz": 252.06978603875814,
+    "f0_iqr_hz": 133.67817113767433,
+    "seconds": 32.4
+   },
+   "angry": {
+    "f0_median_hz": 256.9006292599565,
+    "f0_iqr_hz": 119.30976956562552,
+    "seconds": 29.76
+   },
+   "surprised": {
+    "f0_median_hz": 243.89440124518185,
+    "f0_iqr_hz": 121.36451136181222,
+    "seconds": 31.2
+   }
+  },
+  {
+   "id": "momo/zh004",
+   "neutral": {
+    "f0_median_hz": 263.4352692645545,
+    "f0_iqr_hz": 95.65166472511697,
+    "seconds": 11.68
+   },
+   "control": {
+    "f0_median_hz": 261.0635278473021,
+    "f0_iqr_hz": 96.52972300692005,
+    "seconds": 10.96
+   },
+   "happy": {
+    "f0_median_hz": 272.74721873983276,
+    "f0_iqr_hz": 104.16287827406589,
+    "seconds": 11.28
+   },
+   "sad": {
+    "f0_median_hz": 267.0981531693435,
+    "f0_iqr_hz": 111.28917826185537,
+    "seconds": 11.2
+   },
+   "angry": {
+    "f0_median_hz": 271.98312437634115,
+    "f0_iqr_hz": 103.36364892293935,
+    "seconds": 11.04
+   },
+   "surprised": {
+    "f0_median_hz": 270.8035457336373,
+    "f0_iqr_hz": 104.34918406974688,
+    "seconds": 11.52
+   }
+  },
+  {
+   "id": "momo/zh005",
+   "neutral": {
+    "f0_median_hz": 261.94899300348413,
+    "f0_iqr_hz": 82.345164794487,
+    "seconds": 6.64
+   },
+   "control": {
+    "f0_median_hz": 264.8103070105391,
+    "f0_iqr_hz": 86.47148631812408,
+    "seconds": 6.96
+   },
+   "happy": {
+    "f0_median_hz": 263.00512908203416,
+    "f0_iqr_hz": 78.50962756968644,
+    "seconds": 6.56
+   },
+   "sad": {
+    "f0_median_hz": 297.1266518294381,
+    "f0_iqr_hz": 80.84648802199575,
+    "seconds": 6.16
+   },
+   "angry": {
+    "f0_median_hz": 258.5668429604384,
+    "f0_iqr_hz": 81.29261743617951,
+    "seconds": 6.48
+   },
+   "surprised": {
+    "f0_median_hz": 269.3798499796648,
+    "f0_iqr_hz": 73.60451877302427,
+    "seconds": 6.24
+   }
+  },
+  {
+   "id": "momo/zh006",
+   "neutral": {
+    "f0_median_hz": 272.0716030560386,
+    "f0_iqr_hz": 95.5427984995101,
+    "seconds": 11.44
+   },
+   "control": {
+    "f0_median_hz": 262.88918073059006,
+    "f0_iqr_hz": 79.12893318474755,
+    "seconds": 10.72
+   },
+   "happy": {
+    "f0_median_hz": 272.95189470481796,
+    "f0_iqr_hz": 81.33491453434414,
+    "seconds": 10.16
+   },
+   "sad": {
+    "f0_median_hz": 274.2092415210386,
+    "f0_iqr_hz": 96.01470660882288,
+    "seconds": 10.88
+   },
+   "angry": {
+    "f0_median_hz": 266.8026405164403,
+    "f0_iqr_hz": 86.96728462907078,
+    "seconds": 10.24
+   },
+   "surprised": {
+    "f0_median_hz": 268.44834386085324,
+    "f0_iqr_hz": 86.94385799173736,
+    "seconds": 10.4
+   }
+  },
+  {
+   "id": "momo/zh007",
+   "neutral": {
+    "f0_median_hz": 265.4390430802463,
+    "f0_iqr_hz": 104.4275169370269,
+    "seconds": 27.92
+   },
+   "control": {
+    "f0_median_hz": 232.83777010130987,
+    "f0_iqr_hz": 159.12050730918162,
+    "seconds": 29.2
+   },
+   "happy": {
+    "f0_median_hz": 271.07145705404537,
+    "f0_iqr_hz": 104.98655565574276,
+    "seconds": 28.72
+   },
+   "sad": {
+    "f0_median_hz": 270.4035442697177,
+    "f0_iqr_hz": 92.59194743424237,
+    "seconds": 28.72
+   },
+   "angry": {
+    "f0_median_hz": 258.0848738202771,
+    "f0_iqr_hz": 93.2446997970807,
+    "seconds": 28.32
+   },
+   "surprised": {
+    "f0_median_hz": 253.49163478876028,
+    "f0_iqr_hz": 108.35413788094678,
+    "seconds": 28.0
+   }
+  },
+  {
+   "id": "momo/zh008",
+   "neutral": {
+    "f0_median_hz": 267.48866804607144,
+    "f0_iqr_hz": 117.78610867644082,
+    "seconds": 41.28
+   },
+   "control": {
+    "f0_median_hz": 256.4544288655773,
+    "f0_iqr_hz": 109.81834392025053,
+    "seconds": 38.08
+   },
+   "happy": {
+    "f0_median_hz": 263.26840416279117,
+    "f0_iqr_hz": 113.79637766586868,
+    "seconds": 37.76
+   },
+   "sad": {
+    "f0_median_hz": 234.36180135614387,
+    "f0_iqr_hz": 94.77598570758943,
+    "seconds": 37.2
+   },
+   "angry": {
+    "f0_median_hz": 277.9051782439347,
+    "f0_iqr_hz": 116.5437177205001,
+    "seconds": 37.04
+   },
+   "surprised": {
+    "f0_median_hz": 264.458519583925,
+    "f0_iqr_hz": 107.92246692782834,
+    "seconds": 38.0
+   }
+  },
+  {
+   "id": "momo/zh009",
+   "neutral": {
+    "f0_median_hz": 261.13763239424503,
+    "f0_iqr_hz": 80.37346584155955,
+    "seconds": 9.12
+   },
+   "control": {
+    "f0_median_hz": 256.04174076257027,
+    "f0_iqr_hz": 83.8474037901322,
+    "seconds": 9.04
+   },
+   "happy": {
+    "f0_median_hz": 258.87175818487344,
+    "f0_iqr_hz": 82.20421892157219,
+    "seconds": 8.96
+   },
+   "sad": {
+    "f0_median_hz": 259.7537464553877,
+    "f0_iqr_hz": 76.31781241798032,
+    "seconds": 9.04
+   },
+   "angry": {
+    "f0_median_hz": 247.06665023806536,
+    "f0_iqr_hz": 80.2860417384043,
+    "seconds": 9.12
+   },
+   "surprised": {
+    "f0_median_hz": 259.12783196686297,
+    "f0_iqr_hz": 91.73207402846387,
+    "seconds": 8.96
+   }
+  },
+  {
+   "id": "momo/zh010",
+   "neutral": {
+    "f0_median_hz": 255.560043910305,
+    "f0_iqr_hz": 93.9107513244777,
+    "seconds": 29.84
+   },
+   "control": {
+    "f0_median_hz": 246.82856316451776,
+    "f0_iqr_hz": 94.84085553098527,
+    "seconds": 29.12
+   },
+   "happy": {
+    "f0_median_hz": 242.85182379950172,
+    "f0_iqr_hz": 96.76965215608249,
+    "seconds": 31.12
+   },
+   "sad": {
+    "f0_median_hz": 249.33160262790832,
+    "f0_iqr_hz": 90.36407371659737,
+    "seconds": 28.32
+   },
+   "angry": {
+    "f0_median_hz": 256.4398963665206,
+    "f0_iqr_hz": 86.8945699478005,
+    "seconds": 29.6
+   },
+   "surprised": {
+    "f0_median_hz": 234.16221273586976,
+    "f0_iqr_hz": 95.15319644974477,
+    "seconds": 30.0
+   }
+  },
+  {
+   "id": "momo/zh011",
+   "neutral": {
+    "f0_median_hz": 239.36340232201246,
+    "f0_iqr_hz": 88.38567958058502,
+    "seconds": 31.76
+   },
+   "control": {
+    "f0_median_hz": 251.54086541366104,
+    "f0_iqr_hz": 93.04052182647101,
+    "seconds": 31.84
+   },
+   "happy": {
+    "f0_median_hz": 247.8017160404007,
+    "f0_iqr_hz": 104.39208499735008,
+    "seconds": 32.48
+   },
+   "sad": {
+    "f0_median_hz": 244.77933127768043,
+    "f0_iqr_hz": 100.00513434764642,
+    "seconds": 32.56
+   },
+   "angry": {
+    "f0_median_hz": 238.98090529906835,
+    "f0_iqr_hz": 100.76899611186587,
+    "seconds": 33.44
+   },
+   "surprised": {
+    "f0_median_hz": 257.7762824099648,
+    "f0_iqr_hz": 90.97674642255689,
+    "seconds": 32.64
+   }
+  },
+  {
+   "id": "momo/zh012",
+   "neutral": {
+    "f0_median_hz": 282.77453776674787,
+    "f0_iqr_hz": 95.08495569093265,
+    "seconds": 7.12
+   },
+   "control": {
+    "f0_median_hz": 293.698254097069,
+    "f0_iqr_hz": 107.64941206593238,
+    "seconds": 6.8
+   },
+   "happy": {
+    "f0_median_hz": 281.3443331840184,
+    "f0_iqr_hz": 117.80630914772081,
+    "seconds": 6.88
+   },
+   "sad": {
+    "f0_median_hz": 290.20146879927984,
+    "f0_iqr_hz": 122.77739309468569,
+    "seconds": 7.12
+   },
+   "angry": {
+    "f0_median_hz": 289.17266049174265,
+    "f0_iqr_hz": 108.17573821943938,
+    "seconds": 6.8
+   },
+   "surprised": {
+    "f0_median_hz": 291.2890218058272,
+    "f0_iqr_hz": 116.39647691277966,
+    "seconds": 6.88
+   }
+  },
+  {
+   "id": "momo/zh013",
+   "neutral": {
+    "f0_median_hz": 255.74665741711195,
+    "f0_iqr_hz": 103.6503086931736,
+    "seconds": 4.72
+   },
+   "control": {
+    "f0_median_hz": 254.5707265252775,
+    "f0_iqr_hz": 93.16257395663038,
+    "seconds": 4.88
+   },
+   "happy": {
+    "f0_median_hz": 261.36448499015665,
+    "f0_iqr_hz": 92.56261913442762,
+    "seconds": 4.88
+   },
+   "sad": {
+    "f0_median_hz": 257.5305543738141,
+    "f0_iqr_hz": 81.6913402474404,
+    "seconds": 5.04
+   },
+   "angry": {
+    "f0_median_hz": 263.64058705044386,
+    "f0_iqr_hz": 83.78386030136284,
+    "seconds": 4.96
+   },
+   "surprised": {
+    "f0_median_hz": 286.8398833555669,
+    "f0_iqr_hz": 109.3783395965049,
+    "seconds": 4.8
+   }
+  },
+  {
+   "id": "momo/zh014",
+   "neutral": {
+    "f0_median_hz": 257.0910124342838,
+    "f0_iqr_hz": 121.91029910451152,
+    "seconds": 32.72
+   },
+   "control": {
+    "f0_median_hz": 264.51531196649086,
+    "f0_iqr_hz": 116.32285156930101,
+    "seconds": 31.12
+   },
+   "happy": {
+    "f0_median_hz": 263.3755654396722,
+    "f0_iqr_hz": 124.21876553286137,
+    "seconds": 32.16
+   },
+   "sad": {
+    "f0_median_hz": 265.16773160905586,
+    "f0_iqr_hz": 129.01050294066647,
+    "seconds": 32.96
+   },
+   "angry": {
+    "f0_median_hz": 261.98462753668025,
+    "f0_iqr_hz": 124.78456551498698,
+    "seconds": 31.2
+   },
+   "surprised": {
+    "f0_median_hz": 256.14061912020367,
+    "f0_iqr_hz": 138.92164440043706,
+    "seconds": 31.84
+   }
+  },
+  {
+   "id": "momo/zh015",
+   "neutral": {
+    "f0_median_hz": 246.5083998314379,
+    "f0_iqr_hz": 107.19525711597501,
+    "seconds": 5.2
+   },
+   "control": {
+    "f0_median_hz": 238.4888991095071,
+    "f0_iqr_hz": 116.19205705623287,
+    "seconds": 5.44
+   },
+   "happy": {
+    "f0_median_hz": 258.8361772839028,
+    "f0_iqr_hz": 153.15005658827388,
+    "seconds": 5.6
+   },
+   "sad": {
+    "f0_median_hz": 261.9721003351507,
+    "f0_iqr_hz": 115.94639453002145,
+    "seconds": 4.72
+   },
+   "angry": {
+    "f0_median_hz": 235.21380839928122,
+    "f0_iqr_hz": 113.47093820113531,
+    "seconds": 5.12
+   },
+   "surprised": {
+    "f0_median_hz": 246.18313029505245,
+    "f0_iqr_hz": 108.52392701960284,
+    "seconds": 5.12
+   }
+  },
+  {
+   "id": "momo/zh016",
+   "neutral": {
+    "f0_median_hz": 247.05268174757953,
+    "f0_iqr_hz": 108.85299771655875,
+    "seconds": 8.8
+   },
+   "control": {
+    "f0_median_hz": 256.48623384543924,
+    "f0_iqr_hz": 100.78871215016022,
+    "seconds": 8.96
+   },
+   "happy": {
+    "f0_median_hz": 251.04206668872382,
+    "f0_iqr_hz": 111.31095400736513,
+    "seconds": 9.12
+   },
+   "sad": {
+    "f0_median_hz": 249.9183885484491,
+    "f0_iqr_hz": 96.42486793148711,
+    "seconds": 8.96
+   },
+   "angry": {
+    "f0_median_hz": 257.2480083203523,
+    "f0_iqr_hz": 111.39280352924911,
+    "seconds": 8.88
+   },
+   "surprised": {
+    "f0_median_hz": 251.17921348380372,
+    "f0_iqr_hz": 82.32872898948199,
+    "seconds": 8.56
+   }
+  },
+  {
+   "id": "momo/zh017",
+   "neutral": {
+    "f0_median_hz": 291.43713885108707,
+    "f0_iqr_hz": 136.82609894801305,
+    "seconds": 4.08
+   },
+   "control": {
+    "f0_median_hz": 259.7955632189578,
+    "f0_iqr_hz": 116.94428984576325,
+    "seconds": 3.76
+   },
+   "happy": {
+    "f0_median_hz": 296.6447695471364,
+    "f0_iqr_hz": 130.01713363162818,
+    "seconds": 4.24
+   },
+   "sad": {
+    "f0_median_hz": 319.94390316083474,
+    "f0_iqr_hz": 144.6971669739829,
+    "seconds": 4.24
+   },
+   "angry": {
+    "f0_median_hz": 295.16569385786016,
+    "f0_iqr_hz": 94.5800598821865,
+    "seconds": 3.92
+   },
+   "surprised": {
+    "f0_median_hz": 280.9536624070945,
+    "f0_iqr_hz": 116.76826658936585,
+    "seconds": 3.92
+   }
+  },
+  {
+   "id": "momo/zh018",
+   "neutral": {
+    "f0_median_hz": 247.93142921560218,
+    "f0_iqr_hz": 152.39583879778718,
+    "seconds": 24.64
+   },
+   "control": {
+    "f0_median_hz": 259.1432134025905,
+    "f0_iqr_hz": 127.71405978320988,
+    "seconds": 24.0
+   },
+   "happy": {
+    "f0_median_hz": 255.23720521192334,
+    "f0_iqr_hz": 111.32455785539818,
+    "seconds": 22.8
+   },
+   "sad": {
+    "f0_median_hz": 244.8739225469763,
+    "f0_iqr_hz": 133.7851833940583,
+    "seconds": 15.28
+   },
+   "angry": {
+    "f0_median_hz": 258.17458706261425,
+    "f0_iqr_hz": 117.77102895162164,
+    "seconds": 26.32
+   },
+   "surprised": {
+    "f0_median_hz": 251.2571553396979,
+    "f0_iqr_hz": 112.05115182296521,
+    "seconds": 27.52
+   }
+  },
+  {
+   "id": "momo/zh019",
+   "neutral": {
+    "f0_median_hz": 244.80857631914475,
+    "f0_iqr_hz": 76.01668243204068,
+    "seconds": 18.64
+   },
+   "control": {
+    "f0_median_hz": 285.01056173764283,
+    "f0_iqr_hz": 95.68249780440834,
+    "seconds": 17.6
+   },
+   "happy": {
+    "f0_median_hz": 264.90492109168065,
+    "f0_iqr_hz": 75.87048893563107,
+    "seconds": 17.92
+   },
+   "sad": {
+    "f0_median_hz": 261.9000101657781,
+    "f0_iqr_hz": 86.67210590366022,
+    "seconds": 17.52
+   },
+   "angry": {
+    "f0_median_hz": 246.86577978372213,
+    "f0_iqr_hz": 75.52724932503295,
+    "seconds": 17.76
+   },
+   "surprised": {
+    "f0_median_hz": 254.3754050756499,
+    "f0_iqr_hz": 73.13201314034404,
+    "seconds": 17.6
+   }
+  },
+  {
+   "id": "moon/zh000",
+   "neutral": {
+    "f0_median_hz": 115.97225102579092,
+    "f0_iqr_hz": 40.97008947445538,
+    "seconds": 2.64
+   },
+   "control": {
+    "f0_median_hz": 121.19959252742659,
+    "f0_iqr_hz": 65.5046870664903,
+    "seconds": 2.48
+   },
+   "happy": {
+    "f0_median_hz": 116.09972750757257,
+    "f0_iqr_hz": 49.68216541013601,
+    "seconds": 2.88
+   },
+   "sad": {
+    "f0_median_hz": 124.50373522437675,
+    "f0_iqr_hz": 55.73462782521325,
+    "seconds": 2.4
+   },
+   "angry": {
+    "f0_median_hz": 119.6641366661741,
+    "f0_iqr_hz": 43.46528938493438,
+    "seconds": 2.56
+   },
+   "surprised": {
+    "f0_median_hz": 119.99030102329596,
+    "f0_iqr_hz": 42.60525575740216,
+    "seconds": 2.64
+   }
+  },
+  {
+   "id": "moon/zh001",
+   "neutral": {
+    "f0_median_hz": 111.61711464523538,
+    "f0_iqr_hz": 47.20625014937055,
+    "seconds": 8.08
+   },
+   "control": {
+    "f0_median_hz": 122.40060359173219,
+    "f0_iqr_hz": 54.330795467603394,
+    "seconds": 7.6
+   },
+   "happy": {
+    "f0_median_hz": 117.31545985147966,
+    "f0_iqr_hz": 40.85367431199221,
+    "seconds": 7.68
+   },
+   "sad": {
+    "f0_median_hz": 116.72040932404283,
+    "f0_iqr_hz": 37.71876130291129,
+    "seconds": 8.08
+   },
+   "angry": {
+    "f0_median_hz": 121.39406451246676,
+    "f0_iqr_hz": 47.73029975388502,
+    "seconds": 7.92
+   },
+   "surprised": {
+    "f0_median_hz": 117.07448669439701,
+    "f0_iqr_hz": 39.33962401249211,
+    "seconds": 7.52
+   }
+  },
+  {
+   "id": "moon/zh002",
+   "neutral": {
+    "f0_median_hz": 111.03808214241485,
+    "f0_iqr_hz": 38.84263742164555,
+    "seconds": 12.48
+   },
+   "control": {
+    "f0_median_hz": 113.98367184302415,
+    "f0_iqr_hz": 51.60225180153884,
+    "seconds": 13.12
+   },
+   "happy": {
+    "f0_median_hz": 130.14972586985897,
+    "f0_iqr_hz": 61.11864455784358,
+    "seconds": 12.48
+   },
+   "sad": {
+    "f0_median_hz": 126.08990883472224,
+    "f0_iqr_hz": 64.5652500130013,
+    "seconds": 12.72
+   },
+   "angry": {
+    "f0_median_hz": 117.71153929207894,
+    "f0_iqr_hz": 48.59318687654769,
+    "seconds": 12.4
+   },
+   "surprised": {
+    "f0_median_hz": 115.27321761947431,
+    "f0_iqr_hz": 55.311073970957295,
+    "seconds": 12.72
+   }
+  },
+  {
+   "id": "moon/zh003",
+   "neutral": {
+    "f0_median_hz": 122.04956094053433,
+    "f0_iqr_hz": 57.22050971164586,
+    "seconds": 28.24
+   },
+   "control": {
+    "f0_median_hz": 125.35453798537702,
+    "f0_iqr_hz": 65.52576304066716,
+    "seconds": 31.84
+   },
+   "happy": {
+    "f0_median_hz": 124.06681277516809,
+    "f0_iqr_hz": 57.928636126369,
+    "seconds": 30.48
+   },
+   "sad": {
+    "f0_median_hz": 120.24541748489256,
+    "f0_iqr_hz": 48.57319329165702,
+    "seconds": 31.2
+   },
+   "angry": {
+    "f0_median_hz": 117.05335436506905,
+    "f0_iqr_hz": 47.86519294435895,
+    "seconds": 29.92
+   },
+   "surprised": {
+    "f0_median_hz": 120.05643015151063,
+    "f0_iqr_hz": 47.86623070541383,
+    "seconds": 31.68
+   }
+  },
+  {
+   "id": "moon/zh004",
+   "neutral": {
+    "f0_median_hz": 124.31751256852729,
+    "f0_iqr_hz": 54.259145900726836,
+    "seconds": 12.64
+   },
+   "control": {
+    "f0_median_hz": 119.34215702583269,
+    "f0_iqr_hz": 50.32675837541143,
+    "seconds": 12.88
+   },
+   "happy": {
+    "f0_median_hz": 128.10653107125725,
+    "f0_iqr_hz": 58.552476512405406,
+    "seconds": 12.72
+   },
+   "sad": {
+    "f0_median_hz": 127.91524366797249,
+    "f0_iqr_hz": 56.97486179190166,
+    "seconds": 12.48
+   },
+   "angry": {
+    "f0_median_hz": 128.24852025538934,
+    "f0_iqr_hz": 50.83727550884126,
+    "seconds": 12.48
+   },
+   "surprised": {
+    "f0_median_hz": 126.3097869246378,
+    "f0_iqr_hz": 51.79937948069562,
+    "seconds": 12.4
+   }
+  },
+  {
+   "id": "moon/zh005",
+   "neutral": {
+    "f0_median_hz": 133.67164554610446,
+    "f0_iqr_hz": 66.70695135046893,
+    "seconds": 8.08
+   },
+   "control": {
+    "f0_median_hz": 115.88260428691503,
+    "f0_iqr_hz": 34.17474113560229,
+    "seconds": 7.28
+   },
+   "happy": {
+    "f0_median_hz": 126.90454722133502,
+    "f0_iqr_hz": 52.002654560118444,
+    "seconds": 7.6
+   },
+   "sad": {
+    "f0_median_hz": 122.48955008251693,
+    "f0_iqr_hz": 49.79814408633496,
+    "seconds": 7.52
+   },
+   "angry": {
+    "f0_median_hz": 122.4752924690532,
+    "f0_iqr_hz": 60.407940493498614,
+    "seconds": 7.52
+   },
+   "surprised": {
+    "f0_median_hz": 116.43324760386476,
+    "f0_iqr_hz": 37.63222961589311,
+    "seconds": 7.04
+   }
+  },
+  {
+   "id": "moon/zh006",
+   "neutral": {
+    "f0_median_hz": 121.3007837427592,
+    "f0_iqr_hz": 50.518175944845126,
+    "seconds": 12.16
+   },
+   "control": {
+    "f0_median_hz": 133.0342364994036,
+    "f0_iqr_hz": 47.3177383072384,
+    "seconds": 11.2
+   },
+   "happy": {
+    "f0_median_hz": 119.53774480422345,
+    "f0_iqr_hz": 40.954880824487375,
+    "seconds": 12.08
+   },
+   "sad": {
+    "f0_median_hz": 121.36848307468809,
+    "f0_iqr_hz": 42.80079413108541,
+    "seconds": 11.68
+   },
+   "angry": {
+    "f0_median_hz": 128.37858096302182,
+    "f0_iqr_hz": 55.31706056004137,
+    "seconds": 11.6
+   },
+   "surprised": {
+    "f0_median_hz": 129.81519518113586,
+    "f0_iqr_hz": 47.79577652487305,
+    "seconds": 11.76
+   }
+  },
+  {
+   "id": "moon/zh007",
+   "neutral": {
+    "f0_median_hz": 109.68539595210056,
+    "f0_iqr_hz": 35.64357887105942,
+    "seconds": 29.04
+   },
+   "control": {
+    "f0_median_hz": 116.3999600075344,
+    "f0_iqr_hz": 38.11031369420306,
+    "seconds": 23.2
+   },
+   "happy": {
+    "f0_median_hz": 115.3666699627712,
+    "f0_iqr_hz": 41.77289665101135,
+    "seconds": 27.84
+   },
+   "sad": {
+    "f0_median_hz": 117.52582639324334,
+    "f0_iqr_hz": 33.403245894652486,
+    "seconds": 32.4
+   },
+   "angry": {
+    "f0_median_hz": 113.10472738616579,
+    "f0_iqr_hz": 32.23741195516294,
+    "seconds": 20.88
+   },
+   "surprised": {
+    "f0_median_hz": 114.73060805874097,
+    "f0_iqr_hz": 35.284494055189526,
+    "seconds": 33.36
+   }
+  },
+  {
+   "id": "moon/zh008",
+   "neutral": {
+    "f0_median_hz": 117.34951926906845,
+    "f0_iqr_hz": 57.27733857727898,
+    "seconds": 44.24
+   },
+   "control": {
+    "f0_median_hz": 115.24411955705816,
+    "f0_iqr_hz": 50.890770012203944,
+    "seconds": 38.08
+   },
+   "happy": {
+    "f0_median_hz": 120.7686097324332,
+    "f0_iqr_hz": 54.62149650864703,
+    "seconds": 38.8
+   },
+   "sad": {
+    "f0_median_hz": 140.26831728905216,
+    "f0_iqr_hz": 78.41040403633882,
+    "seconds": 38.56
+   },
+   "angry": {
+    "f0_median_hz": 123.74028812826128,
+    "f0_iqr_hz": 56.12866108447915,
+    "seconds": 41.36
+   },
+   "surprised": {
+    "f0_median_hz": 131.85766376668255,
+    "f0_iqr_hz": 63.21118967868601,
+    "seconds": 38.64
+   }
+  },
+  {
+   "id": "moon/zh009",
+   "neutral": {
+    "f0_median_hz": 107.10605995994523,
+    "f0_iqr_hz": 48.4398465511118,
+    "seconds": 11.04
+   },
+   "control": {
+    "f0_median_hz": 127.89764193404527,
+    "f0_iqr_hz": 48.917991929084195,
+    "seconds": 10.32
+   },
+   "happy": {
+    "f0_median_hz": 121.24249869634457,
+    "f0_iqr_hz": 62.707664444506406,
+    "seconds": 9.52
+   },
+   "sad": {
+    "f0_median_hz": 116.43002541737475,
+    "f0_iqr_hz": 54.697365065433345,
+    "seconds": 10.48
+   },
+   "angry": {
+    "f0_median_hz": 125.50328362987949,
+    "f0_iqr_hz": 47.13596500619076,
+    "seconds": 10.16
+   },
+   "surprised": {
+    "f0_median_hz": 122.41530620853916,
+    "f0_iqr_hz": 42.69416777373635,
+    "seconds": 11.04
+   }
+  },
+  {
+   "id": "moon/zh010",
+   "neutral": {
+    "f0_median_hz": 121.05431055404914,
+    "f0_iqr_hz": 54.18742283801042,
+    "seconds": 32.56
+   },
+   "control": {
+    "f0_median_hz": 131.90575346344474,
+    "f0_iqr_hz": 59.625433694536184,
+    "seconds": 33.84
+   },
+   "happy": {
+    "f0_median_hz": 132.09191236069526,
+    "f0_iqr_hz": 58.5933675490585,
+    "seconds": 32.56
+   },
+   "sad": {
+    "f0_median_hz": 138.5701484416737,
+    "f0_iqr_hz": 71.81605581345205,
+    "seconds": 32.72
+   },
+   "angry": {
+    "f0_median_hz": 131.45181641201725,
+    "f0_iqr_hz": 60.91822344066762,
+    "seconds": 33.04
+   },
+   "surprised": {
+    "f0_median_hz": 132.67635013536022,
+    "f0_iqr_hz": 67.08575577533925,
+    "seconds": 32.56
+   }
+  },
+  {
+   "id": "moon/zh011",
+   "neutral": {
+    "f0_median_hz": 110.57058722998431,
+    "f0_iqr_hz": 52.207001310039985,
+    "seconds": 32.4
+   },
+   "control": {
+    "f0_median_hz": 111.59707083408314,
+    "f0_iqr_hz": 52.4922506978635,
+    "seconds": 36.16
+   },
+   "happy": {
+    "f0_median_hz": 118.2714146340839,
+    "f0_iqr_hz": 57.96335560425774,
+    "seconds": 34.16
+   },
+   "sad": {
+    "f0_median_hz": 124.09818516627183,
+    "f0_iqr_hz": 57.0522304581736,
+    "seconds": 37.84
+   },
+   "angry": {
+    "f0_median_hz": 116.34625626312297,
+    "f0_iqr_hz": 49.71411968711385,
+    "seconds": 34.88
+   },
+   "surprised": {
+    "f0_median_hz": 117.85912840172145,
+    "f0_iqr_hz": 50.49822882134208,
+    "seconds": 32.48
+   }
+  },
+  {
+   "id": "moon/zh012",
+   "neutral": {
+    "f0_median_hz": 141.42886592048671,
+    "f0_iqr_hz": 73.76564716248625,
+    "seconds": 7.12
+   },
+   "control": {
+    "f0_median_hz": 143.01066070394197,
+    "f0_iqr_hz": 69.29446599514058,
+    "seconds": 7.52
+   },
+   "happy": {
+    "f0_median_hz": 154.91970610066278,
+    "f0_iqr_hz": 80.43700982111177,
+    "seconds": 7.28
+   },
+   "sad": {
+    "f0_median_hz": 144.21102352988524,
+    "f0_iqr_hz": 74.87376976810293,
+    "seconds": 7.92
+   },
+   "angry": {
+    "f0_median_hz": 158.14525282145638,
+    "f0_iqr_hz": 82.4572398803664,
+    "seconds": 6.96
+   },
+   "surprised": {
+    "f0_median_hz": 148.80412775525508,
+    "f0_iqr_hz": 69.00160170154689,
+    "seconds": 7.36
+   }
+  },
+  {
+   "id": "moon/zh013",
+   "neutral": {
+    "f0_median_hz": 133.91416637332296,
+    "f0_iqr_hz": 71.52806992158656,
+    "seconds": 4.8
+   },
+   "control": {
+    "f0_median_hz": 143.54670431105956,
+    "f0_iqr_hz": 82.79768960241113,
+    "seconds": 4.88
+   },
+   "happy": {
+    "f0_median_hz": 139.59414626199919,
+    "f0_iqr_hz": 72.8053992247756,
+    "seconds": 5.12
+   },
+   "sad": {
+    "f0_median_hz": 129.06207269726355,
+    "f0_iqr_hz": 80.18664397535188,
+    "seconds": 5.2
+   },
+   "angry": {
+    "f0_median_hz": 138.65456319403893,
+    "f0_iqr_hz": 57.58324338608094,
+    "seconds": 5.12
+   },
+   "surprised": {
+    "f0_median_hz": 142.59031451189185,
+    "f0_iqr_hz": 84.19921059651985,
+    "seconds": 4.88
+   }
+  },
+  {
+   "id": "moon/zh014",
+   "neutral": {
+    "f0_median_hz": 124.19950401041304,
+    "f0_iqr_hz": 66.38840229227068,
+    "seconds": 34.0
+   },
+   "control": {
+    "f0_median_hz": 116.46528041222385,
+    "f0_iqr_hz": 59.456867104383576,
+    "seconds": 30.56
+   },
+   "happy": {
+    "f0_median_hz": 123.2216087561704,
+    "f0_iqr_hz": 62.68864800099789,
+    "seconds": 30.72
+   },
+   "sad": {
+    "f0_median_hz": 119.53413063219529,
+    "f0_iqr_hz": 67.30354939757851,
+    "seconds": 32.96
+   },
+   "angry": {
+    "f0_median_hz": 121.26164447840807,
+    "f0_iqr_hz": 75.80767445417418,
+    "seconds": 31.68
+   },
+   "surprised": {
+    "f0_median_hz": 113.48506099174222,
+    "f0_iqr_hz": 52.24273628660865,
+    "seconds": 33.44
+   }
+  },
+  {
+   "id": "moon/zh015",
+   "neutral": {
+    "f0_median_hz": 111.94261457855107,
+    "f0_iqr_hz": 41.60304625241014,
+    "seconds": 6.48
+   },
+   "control": {
+    "f0_median_hz": 115.58231429162568,
+    "f0_iqr_hz": 44.45636378826731,
+    "seconds": 5.84
+   },
+   "happy": {
+    "f0_median_hz": 116.39322032580753,
+    "f0_iqr_hz": 56.91828917024981,
+    "seconds": 6.16
+   },
+   "sad": {
+    "f0_median_hz": 113.62156933031142,
+    "f0_iqr_hz": 46.88392630542721,
+    "seconds": 6.24
+   },
+   "angry": {
+    "f0_median_hz": 102.80030603927574,
+    "f0_iqr_hz": 44.39396401443673,
+    "seconds": 6.4
+   },
+   "surprised": {
+    "f0_median_hz": 117.16438252007802,
+    "f0_iqr_hz": 51.33547670539461,
+    "seconds": 5.52
+   }
+  },
+  {
+   "id": "moon/zh016",
+   "neutral": {
+    "f0_median_hz": 122.72602097000534,
+    "f0_iqr_hz": 52.172175638573066,
+    "seconds": 10.0
+   },
+   "control": {
+    "f0_median_hz": 124.25495637090624,
+    "f0_iqr_hz": 51.19338381847213,
+    "seconds": 10.32
+   },
+   "happy": {
+    "f0_median_hz": 120.06496708855698,
+    "f0_iqr_hz": 51.14857956796419,
+    "seconds": 10.08
+   },
+   "sad": {
+    "f0_median_hz": 122.73154796129316,
+    "f0_iqr_hz": 52.71830859036409,
+    "seconds": 10.16
+   },
+   "angry": {
+    "f0_median_hz": 118.74261800063603,
+    "f0_iqr_hz": 42.03670800004994,
+    "seconds": 10.08
+   },
+   "surprised": {
+    "f0_median_hz": 122.3912821537675,
+    "f0_iqr_hz": 53.13533535055814,
+    "seconds": 9.68
+   }
+  },
+  {
+   "id": "moon/zh017",
+   "neutral": {
+    "f0_median_hz": 125.25998174476946,
+    "f0_iqr_hz": 85.55020378065885,
+    "seconds": 3.76
+   },
+   "control": {
+    "f0_median_hz": 120.15367227697976,
+    "f0_iqr_hz": 38.74135143377609,
+    "seconds": 4.08
+   },
+   "happy": {
+    "f0_median_hz": 145.01708258079867,
+    "f0_iqr_hz": 94.68022115058906,
+    "seconds": 3.6
+   },
+   "sad": {
+    "f0_median_hz": 147.7785380087308,
+    "f0_iqr_hz": 98.4296060765785,
+    "seconds": 3.68
+   },
+   "angry": {
+    "f0_median_hz": 149.63329159169987,
+    "f0_iqr_hz": 82.95770830935359,
+    "seconds": 3.6
+   },
+   "surprised": {
+    "f0_median_hz": 119.52656950577072,
+    "f0_iqr_hz": 45.56284113540809,
+    "seconds": 3.76
+   }
+  },
+  {
+   "id": "moon/zh018",
+   "neutral": {
+    "f0_median_hz": 110.56585970074448,
+    "f0_iqr_hz": 57.73559530127355,
+    "seconds": 24.96
+   },
+   "control": {
+    "f0_median_hz": 110.10637958574233,
+    "f0_iqr_hz": 49.69813126734931,
+    "seconds": 24.4
+   },
+   "happy": {
+    "f0_median_hz": 119.83026649380255,
+    "f0_iqr_hz": 60.05048616961324,
+    "seconds": 24.56
+   },
+   "sad": {
+    "f0_median_hz": 108.96335821619053,
+    "f0_iqr_hz": 54.01980478976844,
+    "seconds": 25.52
+   },
+   "angry": {
+    "f0_median_hz": 117.10702803950474,
+    "f0_iqr_hz": 51.86571595934423,
+    "seconds": 25.52
+   },
+   "surprised": {
+    "f0_median_hz": 116.3883306594675,
+    "f0_iqr_hz": 66.90448493414532,
+    "seconds": 25.2
+   }
+  },
+  {
+   "id": "moon/zh019",
+   "neutral": {
+    "f0_median_hz": 121.75954736634651,
+    "f0_iqr_hz": 55.220334246700446,
+    "seconds": 20.88
+   },
+   "control": {
+    "f0_median_hz": 130.20900963392629,
+    "f0_iqr_hz": 62.32636309739644,
+    "seconds": 21.2
+   },
+   "happy": {
+    "f0_median_hz": 124.02152011042612,
+    "f0_iqr_hz": 53.08517215353015,
+    "seconds": 20.56
+   },
+   "sad": {
+    "f0_median_hz": 128.63196133033935,
+    "f0_iqr_hz": 64.96110703109632,
+    "seconds": 21.04
+   },
+   "angry": {
+    "f0_median_hz": 124.44410466434506,
+    "f0_iqr_hz": 51.31708140690367,
+    "seconds": 19.04
+   },
+   "surprised": {
+    "f0_median_hz": 128.1742215249584,
+    "f0_iqr_hz": 46.9144218953285,
+    "seconds": 19.6
+   }
+  },
+  {
+   "id": "serena/zh000",
+   "neutral": {
+    "f0_median_hz": 239.92136990372782,
+    "f0_iqr_hz": 122.84196540061075,
+    "seconds": 2.32
+   },
+   "control": {
+    "f0_median_hz": 236.96306432791567,
+    "f0_iqr_hz": 127.75095608484122,
+    "seconds": 2.32
+   },
+   "happy": {
+    "f0_median_hz": 246.05854522957435,
+    "f0_iqr_hz": 94.75317050761413,
+    "seconds": 2.4
+   },
+   "sad": {
+    "f0_median_hz": 238.9238978449816,
+    "f0_iqr_hz": 106.01821343205458,
+    "seconds": 2.4
+   },
+   "angry": {
+    "f0_median_hz": 247.93712241052054,
+    "f0_iqr_hz": 117.28354870640482,
+    "seconds": 2.32
+   },
+   "surprised": {
+    "f0_median_hz": 249.17308245341275,
+    "f0_iqr_hz": 111.04639499783434,
+    "seconds": 2.4
+   }
+  },
+  {
+   "id": "serena/zh001",
+   "neutral": {
+    "f0_median_hz": 254.19896806928028,
+    "f0_iqr_hz": 88.64429332845697,
+    "seconds": 6.88
+   },
+   "control": {
+    "f0_median_hz": 255.01421588025647,
+    "f0_iqr_hz": 99.75201398074685,
+    "seconds": 6.8
+   },
+   "happy": {
+    "f0_median_hz": 244.04024933621955,
+    "f0_iqr_hz": 92.9876952023443,
+    "seconds": 6.32
+   },
+   "sad": {
+    "f0_median_hz": 263.1566787729122,
+    "f0_iqr_hz": 117.97953197091618,
+    "seconds": 6.88
+   },
+   "angry": {
+    "f0_median_hz": 270.11454414534035,
+    "f0_iqr_hz": 98.29841355668319,
+    "seconds": 7.04
+   },
+   "surprised": {
+    "f0_median_hz": 255.47590669813192,
+    "f0_iqr_hz": 87.53867506674288,
+    "seconds": 6.64
+   }
+  },
+  {
+   "id": "serena/zh002",
+   "neutral": {
+    "f0_median_hz": 227.99620055485605,
+    "f0_iqr_hz": 97.90596118734823,
+    "seconds": 11.04
+   },
+   "control": {
+    "f0_median_hz": 242.99727083848668,
+    "f0_iqr_hz": 107.72872003941148,
+    "seconds": 11.2
+   },
+   "happy": {
+    "f0_median_hz": 237.2803258826931,
+    "f0_iqr_hz": 116.97803972566564,
+    "seconds": 11.44
+   },
+   "sad": {
+    "f0_median_hz": 224.89556851929103,
+    "f0_iqr_hz": 111.7064410287631,
+    "seconds": 11.36
+   },
+   "angry": {
+    "f0_median_hz": 231.61674265249187,
+    "f0_iqr_hz": 104.50096886763643,
+    "seconds": 11.36
+   },
+   "surprised": {
+    "f0_median_hz": 239.18391208933537,
+    "f0_iqr_hz": 98.25500967689499,
+    "seconds": 10.8
+   }
+  },
+  {
+   "id": "serena/zh003",
+   "neutral": {
+    "f0_median_hz": 271.7657529982175,
+    "f0_iqr_hz": 116.3302810630974,
+    "seconds": 28.32
+   },
+   "control": {
+    "f0_median_hz": 259.5316910077237,
+    "f0_iqr_hz": 110.43354064004671,
+    "seconds": 28.96
+   },
+   "happy": {
+    "f0_median_hz": 254.75273183960903,
+    "f0_iqr_hz": 116.30223351327271,
+    "seconds": 27.36
+   },
+   "sad": {
+    "f0_median_hz": 257.9575495595991,
+    "f0_iqr_hz": 123.15673951984391,
+    "seconds": 28.72
+   },
+   "angry": {
+    "f0_median_hz": 246.63514815868484,
+    "f0_iqr_hz": 123.60651088293429,
+    "seconds": 31.2
+   },
+   "surprised": {
+    "f0_median_hz": 259.62794129656834,
+    "f0_iqr_hz": 117.57517572404501,
+    "seconds": 29.12
+   }
+  },
+  {
+   "id": "serena/zh004",
+   "neutral": {
+    "f0_median_hz": 256.1100088288781,
+    "f0_iqr_hz": 113.97022742179468,
+    "seconds": 11.36
+   },
+   "control": {
+    "f0_median_hz": 253.26466287404332,
+    "f0_iqr_hz": 118.36815975384013,
+    "seconds": 11.76
+   },
+   "happy": {
+    "f0_median_hz": 246.49484940380447,
+    "f0_iqr_hz": 99.14780280644592,
+    "seconds": 11.12
+   },
+   "sad": {
+    "f0_median_hz": 252.76275141241442,
+    "f0_iqr_hz": 115.64076437035837,
+    "seconds": 11.44
+   },
+   "angry": {
+    "f0_median_hz": 264.65278045646477,
+    "f0_iqr_hz": 122.26042044294527,
+    "seconds": 11.2
+   },
+   "surprised": {
+    "f0_median_hz": 264.2674381204292,
+    "f0_iqr_hz": 115.71196962865673,
+    "seconds": 11.44
+   }
+  },
+  {
+   "id": "serena/zh005",
+   "neutral": {
+    "f0_median_hz": 265.5963413207418,
+    "f0_iqr_hz": 105.01156093102264,
+    "seconds": 6.64
+   },
+   "control": {
+    "f0_median_hz": 254.55074224205137,
+    "f0_iqr_hz": 88.0190601569009,
+    "seconds": 6.48
+   },
+   "happy": {
+    "f0_median_hz": 255.78955388535093,
+    "f0_iqr_hz": 99.14377200115825,
+    "seconds": 6.4
+   },
+   "sad": {
+    "f0_median_hz": 288.5200505834903,
+    "f0_iqr_hz": 100.10501410672885,
+    "seconds": 6.32
+   },
+   "angry": {
+    "f0_median_hz": 281.8541688109867,
+    "f0_iqr_hz": 87.4145608306975,
+    "seconds": 6.4
+   },
+   "surprised": {
+    "f0_median_hz": 264.9449336661764,
+    "f0_iqr_hz": 114.89007107877183,
+    "seconds": 7.36
+   }
+  },
+  {
+   "id": "serena/zh006",
+   "neutral": {
+    "f0_median_hz": 255.52145153168627,
+    "f0_iqr_hz": 88.41303896935034,
+    "seconds": 10.32
+   },
+   "control": {
+    "f0_median_hz": 252.4842962707795,
+    "f0_iqr_hz": 94.72244921490454,
+    "seconds": 10.32
+   },
+   "happy": {
+    "f0_median_hz": 253.95808170428407,
+    "f0_iqr_hz": 84.84214216760455,
+    "seconds": 10.4
+   },
+   "sad": {
+    "f0_median_hz": 269.6251169024076,
+    "f0_iqr_hz": 81.34867381933708,
+    "seconds": 10.48
+   },
+   "angry": {
+    "f0_median_hz": 252.9795999558241,
+    "f0_iqr_hz": 83.0630770880725,
+    "seconds": 10.72
+   },
+   "surprised": {
+    "f0_median_hz": 262.1935998100107,
+    "f0_iqr_hz": 105.78891669882009,
+    "seconds": 10.16
+   }
+  },
+  {
+   "id": "serena/zh007",
+   "neutral": {
+    "f0_median_hz": 259.25775884112716,
+    "f0_iqr_hz": 104.78194334850184,
+    "seconds": 28.48
+   },
+   "control": {
+    "f0_median_hz": 255.6565957365084,
+    "f0_iqr_hz": 106.92550958987047,
+    "seconds": 27.2
+   },
+   "happy": {
+    "f0_median_hz": 257.95070435829996,
+    "f0_iqr_hz": 123.85181961214064,
+    "seconds": 28.64
+   },
+   "sad": {
+    "f0_median_hz": 260.45195763841264,
+    "f0_iqr_hz": 104.90076747407932,
+    "seconds": 25.36
+   },
+   "angry": {
+    "f0_median_hz": 258.34559591955696,
+    "f0_iqr_hz": 101.70800347791877,
+    "seconds": 26.96
+   },
+   "surprised": {
+    "f0_median_hz": 260.3680919112114,
+    "f0_iqr_hz": 109.99609363075098,
+    "seconds": 28.0
+   }
+  },
+  {
+   "id": "serena/zh008",
+   "neutral": {
+    "f0_median_hz": 247.3858001050967,
+    "f0_iqr_hz": 114.03691414394004,
+    "seconds": 36.96
+   },
+   "control": {
+    "f0_median_hz": 256.901496748453,
+    "f0_iqr_hz": 116.48228885159551,
+    "seconds": 35.84
+   },
+   "happy": {
+    "f0_median_hz": 250.6305369112233,
+    "f0_iqr_hz": 118.8181464277113,
+    "seconds": 37.04
+   },
+   "sad": {
+    "f0_median_hz": 237.75247443491443,
+    "f0_iqr_hz": 109.37965380885453,
+    "seconds": 38.96
+   },
+   "angry": {
+    "f0_median_hz": 249.4419194937531,
+    "f0_iqr_hz": 111.35971728069416,
+    "seconds": 36.56
+   },
+   "surprised": {
+    "f0_median_hz": 249.93218751827877,
+    "f0_iqr_hz": 121.02900881163154,
+    "seconds": 37.44
+   }
+  },
+  {
+   "id": "serena/zh009",
+   "neutral": {
+    "f0_median_hz": 255.24352076423835,
+    "f0_iqr_hz": 96.69664550993781,
+    "seconds": 9.04
+   },
+   "control": {
+    "f0_median_hz": 233.03914979241338,
+    "f0_iqr_hz": 99.96190682149637,
+    "seconds": 8.72
+   },
+   "happy": {
+    "f0_median_hz": 248.37385424119918,
+    "f0_iqr_hz": 101.31284932847078,
+    "seconds": 9.04
+   },
+   "sad": {
+    "f0_median_hz": 251.27254899830078,
+    "f0_iqr_hz": 97.54085100356656,
+    "seconds": 9.2
+   },
+   "angry": {
+    "f0_median_hz": 248.06788622155958,
+    "f0_iqr_hz": 91.83326388027797,
+    "seconds": 8.64
+   },
+   "surprised": {
+    "f0_median_hz": 234.738634545514,
+    "f0_iqr_hz": 96.35226034792456,
+    "seconds": 9.6
+   }
+  },
+  {
+   "id": "serena/zh010",
+   "neutral": {
+    "f0_median_hz": 248.94243826091338,
+    "f0_iqr_hz": 100.67398557188716,
+    "seconds": 29.36
+   },
+   "control": {
+    "f0_median_hz": 262.7887680142268,
+    "f0_iqr_hz": 105.36148905908107,
+    "seconds": 29.84
+   },
+   "happy": {
+    "f0_median_hz": 248.8861131053451,
+    "f0_iqr_hz": 96.50557769030499,
+    "seconds": 28.56
+   },
+   "sad": {
+    "f0_median_hz": 248.09264863675725,
+    "f0_iqr_hz": 98.00745178618601,
+    "seconds": 28.88
+   },
+   "angry": {
+    "f0_median_hz": 255.72938080930658,
+    "f0_iqr_hz": 109.63869029135077,
+    "seconds": 28.0
+   },
+   "surprised": {
+    "f0_median_hz": 239.9642353698436,
+    "f0_iqr_hz": 100.06447851094833,
+    "seconds": 29.28
+   }
+  },
+  {
+   "id": "serena/zh011",
+   "neutral": {
+    "f0_median_hz": 245.76560259960888,
+    "f0_iqr_hz": 103.8363705832719,
+    "seconds": 31.6
+   },
+   "control": {
+    "f0_median_hz": 251.7027675927514,
+    "f0_iqr_hz": 109.91825463936908,
+    "seconds": 30.8
+   },
+   "happy": {
+    "f0_median_hz": 244.06720810275468,
+    "f0_iqr_hz": 102.835612859609,
+    "seconds": 32.4
+   },
+   "sad": {
+    "f0_median_hz": 251.84974065917726,
+    "f0_iqr_hz": 108.49544756463644,
+    "seconds": 32.08
+   },
+   "angry": {
+    "f0_median_hz": 245.62218947143361,
+    "f0_iqr_hz": 107.3966425519188,
+    "seconds": 32.16
+   },
+   "surprised": {
+    "f0_median_hz": 256.81531727026163,
+    "f0_iqr_hz": 101.38386279244662,
+    "seconds": 31.68
+   }
+  },
+  {
+   "id": "serena/zh012",
+   "neutral": {
+    "f0_median_hz": 285.51744948445617,
+    "f0_iqr_hz": 116.69030003303095,
+    "seconds": 6.72
+   },
+   "control": {
+    "f0_median_hz": 269.3315580247364,
+    "f0_iqr_hz": 124.26888456045157,
+    "seconds": 6.72
+   },
+   "happy": {
+    "f0_median_hz": 272.9822887067262,
+    "f0_iqr_hz": 123.81708173941473,
+    "seconds": 7.12
+   },
+   "sad": {
+    "f0_median_hz": 274.70552630939324,
+    "f0_iqr_hz": 118.70242611886661,
+    "seconds": 6.88
+   },
+   "angry": {
+    "f0_median_hz": 281.46819876902936,
+    "f0_iqr_hz": 130.93611477117494,
+    "seconds": 7.2
+   },
+   "surprised": {
+    "f0_median_hz": 274.0783344989695,
+    "f0_iqr_hz": 118.18385970423782,
+    "seconds": 6.96
+   }
+  },
+  {
+   "id": "serena/zh013",
+   "neutral": {
+    "f0_median_hz": 247.841855924233,
+    "f0_iqr_hz": 97.0277172481077,
+    "seconds": 4.8
+   },
+   "control": {
+    "f0_median_hz": 255.40276934104372,
+    "f0_iqr_hz": 86.50288765384707,
+    "seconds": 4.64
+   },
+   "happy": {
+    "f0_median_hz": 269.4994406629615,
+    "f0_iqr_hz": 109.65374692836605,
+    "seconds": 4.88
+   },
+   "sad": {
+    "f0_median_hz": 256.9953430523459,
+    "f0_iqr_hz": 102.16860113563371,
+    "seconds": 4.88
+   },
+   "angry": {
+    "f0_median_hz": 251.51130987152155,
+    "f0_iqr_hz": 100.07690212737097,
+    "seconds": 4.8
+   },
+   "surprised": {
+    "f0_median_hz": 240.6833778231449,
+    "f0_iqr_hz": 96.20781991654695,
+    "seconds": 4.56
+   }
+  },
+  {
+   "id": "serena/zh014",
+   "neutral": {
+    "f0_median_hz": 256.0955506150889,
+    "f0_iqr_hz": 116.96016968044412,
+    "seconds": 21.92
+   },
+   "control": {
+    "f0_median_hz": 270.33594363144033,
+    "f0_iqr_hz": 131.57264596838633,
+    "seconds": 36.16
+   },
+   "happy": {
+    "f0_median_hz": 252.1843209371258,
+    "f0_iqr_hz": 138.9115643799309,
+    "seconds": 33.92
+   },
+   "sad": {
+    "f0_median_hz": 253.5553978108569,
+    "f0_iqr_hz": 133.49475361846186,
+    "seconds": 30.0
+   },
+   "angry": {
+    "f0_median_hz": 250.74317371204603,
+    "f0_iqr_hz": 131.40284923903377,
+    "seconds": 30.64
+   },
+   "surprised": {
+    "f0_median_hz": 258.50170710236404,
+    "f0_iqr_hz": 138.3677201859993,
+    "seconds": 29.44
+   }
+  },
+  {
+   "id": "serena/zh015",
+   "neutral": {
+    "f0_median_hz": 221.90558291185812,
+    "f0_iqr_hz": 124.8799449371748,
+    "seconds": 4.96
+   },
+   "control": {
+    "f0_median_hz": 227.0496576576375,
+    "f0_iqr_hz": 89.65859569566891,
+    "seconds": 5.2
+   },
+   "happy": {
+    "f0_median_hz": 220.69774676915438,
+    "f0_iqr_hz": 92.13851499121483,
+    "seconds": 4.96
+   },
+   "sad": {
+    "f0_median_hz": 220.93830706377304,
+    "f0_iqr_hz": 104.01107174234286,
+    "seconds": 4.96
+   },
+   "angry": {
+    "f0_median_hz": 215.9486117124501,
+    "f0_iqr_hz": 107.04829202195853,
+    "seconds": 5.12
+   },
+   "surprised": {
+    "f0_median_hz": 229.00873285223338,
+    "f0_iqr_hz": 99.76752492353557,
+    "seconds": 4.8
+   }
+  },
+  {
+   "id": "serena/zh016",
+   "neutral": {
+    "f0_median_hz": 259.8643522703684,
+    "f0_iqr_hz": 105.31536518641786,
+    "seconds": 8.48
+   },
+   "control": {
+    "f0_median_hz": 248.41757769441205,
+    "f0_iqr_hz": 96.74208236064987,
+    "seconds": 9.44
+   },
+   "happy": {
+    "f0_median_hz": 250.599477428806,
+    "f0_iqr_hz": 103.02489242077615,
+    "seconds": 8.56
+   },
+   "sad": {
+    "f0_median_hz": 241.13785865029905,
+    "f0_iqr_hz": 104.7314564224169,
+    "seconds": 8.64
+   },
+   "angry": {
+    "f0_median_hz": 252.2483300112524,
+    "f0_iqr_hz": 86.4202769002398,
+    "seconds": 8.32
+   },
+   "surprised": {
+    "f0_median_hz": 252.53274780699735,
+    "f0_iqr_hz": 89.40811156592972,
+    "seconds": 8.56
+   }
+  },
+  {
+   "id": "serena/zh017",
+   "neutral": {
+    "f0_median_hz": 287.2631652304665,
+    "f0_iqr_hz": 128.02827144172608,
+    "seconds": 3.6
+   },
+   "control": {
+    "f0_median_hz": 261.0972178796973,
+    "f0_iqr_hz": 132.27878525445277,
+    "seconds": 3.68
+   },
+   "happy": {
+    "f0_median_hz": 295.2464167008821,
+    "f0_iqr_hz": 135.0207610007902,
+    "seconds": 3.68
+   },
+   "sad": {
+    "f0_median_hz": 292.34159117049813,
+    "f0_iqr_hz": 136.05851415282098,
+    "seconds": 3.6
+   },
+   "angry": {
+    "f0_median_hz": 266.05594502198005,
+    "f0_iqr_hz": 130.72098314403132,
+    "seconds": 3.6
+   },
+   "surprised": {
+    "f0_median_hz": 272.52292117033466,
+    "f0_iqr_hz": 134.92472845829536,
+    "seconds": 3.6
+   }
+  },
+  {
+   "id": "serena/zh018",
+   "neutral": {
+    "f0_median_hz": 250.09998623851578,
+    "f0_iqr_hz": 106.2967326991656,
+    "seconds": 23.52
+   },
+   "control": {
+    "f0_median_hz": 246.98542245175167,
+    "f0_iqr_hz": 122.76747206431793,
+    "seconds": 23.92
+   },
+   "happy": {
+    "f0_median_hz": 255.7764899138256,
+    "f0_iqr_hz": 109.18529894615091,
+    "seconds": 22.4
+   },
+   "sad": {
+    "f0_median_hz": 251.00673619851614,
+    "f0_iqr_hz": 122.70816635094141,
+    "seconds": 23.04
+   },
+   "angry": {
+    "f0_median_hz": 265.73537299861573,
+    "f0_iqr_hz": 115.54222344802082,
+    "seconds": 23.04
+   },
+   "surprised": {
+    "f0_median_hz": 274.8108867286672,
+    "f0_iqr_hz": 117.22096278266935,
+    "seconds": 20.8
+   }
+  },
+  {
+   "id": "serena/zh019",
+   "neutral": {
+    "f0_median_hz": 264.48576768589675,
+    "f0_iqr_hz": 97.86062322079863,
+    "seconds": 16.8
+   },
+   "control": {
+    "f0_median_hz": 261.6971386720029,
+    "f0_iqr_hz": 100.6458690824438,
+    "seconds": 18.24
+   },
+   "happy": {
+    "f0_median_hz": 247.93753331356828,
+    "f0_iqr_hz": 83.69651366698989,
+    "seconds": 18.88
+   },
+   "sad": {
+    "f0_median_hz": 268.931703501549,
+    "f0_iqr_hz": 106.73846092901385,
+    "seconds": 18.88
+   },
+   "angry": {
+    "f0_median_hz": 270.70600324990517,
+    "f0_iqr_hz": 105.71325039551922,
+    "seconds": 18.4
+   },
+   "surprised": {
+    "f0_median_hz": 269.460484415846,
+    "f0_iqr_hz": 106.5989601706803,
+    "seconds": 18.08
+   }
+  },
+  {
+   "id": "uncle_fu/zh000",
+   "neutral": {
+    "f0_median_hz": 103.6716456762646,
+    "f0_iqr_hz": 39.424430096680126,
+    "seconds": 2.96
+   },
+   "control": {
+    "f0_median_hz": 103.17605934591478,
+    "f0_iqr_hz": 23.252991977275045,
+    "seconds": 2.8
+   },
+   "happy": {
+    "f0_median_hz": 103.86368671960422,
+    "f0_iqr_hz": 37.77827651217399,
+    "seconds": 2.72
+   },
+   "sad": {
+    "f0_median_hz": 103.54745077964617,
+    "f0_iqr_hz": 24.552296030561152,
+    "seconds": 2.72
+   },
+   "angry": {
+    "f0_median_hz": 108.03062320474518,
+    "f0_iqr_hz": 31.85191545630468,
+    "seconds": 2.64
+   },
+   "surprised": {
+    "f0_median_hz": 111.26914475985052,
+    "f0_iqr_hz": 36.81599983124187,
+    "seconds": 2.72
+   }
+  },
+  {
+   "id": "uncle_fu/zh001",
+   "neutral": {
+    "f0_median_hz": 104.62480209361728,
+    "f0_iqr_hz": 263.8679316220383,
+    "seconds": 8.16
+   },
+   "control": {
+    "f0_median_hz": 97.3831217260861,
+    "f0_iqr_hz": 29.393139168720722,
+    "seconds": 8.0
+   },
+   "happy": {
+    "f0_median_hz": 109.54169451472696,
+    "f0_iqr_hz": 169.05144123378145,
+    "seconds": 7.76
+   },
+   "sad": {
+    "f0_median_hz": 109.69518178637604,
+    "f0_iqr_hz": 185.77039787405732,
+    "seconds": 7.92
+   },
+   "angry": {
+    "f0_median_hz": 110.10656458252936,
+    "f0_iqr_hz": 170.99904286812207,
+    "seconds": 7.52
+   },
+   "surprised": {
+    "f0_median_hz": 106.18355005056317,
+    "f0_iqr_hz": 115.22455030340501,
+    "seconds": 8.08
+   }
+  },
+  {
+   "id": "uncle_fu/zh002",
+   "neutral": {
+    "f0_median_hz": 99.04623820619948,
+    "f0_iqr_hz": 26.175424711888354,
+    "seconds": 14.0
+   },
+   "control": {
+    "f0_median_hz": 100.43088011996136,
+    "f0_iqr_hz": 59.19504817782307,
+    "seconds": 13.12
+   },
+   "happy": {
+    "f0_median_hz": 100.10421047355672,
+    "f0_iqr_hz": 26.950388607389414,
+    "seconds": 14.24
+   },
+   "sad": {
+    "f0_median_hz": 100.32370823683465,
+    "f0_iqr_hz": 33.79752374514224,
+    "seconds": 14.64
+   },
+   "angry": {
+    "f0_median_hz": 102.68244191355814,
+    "f0_iqr_hz": 45.58242331682857,
+    "seconds": 13.52
+   },
+   "surprised": {
+    "f0_median_hz": 103.58498860378391,
+    "f0_iqr_hz": 55.1915178867381,
+    "seconds": 15.28
+   }
+  },
+  {
+   "id": "uncle_fu/zh003",
+   "neutral": {
+    "f0_median_hz": 102.40118409450912,
+    "f0_iqr_hz": 28.575144111478807,
+    "seconds": 32.16
+   },
+   "control": {
+    "f0_median_hz": 103.6840518218662,
+    "f0_iqr_hz": 27.09279072839,
+    "seconds": 33.6
+   },
+   "happy": {
+    "f0_median_hz": 104.18939648643698,
+    "f0_iqr_hz": 23.510681980789627,
+    "seconds": 34.16
+   },
+   "sad": {
+    "f0_median_hz": 107.47946034514086,
+    "f0_iqr_hz": 42.418371463547885,
+    "seconds": 32.32
+   },
+   "angry": {
+    "f0_median_hz": 101.58423195667031,
+    "f0_iqr_hz": 27.8244821853514,
+    "seconds": 34.8
+   },
+   "surprised": {
+    "f0_median_hz": 103.60785871558399,
+    "f0_iqr_hz": 24.194785039115374,
+    "seconds": 32.8
+   }
+  },
+  {
+   "id": "uncle_fu/zh004",
+   "neutral": {
+    "f0_median_hz": 100.13834593660395,
+    "f0_iqr_hz": 54.47568030354057,
+    "seconds": 15.76
+   },
+   "control": {
+    "f0_median_hz": 99.990102326836,
+    "f0_iqr_hz": 59.595503463370704,
+    "seconds": 15.28
+   },
+   "happy": {
+    "f0_median_hz": 102.36624445039654,
+    "f0_iqr_hz": 69.01556190672584,
+    "seconds": 15.04
+   },
+   "sad": {
+    "f0_median_hz": 95.83005216676015,
+    "f0_iqr_hz": 25.703521031561507,
+    "seconds": 15.2
+   },
+   "angry": {
+    "f0_median_hz": 97.88965635407838,
+    "f0_iqr_hz": 54.739203878215335,
+    "seconds": 15.68
+   },
+   "surprised": {
+    "f0_median_hz": 97.0670474987371,
+    "f0_iqr_hz": 48.653818235948194,
+    "seconds": 15.04
+   }
+  },
+  {
+   "id": "uncle_fu/zh005",
+   "neutral": {
+    "f0_median_hz": 106.60686268778778,
+    "f0_iqr_hz": 29.016714645087518,
+    "seconds": 8.0
+   },
+   "control": {
+    "f0_median_hz": 108.7077241521105,
+    "f0_iqr_hz": 201.70883774931767,
+    "seconds": 8.48
+   },
+   "happy": {
+    "f0_median_hz": 108.14414962035278,
+    "f0_iqr_hz": 178.45579870543304,
+    "seconds": 8.56
+   },
+   "sad": {
+    "f0_median_hz": 103.4472100693635,
+    "f0_iqr_hz": 177.0443761617113,
+    "seconds": 8.88
+   },
+   "angry": {
+    "f0_median_hz": 106.5724618193348,
+    "f0_iqr_hz": 117.86681286306069,
+    "seconds": 7.84
+   },
+   "surprised": {
+    "f0_median_hz": 103.55953188476143,
+    "f0_iqr_hz": 78.64257233552634,
+    "seconds": 8.0
+   }
+  },
+  {
+   "id": "uncle_fu/zh006",
+   "neutral": {
+    "f0_median_hz": 101.45623318389467,
+    "f0_iqr_hz": 60.16630410926585,
+    "seconds": 12.32
+   },
+   "control": {
+    "f0_median_hz": 104.54697874482325,
+    "f0_iqr_hz": 182.41916935907292,
+    "seconds": 12.0
+   },
+   "happy": {
+    "f0_median_hz": 96.76694324780718,
+    "f0_iqr_hz": 33.222356644026505,
+    "seconds": 13.6
+   },
+   "sad": {
+    "f0_median_hz": 101.03288020736072,
+    "f0_iqr_hz": 59.983720028060674,
+    "seconds": 13.28
+   },
+   "angry": {
+    "f0_median_hz": 100.33614274423263,
+    "f0_iqr_hz": 44.203815546747904,
+    "seconds": 13.76
+   },
+   "surprised": {
+    "f0_median_hz": 98.78712231605377,
+    "f0_iqr_hz": 22.709235920361465,
+    "seconds": 12.88
+   }
+  },
+  {
+   "id": "uncle_fu/zh007",
+   "neutral": {
+    "f0_median_hz": 105.20304745495608,
+    "f0_iqr_hz": 57.301134728518775,
+    "seconds": 35.92
+   },
+   "control": {
+    "f0_median_hz": 105.20344100902823,
+    "f0_iqr_hz": 159.65619922462326,
+    "seconds": 39.12
+   },
+   "happy": {
+    "f0_median_hz": 107.92646123934543,
+    "f0_iqr_hz": 155.04138071746235,
+    "seconds": 36.56
+   },
+   "sad": {
+    "f0_median_hz": 103.07016140508036,
+    "f0_iqr_hz": 57.60669701407363,
+    "seconds": 36.56
+   },
+   "angry": {
+    "f0_median_hz": 107.6863009792701,
+    "f0_iqr_hz": 149.70024077041194,
+    "seconds": 40.0
+   },
+   "surprised": {
+    "f0_median_hz": 103.75171231106569,
+    "f0_iqr_hz": 46.985724964345806,
+    "seconds": 38.16
+   }
+  },
+  {
+   "id": "uncle_fu/zh008",
+   "neutral": {
+    "f0_median_hz": 100.38008386443482,
+    "f0_iqr_hz": 51.11285006250043,
+    "seconds": 46.32
+   },
+   "control": {
+    "f0_median_hz": 100.07871501240345,
+    "f0_iqr_hz": 32.457164374897744,
+    "seconds": 45.68
+   },
+   "happy": {
+    "f0_median_hz": 102.14534022432835,
+    "f0_iqr_hz": 41.506484458127915,
+    "seconds": 50.56
+   },
+   "sad": {
+    "f0_median_hz": 100.47534929018022,
+    "f0_iqr_hz": 44.434712683936894,
+    "seconds": 49.04
+   },
+   "angry": {
+    "f0_median_hz": 104.30064411829221,
+    "f0_iqr_hz": 47.81691921709975,
+    "seconds": 50.56
+   },
+   "surprised": {
+    "f0_median_hz": 100.59029877216271,
+    "f0_iqr_hz": 41.719999339414514,
+    "seconds": 43.12
+   }
+  },
+  {
+   "id": "uncle_fu/zh009",
+   "neutral": {
+    "f0_median_hz": 99.66500894132051,
+    "f0_iqr_hz": 27.307711449275786,
+    "seconds": 12.56
+   },
+   "control": {
+    "f0_median_hz": 96.90224331985601,
+    "f0_iqr_hz": 24.030571881797613,
+    "seconds": 13.36
+   },
+   "happy": {
+    "f0_median_hz": 97.78489374069702,
+    "f0_iqr_hz": 25.217410398778128,
+    "seconds": 12.64
+   },
+   "sad": {
+    "f0_median_hz": 98.5211744568804,
+    "f0_iqr_hz": 29.969850316783933,
+    "seconds": 13.2
+   },
+   "angry": {
+    "f0_median_hz": 98.77647348416141,
+    "f0_iqr_hz": 27.570238685053468,
+    "seconds": 12.16
+   },
+   "surprised": {
+    "f0_median_hz": 102.56082875163209,
+    "f0_iqr_hz": 40.13562212575273,
+    "seconds": 11.36
+   }
+  },
+  {
+   "id": "uncle_fu/zh010",
+   "neutral": {
+    "f0_median_hz": 100.80445344101443,
+    "f0_iqr_hz": 91.70820007386172,
+    "seconds": 35.84
+   },
+   "control": {
+    "f0_median_hz": 103.00389635224731,
+    "f0_iqr_hz": 43.063975441461935,
+    "seconds": 36.8
+   },
+   "happy": {
+    "f0_median_hz": 100.7042655835609,
+    "f0_iqr_hz": 46.3872865777882,
+    "seconds": 37.76
+   },
+   "sad": {
+    "f0_median_hz": 105.05984521237724,
+    "f0_iqr_hz": 167.40357748912857,
+    "seconds": 35.36
+   },
+   "angry": {
+    "f0_median_hz": 103.56586153424337,
+    "f0_iqr_hz": 86.12142977873843,
+    "seconds": 36.56
+   },
+   "surprised": {
+    "f0_median_hz": 100.00826013088215,
+    "f0_iqr_hz": 59.980949036917934,
+    "seconds": 35.44
+   }
+  },
+  {
+   "id": "uncle_fu/zh011",
+   "neutral": {
+    "f0_median_hz": 100.98251335213735,
+    "f0_iqr_hz": 43.80915059033762,
+    "seconds": 43.04
+   },
+   "control": {
+    "f0_median_hz": 101.26021734565957,
+    "f0_iqr_hz": 36.22743612612412,
+    "seconds": 37.04
+   },
+   "happy": {
+    "f0_median_hz": 99.8556522781762,
+    "f0_iqr_hz": 31.74081439999638,
+    "seconds": 36.08
+   },
+   "sad": {
+    "f0_median_hz": 100.87205387245669,
+    "f0_iqr_hz": 40.86852313882147,
+    "seconds": 39.68
+   },
+   "angry": {
+    "f0_median_hz": 102.50723602605281,
+    "f0_iqr_hz": 34.16055307092961,
+    "seconds": 43.2
+   },
+   "surprised": {
+    "f0_median_hz": 101.25870361171332,
+    "f0_iqr_hz": 49.0530232852018,
+    "seconds": 39.52
+   }
+  },
+  {
+   "id": "uncle_fu/zh012",
+   "neutral": {
+    "f0_median_hz": 105.69007646974822,
+    "f0_iqr_hz": 37.21126152636076,
+    "seconds": 8.32
+   },
+   "control": {
+    "f0_median_hz": 108.88120448663017,
+    "f0_iqr_hz": 35.31084434402308,
+    "seconds": 8.4
+   },
+   "happy": {
+    "f0_median_hz": 104.12973669597987,
+    "f0_iqr_hz": 39.161175853849684,
+    "seconds": 8.24
+   },
+   "sad": {
+    "f0_median_hz": 103.82439816376863,
+    "f0_iqr_hz": 27.24879297429142,
+    "seconds": 8.72
+   },
+   "angry": {
+    "f0_median_hz": 103.99827776932679,
+    "f0_iqr_hz": 24.76569046121739,
+    "seconds": 8.96
+   },
+   "surprised": {
+    "f0_median_hz": 108.3782907929877,
+    "f0_iqr_hz": 29.121044279080735,
+    "seconds": 9.28
+   }
+  },
+  {
+   "id": "uncle_fu/zh013",
+   "neutral": {
+    "f0_median_hz": 117.2660563784384,
+    "f0_iqr_hz": 213.5097029554526,
+    "seconds": 5.6
+   },
+   "control": {
+    "f0_median_hz": 106.5966073027823,
+    "f0_iqr_hz": 55.8409017436735,
+    "seconds": 6.48
+   },
+   "happy": {
+    "f0_median_hz": 104.16067220416772,
+    "f0_iqr_hz": 58.00592372717095,
+    "seconds": 6.24
+   },
+   "sad": {
+    "f0_median_hz": 103.3703138171758,
+    "f0_iqr_hz": 72.65246634296895,
+    "seconds": 5.76
+   },
+   "angry": {
+    "f0_median_hz": 100.12866923667875,
+    "f0_iqr_hz": 55.691743494075936,
+    "seconds": 6.48
+   },
+   "surprised": {
+    "f0_median_hz": 107.16047810229117,
+    "f0_iqr_hz": 60.57137046519233,
+    "seconds": 5.76
+   }
+  },
+  {
+   "id": "uncle_fu/zh014",
+   "neutral": {
+    "f0_median_hz": 99.96897161104289,
+    "f0_iqr_hz": 30.821120861007444,
+    "seconds": 36.48
+   },
+   "control": {
+    "f0_median_hz": 103.5667348516016,
+    "f0_iqr_hz": 55.84074855806645,
+    "seconds": 41.92
+   },
+   "happy": {
+    "f0_median_hz": 99.93312319135765,
+    "f0_iqr_hz": 36.33580092398435,
+    "seconds": 38.24
+   },
+   "sad": {
+    "f0_median_hz": 100.67126456825736,
+    "f0_iqr_hz": 49.836264048167905,
+    "seconds": 38.0
+   },
+   "angry": {
+    "f0_median_hz": 105.90753119773515,
+    "f0_iqr_hz": 75.89084835165669,
+    "seconds": 36.88
+   },
+   "surprised": {
+    "f0_median_hz": 100.08543232876725,
+    "f0_iqr_hz": 42.27154107420159,
+    "seconds": 37.84
+   }
+  },
+  {
+   "id": "uncle_fu/zh015",
+   "neutral": {
+    "f0_median_hz": 108.73796502596161,
+    "f0_iqr_hz": 81.24317045327008,
+    "seconds": 6.16
+   },
+   "control": {
+    "f0_median_hz": 125.60905306910317,
+    "f0_iqr_hz": 258.1321628994819,
+    "seconds": 6.08
+   },
+   "happy": {
+    "f0_median_hz": 99.72344752366358,
+    "f0_iqr_hz": 42.678969224225696,
+    "seconds": 6.56
+   },
+   "sad": {
+    "f0_median_hz": 113.85803504969545,
+    "f0_iqr_hz": 116.4516256438331,
+    "seconds": 6.8
+   },
+   "angry": {
+    "f0_median_hz": 104.2678761159274,
+    "f0_iqr_hz": 60.776995980810696,
+    "seconds": 6.24
+   },
+   "surprised": {
+    "f0_median_hz": 100.1030209381899,
+    "f0_iqr_hz": 36.839677453667505,
+    "seconds": 6.48
+   }
+  },
+  {
+   "id": "uncle_fu/zh016",
+   "neutral": {
+    "f0_median_hz": 112.02739519422575,
+    "f0_iqr_hz": 244.08666957617618,
+    "seconds": 10.4
+   },
+   "control": {
+    "f0_median_hz": 117.29839705825344,
+    "f0_iqr_hz": 235.9560407589721,
+    "seconds": 11.2
+   },
+   "happy": {
+    "f0_median_hz": 105.31858795370242,
+    "f0_iqr_hz": 245.56880338502793,
+    "seconds": 11.2
+   },
+   "sad": {
+    "f0_median_hz": 107.31218825548017,
+    "f0_iqr_hz": 169.66646039071964,
+    "seconds": 10.72
+   },
+   "angry": {
+    "f0_median_hz": 109.2403781411811,
+    "f0_iqr_hz": 239.934621586902,
+    "seconds": 11.76
+   },
+   "surprised": {
+    "f0_median_hz": 113.62709766155191,
+    "f0_iqr_hz": 235.48926820911163,
+    "seconds": 10.88
+   }
+  },
+  {
+   "id": "uncle_fu/zh017",
+   "neutral": {
+    "f0_median_hz": 100.07225085291682,
+    "f0_iqr_hz": 39.10509862769122,
+    "seconds": 5.84
+   },
+   "control": {
+    "f0_median_hz": 100.15066626510566,
+    "f0_iqr_hz": 97.95187714783144,
+    "seconds": 5.6
+   },
+   "happy": {
+    "f0_median_hz": 99.41083858010805,
+    "f0_iqr_hz": 45.967521686642925,
+    "seconds": 4.48
+   },
+   "sad": {
+    "f0_median_hz": 103.46765716536794,
+    "f0_iqr_hz": 88.51139688282993,
+    "seconds": 5.84
+   },
+   "angry": {
+    "f0_median_hz": 99.98029124025497,
+    "f0_iqr_hz": 33.4816618870349,
+    "seconds": 5.92
+   },
+   "surprised": {
+    "f0_median_hz": 98.4633164002222,
+    "f0_iqr_hz": 32.08965830253186,
+    "seconds": 4.8
+   }
+  },
+  {
+   "id": "uncle_fu/zh018",
+   "neutral": {
+    "f0_median_hz": 102.17404413645725,
+    "f0_iqr_hz": 32.934517679370614,
+    "seconds": 28.8
+   },
+   "control": {
+    "f0_median_hz": 100.27513454222422,
+    "f0_iqr_hz": 36.20589653701916,
+    "seconds": 28.08
+   },
+   "happy": {
+    "f0_median_hz": 101.26026111028848,
+    "f0_iqr_hz": 35.197729779362916,
+    "seconds": 28.4
+   },
+   "sad": {
+    "f0_median_hz": 100.66231108617589,
+    "f0_iqr_hz": 32.9304452509262,
+    "seconds": 26.64
+   },
+   "angry": {
+    "f0_median_hz": 99.99732435757497,
+    "f0_iqr_hz": 26.12834011792772,
+    "seconds": 28.24
+   },
+   "surprised": {
+    "f0_median_hz": 102.35705461396505,
+    "f0_iqr_hz": 26.02598888998064,
+    "seconds": 28.56
+   }
+  },
+  {
+   "id": "uncle_fu/zh019",
+   "neutral": {
+    "f0_median_hz": 97.01222588848384,
+    "f0_iqr_hz": 42.21442598271187,
+    "seconds": 23.6
+   },
+   "control": {
+    "f0_median_hz": 100.23573003980744,
+    "f0_iqr_hz": 54.091454983106075,
+    "seconds": 22.8
+   },
+   "happy": {
+    "f0_median_hz": 101.20670856973351,
+    "f0_iqr_hz": 43.9703941547877,
+    "seconds": 23.76
+   },
+   "sad": {
+    "f0_median_hz": 106.00226985958709,
+    "f0_iqr_hz": 175.2410958734677,
+    "seconds": 22.4
+   },
+   "angry": {
+    "f0_median_hz": 103.29372524760404,
+    "f0_iqr_hz": 205.18851772689595,
+    "seconds": 23.76
+   },
+   "surprised": {
+    "f0_median_hz": 99.68167611607868,
+    "f0_iqr_hz": 48.05269157432356,
+    "seconds": 23.04
+   }
+  },
+  {
+   "id": "vivian/zh000",
+   "neutral": {
+    "f0_median_hz": 262.6256365100987,
+    "f0_iqr_hz": 153.97330639650426,
+    "seconds": 2.8
+   },
+   "control": {
+    "f0_median_hz": 272.805419246376,
+    "f0_iqr_hz": 151.4313566308449,
+    "seconds": 2.8
+   },
+   "happy": {
+    "f0_median_hz": 232.14368892666596,
+    "f0_iqr_hz": 170.45965812608245,
+    "seconds": 2.8
+   },
+   "sad": {
+    "f0_median_hz": 268.7589504161305,
+    "f0_iqr_hz": 166.847076479615,
+    "seconds": 2.8
+   },
+   "angry": {
+    "f0_median_hz": 245.28362241086657,
+    "f0_iqr_hz": 146.93548529202315,
+    "seconds": 3.04
+   },
+   "surprised": {
+    "f0_median_hz": 263.9468056312037,
+    "f0_iqr_hz": 120.14233712492583,
+    "seconds": 2.8
+   }
+  },
+  {
+   "id": "vivian/zh001",
+   "neutral": {
+    "f0_median_hz": 275.70812526178884,
+    "f0_iqr_hz": 130.31698899047655,
+    "seconds": 8.56
+   },
+   "control": {
+    "f0_median_hz": 267.4591134587955,
+    "f0_iqr_hz": 136.3265901771299,
+    "seconds": 8.24
+   },
+   "happy": {
+    "f0_median_hz": 266.4086273677015,
+    "f0_iqr_hz": 122.94441640118231,
+    "seconds": 7.68
+   },
+   "sad": {
+    "f0_median_hz": 293.4330792372252,
+    "f0_iqr_hz": 132.30015291675676,
+    "seconds": 8.16
+   },
+   "angry": {
+    "f0_median_hz": 260.3070221637345,
+    "f0_iqr_hz": 136.22832149626797,
+    "seconds": 7.84
+   },
+   "surprised": {
+    "f0_median_hz": 275.9790146602002,
+    "f0_iqr_hz": 121.7486043606182,
+    "seconds": 8.24
+   }
+  },
+  {
+   "id": "vivian/zh002",
+   "neutral": {
+    "f0_median_hz": 253.71491654243786,
+    "f0_iqr_hz": 105.93116428523521,
+    "seconds": 12.48
+   },
+   "control": {
+    "f0_median_hz": 271.997290047359,
+    "f0_iqr_hz": 120.60157653049279,
+    "seconds": 12.8
+   },
+   "happy": {
+    "f0_median_hz": 261.45196431962864,
+    "f0_iqr_hz": 120.97830830996386,
+    "seconds": 13.36
+   },
+   "sad": {
+    "f0_median_hz": 256.3261528162875,
+    "f0_iqr_hz": 124.6357357747905,
+    "seconds": 13.12
+   },
+   "angry": {
+    "f0_median_hz": 257.91299844595426,
+    "f0_iqr_hz": 115.69312088752261,
+    "seconds": 13.84
+   },
+   "surprised": {
+    "f0_median_hz": 254.72621308764886,
+    "f0_iqr_hz": 117.95928809078686,
+    "seconds": 13.36
+   }
+  },
+  {
+   "id": "vivian/zh003",
+   "neutral": {
+    "f0_median_hz": 291.3666891417815,
+    "f0_iqr_hz": 146.82249547395588,
+    "seconds": 31.36
+   },
+   "control": {
+    "f0_median_hz": 287.8215694322318,
+    "f0_iqr_hz": 141.05466742841784,
+    "seconds": 33.84
+   },
+   "happy": {
+    "f0_median_hz": 277.9900162966553,
+    "f0_iqr_hz": 137.0599925306836,
+    "seconds": 30.56
+   },
+   "sad": {
+    "f0_median_hz": 294.0909048334079,
+    "f0_iqr_hz": 131.7839885941526,
+    "seconds": 32.72
+   },
+   "angry": {
+    "f0_median_hz": 294.7949650912051,
+    "f0_iqr_hz": 136.39730442206238,
+    "seconds": 29.92
+   },
+   "surprised": {
+    "f0_median_hz": 288.51533048776344,
+    "f0_iqr_hz": 145.90637387767742,
+    "seconds": 33.04
+   }
+  },
+  {
+   "id": "vivian/zh004",
+   "neutral": {
+    "f0_median_hz": 265.30235272286205,
+    "f0_iqr_hz": 132.7336484522107,
+    "seconds": 14.0
+   },
+   "control": {
+    "f0_median_hz": 265.68510311418254,
+    "f0_iqr_hz": 134.66745948904583,
+    "seconds": 13.44
+   },
+   "happy": {
+    "f0_median_hz": 271.9149316358206,
+    "f0_iqr_hz": 124.04186508471895,
+    "seconds": 14.32
+   },
+   "sad": {
+    "f0_median_hz": 270.9276624860145,
+    "f0_iqr_hz": 114.81280440121287,
+    "seconds": 13.52
+   },
+   "angry": {
+    "f0_median_hz": 279.11793552004616,
+    "f0_iqr_hz": 117.84810416592379,
+    "seconds": 12.72
+   },
+   "surprised": {
+    "f0_median_hz": 279.2053959864832,
+    "f0_iqr_hz": 132.18999173686555,
+    "seconds": 13.68
+   }
+  },
+  {
+   "id": "vivian/zh005",
+   "neutral": {
+    "f0_median_hz": 251.42417669023146,
+    "f0_iqr_hz": 114.20619560768807,
+    "seconds": 7.36
+   },
+   "control": {
+    "f0_median_hz": 275.60580929274926,
+    "f0_iqr_hz": 99.54179310820268,
+    "seconds": 7.36
+   },
+   "happy": {
+    "f0_median_hz": 272.2462309979125,
+    "f0_iqr_hz": 117.30235673544968,
+    "seconds": 7.44
+   },
+   "sad": {
+    "f0_median_hz": 261.43095530780766,
+    "f0_iqr_hz": 111.70076314037507,
+    "seconds": 7.68
+   },
+   "angry": {
+    "f0_median_hz": 260.2702037886789,
+    "f0_iqr_hz": 104.36857870192574,
+    "seconds": 7.76
+   },
+   "surprised": {
+    "f0_median_hz": 261.8322465369172,
+    "f0_iqr_hz": 110.10744781890295,
+    "seconds": 8.0
+   }
+  },
+  {
+   "id": "vivian/zh006",
+   "neutral": {
+    "f0_median_hz": 263.4250157373756,
+    "f0_iqr_hz": 83.48531520882347,
+    "seconds": 11.76
+   },
+   "control": {
+    "f0_median_hz": 272.8810765976742,
+    "f0_iqr_hz": 86.93146455892364,
+    "seconds": 11.28
+   },
+   "happy": {
+    "f0_median_hz": 249.45568439591833,
+    "f0_iqr_hz": 87.43187476430089,
+    "seconds": 11.52
+   },
+   "sad": {
+    "f0_median_hz": 279.4559617616244,
+    "f0_iqr_hz": 92.7783920647654,
+    "seconds": 12.4
+   },
+   "angry": {
+    "f0_median_hz": 269.56852041707975,
+    "f0_iqr_hz": 97.3873181986844,
+    "seconds": 12.0
+   },
+   "surprised": {
+    "f0_median_hz": 271.92980486596076,
+    "f0_iqr_hz": 109.5744800542293,
+    "seconds": 11.92
+   }
+  },
+  {
+   "id": "vivian/zh007",
+   "neutral": {
+    "f0_median_hz": 264.1383702038703,
+    "f0_iqr_hz": 97.0413833411734,
+    "seconds": 31.2
+   },
+   "control": {
+    "f0_median_hz": 258.19908023725657,
+    "f0_iqr_hz": 100.62479992818282,
+    "seconds": 32.24
+   },
+   "happy": {
+    "f0_median_hz": 259.96462422850664,
+    "f0_iqr_hz": 90.41682320960808,
+    "seconds": 31.84
+   },
+   "sad": {
+    "f0_median_hz": 274.4313481090685,
+    "f0_iqr_hz": 108.363299627858,
+    "seconds": 30.8
+   },
+   "angry": {
+    "f0_median_hz": 264.475353462474,
+    "f0_iqr_hz": 107.67131586211133,
+    "seconds": 30.32
+   },
+   "surprised": {
+    "f0_median_hz": 277.48144302468967,
+    "f0_iqr_hz": 105.60258983366819,
+    "seconds": 28.08
+   }
+  },
+  {
+   "id": "vivian/zh008",
+   "neutral": {
+    "f0_median_hz": 272.1298881566918,
+    "f0_iqr_hz": 121.4558172530491,
+    "seconds": 44.32
+   },
+   "control": {
+    "f0_median_hz": 278.0926328165182,
+    "f0_iqr_hz": 125.83182142672939,
+    "seconds": 40.64
+   },
+   "happy": {
+    "f0_median_hz": 275.75546859316444,
+    "f0_iqr_hz": 126.21441779754923,
+    "seconds": 38.56
+   },
+   "sad": {
+    "f0_median_hz": 266.2904954620846,
+    "f0_iqr_hz": 124.68249630812974,
+    "seconds": 40.08
+   },
+   "angry": {
+    "f0_median_hz": 282.5782510256684,
+    "f0_iqr_hz": 123.52914440248281,
+    "seconds": 40.96
+   },
+   "surprised": {
+    "f0_median_hz": 280.6723432770994,
+    "f0_iqr_hz": 125.87820272669114,
+    "seconds": 47.28
+   }
+  },
+  {
+   "id": "vivian/zh009",
+   "neutral": {
+    "f0_median_hz": 265.1971582745735,
+    "f0_iqr_hz": 106.37575231335674,
+    "seconds": 9.84
+   },
+   "control": {
+    "f0_median_hz": 261.76454417040367,
+    "f0_iqr_hz": 126.61946012997774,
+    "seconds": 9.44
+   },
+   "happy": {
+    "f0_median_hz": 262.6085342174696,
+    "f0_iqr_hz": 128.19228396066856,
+    "seconds": 9.52
+   },
+   "sad": {
+    "f0_median_hz": 256.3377488305771,
+    "f0_iqr_hz": 117.5188618464112,
+    "seconds": 9.68
+   },
+   "angry": {
+    "f0_median_hz": 249.14286207752176,
+    "f0_iqr_hz": 121.23073967024618,
+    "seconds": 9.6
+   },
+   "surprised": {
+    "f0_median_hz": 278.53121982161514,
+    "f0_iqr_hz": 121.46336926919315,
+    "seconds": 9.92
+   }
+  },
+  {
+   "id": "vivian/zh010",
+   "neutral": {
+    "f0_median_hz": 259.9247102737909,
+    "f0_iqr_hz": 123.95262552293022,
+    "seconds": 32.56
+   },
+   "control": {
+    "f0_median_hz": 262.3102452120789,
+    "f0_iqr_hz": 105.22454325188457,
+    "seconds": 30.56
+   },
+   "happy": {
+    "f0_median_hz": 263.91900144683075,
+    "f0_iqr_hz": 119.96307184862886,
+    "seconds": 31.28
+   },
+   "sad": {
+    "f0_median_hz": 261.3913171712063,
+    "f0_iqr_hz": 128.28696883313975,
+    "seconds": 32.64
+   },
+   "angry": {
+    "f0_median_hz": 265.7902303619937,
+    "f0_iqr_hz": 124.52380271462044,
+    "seconds": 31.2
+   },
+   "surprised": {
+    "f0_median_hz": 261.02388487296435,
+    "f0_iqr_hz": 119.28488703208424,
+    "seconds": 33.04
+   }
+  },
+  {
+   "id": "vivian/zh011",
+   "neutral": {
+    "f0_median_hz": 271.3781215568296,
+    "f0_iqr_hz": 131.3564738001889,
+    "seconds": 34.32
+   },
+   "control": {
+    "f0_median_hz": 267.0566761381225,
+    "f0_iqr_hz": 127.84027675214881,
+    "seconds": 34.24
+   },
+   "happy": {
+    "f0_median_hz": 266.45920226982827,
+    "f0_iqr_hz": 121.68845998805904,
+    "seconds": 35.68
+   },
+   "sad": {
+    "f0_median_hz": 259.4509526733569,
+    "f0_iqr_hz": 114.28194579188977,
+    "seconds": 33.76
+   },
+   "angry": {
+    "f0_median_hz": 268.1391622371801,
+    "f0_iqr_hz": 128.10187359310598,
+    "seconds": 34.08
+   },
+   "surprised": {
+    "f0_median_hz": 257.10263964293813,
+    "f0_iqr_hz": 120.75561866995034,
+    "seconds": 33.84
+   }
+  },
+  {
+   "id": "vivian/zh012",
+   "neutral": {
+    "f0_median_hz": 242.9480341432356,
+    "f0_iqr_hz": 151.6426471544958,
+    "seconds": 9.12
+   },
+   "control": {
+    "f0_median_hz": 257.2859521628542,
+    "f0_iqr_hz": 140.39853714551649,
+    "seconds": 8.72
+   },
+   "happy": {
+    "f0_median_hz": 247.7009024450748,
+    "f0_iqr_hz": 125.71451126495157,
+    "seconds": 9.04
+   },
+   "sad": {
+    "f0_median_hz": 248.80077779216745,
+    "f0_iqr_hz": 134.7451156069963,
+    "seconds": 8.4
+   },
+   "angry": {
+    "f0_median_hz": 257.3632291746904,
+    "f0_iqr_hz": 138.00574853929575,
+    "seconds": 10.72
+   },
+   "surprised": {
+    "f0_median_hz": 260.3579895665635,
+    "f0_iqr_hz": 160.96191122357075,
+    "seconds": 8.0
+   }
+  },
+  {
+   "id": "vivian/zh013",
+   "neutral": {
+    "f0_median_hz": 263.55027296175865,
+    "f0_iqr_hz": 121.03098027910085,
+    "seconds": 4.96
+   },
+   "control": {
+    "f0_median_hz": 253.43046789535373,
+    "f0_iqr_hz": 136.73263343163535,
+    "seconds": 5.04
+   },
+   "happy": {
+    "f0_median_hz": 263.86694863986327,
+    "f0_iqr_hz": 116.44564018098401,
+    "seconds": 5.12
+   },
+   "sad": {
+    "f0_median_hz": 277.50763203658704,
+    "f0_iqr_hz": 108.9331067482733,
+    "seconds": 5.2
+   },
+   "angry": {
+    "f0_median_hz": 277.0429058556911,
+    "f0_iqr_hz": 112.86522580816376,
+    "seconds": 5.2
+   },
+   "surprised": {
+    "f0_median_hz": 290.5046156405663,
+    "f0_iqr_hz": 108.8762720106997,
+    "seconds": 5.36
+   }
+  },
+  {
+   "id": "vivian/zh014",
+   "neutral": {
+    "f0_median_hz": 255.87845050630133,
+    "f0_iqr_hz": 137.90303504019286,
+    "seconds": 33.84
+   },
+   "control": {
+    "f0_median_hz": 267.6987395584464,
+    "f0_iqr_hz": 137.74946995356578,
+    "seconds": 31.84
+   },
+   "happy": {
+    "f0_median_hz": 275.967051970381,
+    "f0_iqr_hz": 141.23335562113584,
+    "seconds": 31.6
+   },
+   "sad": {
+    "f0_median_hz": 271.3428036526473,
+    "f0_iqr_hz": 141.21530953227057,
+    "seconds": 35.44
+   },
+   "angry": {
+    "f0_median_hz": 262.0063300971699,
+    "f0_iqr_hz": 143.07011204253678,
+    "seconds": 33.6
+   },
+   "surprised": {
+    "f0_median_hz": 276.0852649278119,
+    "f0_iqr_hz": 124.48646899278845,
+    "seconds": 33.28
+   }
+  },
+  {
+   "id": "vivian/zh015",
+   "neutral": {
+    "f0_median_hz": 245.80897230659707,
+    "f0_iqr_hz": 113.4390737598371,
+    "seconds": 6.72
+   },
+   "control": {
+    "f0_median_hz": 242.12004033279544,
+    "f0_iqr_hz": 117.18152862075067,
+    "seconds": 6.48
+   },
+   "happy": {
+    "f0_median_hz": 241.08437860853076,
+    "f0_iqr_hz": 128.42489909610828,
+    "seconds": 6.64
+   },
+   "sad": {
+    "f0_median_hz": 239.4929262302727,
+    "f0_iqr_hz": 117.7058108059515,
+    "seconds": 6.64
+   },
+   "angry": {
+    "f0_median_hz": 223.29264979892793,
+    "f0_iqr_hz": 137.09238797519578,
+    "seconds": 6.8
+   },
+   "surprised": {
+    "f0_median_hz": 254.0778943827989,
+    "f0_iqr_hz": 145.356723164937,
+    "seconds": 6.4
+   }
+  },
+  {
+   "id": "vivian/zh016",
+   "neutral": {
+    "f0_median_hz": 251.93801191685222,
+    "f0_iqr_hz": 94.22803974272165,
+    "seconds": 10.0
+   },
+   "control": {
+    "f0_median_hz": 257.52455301194425,
+    "f0_iqr_hz": 114.71033719971055,
+    "seconds": 10.16
+   },
+   "happy": {
+    "f0_median_hz": 249.36635054168426,
+    "f0_iqr_hz": 109.42488694547416,
+    "seconds": 10.24
+   },
+   "sad": {
+    "f0_median_hz": 253.25668422913137,
+    "f0_iqr_hz": 106.93169637385466,
+    "seconds": 9.36
+   },
+   "angry": {
+    "f0_median_hz": 255.5244737110251,
+    "f0_iqr_hz": 104.54788469246847,
+    "seconds": 9.68
+   },
+   "surprised": {
+    "f0_median_hz": 251.17363954719534,
+    "f0_iqr_hz": 103.62778531065948,
+    "seconds": 9.84
+   }
+  },
+  {
+   "id": "vivian/zh017",
+   "neutral": {
+    "f0_median_hz": 317.16237070232285,
+    "f0_iqr_hz": 161.53238092117434,
+    "seconds": 4.56
+   },
+   "control": {
+    "f0_median_hz": 320.7981840768539,
+    "f0_iqr_hz": 146.5710428780693,
+    "seconds": 4.32
+   },
+   "happy": {
+    "f0_median_hz": 299.6000605980143,
+    "f0_iqr_hz": 154.29526932214105,
+    "seconds": 4.8
+   },
+   "sad": {
+    "f0_median_hz": 327.94341514889436,
+    "f0_iqr_hz": 157.78077953009733,
+    "seconds": 4.32
+   },
+   "angry": {
+    "f0_median_hz": 319.6819768041794,
+    "f0_iqr_hz": 157.5808953849452,
+    "seconds": 4.48
+   },
+   "surprised": {
+    "f0_median_hz": 307.14656895079133,
+    "f0_iqr_hz": 149.80582793907786,
+    "seconds": 4.64
+   }
+  },
+  {
+   "id": "vivian/zh018",
+   "neutral": {
+    "f0_median_hz": 283.5595699333611,
+    "f0_iqr_hz": 126.87274300965407,
+    "seconds": 25.2
+   },
+   "control": {
+    "f0_median_hz": 296.5940657121368,
+    "f0_iqr_hz": 133.13516538298958,
+    "seconds": 25.2
+   },
+   "happy": {
+    "f0_median_hz": 273.98729312312673,
+    "f0_iqr_hz": 129.07875761930765,
+    "seconds": 25.28
+   },
+   "sad": {
+    "f0_median_hz": 282.5509683157011,
+    "f0_iqr_hz": 135.78057959835758,
+    "seconds": 25.6
+   },
+   "angry": {
+    "f0_median_hz": 278.128280347878,
+    "f0_iqr_hz": 128.10478414678187,
+    "seconds": 25.2
+   },
+   "surprised": {
+    "f0_median_hz": 258.7932690604763,
+    "f0_iqr_hz": 134.3860694710175,
+    "seconds": 26.4
+   }
+  },
+  {
+   "id": "vivian/zh019",
+   "neutral": {
+    "f0_median_hz": 274.96824095982015,
+    "f0_iqr_hz": 112.28266645775372,
+    "seconds": 19.12
+   },
+   "control": {
+    "f0_median_hz": 278.2387459556606,
+    "f0_iqr_hz": 124.53923524607356,
+    "seconds": 20.16
+   },
+   "happy": {
+    "f0_median_hz": 271.07805941458173,
+    "f0_iqr_hz": 91.98336362458582,
+    "seconds": 19.52
+   },
+   "sad": {
+    "f0_median_hz": 275.2476981971811,
+    "f0_iqr_hz": 104.32607834870942,
+    "seconds": 20.16
+   },
+   "angry": {
+    "f0_median_hz": 267.9368813791384,
+    "f0_iqr_hz": 117.97305922874276,
+    "seconds": 20.64
+   },
+   "surprised": {
+    "f0_median_hz": 271.10903237427874,
+    "f0_iqr_hz": 108.03538845113815,
+    "seconds": 21.2
+   }
+  }
+ ],
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
+}

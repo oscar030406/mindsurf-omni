@@ -60,11 +60,13 @@ PROMPT = """你在做一次盲评。下面是同一个问题的两个回答，�
 def load_credentials(path: Path) -> dict[str, str]:
     """The local file first, then the environment.
 
-    A key belongs in neither the source nor a global environment variable: the
-    source is tracked and the gate rejects it on the way out, and a machine-wide
-    variable hands it to every process on the box. A file next to the project
-    that .gitignore already excludes is the narrow option -- one place to paste
-    it, one place to delete it, and it cannot be committed by accident.
+    A key belongs in none of three places. Not the source, which is tracked and
+    which the gate rejects on the way out. Not a machine-wide variable, which
+    hands it to every process on the box. And not inside the project directory
+    either, even gitignored: verify_delivery scans the working tree rather than
+    the index, because packaging the project copies what is on disk and not what
+    git would ship -- it caught exactly this and was right to. So the default
+    sits under the user's home, one file, one place to delete it.
     """
     settings: dict[str, str] = {}
     if path.exists():
@@ -168,7 +170,9 @@ def main() -> int:
     parser.add_argument("--arm", action="append", required=True, metavar="LABEL=PATH")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pairs", type=Path, help="write every judged pair here too")
-    parser.add_argument("--credentials", type=Path, default=Path("configs/judge.local.json"))
+    parser.add_argument(
+        "--credentials", type=Path, default=Path.home() / ".mindsurf" / "judge.json"
+    )
     parser.add_argument("--seed", type=int, default=20260803)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--limit", type=int, help="first N pairs, for a smoke run")
