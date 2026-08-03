@@ -90,9 +90,23 @@ def answered(answer: str) -> bool:
     return answer.strip().startswith("是")
 
 
-def judge_rows(judge: Judge, rows: list[dict[str, Any]], label: str) -> list[bool]:
-    answers = judge.run(rows, lambda row: PROMPT.format(**row), label=label)
-    return [answered(answer) for answer in answers]
+def judge_rows(judge: Judge, rows: list[dict[str, Any]], label: str, votes: int = 1) -> list[bool]:
+    """One verdict per row, or the majority of an odd number of them.
+
+    Temperature is already zero, so a repeat is not sampling the judge's
+    uncertainty -- it is sampling the endpoint's. That is the flicker the first
+    validity run measured, eight probes of 158 changing between two readings,
+    and a majority helps exactly to the extent that those flips are independent
+    rather than the same ambiguous probes flipping every time. Which of the two
+    it is, is the thing the second attempt measures.
+    """
+    tallies = [0] * len(rows)
+    for round_index in range(votes):
+        suffix = label if votes == 1 else f"{label} 第{round_index + 1}票"
+        answers = judge.run(rows, lambda row: PROMPT.format(**row), label=suffix)
+        for index, answer in enumerate(answers):
+            tallies[index] += int(answered(answer))
+    return [tally * 2 > votes for tally in tallies]
 
 
 def shuffled(rows: list[dict[str, Any]], seed: int) -> list[dict[str, Any]]:
@@ -110,10 +124,12 @@ def binomial_noise(n: int) -> float:
     return 1.96 * math.sqrt(0.25 / n) if n else float("inf")
 
 
-def validate(judge: Judge, label: str, rows: list[dict[str, Any]], seed: int) -> dict[str, Any]:
-    intact = judge_rows(judge, rows, f"{label} 完整")
-    again = judge_rows(judge, rows, f"{label} 重判")
-    control = judge_rows(judge, shuffled(rows, seed), f"{label} 打乱")
+def validate(
+    judge: Judge, label: str, rows: list[dict[str, Any]], seed: int, votes: int = 1
+) -> dict[str, Any]:
+    intact = judge_rows(judge, rows, f"{label} 完整", votes)
+    again = judge_rows(judge, rows, f"{label} 重判", votes)
+    control = judge_rows(judge, shuffled(rows, seed), f"{label} 打乱", votes)
 
     agreement = sum(1 for a, b in zip(intact, again, strict=True) if a == b) / len(rows)
     intact_rate = sum(intact) / len(rows)
@@ -139,6 +155,7 @@ def validate(judge: Judge, label: str, rows: list[dict[str, Any]], seed: int) ->
     }
     return {
         "arm": label,
+        "votes": votes,
         "n": len(rows),
         "intact_rate": intact_rate,
         "rejudge_agreement": agreement,
@@ -166,6 +183,9 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=20260803)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--limit", type=int)
+    parser.add_argument(
+        "--votes", type=int, default=1, help="odd number of judgements, majority wins"
+    )
     args = parser.parse_args()
 
     judge = Judge(credentials=args.credentials, workers=args.workers)
@@ -178,8 +198,8 @@ def main() -> int:
 
     if args.validate:
         label, rows = rows_of(args.validate)
-        report = validate(judge, label, rows, args.seed)
-        report["judge"] = judge.provenance(PROMPT, seed=args.seed)
+        report = validate(judge, label, rows, args.seed, args.votes)
+        report["judge"] = judge.provenance(PROMPT, seed=args.seed, votes=args.votes)
         for key in ("n", "intact_rate", "rejudge_agreement", "shuffled_rate", "separation"):
             print(f"  {key}: {report[key]}")
         print(f"  {report['paired_self_comparison']}")
@@ -199,8 +219,8 @@ def main() -> int:
     base_by_id = {row["id"]: row for row in base_rows}
     arm_by_id = {row["id"]: row for row in arm_rows}
 
-    base = judge_rows(judge, [base_by_id[i] for i in shared], base_label)
-    arm = judge_rows(judge, [arm_by_id[i] for i in shared], arm_label)
+    base = judge_rows(judge, [base_by_id[i] for i in shared], base_label, args.votes)
+    arm = judge_rows(judge, [arm_by_id[i] for i in shared], arm_label, args.votes)
     deltas = [float(b) - float(a) for a, b in zip(base, arm, strict=True)]
     verdict = compare_paired(
         f"answerable_rate[{arm_label} vs {base_label}]",
@@ -213,7 +233,7 @@ def main() -> int:
         f"{base_label}_rate": sum(base) / len(base),
         f"{arm_label}_rate": sum(arm) / len(arm),
         "verdict": verdict,
-        "judge": judge.provenance(PROMPT, seed=args.seed),
+        "judge": judge.provenance(PROMPT, seed=args.seed, votes=args.votes),
     }
     for key in ("n", f"{base_label}_rate", f"{arm_label}_rate"):
         print(f"  {key}: {report[key]}")
