@@ -1,0 +1,13 @@
+{
+  "n": 158,
+  "base_rate": 0.41139240506329117,
+  "length_rate": 0.4177215189873418,
+  "verdict": "answerable_rate[length vs base]: indistinguishable (+0.0063, within ±0.2278, paired n=158) —— 仅报告：只分辨得了 0.2278，而关心的是 0.0500，读不出这么小的劣化",
+  "judge": {
+    "model": "deepseek-ai/DeepSeek-V3.2",
+    "endpoint": "https://api.siliconflow.cn/v1",
+    "prompt_sha256": "8031f57fbb09e7195aa6ee6845c14b81f4590052438c4ab11e310a1b2fe64d35",
+    "seed": 20260803,
+    "votes": 3
+  }
+}
