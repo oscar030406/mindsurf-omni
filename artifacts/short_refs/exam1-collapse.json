@@ -1,0 +1,31 @@
+{
+  "authors": {
+    "ext": {
+      "candidate": "sft_graft_768.pth",
+      "candidate_chat_nll": 5.519719367304807,
+      "candidate_entropy": 1.6172361079031827,
+      "n": 158,
+      "reference": "t2a_graft_768.pth",
+      "reference_chat_nll": 4.038840959311793,
+      "reference_entropy": 2.220449563372072,
+      "verdict": "chat_nll[ext]: regressed (+1.4859 against ±0.1975, paired n=158)"
+    },
+    "up": {
+      "candidate": "sft_graft_768.pth",
+      "candidate_chat_nll": 4.500734522266404,
+      "candidate_entropy": 1.438033889120382,
+      "n": 158,
+      "reference": "t2a_graft_768.pth",
+      "reference_chat_nll": 3.2712194931321306,
+      "reference_entropy": 1.9442231735310855,
+      "verdict": "chat_nll[up]: regressed (+1.2356 against ±0.2081, paired n=158)"
+    }
+  },
+  "cross_reference_agreement": {
+    "agreement": 1.0,
+    "gating_eligible": true,
+    "n": 158,
+    "noise": 0.07796461384922154,
+    "note": "the two reference sets rank probes alike often enough to gate"
+  }
+}
