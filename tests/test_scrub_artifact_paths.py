@@ -71,3 +71,21 @@ def test_check_mode_reports_without_writing(tmp_path: Path) -> None:
 
     assert scrub_jsonl(path, apply=False) == 1
     assert path.read_text(encoding="utf-8") == original
+
+
+def test_naming_one_file_scans_it_rather_than_reporting_nothing(tmp_path: Path) -> None:
+    """rglob on a file yields nothing, so this call used to pass silently."""
+    import subprocess
+    import sys
+
+    evidence = tmp_path / "evidence.jsonl"
+    evidence.write_text(
+        '{"audio_path": "/home/someone/run/zh000.wav"}\n', encoding="utf-8"
+    )
+    result = subprocess.run(
+        [sys.executable, "scripts/scrub_artifact_paths.py", "--check", str(evidence)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 1, result.stdout
+    assert "1 处路径" in result.stdout

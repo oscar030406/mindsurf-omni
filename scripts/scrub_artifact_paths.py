@@ -120,7 +120,12 @@ def main() -> None:
 
     total, touched = 0, 0
     for root in args.roots:
-        for path in sorted(root.rglob("*")):
+        # rglob on a file yields nothing, so naming one evidence file used to
+        # print "0 paths" and exit 0 -- the same output as a clean scan. The
+        # documented habit is to check a file the moment it comes off the
+        # training host, and that is exactly the call that silently passed.
+        candidates = [root] if root.is_file() else sorted(root.rglob("*"))
+        for path in candidates:
             if path.suffix not in (".json", ".jsonl") or not path.is_file():
                 continue
             handler = scrub_jsonl if path.suffix == ".jsonl" else scrub_json

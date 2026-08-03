@@ -80,11 +80,12 @@ def compare(
 def load(path: Path) -> dict[str, Any]:
     import torch
 
-    blob = torch.load(path, map_location="cpu", weights_only=True)
+    blob: dict[str, Any] = torch.load(path, map_location="cpu", weights_only=True)
     # Trainers save either the state dict itself or a resume bundle around it.
     for key in ("state_dict", "model", "weights"):
-        if isinstance(blob, dict) and key in blob and isinstance(blob[key], dict):
-            return blob[key]
+        inner = blob.get(key) if isinstance(blob, dict) else None
+        if isinstance(inner, dict):
+            return inner
     return blob
 
 
