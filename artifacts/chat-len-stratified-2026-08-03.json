@@ -1,0 +1,18 @@
+{
+  "full": {
+    "n": 158,
+    "agreement": 0.20253164556962025,
+    "noise": 0.07796461384922154,
+    "gating_eligible": false,
+    "note": "the two reference sets do not agree per probe beyond chance; report both, let neither decide"
+  },
+  "low_third": {
+    "n": 52,
+    "agreement": 0.019230769230769232,
+    "noise": 0.13590154807518115,
+    "gating_eligible": false,
+    "note": "the two reference sets do not agree per probe beyond chance; report both, let neither decide"
+  },
+  "n_full": 158,
+  "n_low": 52
+}
