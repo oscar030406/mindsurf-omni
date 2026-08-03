@@ -36,7 +36,6 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
@@ -174,7 +173,9 @@ def main() -> int:
     parser.add_argument("--classify", type=Path)
     parser.add_argument("--generate", type=int)
     parser.add_argument("--themes", type=Path, help="output of --classify")
-    parser.add_argument("--existing", type=Path, default=Path("configs/chat_refs_external_v1.jsonl"))
+    parser.add_argument(
+        "--existing", type=Path, default=Path("configs/chat_refs_external_v1.jsonl")
+    )
     parser.add_argument(
         "--exclude", type=Path, nargs="*", default=[Path("configs/preference_prompts_zh_all.jsonl")]
     )
@@ -222,13 +223,12 @@ def main() -> int:
         for _ in range(args.rounds):
             if len(kept[theme]) >= need:
                 break
-            reply = judge.run(
-                [None],
-                lambda _: GENERATE.format(
-                    count=max(need * 2, 20), theme=theme, examples=examples
-                ),
-                label=f"造 {theme}",
-            )[0]
+            # Built here rather than inside the lambda: a closure over the loop
+            # variables reads whatever they hold when it runs, which is correct
+            # only because run() happens to consume within the iteration. That
+            # is a coincidence, not a design.
+            question = GENERATE.format(count=max(need * 2, 20), theme=theme, examples=examples)
+            reply = judge.run([None], lambda _, q=question: q, label=f"造 {theme}")[0]
             for line in parse_lines(reply):
                 if len(line) > args.max_chars or line in banned:
                     continue
