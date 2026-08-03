@@ -79,6 +79,15 @@ CONTENT_RULES: tuple[tuple[str, str, str], ...] = (
         "section 7: personal usernames and absolute paths",
     ),
     (
+        # Only the two angle-bracket markers. Git's middle marker is seven
+        # equals on its own line, and that is also how Markdown underlines a
+        # setext heading -- a conflict always carries both ends, so dropping the
+        # ambiguous one costs no coverage and no false positives.
+        "merge_conflict",
+        r"^<{7}(\s|$)|^>{7}(\s|$)",
+        "an unresolved merge conflict was committed",
+    ),
+    (
         "internal_address",
         r"\b(?:192\.168\.\d{1,3}\.\d{1,3}"
         r"|10\.\d{1,3}\.\d{1,3}\.\d{1,3}"

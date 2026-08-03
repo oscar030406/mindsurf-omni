@@ -22,7 +22,11 @@ REPO="${MINDSURF_REPO:-$HOME/omni/mindsurf-omni}"
 PY="${OMNI_PYTHON:-$HOME/.venvs/omni/bin/python}"
 SAVE="${1:-sft_graft_frozen}"
 ALPHA="${2:-0.50}"
-PACK="${EMOTION_PACK_ROOT:-$HOME/omni/emo_vec_full}/alpha$ALPHA"
+# The conditioned arm puts the emotion in the user turn instead of in the
+# speaker vector, so it wants the untouched vectors and a probe file per
+# instruction -- same generation protocol, same guard, same resumability, and
+# no alpha in the path. EMOTION_PACK names the pack outright for that case.
+PACK="${EMOTION_PACK:-${EMOTION_PACK_ROOT:-$HOME/omni/emo_vec_full}/alpha$ALPHA}"
 OUT="${3:-$HOME/omni/emo_pack_eval/$SAVE/alpha$ALPHA}"
 TEXTS="${EMOTION_TEXTS:-configs/talker_texts_zh_v1.jsonl}"
 LIMIT="${EMOTION_LIMIT:-20}"

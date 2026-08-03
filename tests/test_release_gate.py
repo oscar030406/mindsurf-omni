@@ -121,3 +121,28 @@ def test_the_scrubber_test_may_hold_the_paths_it_catches() -> None:
 
     assert "tests/test_scrub_artifact_paths.py" in EXEMPT
     assert "tests/test_release_gate.py" in EXEMPT
+
+
+def test_a_committed_merge_conflict_is_caught() -> None:
+    """This shipped once: a doc went to a public branch with both markers in it."""
+    conflicted = (
+        "before\n<<<<<<< Updated upstream\nours\n"
+        "=======\ntheirs\n>>>>>>> Stashed changes\n"
+    )
+    hits = [
+        rule
+        for line in conflicted.splitlines()
+        for rule, pattern, _ in CONTENT_RULES
+        if re.search(pattern, line, re.IGNORECASE)
+    ]
+    assert hits.count("merge_conflict") == 2
+
+
+def test_seven_equals_alone_is_not_read_as_a_conflict() -> None:
+    """Markdown underlines a setext heading the same way git marks a midpoint."""
+    hits = [
+        rule
+        for rule, pattern, _ in CONTENT_RULES
+        if re.search(pattern, "=======", re.IGNORECASE)
+    ]
+    assert "merge_conflict" not in hits
