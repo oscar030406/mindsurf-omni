@@ -61,6 +61,13 @@ AXES: tuple[tuple[str, bool], ...] = (
     ("seconds", True),
 )
 
+# Pitch has a declared line: the labelling pilot judged its per-label F0 against
+# 15 Hz and marked every row reported-only for resolving 22.8. Spread and
+# duration have never had one, and inventing a number here to make a guardrail
+# come out somewhere would be worse than leaving the older behaviour, so they
+# stay unset and keep deciding on the noise floor alone.
+EFFECTS: dict[str, float] = {"f0_median_hz": 15.0}
+
 
 def prosody(path: str | Path, rate: int = 24_000) -> dict[str, float] | None:
     """Median pitch, its interquartile spread, and duration -- or None if unvoiced.
@@ -121,6 +128,7 @@ def verdicts(
                 axis,
                 [samples[i][axis] - measured[baseline][i][axis] for i in paired],
                 lower_is_better=lower_is_better,
+                effect_of_interest=EFFECTS.get(axis),
             )
             for axis, lower_is_better in AXES
         ]

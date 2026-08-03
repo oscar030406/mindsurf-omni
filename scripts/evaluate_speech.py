@@ -36,6 +36,14 @@ from mindsurf_omni.evaluation.text_regression import (  # noqa: E402
     assess_text_regression,
 )
 
+# What each axis has to move by before the move is worth acting on. These are
+# the same numbers the unpaired path has always passed to ``assess``; the paired
+# path, which is what actually gates, never had them. utmos takes 0.2 rather
+# than the 0.3 default here because measure_naturalness -- the script that
+# validated the metric -- declares 0.2, and two scripts disagreeing about the
+# same axis is how a guardrail ends up meaning whichever one the caller ran.
+PAIRED_EFFECTS: dict[str, float] = {"cer": 0.05, "utmos": 0.2, "silent_rate": 0.05}
+
 
 @dataclass
 class Sample:
@@ -341,7 +349,16 @@ def main() -> None:
             lines.append("配对对比（同 id 同文本，逐样本相减）:")
             payload["paired_comparison"] = {}
             for key in sorted(deltas):
-                verdict = compare_paired(key, deltas[key], lower_is_better=key != "utmos")
+                verdict = compare_paired(
+                    key,
+                    deltas[key],
+                    lower_is_better=key != "utmos",
+                    # The same line the unpaired path already declares for
+                    # this axis. A guardrail decided on the noise floor
+                    # alone tightens as the instrument sharpens, which is
+                    # not what "did not regress" was ever supposed to mean.
+                    effect_of_interest=PAIRED_EFFECTS.get(key),
+                )
                 lines.append("  " + verdict)
                 payload["paired_comparison"][key] = verdict
         elif any(sample.id for sample in candidate.samples):

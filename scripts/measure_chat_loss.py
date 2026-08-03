@@ -298,10 +298,12 @@ def main() -> None:
             row["nll"] - theirs[row["id"]] for row in report["samples"] if row["id"] in theirs
         ]
         print(f"  reference  {other['checkpoint']}  chat_nll {other['chat_nll']:.4f}")
-        print("  " + compare_paired("chat_nll", deltas))
+        print("  " + compare_paired("chat_nll", deltas, effect_of_interest=EFFECT_OF_INTEREST))
         print(f"  效应关心 {EFFECT_OF_INTEREST} nat/token")
         report["paired_against"] = other["checkpoint"]
-        report["paired_verdict"] = compare_paired("chat_nll", deltas)
+        report["paired_verdict"] = compare_paired(
+            "chat_nll", deltas, effect_of_interest=EFFECT_OF_INTEREST
+        )
 
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

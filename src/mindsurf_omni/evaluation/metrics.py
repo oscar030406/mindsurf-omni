@@ -246,8 +246,60 @@ def assess(
     )
 
 
+def _paired_verdict(
+    name: str,
+    difference: float,
+    threshold: float,
+    tail: str,
+    lower_is_better: bool,
+    effect_of_interest: float | None,
+) -> str:
+    """Verdict plus, when an effect of interest is declared, its licence to gate.
+
+    Statistical resolution and practical relevance are different questions, and
+    a comparison that answers only the first decides guardrails by how sharp the
+    instrument happens to be. The two failures are opposite and both have
+    happened here:
+
+    A blunt instrument certifies. Anything inside a wide band reads
+    indistinguishable, so a guardrail worded as "did not regress" passes because
+    nothing could have been seen -- rank-1 identification resolves 0.70 where the
+    effect of interest is 0.10, and passed a guardrail on that basis.
+
+    A sharp instrument convicts. Once the floor is small enough, a difference
+    nobody argued was meaningful clears it and reads regressed -- chat_nll failed
+    the length arm at 0.0479 nat while measure_chat_loss had declared 0.05 the
+    threshold for two comparable runs, printed it, and never applied it.
+
+    So the demotion is one-sided in each branch. A null result is worthless when
+    the instrument cannot resolve the effect of interest. A non-null result is
+    still real when the instrument is blunt -- it saw something anyway, and
+    anything it can see exceeds what it cannot -- but it may not gate when the
+    difference is below what was declared worth acting on.
+    """
+    if abs(difference) <= threshold:
+        verdict = f"{name}: indistinguishable ({difference:+.4f}, within ±{threshold:.4f}, {tail})"
+        if effect_of_interest is not None and threshold > effect_of_interest:
+            return (
+                f"{verdict} —— 仅报告：只分辨得了 {threshold:.4f}，"
+                f"而关心的是 {effect_of_interest:.4f}，读不出这么小的劣化"
+            )
+        return verdict
+
+    improved = difference < 0 if lower_is_better else difference > 0
+    word = "improved" if improved else "regressed"
+    verdict = f"{name}: {word} ({difference:+.4f} against ±{threshold:.4f}, {tail})"
+    if effect_of_interest is not None and abs(difference) < effect_of_interest:
+        return f"{verdict} —— 仅报告：低于关心的效应 {effect_of_interest:.4f}"
+    return verdict
+
+
 def compare_paired(
-    name: str, deltas: list[float], lower_is_better: bool = True, seed: int = 0
+    name: str,
+    deltas: list[float],
+    lower_is_better: bool = True,
+    seed: int = 0,
+    effect_of_interest: float | None = None,
 ) -> str:
     """The same three verdicts, from per-sample differences on shared items.
 
@@ -257,21 +309,24 @@ def compare_paired(
     and the floor shrinks to what actually differs between the systems. The
     caller is responsible for only pairing rows whose reference text matches --
     a pair over different texts subtracts two unrelated numbers.
+
+    ``effect_of_interest`` is the difference worth acting on. Leaving it unset
+    keeps the older behaviour, where the noise floor alone decides; see
+    ``_paired_verdict`` for what setting it buys and which failure it caught.
     """
     if len(deltas) < 2:
         return f"{name}: reported only (only {len(deltas)} pairs)"
 
     difference = sum(deltas) / len(deltas)
     threshold = resolvable_effect(bootstrap_noise_floor(deltas, seed=seed))
-
-    if abs(difference) <= threshold:
-        return (
-            f"{name}: indistinguishable ({difference:+.4f}, within ±{threshold:.4f}, "
-            f"paired n={len(deltas)})"
-        )
-    improved = difference < 0 if lower_is_better else difference > 0
-    verdict = "improved" if improved else "regressed"
-    return f"{name}: {verdict} ({difference:+.4f} against ±{threshold:.4f}, paired n={len(deltas)})"
+    return _paired_verdict(
+        name,
+        difference,
+        threshold,
+        f"paired n={len(deltas)}",
+        lower_is_better,
+        effect_of_interest,
+    )
 
 
 def compare_paired_clustered(
@@ -279,6 +334,7 @@ def compare_paired_clustered(
     groups: dict[str, list[float]] | list[list[float]],
     lower_is_better: bool = True,
     seed: int = 0,
+    effect_of_interest: float | None = None,
 ) -> str:
     """``compare_paired`` where the pairs are not independent of each other.
 
@@ -301,13 +357,8 @@ def compare_paired_clustered(
 
     difference = sum(rows) / len(rows)
     threshold = resolvable_effect(cluster_bootstrap_noise_floor(populated, seed=seed))
-
     tail = f"paired n={len(rows)} in {len(populated)} clusters"
-    if abs(difference) <= threshold:
-        return f"{name}: indistinguishable ({difference:+.4f}, within ±{threshold:.4f}, {tail})"
-    improved = difference < 0 if lower_is_better else difference > 0
-    verdict = "improved" if improved else "regressed"
-    return f"{name}: {verdict} ({difference:+.4f} against ±{threshold:.4f}, {tail})"
+    return _paired_verdict(name, difference, threshold, tail, lower_is_better, effect_of_interest)
 
 
 def compare(

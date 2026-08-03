@@ -142,3 +142,33 @@ def test_the_floor_tracks_the_checkpoint_scale_rather_than_being_a_constant() ->
     assert smaller < ours
     # The old default's entire budget across the run.
     assert ours > 2.5e-5
+
+
+def test_behavioural_evidence_overrules_the_displacement_proxy() -> None:
+    """The epoch-0 peak of the length round: 96.8% ordering, 2.83x spacing."""
+    from scripts.train_dpo import behavioural_evidence
+
+    assert behavioural_evidence([{"heldout_ordered": 0.968}], 62) is not None
+
+
+def test_ordering_at_chance_leaves_the_proxy_in_charge() -> None:
+    from scripts.train_dpo import behavioural_evidence
+
+    assert behavioural_evidence([{"heldout_ordered": 0.52}], 62) is None
+
+
+def test_no_heldout_set_leaves_the_proxy_in_charge() -> None:
+    """Without pairs it never trained on there is nothing to overrule it with."""
+    from scripts.train_dpo import behavioural_evidence
+
+    assert behavioural_evidence([{"heldout_ordered": 0.99}], 0) is None
+    assert behavioural_evidence([], 62) is None
+    assert behavioural_evidence([{"loss": 0.4}], 62) is None
+
+
+def test_the_last_epoch_is_what_gets_saved_and_what_gets_read() -> None:
+    """History carries every epoch; the checkpoint is the final policy state."""
+    from scripts.train_dpo import behavioural_evidence
+
+    history = [{"heldout_ordered": 0.97}, {"heldout_ordered": 0.51}]
+    assert behavioural_evidence(history, 62) is None

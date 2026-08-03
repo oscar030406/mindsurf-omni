@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import random
+
 import pytest
 
 from mindsurf_omni.evaluation.metrics import (
@@ -327,3 +329,46 @@ def test_a_few_probes_fewer_and_the_same_rate_would_not_clear() -> None:
     two = [0.1] * agree + [-0.1] * (n - agree)
 
     assert not cross_reference_agreement(one, two)["gating_eligible"]
+
+
+def test_a_sharp_instrument_may_not_convict_below_the_effect_of_interest() -> None:
+    """chat_nll failed the length arm at 0.0479 while 0.05 was the declared line."""
+    deltas = [0.0479 + (0.001 if index % 2 else -0.001) for index in range(158)]
+    without = compare_paired("chat_nll", deltas, effect_of_interest=None)
+    with_line = compare_paired("chat_nll", deltas, effect_of_interest=0.05)
+    assert "regressed" in without and "仅报告" not in without
+    assert "regressed" in with_line and "低于关心的效应" in with_line
+
+
+def test_a_real_regression_above_the_line_still_gates() -> None:
+    deltas = [0.77 + (0.01 if index % 2 else -0.01) for index in range(158)]
+    verdict = compare_paired("chat_nll", deltas, effect_of_interest=0.05)
+    assert "regressed" in verdict and "仅报告" not in verdict
+
+
+def test_a_blunt_instrument_may_not_certify_a_null() -> None:
+    """rank-1 resolved 0.70 where 0.10 mattered, and passed a guardrail on it."""
+    # Six voices move one way and six the other, so the mean sits near zero
+    # while the spread between voices keeps the clustered floor wide -- the
+    # shape the identification axis actually has.
+    rng = random.Random(11)
+    groups = [
+        [(1.0 if index < 6 else -1.0) + rng.gauss(0, 0.05) for _ in range(20)]
+        for index in range(12)
+    ]
+    verdict = compare_paired_clustered("rank1", groups, effect_of_interest=0.10)
+    assert "indistinguishable" in verdict
+    assert "仅报告" in verdict and "读不出这么小的劣化" in verdict
+
+
+def test_a_null_from_an_instrument_sharp_enough_still_gates() -> None:
+    deltas = [0.0005 if index % 2 else -0.0005 for index in range(240)]
+    verdict = compare_paired("f0", deltas, effect_of_interest=15.0)
+    assert "indistinguishable" in verdict and "仅报告" not in verdict
+
+
+def test_omitting_the_effect_of_interest_changes_nothing() -> None:
+    """Every existing caller keeps its verdict until it opts in."""
+    rng = random.Random(3)
+    deltas = [rng.gauss(0.02, 0.01) for _ in range(200)]
+    assert compare_paired("m", deltas) == compare_paired("m", deltas, effect_of_interest=None)

@@ -34,6 +34,12 @@ from mindsurf_omni.evaluation.metrics import (  # noqa: E402
     cross_reference_agreement,
 )
 
+# The same 0.05 nat/token measure_chat_loss declares. It lived there as a
+# printed line and never reached a verdict, and the gap cost a round: the length
+# arm's conversation guardrail failed at +0.0479, under the threshold this
+# project had already written down as the smallest shift worth acting on.
+CHAT_NLL_EFFECT = 0.05
+
 
 def deltas(candidate: Path, reference: Path) -> tuple[list[str], list[float], dict[str, Any]]:
     """Per-probe nll difference on the probes both reports scored."""
@@ -65,7 +71,9 @@ def main() -> None:
     ):
         shared, difference, payload = deltas(candidate, reference)
         collected[author] = (shared, difference)
-        verdict = compare_paired(f"chat_nll[{author}]", difference)
+        verdict = compare_paired(
+            f"chat_nll[{author}]", difference, effect_of_interest=CHAT_NLL_EFFECT
+        )
         report["authors"][author] = {
             "candidate": payload["candidate"].get("checkpoint"),
             "reference": payload["reference"].get("checkpoint"),

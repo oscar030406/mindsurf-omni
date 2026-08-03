@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 import sys
 from pathlib import Path
@@ -127,6 +128,41 @@ def storage_resolution(scale: float) -> float:
     step = torch.tensor(scale, dtype=torch.float16)
     above = torch.nextafter(step, torch.tensor(float("inf"), dtype=torch.float16))
     return float(above - step)
+
+
+def behavioural_evidence(history: list[dict[str, float]], heldout_pairs: int) -> str | None:
+    """Did the run change behaviour on data it never trained on?
+
+    The displacement guard below is a proxy: it asks whether the weights moved
+    further than the format the other checkpoints are stored in can resolve. A
+    proxy is what you use when the thing itself is not measurable, and here it
+    is. ``heldout_ordered`` counts pairs whose preference margin *relative to
+    the reference model* came out positive, on pairs never backpropagated
+    through, so above chance means this checkpoint orders preferences
+    differently from the one it started from. That is the claim the proxy was
+    standing in for, measured directly.
+
+    It matters because the proxy has been wrong in the expensive direction three
+    times. The generalisation peak in every DPO round here lands at epoch 0,
+    where displacement is smallest -- 2.83 times fp16 spacing with held-out
+    ordering at 96.8%, the best of that run. The guard refused it and what
+    shipped was the three-epoch checkpoint at 93.5%. A proxy may not overrule
+    the quantity it proxies for.
+
+    Chance is 0.5 and the floor is binomial, the same one
+    ``cross_reference_agreement`` uses. Returns None when there is no held-out
+    set or the ordering is not resolvably above chance -- then the proxy is all
+    there is, and it decides.
+    """
+    if not heldout_pairs or not history:
+        return None
+    ordered = history[-1].get("heldout_ordered")
+    if ordered is None:
+        return None
+    noise = 1.96 * math.sqrt(0.25 / heldout_pairs)
+    if ordered - 0.5 <= noise:
+        return None
+    return f"留出排序 {ordered:.1%} 对随机的 50%（噪声 ±{noise:.1%}，n={heldout_pairs}）"
 
 
 def evaluate(
@@ -347,14 +383,21 @@ def main() -> None:
     moved = sum(1 for key in wanted if not torch.equal(merged[key], parent[key].float()))
     scale = float(torch.cat([parent[key].float().flatten() for key in wanted]).pow(2).mean().sqrt())
     ulp = storage_resolution(scale)
+    behaviour = behavioural_evidence(history, len(heldout))
     if displacement < MINIMUM_ULPS * ulp and not args.allow_tiny_update:
-        raise SystemExit(
-            f"max |dw| is {displacement:.2e}, under {MINIMUM_ULPS} times the fp16 spacing "
-            f"({ulp:.2e}) at this checkpoint's weight scale ({scale:.4f}). An update this "
-            "small is indistinguishable from no update once stored, and every downstream "
-            "comparison would read it as 'no measurable effect' for a reason that is not "
-            "about preference. Raise --learning-rate or --epochs, or pass --allow-tiny-update "
-            "if a null run is what you meant to produce."
+        if behaviour is None:
+            raise SystemExit(
+                f"max |dw| is {displacement:.2e}, under {MINIMUM_ULPS} times the fp16 spacing "
+                f"({ulp:.2e}) at this checkpoint's weight scale ({scale:.4f}). An update this "
+                "small is indistinguishable from no update once stored, and every downstream "
+                "comparison would read it as 'no measurable effect' for a reason that is not "
+                "about preference. Raise --learning-rate or --epochs, pass --heldout to "
+                "get behavioural evidence that can overrule this, or pass --allow-tiny-update "
+                "if a null run is what you meant to produce."
+            )
+        print(
+            f"位移 {displacement / ulp:.2f}× fp16 间距，低于 {MINIMUM_ULPS}× 的门槛，"
+            f"但留出集有行为证据：{behaviour}。按证据落盘。"
         )
     print(f"最大权重位移 {displacement:.3e}（fp16 间距的 {displacement / ulp:.1f} 倍）")
     args.output.parent.mkdir(parents=True, exist_ok=True)
