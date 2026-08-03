@@ -157,6 +157,87 @@ async def one_realtime_turn(url: str, pcm: bytes, timeout: float) -> TurnTimings
                 raise RuntimeError("the turn finished without producing audio")
 
 
+async def one_barge_in_turn(url: str, pcm: bytes, timeout: float) -> tuple[TurnTimings, int]:
+    """Start a reply, cancel at the first sound, time the confirmed stop.
+
+    The clock starts when the cancel is SENT, not when the client decides to
+    send it: the number under test is how long the service takes to stop, and
+    the client's own decision time is the client's business. Audio frames that
+    arrive after the cancel are counted rather than ignored -- they are the
+    tail the client still has to discard, and a service could game the stop
+    time by confirming early and flushing late.
+    """
+    import base64
+
+    import websockets
+
+    timings = TurnTimings()
+    async with websockets.connect(url, max_size=None, open_timeout=timeout) as socket:
+        await socket.recv()  # session.created
+        await socket.send(
+            json.dumps(
+                {
+                    "type": "input_audio_buffer.append",
+                    "audio": base64.b64encode(pcm).decode("ascii"),
+                }
+            )
+        )
+        await socket.send(json.dumps({"type": "input_audio_buffer.commit"}))
+
+        cancelled_at = None
+        in_flight = 0
+        while True:
+            event = json.loads(await asyncio.wait_for(socket.recv(), timeout=timeout))
+            kind = event.get("type")
+            if kind == "response.audio.delta":
+                if cancelled_at is None:
+                    await socket.send(json.dumps({"type": "response.cancel"}))
+                    cancelled_at = time.perf_counter()
+                else:
+                    in_flight += 1
+            elif kind == "response.done":
+                if cancelled_at is None:
+                    raise RuntimeError("the turn finished before any audio arrived")
+                if not event.get("cancelled"):
+                    raise RuntimeError("response.done arrived without the cancelled flag")
+                timings.stages["cancel_to_stop"] = (time.perf_counter() - cancelled_at) * 1000
+                # Returned beside the timings, not inside them: the report sums
+                # stages into a total of milliseconds, and a frame count added
+                # to milliseconds would corrupt the number being gated.
+                return timings, in_flight
+
+
+async def measure_barge_in(
+    base: str, turns: int, timeout: float, stimulus: Path, probes: list[str]
+) -> tuple[LatencyReport, list[str], list[int]]:
+    import soundfile
+
+    from mindsurf_omni.contract import INPUT_SAMPLE_RATE
+    from mindsurf_omni.service.audio import resample
+
+    parsed = urlparse(base)
+    url = f"{'wss' if parsed.scheme == 'https' else 'ws'}://{parsed.netloc}/v1/realtime"
+
+    report = LatencyReport()
+    errors: list[str] = []
+    frames: list[int] = []
+    for index in range(turns):
+        audio_file = stimulus / f"{probes[index % len(probes)]}.wav"
+        if not audio_file.is_file():
+            errors.append(f"turn {index}: no stimulus at {audio_file.name}")
+            continue
+        heard, rate = soundfile.read(audio_file, dtype="int16")
+        try:
+            timings, in_flight = await one_barge_in_turn(
+                url, resample(heard.tobytes(), rate, INPUT_SAMPLE_RATE), timeout
+            )
+            report.add(timings)
+            frames.append(in_flight)
+        except Exception as error:  # noqa: BLE001 - a failed turn is data
+            errors.append(f"turn {index}: {type(error).__name__}: {error}")
+    return report, errors, frames
+
+
 async def measure_realtime(
     base: str, turns: int, timeout: float, stimulus: Path, probes: list[str]
 ) -> tuple[LatencyReport, list[str]]:
@@ -226,7 +307,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument(
         "--via",
-        choices=("http", "realtime"),
+        choices=("http", "realtime", "barge-in"),
         default="http",
         help="'realtime' is the only way to time the native path: it makes words "
         "and sound in one pass and will not read text it did not write",
@@ -247,7 +328,19 @@ def main() -> None:
     args = parser.parse_args()
 
     print(f"测 {args.turns} 轮，对 {args.base}")
-    if args.via == "realtime":
+    frames: list[int] | None = None
+    if args.via == "barge-in":
+        if args.stimulus is None:
+            raise SystemExit("--via barge-in needs --stimulus pointing at spoken probes")
+        ids = [
+            json.loads(line)["id"]
+            for line in args.probes.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        report, errors, frames = asyncio.run(
+            measure_barge_in(args.base, args.turns, args.timeout, args.stimulus, ids)
+        )
+    elif args.via == "realtime":
         if args.stimulus is None:
             raise SystemExit("--via realtime needs --stimulus pointing at spoken probes")
         ids = [
@@ -298,6 +391,13 @@ def main() -> None:
         for error in errors[:5]:
             print(f"  {error}")
 
+    if frames is not None and frames:
+        ordered = sorted(frames)
+        print(
+            f"\n取消后在途音频帧: 中位 {ordered[len(ordered) // 2]}，"
+            f"最大 {ordered[-1]}——客户端要吐掉的尾巴"
+        )
+
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
@@ -310,6 +410,7 @@ def main() -> None:
                     "stage_medians_ms": report.stage_medians(),
                     "gating_eligible": measurement.gating_eligible,
                     "note": measurement.note,
+                    "frames_in_flight": frames,
                 },
                 ensure_ascii=False,
                 indent=2,
