@@ -1,0 +1,28 @@
+{
+  "arm": "base",
+  "n": 158,
+  "intact_rate": 0.43037974683544306,
+  "rejudge_agreement": 0.9493670886075949,
+  "shuffled_rate": 0.0,
+  "separation": 0.43037974683544306,
+  "binomial_noise": 0.07796461384922154,
+  "paired_self_comparison": "answerable_rate(重判自比): indistinguishable (-0.0253, within ±0.1044, paired n=158) —— 仅报告：只分辨得了 0.1044，而关心的是 0.0500，读不出这么小的劣化",
+  "resolves": 0.1044,
+  "checks": {
+    "invariance": false,
+    "discrimination": true,
+    "resolution": false
+  },
+  "gating_eligible": false,
+  "registered": {
+    "invariance_floor": 0.95,
+    "shuffled_ceiling": 0.3,
+    "effect_of_interest": 0.05
+  },
+  "judge": {
+    "model": "deepseek-ai/DeepSeek-V3.2",
+    "endpoint": "https://api.siliconflow.cn/v1",
+    "prompt_sha256": "8031f57fbb09e7195aa6ee6845c14b81f4590052438c4ab11e310a1b2fe64d35",
+    "seed": 20260803
+  }
+}
