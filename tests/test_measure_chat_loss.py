@@ -75,3 +75,30 @@ def test_the_spoken_rate_is_the_one_measured_on_the_fixed_texts() -> None:
     assert SPOKEN_CHARS_PER_SECOND == 4.67
     # the product's own median reply is over half a minute of speech
     assert 140 / SPOKEN_CHARS_PER_SECOND > 25
+
+
+def test_a_generating_run_records_how_it_sampled() -> None:
+    """The old reports could not say, and extending the probe set needed to know."""
+    from argparse import Namespace
+
+    from scripts.measure_chat_loss import generation_settings
+
+    settings = generation_settings(
+        Namespace(
+            generate=True, temperature=0.7, top_p=0.9, max_tokens=512, seed=1000,
+            system_prompt=None,
+        )
+    )
+    assert settings == {
+        "temperature": 0.7, "top_p": 0.9, "max_tokens": 512, "seed": 1000,
+        "system_prompt": None,
+    }
+
+
+def test_a_likelihood_only_run_records_no_sampling() -> None:
+    """Nothing was sampled, so writing a temperature would claim something untrue."""
+    from argparse import Namespace
+
+    from scripts.measure_chat_loss import generation_settings
+
+    assert generation_settings(Namespace(generate=False, temperature=0.7)) is None

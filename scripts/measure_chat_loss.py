@@ -65,6 +65,31 @@ def repetition(text: str, window: int = 8) -> float:
     return 1.0 - len(set(grams)) / len(grams)
 
 
+def generation_settings(args: Any) -> dict[str, Any] | None:
+    """What produced the replies, or None when nothing was sampled.
+
+    Recorded because it cannot be recovered afterwards. Extending this probe set
+    had to answer "were the new replies sampled the way the old ones were", and
+    the existing reports could not say: temperature, top-p, seed and the token
+    cap all defaulted silently and none were written down. PROJECT_RULES section
+    7 records the same failure for training hyperparameters -- the cost is never
+    picking a wrong value, it is being unable to tell afterwards which was
+    picked.
+
+    None rather than the defaults when --generate did not run, because writing
+    a temperature for a pass that sampled nothing claims something untrue.
+    """
+    if not getattr(args, "generate", False):
+        return None
+    return {
+        "temperature": args.temperature,
+        "top_p": args.top_p,
+        "max_tokens": args.max_tokens,
+        "seed": args.seed,
+        "system_prompt": str(args.system_prompt) if args.system_prompt else None,
+    }
+
+
 def reply_span(prefix_ids: list[int], full_ids: list[int]) -> slice | None:
     """Where the assistant's reply sits in the full sequence, or None.
 
@@ -213,9 +238,19 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
     else:
         replies, screen = [], {}
 
+    # What produced the replies, recorded because it cannot be recovered later.
+    # The first attempt to extend this probe set had to answer "were the new
+    # replies sampled the same way as the old ones", and the reports could not
+    # say -- temperature, top-p, seed and the token cap all defaulted silently
+    # and none of them were written down. That is the same failure PROJECT_RULES
+    # section 7 records for training hyperparameters, in a different script: the
+    # cost is not picking a wrong value, it is being unable to tell afterwards
+    # which value was picked. Only present when --generate ran; a likelihood
+    # pass samples nothing.
     return {
         "checkpoint": checkpoint.name,
         "probes": str(args.probes),
+        "generation": generation_settings(args),
         "scored": len(rows),
         "dropped_misaligned": dropped,
         # Token-weighted, the way strict_val is computed: long replies should

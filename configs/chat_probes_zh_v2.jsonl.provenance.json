@@ -1,0 +1,12 @@
+{
+  "author": "zai-org/GLM-5.2",
+  "purpose": "extend the chat probe set so blind preference resolves 5 points",
+  "written_to_match": "configs\\chat_refs_external_v1.jsonl",
+  "excluded": [
+    "configs\\preference_prompts_zh_all.jsonl"
+  ],
+  "note": "Not the author of either training prompt set and not the blind judge. A probe in the training prompts' hand would give a tuned arm a familiarity advantage; one in the judge's hand invites a second circularity for no benefit.",
+  "model": "zai-org/GLM-5.2",
+  "endpoint": "https://api.siliconflow.cn/v1",
+  "prompt_sha256": "7c7372f903b47ad40ed2e3429904dfdd038362080cfb83531f085fde96a3e0e1"
+}
