@@ -1,0 +1,12 @@
+{
+  "author": "zai-org/GLM-5.2",
+  "purpose": "short-register chat_nll reference set, the fourth ruler's fuel: the instrument died of reference length, so the references match the register the candidates speak",
+  "probes": "configs\\chat_refs_external_v1.jsonl",
+  "max_chars": 60,
+  "dropped_overlong": [],
+  "median_chars": 39,
+  "note": "Author is neither a compared arm nor the blind-preference judge. Authorship is declared because it cannot be inferred afterwards (PROJECT_RULES section 6).",
+  "model": "zai-org/GLM-5.2",
+  "endpoint": "https://api.siliconflow.cn/v1",
+  "prompt_sha256": "90e2e8abf40124589c9fa243772d1ae1c1012fd5963ec14db12e2d64e0616778"
+}
