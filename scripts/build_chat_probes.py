@@ -228,7 +228,9 @@ def main() -> int:
             # only because run() happens to consume within the iteration. That
             # is a coincidence, not a design.
             question = GENERATE.format(count=max(need * 2, 20), theme=theme, examples=examples)
-            reply = judge.run([None], lambda _, q=question: q, label=f"造 {theme}")[0]
+            reply = judge.run(
+                [None], lambda _, q=question: q, label=f"造 {theme}", max_tokens=2048
+            )[0]
             for line in parse_lines(reply):
                 if len(line) > args.max_chars or line in banned:
                     continue

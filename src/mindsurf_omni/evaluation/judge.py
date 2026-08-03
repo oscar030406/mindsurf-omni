@@ -103,9 +103,20 @@ class Judge:
         return ""
 
     def run(
-        self, items: list[Any], question_of: Callable[[Any], str], label: str = "判"
+        self,
+        items: list[Any],
+        question_of: Callable[[Any], str],
+        label: str = "判",
+        max_tokens: int = 8,
     ) -> list[str]:
-        """Answers in the order the items came in, several calls in flight."""
+        """Answers in the order the items came in, several calls in flight.
+
+        ``max_tokens`` defaults to a label's worth because that is what judging
+        needs, and a judge given room to explain itself argues toward whichever
+        label it said first. A caller that wants prose has to say so -- and a
+        caller that forgets gets eight tokens, which fails loudly rather than
+        returning something shaped right and truncated.
+        """
         import httpx
 
         answers: list[str] = [""] * len(items)
@@ -118,7 +129,7 @@ class Judge:
             concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as pool,
         ):
             futures = {
-                pool.submit(self.ask, client, question_of(item)): index
+                pool.submit(self.ask, client, question_of(item), max_tokens): index
                 for index, item in enumerate(items)
             }
             for done, future in enumerate(concurrent.futures.as_completed(futures), start=1):
