@@ -1,0 +1,21 @@
+{
+  "n_pairs": 608,
+  "tie": 390,
+  "n_decided": 218,
+  "merge_wins": 129,
+  "merge_share": 0.591743119266055,
+  "noise": 0.06637397522490245,
+  "position_right_share": 0.5137614678899083,
+  "verdict": "赢",
+  "judge": {
+    "model": "deepseek-ai/DeepSeek-V3.2",
+    "endpoint": "https://api.siliconflow.cn/v1",
+    "prompt_sha256": "4a2d839091a7e4ffb30867b45121ee1ef4e43a7b3abd926fca7ae1d0e0c2340e",
+    "side_seed": 20260803,
+    "note": "判官是外部模型，不是被比较的任何一臂"
+  },
+  "arms": {
+    "first": "len",
+    "second": "merge"
+  }
+}

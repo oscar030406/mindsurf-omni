@@ -1,0 +1,31 @@
+{
+  "authors": {
+    "ext": {
+      "candidate": "sft_merge_768.pth",
+      "candidate_chat_nll": 3.8267288452052233,
+      "candidate_entropy": 2.503349224619516,
+      "n": 158,
+      "reference": "sft_graft_frozen_768.pth",
+      "reference_chat_nll": 3.859594164623692,
+      "reference_entropy": 2.3762186963017387,
+      "verdict": "chat_nll[ext]: improved (-0.0329 against ±0.0131, paired n=158) —— 仅报告：低于关心的效应 0.0500"
+    },
+    "up": {
+      "candidate": "sft_merge_768.pth",
+      "candidate_chat_nll": 1.5802731144125537,
+      "candidate_entropy": 1.6513661272845366,
+      "n": 158,
+      "reference": "sft_graft_frozen_768.pth",
+      "reference_chat_nll": 1.485453976668257,
+      "reference_entropy": 1.4846197040009752,
+      "verdict": "chat_nll[up]: regressed (+0.0583 against ±0.0391, paired n=158)"
+    }
+  },
+  "cross_reference_agreement": {
+    "agreement": 0.20253164556962025,
+    "gating_eligible": false,
+    "n": 158,
+    "noise": 0.07796461384922154,
+    "note": "the two reference sets do not agree per probe beyond chance; report both, let neither decide"
+  }
+}
