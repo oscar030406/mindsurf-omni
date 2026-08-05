@@ -185,7 +185,13 @@ def harvest(args: argparse.Namespace) -> dict[str, Any]:
         for index in members[: args.clips_per_cluster]:
             codes = unpack(rows[index][0])
             with torch.no_grad():
-                wave = codec.decode(codes.unsqueeze(0))[0][0, 0].numpy()
+                # .float() before .numpy(): the codec's output dtype follows
+                # whatever torch and transformers negotiate, and a newer pair
+                # hands back float16 here. librosa's resampler takes float32,
+                # float64, int16 or int32 and raises on float16, so the run dies
+                # several minutes in, after the clustering, on a machine where
+                # the same script worked before.
+                wave = codec.decode(codes.unsqueeze(0))[0][0, 0].float().numpy()
             pitch = median_f0(wave)
             if pitch == pitch:
                 measured.append((pitch, index, codes, wave))
