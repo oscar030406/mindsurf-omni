@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -135,15 +136,34 @@ def harvest(args: argparse.Namespace) -> dict[str, Any]:
 
     wanted = args.row_groups or list(range(handle.num_row_groups))
     rows: list[tuple[list[int], Any]] = []
-    for group in wanted:
-        table = handle.read_row_group(group, columns=["ref_audios", "spk_emb"])
+    # Batched, and spread across the whole file rather than taken from the front.
+    #
+    # Two things force this. The corpus as published is a single row group of
+    # 414,024 rows, so reading a group whole would materialise every reference
+    # strip in the file as Python lists -- tens of gigabytes to sample a few
+    # thousand. And the rows are blocked by language, which is why --row-groups
+    # exists at all; with one row group that flag has nothing to select, so a
+    # prefix of this file is one language and a sample drawn from it would
+    # describe the prefix rather than the corpus. The same mistake was caught
+    # once already when the T2A corpus turned out to be stored in language
+    # blocks and nobody knew until it was checked.
+    batch_size = 2048
+    total_batches = max(1, math.ceil(handle.metadata.num_rows / batch_size))
+    per_batch = max(1, math.ceil(args.sample / total_batches))
+    for batch in handle.iter_batches(
+        batch_size=batch_size, row_groups=wanted, columns=["ref_audios", "spk_emb"]
+    ):
+        taken = 0
         for ref, emb in zip(
-            table.column("ref_audios").to_pylist(),
-            table.column("spk_emb").to_pylist(),
+            batch.column("ref_audios").to_pylist(),
+            batch.column("spk_emb").to_pylist(),
             strict=False,
         ):
+            if taken >= per_batch:
+                break
             if ref and emb and len(emb) == 192 and len(ref) >= 8 * MINIMUM_FRAMES:
                 rows.append((ref, torch.tensor(emb, dtype=torch.float32)))
+                taken += 1
         if len(rows) >= args.sample:
             break
     rows = rows[: args.sample]
@@ -223,8 +243,9 @@ def main() -> None:
         "--row-groups",
         type=int,
         nargs="*",
-        help="which row groups to read. The file is blocked by language -- 0-25 are "
-        "English, 51 onward Chinese -- so reading from the start returns one language",
+        help="which row groups to read. Only useful on a repartitioned copy: the "
+        "corpus as published is one row group, and the rows inside it are blocked "
+        "by language, so the sample is spread across the whole file instead",
     )
     parser.add_argument("--clusters", type=int, default=6)
     parser.add_argument("--minimum-clips", type=int, default=8)
