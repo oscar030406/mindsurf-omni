@@ -62,15 +62,25 @@ SAME_SPEAKER = 0.93
 # A reference this short conditions on almost nothing once the model right-
 # aligns it into the prompt.
 MINIMUM_FRAMES = 60
-# The tail of the reference, and only the tail, is what the model reads.
-# speak_forced right-aligns the strip so it ends just before the assistant's
-# first position and drops whatever does not fit, which on a typical prompt
-# leaves about forty frames. A twenty-four second clip therefore contributes
-# its last three seconds, while an F0 measured over the whole clip describes
-# twenty-one seconds the model never sees. So clips are cut to their tail
-# before anything is measured, at the length the shipped packs already use
-# (5.9 to 9.4 seconds).
-MAXIMUM_FRAMES = 125
+# The tail of the reference, and only the tail, is what the model reads -- and
+# the window is far shorter than the clips are.
+#
+# speak_forced right-aligns the strip to end just before the assistant's first
+# position and drops whatever does not fit, so the number of frames that
+# survive is start_pos - 1: the *prompt's* length, not the reference's. Measured
+# on the twelve fixed texts this protocol uses, start_pos runs 21 to 27, so the
+# model reads the last 20 to 26 frames -- 1.6 to 2.1 seconds. The shipped voice
+# packs hold 5.9 to 9.4 seconds and are clipped the same way.
+#
+# This was found the expensive way. Pairs were selected on a pitch span
+# measured over ten seconds, every one of them cleared the gate at 38 to 98
+# hertz, and not one moved the output: five voices, all indistinguishable, two
+# of them negative. The span was real and the model never heard it.
+#
+# So selection, the gate, and the strip that ships are all the last 26 frames.
+# Two seconds is little to measure a median pitch on, and that is the honest
+# constraint rather than a choice.
+DEFAULT_REFERENCE_FRAMES = 26
 
 
 def is_chinese(text: str, share: float = 0.5) -> bool:
@@ -192,7 +202,7 @@ def harvest(args: argparse.Namespace) -> dict[str, Any]:
     for number, members in enumerate(clusters[: args.clusters]):
         measured = []
         for index in members[: args.clips_per_cluster]:
-            codes = unpack(rows[index][0])[:, -MAXIMUM_FRAMES:]
+            codes = unpack(rows[index][0])[:, -args.reference_frames :]
             with torch.no_grad():
                 # .float() before .numpy(): the codec's output dtype follows
                 # whatever torch and transformers negotiate, and a newer pair
@@ -265,6 +275,14 @@ def main() -> None:
     parser.add_argument("--clusters", type=int, default=6)
     parser.add_argument("--minimum-clips", type=int, default=8)
     parser.add_argument("--clips-per-cluster", type=int, default=16)
+    parser.add_argument(
+        "--reference-frames",
+        type=int,
+        default=DEFAULT_REFERENCE_FRAMES,
+        help="how many frames of each clip's tail to keep. The default is what "
+        "speak_forced actually reads on this protocol's prompts; raising it "
+        "measures audio the model will not hear",
+    )
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
 
