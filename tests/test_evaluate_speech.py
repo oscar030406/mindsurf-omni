@@ -365,3 +365,39 @@ def test_some_failures_are_still_counted_as_silence() -> None:
         [{"id": "a", "transcribed": True}, {"id": "b", "transcribed": False}]
     )
     refuse_if_the_judge_never_ran([])
+
+
+def test_the_digit_split_separates_notation_from_a_model_that_cannot_speak() -> None:
+    """Most of what Arabic numerals cost this metric is correct speech.
+
+    A speaker reading 2021 aloud as 二零二一 is right, and the judge transcribes
+    what it hears, so the comparison charges a substitution per digit. Without
+    the split beside the mean, a reader comparing our number to a cascade's
+    concludes the model is several times worse when most of the gap is notation.
+    """
+    from scripts.evaluate_speech import score, shape_lines
+
+    report = score(
+        "ours",
+        [Sample(prompt="p", reference_text="2021年", transcript="二零二一年") for _ in range(8)]
+        + [Sample(prompt="p", reference_text="今天天气", transcript="今天天气") for _ in range(8)],
+        {"cer": 0.05},
+    )
+
+    assert report.shape["n_with_digits"] == 8.0
+    assert report.shape["cer_with_digits"] > report.shape["cer_without_digits"]
+    assert report.shape["cer_without_digits"] == 0.0
+    assert "含阿拉伯数字 8/16 条" in shape_lines(report)[1]
+
+
+def test_the_split_is_absent_when_every_sample_looks_the_same() -> None:
+    """Reporting a split of one group against nothing invites reading a zero."""
+    from scripts.evaluate_speech import score
+
+    report = score(
+        "ours",
+        [Sample(prompt="p", reference_text="今天天气", transcript="今天天气") for _ in range(4)],
+        {"cer": 0.05},
+    )
+
+    assert "cer_with_digits" not in report.shape

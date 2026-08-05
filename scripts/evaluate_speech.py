@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import statistics
 import sys
 from dataclasses import dataclass, field
@@ -98,6 +99,11 @@ class Report:
         }
 
 
+# Arabic digits in the reference text. Chinese numerals are how a speaker
+# says them, so they are not what this splits on.
+_DIGIT = re.compile(r"[0-9]")
+
+
 def score(
     name: str, samples: list[Sample], effects: dict[str, float], fold_numbers: bool = False
 ) -> Report:
@@ -121,6 +127,26 @@ def score(
             "cer_over_0_3": float(sum(1 for rate in rates if rate > 0.3)),
             "sample_size": float(len(rates)),
         }
+        # Arabic numerals in the reference are the single largest contributor
+        # to this metric, and most of what they contribute is a speaker being
+        # charged for reading 2021 aloud as 二零二一 -- which is correct. On
+        # sft_merge the split is 0.1482 against 0.0548, so a reader comparing
+        # our number to a cascade's needs the split beside it or they conclude
+        # the model is three times worse when most of the gap is notation.
+        with_digits = [
+            rate
+            for rate, sample in zip(rates, transcribed, strict=True)
+            if _DIGIT.search(sample.reference_text)
+        ]
+        without = [
+            rate
+            for rate, sample in zip(rates, transcribed, strict=True)
+            if not _DIGIT.search(sample.reference_text)
+        ]
+        if with_digits and without:
+            report.shape["cer_with_digits"] = statistics.fmean(with_digits)
+            report.shape["cer_without_digits"] = statistics.fmean(without)
+            report.shape["n_with_digits"] = float(len(with_digits))
 
     rated = [sample.utmos for sample in samples if sample.utmos is not None]
     if rated:
@@ -189,10 +215,19 @@ def shape_lines(report: Report) -> list[str]:
         return []
     total = int(report.shape["sample_size"])
     over = int(report.shape["cer_over_0_3"])
-    return [
+    lines = [
         f"  形状: 中位 CER {report.shape['cer_median']:.4f}，{over}/{total} 超过 0.3"
         + ("（普遍念不准）" if over > total * 0.25 else "（少数难例）")
     ]
+    if "cer_with_digits" in report.shape:
+        digits = int(report.shape["n_with_digits"])
+        lines.append(
+            f"  数字: 含阿拉伯数字 {digits}/{total} 条 CER "
+            f"{report.shape['cer_with_digits']:.4f}，其余 "
+            f"{report.shape['cer_without_digits']:.4f}"
+            "（差的大半是「2021 念成二零二一」被罚，用 --fold-numerals 看折叠口径）"
+        )
+    return lines
 
 
 def judges_of(samples: list[Sample]) -> set[str]:

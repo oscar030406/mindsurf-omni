@@ -53,6 +53,16 @@
     "cer_status": "仅报告（分辨 0.0529 > 关心 0.0500）",
     "cer_median": 0.0678,
     "cer_over_0_3": "7/160",
+    "cer_folded_numerals": 0.073,
+    "cer_with_arabic_digits": 0.1482,
+    "cer_without_arabic_digits": 0.0548,
+    "cer_digit_note": [
+      "拿 0.0962 去比级联的 0.0359 会得出「模型差三倍」，那是读错了。",
+      "71/160 条参考文本含阿拉伯数字，它们的 CER 是 0.1482，其余 89 条是 0.0548。",
+      "差的大半不是发音，是「2021 念成二零二一」这种正确行为被判官罚——",
+      "级联那条也被同样罚，两个数在这一项上不可比。折叠数字口径全部是 0.0730。",
+      "evaluate_speech.py 现在把这个拆分打在形状行旁边。"
+    ],
     "cer_judge": "paraformer-zh（独立于被测模型）",
     "cer_n": 160,
     "silent_rate": 0.0,
