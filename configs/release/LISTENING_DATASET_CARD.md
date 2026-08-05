@@ -43,17 +43,27 @@ size_categories:
 同一条音频在三个人的表里编号不同，这是故意的，所以不要互相对编号。
 每个包里还混了重复条目，用来看同一个人前后给分是否一致。
 
-## 答案表不在这里
+## 答案表
 
 生成这些包的脚本会同时写一份 `key.json`，记着每条音频出自哪个系统、
 或者那条语料原本被标成什么情绪。包里的 `README.txt` 写着"不要打开 key.json"，
-我们干脆没有传：这个仓库和我们的代码仓库里都没有它。
-评分收齐之后，它会连同结果一起公开。
+发包的时候我们干脆没有传，这个仓库和代码仓库里都没有它。
+
+**2026-08-05 十二份表全部收齐，答案表连同评分一起公开。**
+它在代码仓库的 `artifacts/listening_<包名>/key.json`，评分原件在
+`artifacts/listening_returned/`。拿这两样可以自己把 MOS 和一致率重算一遍：
+
+```bash
+python scripts/listening_test.py score \
+  --pack artifacts/listening_returned/listening_models \
+  --key artifacts/listening_models/key.json
+```
+
+代码仓库：[github.com/oscar030406/mindsurf-omni](https://github.com/oscar030406/mindsurf-omni)。
 
 ## 这批评分后来得出了什么
 
-四个人填完了，三个包各自给出一条结论。写在这里是因为下载这份材料的人
-应该先知道它被用来回答什么问题。
+四个人填完了，三个包各自给出一条结论。
 
 `listening_emotion` 那一包否掉了一个训练计划。人对 `emotion2vec` 自动标签的一致率
 是 31–42%，而人对人是 41–65%。两个数都低说明任务本来就难；
@@ -77,11 +87,8 @@ size_categories:
 
 `listening_emotion` 不全是中文，发包的时候我们没有声明这件事。
 抽的 50 条里有 6 条是英语，按 SenseVoice 的语种检测判的。没有粤语，
-但带口音的普通话排除不了，语种检测判不了口音。这条补记于 2026-08-05，
-评分那时已经收齐，所以它没有影响任何一位评分员填表。写在这里是因为
-拿这份材料做二次分析的人需要知道。
+但带口音的普通话排除不了，语种检测判不了口音。
 
 整套材料按 CC-BY-NC-4.0 发布，不可商用。这条来自文本基座继承的语料许可，
 传导到每一个衍生物。上游模型权重取自
-[`jingyaogong/minimind-3o`](https://huggingface.co/jingyaogong/minimind-3o)，
-其发布卡声明 apache-2.0，我们没有独立核实过这一条。
+[`jingyaogong/minimind-3o`](https://huggingface.co/jingyaogong/minimind-3o)。

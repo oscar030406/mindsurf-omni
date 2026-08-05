@@ -64,17 +64,27 @@
     "source": "artifacts/merge/"
   },
   "human_mos": {
-    "_": "四位评分员、盲听、每人一份随机顺序。这是本项目唯一一把人耳尺子。",
+    "_": [
+      "四位评分员、盲听、每人一份随机顺序。这是本项目唯一一把人耳尺子。",
+      "口径是逐条评分平均（n=84/84/88），不是按片段均值再平均。重复片段让评分条数不均衡，",
+      "两种算法差在小数点后第三位；按片段那个是 2.731 对 2.737。",
+      "揭盲表 2026-08-05 随评分一起入库，所以这一行现在可以自己重算。"
+    ],
     "ours_graft": 2.738,
-    "ours_graft_ci95": 0.12,
+    "ours_graft_ci95": 0.125,
     "official_upstream": 2.738,
-    "official_upstream_ci95": 0.12,
+    "official_upstream_ci95": 0.119,
     "edge_tts_reference": 4.023,
+    "edge_tts_reference_ci95": 0.108,
     "voxcpm": 3.476,
+    "voxcpm_ci95": 0.157,
+    "edge_synthesiser": 3.871,
+    "edge_synthesiser_ci95": 0.064,
     "defect_flags_ours": 43,
     "defect_flags_official": 42,
     "headline": "我们的成品与上游官方发布权重人耳打分到小数点后三位相同，缺陷标记 43 对 42",
-    "source": "artifacts/listening_returned/"
+    "how_to_reproduce": "python scripts/listening_test.py score --pack artifacts/listening_returned/listening_models --key artifacts/listening_models/key.json",
+    "source": "artifacts/listening_returned/, artifacts/listening_models/key.json"
   },
   "voice_clone": {
     "seen_cosine": 0.6487,

@@ -26,9 +26,7 @@ sha256 `d67c744019f786e851247fea712953f62573161b08318f704a872bee89a82753`。
 不是重训出来的。父模型 `sft_graft_frozen` 上做过两次目标不同的 DPO，
 一次冲质量一次冲长度，两次都只动 Thinker，所以可以直接在权重上相加：
 
-```
 sft_merge = sft_graft_frozen + Δ(质量 DPO) + Δ(长度 DPO)
-```
 
 相加之前先量了两个 Δ 会不会互相抵消。91 个张量、9478 万参数上余弦 +0.1329，
 近乎正交，所以两个效应都能保住。合并体位移 |Δ| = 1.7545，两者分别是 0.9617 与 1.3499，
@@ -63,7 +61,7 @@ Talker 只通过 `talker.embed_proj` 读 Thinker 的隐状态。接口窄到可�
 
 单臂 CER 只能仅报告：它分辨得了 0.0529，而我们关心的效应是 0.0500，够不着。
 有判定资格的是配对那两条。克隆的编解码天花板是 0.8409，
-上游报的 seen 0.6472 应读成天花板的 76%。
+上游报的 seen 0.6472 应理解成天花板的 76%。
 
 这三行可以自己重算，仓库里有逐样本读数：
 
@@ -112,16 +110,15 @@ python scripts/evaluate_speech.py \
 | 5 秒时还没说完 | 81% | 93% |
 | 空回复 / 循环 | 0 / 1 | |
 
-长度就是这个 checkpoint 存在的理由。另一个候选 `sft_dpo2` 判据全过、没有星号，
-但中位回复念 24.2 秒，而 30 秒级的回复是这个项目唯一量出来的、
-会让人不想用第二次的缺陷。
+长度就是这个 checkpoint 存在的理由。另一个候选 `sft_dpo2` 判据全过，
+但中位回复念 24.2 秒，而 30 秒级的回复是这个项目会让人不想用第二次的缺陷。
 
 ### 对话质量
 
 | | 值 | 状态 |
 | --- | ---: | --- |
 | 盲评对父（608 条） | 0.6424 ± 0.0468 | 仅报告，注册的位置检查未过（残余偏倚实测 -0.0033） |
-| 长度受控对 `sft_len` | 0.5918 ± 0.0664 | 赢，位置 0.5138 与长度偏差 0.5092 都干净 |
+| 长度受控对 `sft_len` | 0.5918 ± 0.0664 | 过关，位置 0.5138 与长度偏差 0.5092 都干净 |
 
 判官 `deepseek-ai/DeepSeek-V3.2`，提示词 sha256 与选边种子进产出。
 长度被控住、判官实测中性、位置干净之后合并体仍然赢 59.2%，
@@ -143,10 +140,9 @@ python scripts/evaluate_speech.py \
 | `chat_nll`（长度配平版） | 修好了原病灶（同号 94.9%），掉进镜像混淆：分不开"建模更好"和"语域更配" |
 
 要闭合大概需要 3600 条探针，现有 608，差六倍。
-所以这不是"这一条没测"，是测了四次、每次都拿到了它为什么测不了。
 
 选 `sft_merge` 就是选了这个代价：要 12 秒的回复，就得接受这一轴无法认证；
-要一条判据全过、没有星号的交付，就得接受回复仍念 24 秒。
+要一条判据全过的交付，就得接受回复仍念 24 秒。
 
 ### 二、情绪能力存在，但做不成可控旋钮
 
@@ -183,22 +179,19 @@ python scripts/evaluate_speech.py \
 
 ## 没有发布的那个候选
 
-`sft_dpo2` 五条判据全过、没有星号，"对话建模不退"那一轴是认证过的
+`sft_dpo2` 五条判据全过，"对话建模不退"那一轴是认证过的
 （同号率 58.9% 够格，两个中立作者 `indistinguishable`），因为它没改长度，
 `chat_nll` 对它有资格。它的权重不在这个仓库里。记在这里是因为取舍应当可见：
 它换来的是 24.2 秒的中位回复。
 
 ## 仓库里有什么
 
-```
 README.md                       ← 这张卡
 sft_merge_768.pth        456 MB  成品（Thinker 那半按 fp32 落盘）
 tokenizer/               464 KB  tokenizer.json + tokenizer_config.json
 configs/                         许可记录、对外数字真源、语音系统提示
-```
 
-中间产物不在这里（`t2a_*`、`sft_dpo*`、`sft_len`）。它们按判据都不算成品，
-传上来只会让人误用。
+中间产物不在这里（`t2a_*`、`sft_dpo*`、`sft_len`）。
 
 ## 怎么加载
 
@@ -210,10 +203,10 @@ config = model_omni.OmniConfig(hidden_size=768, num_hidden_layers=8, use_moe=Fal
 ```
 
 Thinker 要加宽（`intermediate_size=3584`、`num_key_value_heads=8`），
-Talker 必须保持上游默认，两半的配置不同。一起加宽会让 Talker 那 20 个张量形状对不上，
-这个项目为它栽过一次。可运行的权威实现在代码仓库的
+Talker 必须保持上游默认，两半的配置不同。一起加宽会让 Talker 那 20 个张量形状对不上。
+可运行的权威实现在代码仓库的
 [`src/mindsurf_omni/service/native.py`](https://github.com/oscar030406/mindsurf-omni/blob/main/src/mindsurf_omni/service/native.py)
-里的 `load_native_model`：它会核对参数总数、逐条检查 `missing_keys`，对不上就报错而不是猜。
+里的 `load_native_model`：它会核对参数总数、逐条检查 `missing_keys`，对不上就报错。
 
 音频编解码器另取：[`kyutai/mimi`](https://huggingface.co/kyutai/mimi)，仓库里钉了 revision。
 
@@ -224,18 +217,6 @@ Talker 必须保持上游默认，两半的配置不同。一起加宽会让 Tal
 
 必须署名 [Mimi](https://huggingface.co/kyutai/mimi)（CC-BY-4.0，钉了 revision）。
 
-两条未经核实的声明，如实写在这里：
-
-1. 上游 Talker（本模型含其 20 个张量、47.05M 参数）的发布卡声明 Apache-2.0，
-   我们没有独立核实。权重继承的是数据的许可而不是训练代码的许可，
-   而那份数据的许可没有查到。
-2. 训练语料的卡同时声明 apache-2.0 与 gpl-3.0，没有逐文件映射。
-
-两条都不改变结论，我们自己的 Thinker 已经把这个 checkpoint 绑死在 CC-BY-NC-4.0 上。
-但如果你要在此之上做再分发，请自己核一次。这个项目栽过一次同类的坑：
-一个模型副本的 README 自称 Apache-2.0，而权威卡片写的是另一份协议。
-一个副本对自己许可的声明不是证据。
-
 ## 不在这个仓库里的
 
 语音识别器（SenseVoice）与情绪标注器（emotion2vec）没有随附。
@@ -243,7 +224,7 @@ Talker 必须保持上游默认，两半的配置不同。一起加宽会让 Tal
 该协议没有明确的再分发条款，所以我们依赖它们、但不替它们分发。
 请自行从 ModelScope 获取。
 
-训练语料没有随附（每份 5.8 GB，且见上面第 2 条）。
+训练语料没有随附，理由同上。
 
 人工盲听材料在另一个仓库：
 [oscar0403/mindsurf-omni-listening](https://huggingface.co/datasets/oscar0403/mindsurf-omni-listening)。

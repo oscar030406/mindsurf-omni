@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 from scripts.listening_test import (
     OBSERVED_PAIRED_SD,
     RATER_SD_RANGE,
     required_clips,
+    returned_sheets,
+    sheet_rows,
     spearman,
     stratified_ids,
 )
@@ -65,3 +68,41 @@ def test_selection_without_scores_still_returns_the_asked_for_count() -> None:
     ids = [f"s{i}" for i in range(50)]
 
     assert len(stratified_ids(ids, {}, count=12, seed=1)) == 12
+
+
+def test_sheets_come_back_named_however_the_rater_left_them(tmp_path: Path) -> None:
+    """Two things this has to survive, both of which happened.
+
+    A mail client renames the attachment (``rater3 (1).xlsx``), and more raters
+    than packs means two people return sheets cut from the same pack. The pack
+    number picks the play order, so it cannot double as the person's identity.
+    """
+    (tmp_path / "rater2").mkdir()
+    for name in ("rater1.xlsx", "rater2.xlsx", "rater2/rater2.xlsx", "rater3 (1).xlsx"):
+        (tmp_path / name).write_text("", encoding="utf-8")
+
+    found = returned_sheets(tmp_path)
+
+    assert len(found) == 4, "a second person's copy of one pack must not be dropped"
+    assert sorted(pack for _, pack in found) == ["1", "2", "2", "3"]
+
+
+def test_a_pack_shipping_both_formats_is_counted_once(tmp_path: Path) -> None:
+    """Packs go out as csv and xlsx of the same sheet; scoring both doubles it."""
+    (tmp_path / "rater1").mkdir()
+    (tmp_path / "rater1" / "rater1.csv").write_text("row\n", encoding="utf-8")
+    (tmp_path / "rater1" / "rater1.xlsx").write_text("", encoding="utf-8")
+
+    found = returned_sheets(tmp_path)
+
+    assert len(found) == 1
+    assert found[0][0].suffix == ".csv", "the readable one wins"
+
+
+def test_a_csv_sheet_reads_as_rows(tmp_path: Path) -> None:
+    sheet = tmp_path / "rater1.csv"
+    sheet.write_text("行号,音频文件,mos_1_to_5\n1,001.wav,3\n", encoding="utf-8-sig")
+
+    rows = list(sheet_rows(sheet))
+
+    assert rows == [{"行号": "1", "音频文件": "001.wav", "mos_1_to_5": "3"}]

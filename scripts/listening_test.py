@@ -44,9 +44,11 @@ import hashlib
 import json
 import math
 import random
+import re
 import shutil
 import statistics
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -218,37 +220,78 @@ def prepare(args: argparse.Namespace) -> None:
     print("  能：查自动指标看不见的粗大缺陷；验 UTMOS 的排序是否与人耳一致")
 
 
+def sheet_rows(path: Path) -> Iterator[dict[str, str]]:
+    """Rows of a returned sheet, whether it came back as csv or as xlsx.
+
+    Both are handed out, a rater fills in whichever they prefer, and what comes
+    back is whichever one they opened. Reading only csv silently scores a subset
+    of the panel, which is worse than failing.
+    """
+    if path.suffix.lower() != ".xlsx":
+        with path.open(encoding="utf-8-sig") as handle:
+            yield from csv.DictReader(handle)
+        return
+
+    from openpyxl import load_workbook
+
+    rows = load_workbook(path, read_only=True, data_only=True).active.iter_rows(values_only=True)
+    header = ["" if cell is None else str(cell).strip() for cell in next(rows)]
+    for values in rows:
+        yield {
+            name: "" if value is None else str(value)
+            for name, value in zip(header, values, strict=False)
+            if name
+        }
+
+
+def returned_sheets(root: Path) -> list[tuple[Path, str]]:
+    """Every filled sheet under ``root``, paired with the pack it was cut from.
+
+    Two things make this messier than a glob. A sheet comes back named however
+    the rater's mail client left it (``rater3 (1).xlsx``), and more raters than
+    packs means two people can return sheets cut from the same pack -- the pack
+    number picks the play order, so it cannot double as the person's identity.
+    """
+    found: dict[tuple[Path, str], Path] = {}
+    for path in sorted(root.rglob("rater*")):
+        if path.suffix.lower() not in (".csv", ".xlsx"):
+            continue
+        match = re.search(r"rater\s*(\d+)", path.stem)
+        if not match:
+            continue
+        # A pack ships csv and xlsx of the same sheet; count the pair once.
+        slot = (path.parent, match.group(1))
+        if slot not in found or path.suffix.lower() == ".csv":
+            found[slot] = path
+    return [(path, pack) for (_, pack), path in sorted(found.items(), key=lambda kv: kv[1])]
+
+
 def score(args: argparse.Namespace) -> None:
-    key_blob = json.loads((args.pack / "key.json").read_text(encoding="utf-8"))
+    key_path = args.key or (args.pack / "key.json")
+    key_blob = json.loads(key_path.read_text(encoding="utf-8"))
     by_token = {entry["token"]: entry for entry in key_blob["entries"]}
 
-    # Sheets live one per rater folder, and the first column is that rater's
-    # play order rather than the clip's identity -- the clips are numbered so a
-    # rater can play them straight through instead of hunting a hash. The key
-    # holds the position-to-token map, per rater, because the three orders
-    # differ on purpose.
+    # The first column is the rater's play order rather than the clip's
+    # identity -- clips are numbered so a rater can play them straight through
+    # instead of hunting a hash. The key holds the position-to-token map, per
+    # pack, because the orders differ on purpose.
     layout = key_blob.get("raters") or {}
     ratings: dict[str, list[tuple[int, float, bool, str]]] = {}
-    sheets = sorted(args.pack.glob("rater*/rater*.csv")) or sorted(args.pack.glob("rater*.csv"))
-    for path in sheets:
-        rater = path.stem.replace("rater", "")
-        positions = {row["position"]: row["token"] for row in layout.get(rater, [])}
-        with path.open(encoding="utf-8-sig") as handle:
-            for row in csv.DictReader(handle):
-                raw = (row.get("mos_1_to_5") or "").strip()
-                if not raw:
-                    continue
-                key_cell = (row.get("音频文件") or next(iter(row.values())) or "").strip()
-                position = key_cell.removesuffix(".wav")
-                token = positions.get(position, "") or position.split("#")[0]
-                if token not in by_token:
-                    raise SystemExit(
-                        f"{path.name}: {key_cell} does not resolve to a clip in the key"
-                    )
-                defect = (row.get("defect") or "").strip() not in ("", "0")
-                ratings.setdefault(token, []).append(
-                    (int(rater), float(raw), defect, (row.get("note") or "").strip())
-                )
+    for person, (path, pack) in enumerate(returned_sheets(args.pack), start=1):
+        positions = {row["position"]: row["token"] for row in layout.get(pack, [])}
+        for row in sheet_rows(path):
+            raw = (row.get("mos_1_to_5") or "").strip()
+            if not raw:
+                continue
+            key_cell = (row.get("音频文件") or next(iter(row.values())) or "").strip()
+            position = key_cell.removesuffix(".wav")
+            token = positions.get(position, "") or position.split("#")[0]
+            if token not in by_token:
+                raise SystemExit(f"{path.name}: {key_cell} does not resolve to a clip in the key")
+            defect = (row.get("defect") or "").strip() not in ("", "0")
+            ratings.setdefault(token, []).append(
+                (person, float(raw), defect, (row.get("note") or "").strip())
+            )
     if not ratings:
         raise SystemExit(f"no filled sheets in {args.pack}; the mos_1_to_5 column is empty")
 
@@ -268,10 +311,25 @@ def score(args: argparse.Namespace) -> None:
         f"评分员 {len({r for e in ratings.values() for r, _, _, _ in e})} 名，"
         f"片段 {len(ratings)} 条\n"
     )
-    print("各系统平均 MOS:")
+    # Two averages, because they are not the same number and the difference is
+    # not rounding. Ratings are not balanced -- repeats mean some clips carry
+    # five and some four -- so averaging the clip means re-weights the panel
+    # towards the clips fewer people heard. The headline figure is the pooled
+    # one, every rating counted once; the clip means are what the UTMOS rank
+    # check below needs, one value per clip.
+    pooled: dict[str, list[float]] = {}
+    for token, entries in ratings.items():
+        pooled.setdefault(by_token[token]["system"], []).extend(value for _, value, _, _ in entries)
+
+    print("各系统平均 MOS（逐条评分，对外报的是这个）:")
+    for label, values in sorted(pooled.items()):
+        floor = bootstrap_noise_floor(values) if len(values) > 1 else float("inf")
+        print(f"  {label:28} {statistics.fmean(values):.3f} ± {floor:.3f}  n={len(values)}")
+
+    print("\n按片段均值再平均（评分条数不均衡时与上面不同）:")
     for label, values in sorted(systems.items()):
         floor = bootstrap_noise_floor(values) if len(values) > 1 else float("inf")
-        print(f"  {label:28} {statistics.fmean(values):.2f} ± {floor:.2f}  n={len(values)}")
+        print(f"  {label:28} {statistics.fmean(values):.3f} ± {floor:.3f}  n={len(values)}")
 
     # Self-consistency: the same clip asked twice inside one sheet.
     spreads = [
@@ -347,7 +405,12 @@ def main() -> None:
     build.set_defaults(func=prepare)
 
     read = sub.add_parser("score", help="unblind filled sheets and report")
-    read.add_argument("--pack", required=True, type=Path)
+    read.add_argument("--pack", required=True, type=Path, help="folder of returned sheets")
+    read.add_argument(
+        "--key",
+        type=Path,
+        help="the unblinding key, when the sheets came back somewhere other than the pack",
+    )
     read.add_argument("--effect", type=float, default=0.29)
     read.set_defaults(func=score)
 

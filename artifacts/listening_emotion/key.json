@@ -1,0 +1,1699 @@
+{
+  "choices": [
+    "中立",
+    "开心",
+    "生气",
+    "吃惊",
+    "难过",
+    "说不上来"
+  ],
+  "entries": [
+    {
+      "choice": "难过",
+      "index": 1342,
+      "label": "难过/sad",
+      "row_group": 33,
+      "token": "758441ba8902"
+    },
+    {
+      "choice": "生气",
+      "index": 281,
+      "label": "生气/angry",
+      "row_group": 16,
+      "token": "ce9c1b114985"
+    },
+    {
+      "choice": "中立",
+      "index": 1716,
+      "label": "中立/neutral",
+      "row_group": 67,
+      "token": "ae4720f82c6d"
+    },
+    {
+      "choice": "吃惊",
+      "index": 2289,
+      "label": "吃惊/surprised",
+      "row_group": 18,
+      "token": "2fb81389baf6"
+    },
+    {
+      "choice": "开心",
+      "index": 3767,
+      "label": "开心/happy",
+      "row_group": 27,
+      "token": "a37b5f772218"
+    },
+    {
+      "choice": "难过",
+      "index": 1899,
+      "label": "难过/sad",
+      "row_group": 43,
+      "token": "a4cdcd88e6a6"
+    },
+    {
+      "choice": "难过",
+      "index": 3451,
+      "label": "难过/sad",
+      "row_group": 30,
+      "token": "3c5b0c3445ca"
+    },
+    {
+      "choice": "中立",
+      "index": 3901,
+      "label": "中立/neutral",
+      "row_group": 87,
+      "token": "111f97eb0c3e"
+    },
+    {
+      "choice": "生气",
+      "index": 3272,
+      "label": "生气/angry",
+      "row_group": 17,
+      "token": "2e4ef9c62032"
+    },
+    {
+      "choice": "吃惊",
+      "index": 654,
+      "label": "吃惊/surprised",
+      "row_group": 19,
+      "token": "781d3ada1c5e"
+    },
+    {
+      "choice": "难过",
+      "index": 1217,
+      "label": "难过/sad",
+      "row_group": 95,
+      "token": "db8100bf80d2"
+    },
+    {
+      "choice": "开心",
+      "index": 1956,
+      "label": "开心/happy",
+      "row_group": 1,
+      "token": "ebe7f5257372"
+    },
+    {
+      "choice": "中立",
+      "index": 281,
+      "label": "中立/neutral",
+      "row_group": 86,
+      "token": "45e5f4553704"
+    },
+    {
+      "choice": "难过",
+      "index": 384,
+      "label": "难过/sad",
+      "row_group": 40,
+      "token": "d833735e0963"
+    },
+    {
+      "choice": "生气",
+      "index": 1708,
+      "label": "生气/angry",
+      "row_group": 15,
+      "token": "ddc8fa3cf9a5"
+    },
+    {
+      "choice": "难过",
+      "index": 2185,
+      "label": "难过/sad",
+      "row_group": 94,
+      "token": "5fc789f56273"
+    },
+    {
+      "choice": "生气",
+      "index": 1810,
+      "label": "生气/angry",
+      "row_group": 58,
+      "token": "0bf03bdc026c"
+    },
+    {
+      "choice": "吃惊",
+      "index": 3640,
+      "label": "吃惊/surprised",
+      "row_group": 16,
+      "token": "2686eb506aed"
+    },
+    {
+      "choice": "吃惊",
+      "index": 2743,
+      "label": "吃惊/surprised",
+      "row_group": 22,
+      "token": "590cc5fad53d"
+    },
+    {
+      "choice": "开心",
+      "index": 3758,
+      "label": "开心/happy",
+      "row_group": 23,
+      "token": "e21d2879aa35"
+    },
+    {
+      "choice": "难过",
+      "index": 886,
+      "label": "难过/sad",
+      "row_group": 83,
+      "token": "31d1cd9a562a"
+    },
+    {
+      "choice": "中立",
+      "index": 571,
+      "label": "中立/neutral",
+      "row_group": 30,
+      "token": "a8da28299228"
+    },
+    {
+      "choice": "难过",
+      "index": 2040,
+      "label": "难过/sad",
+      "row_group": 42,
+      "token": "851bf756538b"
+    },
+    {
+      "choice": "生气",
+      "index": 3133,
+      "label": "生气/angry",
+      "row_group": 40,
+      "token": "a55a9ae355eb"
+    },
+    {
+      "choice": "难过",
+      "index": 2638,
+      "label": "难过/sad",
+      "row_group": 40,
+      "token": "77cf4a7b8895"
+    },
+    {
+      "choice": "生气",
+      "index": 995,
+      "label": "生气/angry",
+      "row_group": 17,
+      "token": "b19114c378ff"
+    },
+    {
+      "choice": "吃惊",
+      "index": 1770,
+      "label": "吃惊/surprised",
+      "row_group": 20,
+      "token": "97d6ee532858"
+    },
+    {
+      "choice": "开心",
+      "index": 1042,
+      "label": "开心/happy",
+      "row_group": 30,
+      "token": "cf115416a790"
+    },
+    {
+      "choice": "中立",
+      "index": 1164,
+      "label": "中立/neutral",
+      "row_group": 53,
+      "token": "99b4bd0990af"
+    },
+    {
+      "choice": "开心",
+      "index": 1573,
+      "label": "开心/happy",
+      "row_group": 24,
+      "token": "e0a969366494"
+    },
+    {
+      "choice": "吃惊",
+      "index": 3363,
+      "label": "吃惊/surprised",
+      "row_group": 9,
+      "token": "98b0d9dc3ef9"
+    },
+    {
+      "choice": "生气",
+      "index": 387,
+      "label": "生气/angry",
+      "row_group": 53,
+      "token": "43020bdaece8"
+    },
+    {
+      "choice": "吃惊",
+      "index": 1713,
+      "label": "吃惊/surprised",
+      "row_group": 22,
+      "token": "1f5f9bd67d33"
+    },
+    {
+      "choice": "开心",
+      "index": 1951,
+      "label": "开心/happy",
+      "row_group": 21,
+      "token": "9833fef59b17"
+    },
+    {
+      "choice": "吃惊",
+      "index": 1318,
+      "label": "吃惊/surprised",
+      "row_group": 2,
+      "token": "f71bbabf9001"
+    },
+    {
+      "choice": "吃惊",
+      "index": 510,
+      "label": "吃惊/surprised",
+      "row_group": 16,
+      "token": "428b423b7ec7"
+    },
+    {
+      "choice": "开心",
+      "index": 2404,
+      "label": "开心/happy",
+      "row_group": 27,
+      "token": "874965001732"
+    },
+    {
+      "choice": "难过",
+      "index": 2627,
+      "label": "难过/sad",
+      "row_group": 14,
+      "token": "1f184b654c1d"
+    },
+    {
+      "choice": "生气",
+      "index": 2733,
+      "label": "生气/angry",
+      "row_group": 46,
+      "token": "0928c9b20618"
+    },
+    {
+      "choice": "中立",
+      "index": 4065,
+      "label": "中立/neutral",
+      "row_group": 99,
+      "token": "7c84dceb6916"
+    },
+    {
+      "choice": "生气",
+      "index": 2914,
+      "label": "生气/angry",
+      "row_group": 57,
+      "token": "04c72aaa8d14"
+    },
+    {
+      "choice": "生气",
+      "index": 3085,
+      "label": "生气/angry",
+      "row_group": 52,
+      "token": "2c7f4d9417ab"
+    },
+    {
+      "choice": "开心",
+      "index": 1220,
+      "label": "开心/happy",
+      "row_group": 12,
+      "token": "77fb0c5c0719"
+    },
+    {
+      "choice": "开心",
+      "index": 403,
+      "label": "开心/happy",
+      "row_group": 58,
+      "token": "d390af01a81a"
+    },
+    {
+      "choice": "开心",
+      "index": 2617,
+      "label": "开心/happy",
+      "row_group": 35,
+      "token": "27d92b4f22c0"
+    },
+    {
+      "choice": "中立",
+      "index": 440,
+      "label": "中立/neutral",
+      "row_group": 46,
+      "token": "623c9663aa1d"
+    },
+    {
+      "choice": "中立",
+      "index": 2976,
+      "label": "中立/neutral",
+      "row_group": 39,
+      "token": "1362f4313c7d"
+    },
+    {
+      "choice": "中立",
+      "index": 2116,
+      "label": "中立/neutral",
+      "row_group": 54,
+      "token": "c28ab5344fca"
+    },
+    {
+      "choice": "吃惊",
+      "index": 2468,
+      "label": "吃惊/surprised",
+      "row_group": 10,
+      "token": "3fc10e5b3684"
+    },
+    {
+      "choice": "中立",
+      "index": 155,
+      "label": "中立/neutral",
+      "row_group": 15,
+      "token": "cb0aacb61740"
+    }
+  ],
+  "layout": "each rater has their own folder; clips are numbered in that rater's sheet order",
+  "measures": "precision of the assigned label, not recall",
+  "raters": {
+    "1": [
+      {
+        "choice": "开心",
+        "index": 2404,
+        "label": "开心/happy",
+        "position": "001",
+        "row_group": 27,
+        "token": "874965001732"
+      },
+      {
+        "choice": "开心",
+        "index": 1220,
+        "label": "开心/happy",
+        "position": "002",
+        "row_group": 12,
+        "token": "77fb0c5c0719"
+      },
+      {
+        "choice": "中立",
+        "index": 2116,
+        "label": "中立/neutral",
+        "position": "003",
+        "row_group": 54,
+        "token": "c28ab5344fca"
+      },
+      {
+        "choice": "难过",
+        "index": 1342,
+        "label": "难过/sad",
+        "position": "004",
+        "row_group": 33,
+        "token": "758441ba8902"
+      },
+      {
+        "choice": "生气",
+        "index": 3133,
+        "label": "生气/angry",
+        "position": "005",
+        "row_group": 40,
+        "token": "a55a9ae355eb"
+      },
+      {
+        "choice": "中立",
+        "index": 2976,
+        "label": "中立/neutral",
+        "position": "006",
+        "row_group": 39,
+        "token": "1362f4313c7d"
+      },
+      {
+        "choice": "生气",
+        "index": 3272,
+        "label": "生气/angry",
+        "position": "007",
+        "row_group": 17,
+        "token": "2e4ef9c62032"
+      },
+      {
+        "choice": "开心",
+        "index": 1042,
+        "label": "开心/happy",
+        "position": "008",
+        "row_group": 30,
+        "token": "cf115416a790"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1318,
+        "label": "吃惊/surprised",
+        "position": "009",
+        "row_group": 2,
+        "token": "f71bbabf9001"
+      },
+      {
+        "choice": "难过",
+        "index": 1899,
+        "label": "难过/sad",
+        "position": "010",
+        "row_group": 43,
+        "token": "a4cdcd88e6a6"
+      },
+      {
+        "choice": "开心",
+        "index": 1573,
+        "label": "开心/happy",
+        "position": "011",
+        "row_group": 24,
+        "token": "e0a969366494"
+      },
+      {
+        "choice": "生气",
+        "index": 2733,
+        "label": "生气/angry",
+        "position": "012",
+        "row_group": 46,
+        "token": "0928c9b20618"
+      },
+      {
+        "choice": "中立",
+        "index": 155,
+        "label": "中立/neutral",
+        "position": "013",
+        "row_group": 15,
+        "token": "cb0aacb61740"
+      },
+      {
+        "choice": "吃惊",
+        "index": 510,
+        "label": "吃惊/surprised",
+        "position": "014",
+        "row_group": 16,
+        "token": "428b423b7ec7"
+      },
+      {
+        "choice": "中立",
+        "index": 440,
+        "label": "中立/neutral",
+        "position": "015",
+        "row_group": 46,
+        "token": "623c9663aa1d"
+      },
+      {
+        "choice": "生气",
+        "index": 2914,
+        "label": "生气/angry",
+        "position": "016",
+        "row_group": 57,
+        "token": "04c72aaa8d14"
+      },
+      {
+        "choice": "难过",
+        "index": 2627,
+        "label": "难过/sad",
+        "position": "017",
+        "row_group": 14,
+        "token": "1f184b654c1d"
+      },
+      {
+        "choice": "难过",
+        "index": 1217,
+        "label": "难过/sad",
+        "position": "018",
+        "row_group": 95,
+        "token": "db8100bf80d2"
+      },
+      {
+        "choice": "开心",
+        "index": 1951,
+        "label": "开心/happy",
+        "position": "019",
+        "row_group": 21,
+        "token": "9833fef59b17"
+      },
+      {
+        "choice": "开心",
+        "index": 403,
+        "label": "开心/happy",
+        "position": "020",
+        "row_group": 58,
+        "token": "d390af01a81a"
+      },
+      {
+        "choice": "生气",
+        "index": 281,
+        "label": "生气/angry",
+        "position": "021",
+        "row_group": 16,
+        "token": "ce9c1b114985"
+      },
+      {
+        "choice": "生气",
+        "index": 1708,
+        "label": "生气/angry",
+        "position": "022",
+        "row_group": 15,
+        "token": "ddc8fa3cf9a5"
+      },
+      {
+        "choice": "吃惊",
+        "index": 510,
+        "label": "吃惊/surprised",
+        "position": "023",
+        "row_group": 16,
+        "token": "428b423b7ec7"
+      },
+      {
+        "choice": "中立",
+        "index": 3901,
+        "label": "中立/neutral",
+        "position": "024",
+        "row_group": 87,
+        "token": "111f97eb0c3e"
+      },
+      {
+        "choice": "生气",
+        "index": 3085,
+        "label": "生气/angry",
+        "position": "025",
+        "row_group": 52,
+        "token": "2c7f4d9417ab"
+      },
+      {
+        "choice": "中立",
+        "index": 571,
+        "label": "中立/neutral",
+        "position": "026",
+        "row_group": 30,
+        "token": "a8da28299228"
+      },
+      {
+        "choice": "开心",
+        "index": 3767,
+        "label": "开心/happy",
+        "position": "027",
+        "row_group": 27,
+        "token": "a37b5f772218"
+      },
+      {
+        "choice": "生气",
+        "index": 281,
+        "label": "生气/angry",
+        "position": "028",
+        "row_group": 16,
+        "token": "ce9c1b114985"
+      },
+      {
+        "choice": "吃惊",
+        "index": 3640,
+        "label": "吃惊/surprised",
+        "position": "029",
+        "row_group": 16,
+        "token": "2686eb506aed"
+      },
+      {
+        "choice": "难过",
+        "index": 886,
+        "label": "难过/sad",
+        "position": "030",
+        "row_group": 83,
+        "token": "31d1cd9a562a"
+      },
+      {
+        "choice": "生气",
+        "index": 995,
+        "label": "生气/angry",
+        "position": "031",
+        "row_group": 17,
+        "token": "b19114c378ff"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2289,
+        "label": "吃惊/surprised",
+        "position": "032",
+        "row_group": 18,
+        "token": "2fb81389baf6"
+      },
+      {
+        "choice": "中立",
+        "index": 281,
+        "label": "中立/neutral",
+        "position": "033",
+        "row_group": 86,
+        "token": "45e5f4553704"
+      },
+      {
+        "choice": "吃惊",
+        "index": 654,
+        "label": "吃惊/surprised",
+        "position": "034",
+        "row_group": 19,
+        "token": "781d3ada1c5e"
+      },
+      {
+        "choice": "难过",
+        "index": 2185,
+        "label": "难过/sad",
+        "position": "035",
+        "row_group": 94,
+        "token": "5fc789f56273"
+      },
+      {
+        "choice": "中立",
+        "index": 1164,
+        "label": "中立/neutral",
+        "position": "036",
+        "row_group": 53,
+        "token": "99b4bd0990af"
+      },
+      {
+        "choice": "开心",
+        "index": 2617,
+        "label": "开心/happy",
+        "position": "037",
+        "row_group": 35,
+        "token": "27d92b4f22c0"
+      },
+      {
+        "choice": "难过",
+        "index": 2638,
+        "label": "难过/sad",
+        "position": "038",
+        "row_group": 40,
+        "token": "77cf4a7b8895"
+      },
+      {
+        "choice": "吃惊",
+        "index": 3363,
+        "label": "吃惊/surprised",
+        "position": "039",
+        "row_group": 9,
+        "token": "98b0d9dc3ef9"
+      },
+      {
+        "choice": "开心",
+        "index": 1956,
+        "label": "开心/happy",
+        "position": "040",
+        "row_group": 1,
+        "token": "ebe7f5257372"
+      },
+      {
+        "choice": "中立",
+        "index": 1716,
+        "label": "中立/neutral",
+        "position": "041",
+        "row_group": 67,
+        "token": "ae4720f82c6d"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1770,
+        "label": "吃惊/surprised",
+        "position": "042",
+        "row_group": 20,
+        "token": "97d6ee532858"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1713,
+        "label": "吃惊/surprised",
+        "position": "043",
+        "row_group": 22,
+        "token": "1f5f9bd67d33"
+      },
+      {
+        "choice": "难过",
+        "index": 384,
+        "label": "难过/sad",
+        "position": "044",
+        "row_group": 40,
+        "token": "d833735e0963"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2468,
+        "label": "吃惊/surprised",
+        "position": "045",
+        "row_group": 10,
+        "token": "3fc10e5b3684"
+      },
+      {
+        "choice": "难过",
+        "index": 2040,
+        "label": "难过/sad",
+        "position": "046",
+        "row_group": 42,
+        "token": "851bf756538b"
+      },
+      {
+        "choice": "中立",
+        "index": 281,
+        "label": "中立/neutral",
+        "position": "047",
+        "row_group": 86,
+        "token": "45e5f4553704"
+      },
+      {
+        "choice": "难过",
+        "index": 384,
+        "label": "难过/sad",
+        "position": "048",
+        "row_group": 40,
+        "token": "d833735e0963"
+      },
+      {
+        "choice": "难过",
+        "index": 3451,
+        "label": "难过/sad",
+        "position": "049",
+        "row_group": 30,
+        "token": "3c5b0c3445ca"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2743,
+        "label": "吃惊/surprised",
+        "position": "050",
+        "row_group": 22,
+        "token": "590cc5fad53d"
+      },
+      {
+        "choice": "生气",
+        "index": 1810,
+        "label": "生气/angry",
+        "position": "051",
+        "row_group": 58,
+        "token": "0bf03bdc026c"
+      },
+      {
+        "choice": "生气",
+        "index": 387,
+        "label": "生气/angry",
+        "position": "052",
+        "row_group": 53,
+        "token": "43020bdaece8"
+      },
+      {
+        "choice": "中立",
+        "index": 4065,
+        "label": "中立/neutral",
+        "position": "053",
+        "row_group": 99,
+        "token": "7c84dceb6916"
+      },
+      {
+        "choice": "生气",
+        "index": 1708,
+        "label": "生气/angry",
+        "position": "054",
+        "row_group": 15,
+        "token": "ddc8fa3cf9a5"
+      },
+      {
+        "choice": "开心",
+        "index": 3758,
+        "label": "开心/happy",
+        "position": "055",
+        "row_group": 23,
+        "token": "e21d2879aa35"
+      }
+    ],
+    "2": [
+      {
+        "choice": "开心",
+        "index": 2404,
+        "label": "开心/happy",
+        "position": "001",
+        "row_group": 27,
+        "token": "874965001732"
+      },
+      {
+        "choice": "开心",
+        "index": 1220,
+        "label": "开心/happy",
+        "position": "002",
+        "row_group": 12,
+        "token": "77fb0c5c0719"
+      },
+      {
+        "choice": "中立",
+        "index": 2116,
+        "label": "中立/neutral",
+        "position": "003",
+        "row_group": 54,
+        "token": "c28ab5344fca"
+      },
+      {
+        "choice": "难过",
+        "index": 1342,
+        "label": "难过/sad",
+        "position": "004",
+        "row_group": 33,
+        "token": "758441ba8902"
+      },
+      {
+        "choice": "生气",
+        "index": 3133,
+        "label": "生气/angry",
+        "position": "005",
+        "row_group": 40,
+        "token": "a55a9ae355eb"
+      },
+      {
+        "choice": "中立",
+        "index": 2976,
+        "label": "中立/neutral",
+        "position": "006",
+        "row_group": 39,
+        "token": "1362f4313c7d"
+      },
+      {
+        "choice": "生气",
+        "index": 3272,
+        "label": "生气/angry",
+        "position": "007",
+        "row_group": 17,
+        "token": "2e4ef9c62032"
+      },
+      {
+        "choice": "开心",
+        "index": 1042,
+        "label": "开心/happy",
+        "position": "008",
+        "row_group": 30,
+        "token": "cf115416a790"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1318,
+        "label": "吃惊/surprised",
+        "position": "009",
+        "row_group": 2,
+        "token": "f71bbabf9001"
+      },
+      {
+        "choice": "难过",
+        "index": 1899,
+        "label": "难过/sad",
+        "position": "010",
+        "row_group": 43,
+        "token": "a4cdcd88e6a6"
+      },
+      {
+        "choice": "开心",
+        "index": 1573,
+        "label": "开心/happy",
+        "position": "011",
+        "row_group": 24,
+        "token": "e0a969366494"
+      },
+      {
+        "choice": "生气",
+        "index": 2733,
+        "label": "生气/angry",
+        "position": "012",
+        "row_group": 46,
+        "token": "0928c9b20618"
+      },
+      {
+        "choice": "中立",
+        "index": 155,
+        "label": "中立/neutral",
+        "position": "013",
+        "row_group": 15,
+        "token": "cb0aacb61740"
+      },
+      {
+        "choice": "吃惊",
+        "index": 510,
+        "label": "吃惊/surprised",
+        "position": "014",
+        "row_group": 16,
+        "token": "428b423b7ec7"
+      },
+      {
+        "choice": "中立",
+        "index": 440,
+        "label": "中立/neutral",
+        "position": "015",
+        "row_group": 46,
+        "token": "623c9663aa1d"
+      },
+      {
+        "choice": "生气",
+        "index": 2914,
+        "label": "生气/angry",
+        "position": "016",
+        "row_group": 57,
+        "token": "04c72aaa8d14"
+      },
+      {
+        "choice": "难过",
+        "index": 2627,
+        "label": "难过/sad",
+        "position": "017",
+        "row_group": 14,
+        "token": "1f184b654c1d"
+      },
+      {
+        "choice": "难过",
+        "index": 1217,
+        "label": "难过/sad",
+        "position": "018",
+        "row_group": 95,
+        "token": "db8100bf80d2"
+      },
+      {
+        "choice": "开心",
+        "index": 1951,
+        "label": "开心/happy",
+        "position": "019",
+        "row_group": 21,
+        "token": "9833fef59b17"
+      },
+      {
+        "choice": "开心",
+        "index": 403,
+        "label": "开心/happy",
+        "position": "020",
+        "row_group": 58,
+        "token": "d390af01a81a"
+      },
+      {
+        "choice": "生气",
+        "index": 281,
+        "label": "生气/angry",
+        "position": "021",
+        "row_group": 16,
+        "token": "ce9c1b114985"
+      },
+      {
+        "choice": "生气",
+        "index": 1708,
+        "label": "生气/angry",
+        "position": "022",
+        "row_group": 15,
+        "token": "ddc8fa3cf9a5"
+      },
+      {
+        "choice": "吃惊",
+        "index": 510,
+        "label": "吃惊/surprised",
+        "position": "023",
+        "row_group": 16,
+        "token": "428b423b7ec7"
+      },
+      {
+        "choice": "中立",
+        "index": 3901,
+        "label": "中立/neutral",
+        "position": "024",
+        "row_group": 87,
+        "token": "111f97eb0c3e"
+      },
+      {
+        "choice": "生气",
+        "index": 3085,
+        "label": "生气/angry",
+        "position": "025",
+        "row_group": 52,
+        "token": "2c7f4d9417ab"
+      },
+      {
+        "choice": "中立",
+        "index": 571,
+        "label": "中立/neutral",
+        "position": "026",
+        "row_group": 30,
+        "token": "a8da28299228"
+      },
+      {
+        "choice": "开心",
+        "index": 3767,
+        "label": "开心/happy",
+        "position": "027",
+        "row_group": 27,
+        "token": "a37b5f772218"
+      },
+      {
+        "choice": "生气",
+        "index": 281,
+        "label": "生气/angry",
+        "position": "028",
+        "row_group": 16,
+        "token": "ce9c1b114985"
+      },
+      {
+        "choice": "吃惊",
+        "index": 3640,
+        "label": "吃惊/surprised",
+        "position": "029",
+        "row_group": 16,
+        "token": "2686eb506aed"
+      },
+      {
+        "choice": "难过",
+        "index": 886,
+        "label": "难过/sad",
+        "position": "030",
+        "row_group": 83,
+        "token": "31d1cd9a562a"
+      },
+      {
+        "choice": "生气",
+        "index": 995,
+        "label": "生气/angry",
+        "position": "031",
+        "row_group": 17,
+        "token": "b19114c378ff"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2289,
+        "label": "吃惊/surprised",
+        "position": "032",
+        "row_group": 18,
+        "token": "2fb81389baf6"
+      },
+      {
+        "choice": "中立",
+        "index": 281,
+        "label": "中立/neutral",
+        "position": "033",
+        "row_group": 86,
+        "token": "45e5f4553704"
+      },
+      {
+        "choice": "吃惊",
+        "index": 654,
+        "label": "吃惊/surprised",
+        "position": "034",
+        "row_group": 19,
+        "token": "781d3ada1c5e"
+      },
+      {
+        "choice": "难过",
+        "index": 2185,
+        "label": "难过/sad",
+        "position": "035",
+        "row_group": 94,
+        "token": "5fc789f56273"
+      },
+      {
+        "choice": "中立",
+        "index": 1164,
+        "label": "中立/neutral",
+        "position": "036",
+        "row_group": 53,
+        "token": "99b4bd0990af"
+      },
+      {
+        "choice": "开心",
+        "index": 2617,
+        "label": "开心/happy",
+        "position": "037",
+        "row_group": 35,
+        "token": "27d92b4f22c0"
+      },
+      {
+        "choice": "难过",
+        "index": 2638,
+        "label": "难过/sad",
+        "position": "038",
+        "row_group": 40,
+        "token": "77cf4a7b8895"
+      },
+      {
+        "choice": "吃惊",
+        "index": 3363,
+        "label": "吃惊/surprised",
+        "position": "039",
+        "row_group": 9,
+        "token": "98b0d9dc3ef9"
+      },
+      {
+        "choice": "开心",
+        "index": 1956,
+        "label": "开心/happy",
+        "position": "040",
+        "row_group": 1,
+        "token": "ebe7f5257372"
+      },
+      {
+        "choice": "中立",
+        "index": 1716,
+        "label": "中立/neutral",
+        "position": "041",
+        "row_group": 67,
+        "token": "ae4720f82c6d"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1770,
+        "label": "吃惊/surprised",
+        "position": "042",
+        "row_group": 20,
+        "token": "97d6ee532858"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1713,
+        "label": "吃惊/surprised",
+        "position": "043",
+        "row_group": 22,
+        "token": "1f5f9bd67d33"
+      },
+      {
+        "choice": "难过",
+        "index": 384,
+        "label": "难过/sad",
+        "position": "044",
+        "row_group": 40,
+        "token": "d833735e0963"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2468,
+        "label": "吃惊/surprised",
+        "position": "045",
+        "row_group": 10,
+        "token": "3fc10e5b3684"
+      },
+      {
+        "choice": "难过",
+        "index": 2040,
+        "label": "难过/sad",
+        "position": "046",
+        "row_group": 42,
+        "token": "851bf756538b"
+      },
+      {
+        "choice": "中立",
+        "index": 281,
+        "label": "中立/neutral",
+        "position": "047",
+        "row_group": 86,
+        "token": "45e5f4553704"
+      },
+      {
+        "choice": "难过",
+        "index": 384,
+        "label": "难过/sad",
+        "position": "048",
+        "row_group": 40,
+        "token": "d833735e0963"
+      },
+      {
+        "choice": "难过",
+        "index": 3451,
+        "label": "难过/sad",
+        "position": "049",
+        "row_group": 30,
+        "token": "3c5b0c3445ca"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2743,
+        "label": "吃惊/surprised",
+        "position": "050",
+        "row_group": 22,
+        "token": "590cc5fad53d"
+      },
+      {
+        "choice": "生气",
+        "index": 1810,
+        "label": "生气/angry",
+        "position": "051",
+        "row_group": 58,
+        "token": "0bf03bdc026c"
+      },
+      {
+        "choice": "生气",
+        "index": 387,
+        "label": "生气/angry",
+        "position": "052",
+        "row_group": 53,
+        "token": "43020bdaece8"
+      },
+      {
+        "choice": "中立",
+        "index": 4065,
+        "label": "中立/neutral",
+        "position": "053",
+        "row_group": 99,
+        "token": "7c84dceb6916"
+      },
+      {
+        "choice": "生气",
+        "index": 1708,
+        "label": "生气/angry",
+        "position": "054",
+        "row_group": 15,
+        "token": "ddc8fa3cf9a5"
+      },
+      {
+        "choice": "开心",
+        "index": 3758,
+        "label": "开心/happy",
+        "position": "055",
+        "row_group": 23,
+        "token": "e21d2879aa35"
+      }
+    ],
+    "3": [
+      {
+        "choice": "开心",
+        "index": 2404,
+        "label": "开心/happy",
+        "position": "001",
+        "row_group": 27,
+        "token": "874965001732"
+      },
+      {
+        "choice": "开心",
+        "index": 1220,
+        "label": "开心/happy",
+        "position": "002",
+        "row_group": 12,
+        "token": "77fb0c5c0719"
+      },
+      {
+        "choice": "中立",
+        "index": 2116,
+        "label": "中立/neutral",
+        "position": "003",
+        "row_group": 54,
+        "token": "c28ab5344fca"
+      },
+      {
+        "choice": "难过",
+        "index": 1342,
+        "label": "难过/sad",
+        "position": "004",
+        "row_group": 33,
+        "token": "758441ba8902"
+      },
+      {
+        "choice": "生气",
+        "index": 3133,
+        "label": "生气/angry",
+        "position": "005",
+        "row_group": 40,
+        "token": "a55a9ae355eb"
+      },
+      {
+        "choice": "中立",
+        "index": 2976,
+        "label": "中立/neutral",
+        "position": "006",
+        "row_group": 39,
+        "token": "1362f4313c7d"
+      },
+      {
+        "choice": "生气",
+        "index": 3272,
+        "label": "生气/angry",
+        "position": "007",
+        "row_group": 17,
+        "token": "2e4ef9c62032"
+      },
+      {
+        "choice": "开心",
+        "index": 1042,
+        "label": "开心/happy",
+        "position": "008",
+        "row_group": 30,
+        "token": "cf115416a790"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1318,
+        "label": "吃惊/surprised",
+        "position": "009",
+        "row_group": 2,
+        "token": "f71bbabf9001"
+      },
+      {
+        "choice": "难过",
+        "index": 1899,
+        "label": "难过/sad",
+        "position": "010",
+        "row_group": 43,
+        "token": "a4cdcd88e6a6"
+      },
+      {
+        "choice": "开心",
+        "index": 1573,
+        "label": "开心/happy",
+        "position": "011",
+        "row_group": 24,
+        "token": "e0a969366494"
+      },
+      {
+        "choice": "生气",
+        "index": 2733,
+        "label": "生气/angry",
+        "position": "012",
+        "row_group": 46,
+        "token": "0928c9b20618"
+      },
+      {
+        "choice": "中立",
+        "index": 155,
+        "label": "中立/neutral",
+        "position": "013",
+        "row_group": 15,
+        "token": "cb0aacb61740"
+      },
+      {
+        "choice": "吃惊",
+        "index": 510,
+        "label": "吃惊/surprised",
+        "position": "014",
+        "row_group": 16,
+        "token": "428b423b7ec7"
+      },
+      {
+        "choice": "中立",
+        "index": 440,
+        "label": "中立/neutral",
+        "position": "015",
+        "row_group": 46,
+        "token": "623c9663aa1d"
+      },
+      {
+        "choice": "生气",
+        "index": 2914,
+        "label": "生气/angry",
+        "position": "016",
+        "row_group": 57,
+        "token": "04c72aaa8d14"
+      },
+      {
+        "choice": "难过",
+        "index": 2627,
+        "label": "难过/sad",
+        "position": "017",
+        "row_group": 14,
+        "token": "1f184b654c1d"
+      },
+      {
+        "choice": "难过",
+        "index": 1217,
+        "label": "难过/sad",
+        "position": "018",
+        "row_group": 95,
+        "token": "db8100bf80d2"
+      },
+      {
+        "choice": "开心",
+        "index": 1951,
+        "label": "开心/happy",
+        "position": "019",
+        "row_group": 21,
+        "token": "9833fef59b17"
+      },
+      {
+        "choice": "开心",
+        "index": 403,
+        "label": "开心/happy",
+        "position": "020",
+        "row_group": 58,
+        "token": "d390af01a81a"
+      },
+      {
+        "choice": "生气",
+        "index": 281,
+        "label": "生气/angry",
+        "position": "021",
+        "row_group": 16,
+        "token": "ce9c1b114985"
+      },
+      {
+        "choice": "生气",
+        "index": 1708,
+        "label": "生气/angry",
+        "position": "022",
+        "row_group": 15,
+        "token": "ddc8fa3cf9a5"
+      },
+      {
+        "choice": "吃惊",
+        "index": 510,
+        "label": "吃惊/surprised",
+        "position": "023",
+        "row_group": 16,
+        "token": "428b423b7ec7"
+      },
+      {
+        "choice": "中立",
+        "index": 3901,
+        "label": "中立/neutral",
+        "position": "024",
+        "row_group": 87,
+        "token": "111f97eb0c3e"
+      },
+      {
+        "choice": "生气",
+        "index": 3085,
+        "label": "生气/angry",
+        "position": "025",
+        "row_group": 52,
+        "token": "2c7f4d9417ab"
+      },
+      {
+        "choice": "中立",
+        "index": 571,
+        "label": "中立/neutral",
+        "position": "026",
+        "row_group": 30,
+        "token": "a8da28299228"
+      },
+      {
+        "choice": "开心",
+        "index": 3767,
+        "label": "开心/happy",
+        "position": "027",
+        "row_group": 27,
+        "token": "a37b5f772218"
+      },
+      {
+        "choice": "生气",
+        "index": 281,
+        "label": "生气/angry",
+        "position": "028",
+        "row_group": 16,
+        "token": "ce9c1b114985"
+      },
+      {
+        "choice": "吃惊",
+        "index": 3640,
+        "label": "吃惊/surprised",
+        "position": "029",
+        "row_group": 16,
+        "token": "2686eb506aed"
+      },
+      {
+        "choice": "难过",
+        "index": 886,
+        "label": "难过/sad",
+        "position": "030",
+        "row_group": 83,
+        "token": "31d1cd9a562a"
+      },
+      {
+        "choice": "生气",
+        "index": 995,
+        "label": "生气/angry",
+        "position": "031",
+        "row_group": 17,
+        "token": "b19114c378ff"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2289,
+        "label": "吃惊/surprised",
+        "position": "032",
+        "row_group": 18,
+        "token": "2fb81389baf6"
+      },
+      {
+        "choice": "中立",
+        "index": 281,
+        "label": "中立/neutral",
+        "position": "033",
+        "row_group": 86,
+        "token": "45e5f4553704"
+      },
+      {
+        "choice": "吃惊",
+        "index": 654,
+        "label": "吃惊/surprised",
+        "position": "034",
+        "row_group": 19,
+        "token": "781d3ada1c5e"
+      },
+      {
+        "choice": "难过",
+        "index": 2185,
+        "label": "难过/sad",
+        "position": "035",
+        "row_group": 94,
+        "token": "5fc789f56273"
+      },
+      {
+        "choice": "中立",
+        "index": 1164,
+        "label": "中立/neutral",
+        "position": "036",
+        "row_group": 53,
+        "token": "99b4bd0990af"
+      },
+      {
+        "choice": "开心",
+        "index": 2617,
+        "label": "开心/happy",
+        "position": "037",
+        "row_group": 35,
+        "token": "27d92b4f22c0"
+      },
+      {
+        "choice": "难过",
+        "index": 2638,
+        "label": "难过/sad",
+        "position": "038",
+        "row_group": 40,
+        "token": "77cf4a7b8895"
+      },
+      {
+        "choice": "吃惊",
+        "index": 3363,
+        "label": "吃惊/surprised",
+        "position": "039",
+        "row_group": 9,
+        "token": "98b0d9dc3ef9"
+      },
+      {
+        "choice": "开心",
+        "index": 1956,
+        "label": "开心/happy",
+        "position": "040",
+        "row_group": 1,
+        "token": "ebe7f5257372"
+      },
+      {
+        "choice": "中立",
+        "index": 1716,
+        "label": "中立/neutral",
+        "position": "041",
+        "row_group": 67,
+        "token": "ae4720f82c6d"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1770,
+        "label": "吃惊/surprised",
+        "position": "042",
+        "row_group": 20,
+        "token": "97d6ee532858"
+      },
+      {
+        "choice": "吃惊",
+        "index": 1713,
+        "label": "吃惊/surprised",
+        "position": "043",
+        "row_group": 22,
+        "token": "1f5f9bd67d33"
+      },
+      {
+        "choice": "难过",
+        "index": 384,
+        "label": "难过/sad",
+        "position": "044",
+        "row_group": 40,
+        "token": "d833735e0963"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2468,
+        "label": "吃惊/surprised",
+        "position": "045",
+        "row_group": 10,
+        "token": "3fc10e5b3684"
+      },
+      {
+        "choice": "难过",
+        "index": 2040,
+        "label": "难过/sad",
+        "position": "046",
+        "row_group": 42,
+        "token": "851bf756538b"
+      },
+      {
+        "choice": "中立",
+        "index": 281,
+        "label": "中立/neutral",
+        "position": "047",
+        "row_group": 86,
+        "token": "45e5f4553704"
+      },
+      {
+        "choice": "难过",
+        "index": 384,
+        "label": "难过/sad",
+        "position": "048",
+        "row_group": 40,
+        "token": "d833735e0963"
+      },
+      {
+        "choice": "难过",
+        "index": 3451,
+        "label": "难过/sad",
+        "position": "049",
+        "row_group": 30,
+        "token": "3c5b0c3445ca"
+      },
+      {
+        "choice": "吃惊",
+        "index": 2743,
+        "label": "吃惊/surprised",
+        "position": "050",
+        "row_group": 22,
+        "token": "590cc5fad53d"
+      },
+      {
+        "choice": "生气",
+        "index": 1810,
+        "label": "生气/angry",
+        "position": "051",
+        "row_group": 58,
+        "token": "0bf03bdc026c"
+      },
+      {
+        "choice": "生气",
+        "index": 387,
+        "label": "生气/angry",
+        "position": "052",
+        "row_group": 53,
+        "token": "43020bdaece8"
+      },
+      {
+        "choice": "中立",
+        "index": 4065,
+        "label": "中立/neutral",
+        "position": "053",
+        "row_group": 99,
+        "token": "7c84dceb6916"
+      },
+      {
+        "choice": "生气",
+        "index": 1708,
+        "label": "生气/angry",
+        "position": "054",
+        "row_group": 15,
+        "token": "ddc8fa3cf9a5"
+      },
+      {
+        "choice": "开心",
+        "index": 3758,
+        "label": "开心/happy",
+        "position": "055",
+        "row_group": 23,
+        "token": "e21d2879aa35"
+      }
+    ]
+  },
+  "repeat_tokens": [
+    "ddc8fa3cf9a5",
+    "428b423b7ec7",
+    "ce9c1b114985",
+    "45e5f4553704",
+    "d833735e0963"
+  ]
+}
