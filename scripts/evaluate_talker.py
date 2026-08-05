@@ -138,11 +138,34 @@ class AudioSampling:
     top_k: int = 50
     penalty: float = 1.05
     penalty_window: int = 3
+    # Classifier-free guidance on the speaker condition. Each step is forwarded
+    # twice, once with the reference and once without, and the audio logits are
+    # extrapolated away from the unconditional ones:
+    #
+    #     logits = unconditional + guidance * (conditional - unconditional)
+    #
+    # 1.0 is exactly the conditional pass, so it is off by definition rather
+    # than by a branch. Above 1.0 sharpens whatever the reference contributes,
+    # which is the thing to test: the codec carries identity (the reference
+    # round trip identifies 12 of 12 voices) while generation only carries it
+    # for 6, so the loss is on this side of the decoder.
+    #
+    # It costs a second forward pass and a second cache per step. It can also
+    # overshoot -- extrapolating logits far enough will produce a voice that
+    # identifies well and says nothing intelligible -- so any sweep of it has
+    # to carry CER beside the identification rate, not after it.
+    guidance: float = 1.0
 
     def for_codebook(self, layer: int) -> float:
         if isinstance(self.temperature, list):
             return self.temperature[layer]
         return self.temperature
+
+    def guided(self, conditional: Any, unconditional: Any) -> Any:
+        """Blend one codebook's logits. Written out so a test can pin it."""
+        if self.guidance == 1.0:
+            return conditional
+        return unconditional + self.guidance * (conditional - unconditional)
 
 
 DEFAULT_SAMPLING = AudioSampling()
@@ -236,6 +259,18 @@ def speak_forced(
             # the first -- the cached path forwards one position at a time.
             speaker["spk_emb"] = embedding
 
+    # The unconditional branch: the same text, the same sampled codes, and no
+    # speaker at all. Built only when it will be used -- a second cache is a
+    # second cache whether or not its logits reach the sampler.
+    guiding = sampling.guidance != 1.0 and voice is not None
+    plain_buffer = audio_buffer.clone() if guiding else None
+    if guiding:
+        # Whatever the reference wrote goes back to padding, including the
+        # speaker slot. This is the branch the blend extrapolates away from, so
+        # a leftover reference code here would quietly weaken the guidance.
+        plain_buffer[:, :, :] = model.audio_pad_token
+    plain_past = None
+
     with torch.no_grad():
         while input_ids.shape[1] < start_pos + max_steps:
             if past is None:
@@ -254,6 +289,22 @@ def speak_forced(
                 )
             past = out.past_key_values
 
+            plain_out = None
+            if guiding:
+                if plain_past is None:
+                    plain_out = model.forward(
+                        torch.cat((plain_buffer, input_ids.unsqueeze(1)), dim=1),
+                        past_key_values=plain_past,
+                        use_cache=True,
+                    )
+                else:
+                    plain_out = model.forward(
+                        torch.cat((plain_buffer[:, :, -1:], input_ids[:, -1:].unsqueeze(1)), dim=1),
+                        past_key_values=plain_past,
+                        use_cache=True,
+                    )
+                plain_past = plain_out.past_key_values
+
             step = input_ids.shape[1] - start_pos
             if text_finished:
                 text_token = ENTER_TOKEN if first_finished else PAD_TOKEN
@@ -266,7 +317,10 @@ def speak_forced(
                 if audio_step < layer:
                     audio_codes[layer].append(model.audio_pad_token)
                     continue
-                scores = logits[0, -1, :].clone() / sampling.for_codebook(layer)
+                raw = logits[0, -1, :]
+                if plain_out is not None:
+                    raw = sampling.guided(raw, plain_out.audio_logits[layer][0, -1, :])
+                scores = raw.clone() / sampling.for_codebook(layer)
                 if sampling.penalty != 1.0:
                     for previous in audio_codes[layer][-sampling.penalty_window :]:
                         value = scores[previous]
@@ -297,6 +351,22 @@ def speak_forced(
             )
             for layer in range(min(audio_step + 1, 8)):
                 audio_buffer[0, layer, -1] = audio_codes[layer][-1]
+            if guiding:
+                # The unconditional branch is a counterfactual about the
+                # speaker, not about the words: it has to see the codes that
+                # were drawn, or after a few steps it is scoring a different
+                # utterance and the difference stops being about the reference.
+                plain_buffer = torch.cat(
+                    (
+                        plain_buffer,
+                        torch.full(
+                            (1, 8, 1), model.audio_pad_token, dtype=torch.long, device=device
+                        ),
+                    ),
+                    dim=2,
+                )
+                for layer in range(min(audio_step + 1, 8)):
+                    plain_buffer[0, layer, -1] = audio_codes[layer][-1]
 
             if audio_step >= 7:
                 frame = [audio_codes[layer][step - 7 + layer] for layer in range(8)]
@@ -345,6 +415,16 @@ def main() -> None:
     parser.add_argument("--codec", required=True, type=Path, help="Mimi model directory")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--seed", type=int, default=20260725)
+    parser.add_argument(
+        "--speaker-guidance",
+        type=float,
+        default=1.0,
+        help="classifier-free guidance on the speaker condition. 1.0 is off and "
+        "is exactly the conditional pass; above it extrapolates away from a "
+        "speakerless forward, which costs a second pass per step. Sweeping it "
+        "requires reading CER beside the identification rate: overshooting "
+        "produces a voice that identifies well and says nothing",
+    )
     parser.add_argument("--limit", type=int, help="first N texts only, for a smoke run")
     parser.add_argument("--device", default="cuda")
     parser.add_argument(
@@ -380,7 +460,13 @@ def main() -> None:
         top_k=DEFAULT_SAMPLING.top_k,
         penalty=args.audio_penalty,
         penalty_window=args.audio_penalty_window,
+        guidance=args.speaker_guidance,
     )
+    if args.speaker_guidance != 1.0 and not args.voice:
+        raise SystemExit(
+            "--speaker-guidance 要有 --voice 才有意义：它外推的是「有参考」和"
+            "「没参考」之间的差，没有参考时两路一模一样，只会把每步算两遍"
+        )
 
     import torch
     from transformers import AutoTokenizer, MimiModel
@@ -473,6 +559,7 @@ def main() -> None:
                 "audio_top_k": sampling.top_k,
                 "audio_penalty": sampling.penalty,
                 "audio_penalty_window": sampling.penalty_window,
+                "speaker_guidance": sampling.guidance,
                 "seed": args.seed,
             },
         },

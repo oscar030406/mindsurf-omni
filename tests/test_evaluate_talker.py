@@ -6,6 +6,7 @@ import json
 import statistics
 from pathlib import Path
 
+import pytest
 from scripts.evaluate_talker import EOS_TOKEN, SHAPES, forced_text_plan, load_texts
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -122,3 +123,52 @@ def test_the_manifest_names_the_voice_even_when_there_is_none() -> None:
     # And the vector has to ride on every forward call, not just the first --
     # the cached path forwards one position at a time.
     assert source.count("**speaker,") == 2
+
+
+def test_guidance_of_one_is_the_conditional_pass_itself() -> None:
+    """Off by definition rather than by a branch.
+
+    A guidance knob whose neutral value merely happens to land near the unguided
+    result is a knob that silently moves the baseline every arm is compared
+    against. 1.0 has to hand back the conditional logits themselves.
+    """
+    from scripts.evaluate_talker import AudioSampling
+
+    conditional, unconditional = object(), object()
+
+    assert AudioSampling().guided(conditional, unconditional) is conditional
+
+
+def test_guidance_extrapolates_away_from_the_speakerless_pass() -> None:
+    """Above 1.0 it is extrapolation, not interpolation.
+
+    Getting the sign backwards would push generation towards the branch that
+    was told nothing about the speaker -- the opposite of the point, and it
+    would still produce speech, just not that person's.
+    """
+    from scripts.evaluate_talker import AudioSampling
+
+    # Plain numbers on purpose: the blend is arithmetic on whatever the model
+    # hands back, and pinning it should not need a tensor library the test
+    # environment deliberately does not carry.
+    assert AudioSampling(guidance=2.0).guided(2.0, 1.0) == 3.0
+    assert AudioSampling(guidance=2.0).guided(0.0, 1.0) == -1.0
+    # A codebook where the two passes agree is left where it was: the gap the
+    # reference opened is the only thing being widened.
+    assert AudioSampling(guidance=3.0).guided(0.7, 0.7) == pytest.approx(0.7)
+
+
+def test_the_unconditional_branch_sees_the_codes_that_were_drawn() -> None:
+    """It is a counterfactual about the speaker, not about the words.
+
+    If the speakerless branch is left to drift on padding it is soon scoring a
+    different utterance, and the difference the blend extrapolates stops being
+    about the reference at all. Nothing about the audio would look wrong.
+    """
+    source = (ROOT / "scripts" / "evaluate_talker.py").read_text(encoding="utf-8")
+    guided = source[source.index("if guiding:\n                # The unconditional") :]
+
+    assert "plain_buffer[0, layer, -1] = audio_codes[layer][-1]" in guided
+    # And it starts from padding everywhere, including the speaker slot: a
+    # leftover reference code there would quietly weaken the guidance.
+    assert "plain_buffer[:, :, :] = model.audio_pad_token" in source
