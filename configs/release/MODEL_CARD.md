@@ -171,10 +171,13 @@ python scripts/evaluate_speech.py \
 
 ### 其余已量的短板
 
-音色只有 6 个认得出。12 选 1 最近邻识别里 arthur、serena、eric、uncle_fu、dylan、moon
-是 19–20/20，而 cherry、ethan、chelsie、momo 只有 ≤ 2/20，塌向 serena 和 moon。
+音色只有 6 个认得出。在成品上重量的 12 选 1 最近邻识别（20 句固定文本）：
+serena、eric、uncle_fu、dylan、arthur 是 20/20，moon 17/20；
+vivian 16/20、jennifer 6/20 是边缘；cherry、ethan、momo 是 **0/20**，chelsie 1/20，
+四个都塌向 serena 和 moon。**后四个不要当独立音色投放。**
 完美克隆（参考码回环）是 12/12，所以这是生成侧带的身份不够，不是判官分不开。
-后四个不要当独立音色投放。
+推理侧的旋钮救不了：说话人 classifier-free guidance 扫过三档，
+四个坏音色没有一个到 15/20，而 moon 反而掉到 10/20。
 
 多轮只测到三轮。不崩、上下文利用 82% 且不衰减，
 但答得上的比例随深度掉：42%、24%、14%。
