@@ -50,8 +50,11 @@ size_categories:
 发包的时候我们干脆没有传，这个仓库和代码仓库里都没有它。
 
 **2026-08-05 十二份表全部收齐，答案表连同评分一起公开。**
-它在代码仓库的 `artifacts/listening_<包名>/key.json`，评分原件在
-`artifacts/listening_returned/`。拿这两样可以自己把 MOS 和一致率重算一遍：
+每个包的根目录下现在都有 `key.json`：`listening_models/key.json`、
+`listening_synthesiser/key.json`、`listening_emotion/key.json`。
+
+评分原件和算分脚本在代码仓库（`artifacts/listening_returned/`、
+`scripts/listening_test.py`）。三样凑齐可以自己把 MOS 重算一遍：
 
 ```bash
 python scripts/listening_test.py score \
@@ -59,7 +62,9 @@ python scripts/listening_test.py score \
   --key artifacts/listening_models/key.json
 ```
 
-代码仓库：[github.com/oscar030406/mindsurf-omni](https://github.com/oscar030406/mindsurf-omni)。
+它打两个平均，这两个数不一样，差的不是舍入。重复片段让评分条数不均衡
+（有的片段五条评分、有的四条），按片段均值再平均会把权重挪向听的人少的那些片段。
+**下面报的 2.738 是逐条评分那个**，每条评分只数一次。
 
 ## 这批评分后来得出了什么
 

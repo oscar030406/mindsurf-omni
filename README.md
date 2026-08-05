@@ -253,7 +253,7 @@ JUDGE_API_KEY=... python scripts/blind_preference.py   --arm parent=artifacts/bl
 材料本身在 [`oscar0403/mindsurf-omni-listening`](https://huggingface.co/datasets/oscar0403/mindsurf-omni-listening)。
 
 揭盲表也在，`artifacts/listening_<包名>/key.json`。评分期间它是不入库的：
-仓库公开、评分员也拿得到，答案入库等于把答案发给被测的人。
+评分员拿得到这个仓库，答案入库等于把答案发给被测的人。
 十二份表收齐之后那个理由到期了，所以现在它在，这一项可以自己重算：
 
 ```bash
