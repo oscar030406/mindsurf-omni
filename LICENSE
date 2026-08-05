@@ -1,0 +1,39 @@
+Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC-4.0)
+
+Full text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+Summary:   https://creativecommons.org/licenses/by-nc/4.0/
+
+Copyright (c) 2026 the MindSurf Omni training group.
+
+
+Why this licence and not a permissive one
+-----------------------------------------
+
+Not a choice. The text base this project fine-tunes inherits CC-BY-NC-4.0 from
+its training corpus, and that restriction passes to every derivative, including
+this repository's code, the checkpoints, and the listening material. Nothing
+here may be used commercially.
+
+To change that you would have to replace the text base's training data with a
+corpus whose licence permits commercial use, and read the terms of the frozen
+components. Relaxing this statement without doing that would be a false claim.
+
+
+What is not ours
+----------------
+
+The audio architecture comes from MiniMind-O (Apache-2.0), and files derived
+from it keep their upstream notices. The audio codec is Mimi (CC-BY-4.0), which
+requires attribution and is pinned by revision. The speaker encoder is CAM++
+(Apache-2.0). Two further components are relied on but not redistributed here:
+SenseVoice and emotion2vec, both under the FunASR Model Open Source License
+Agreement v1.1, which has no clear redistribution clause.
+
+Four assets carry declarations we could not verify -- upstream's Talker
+weights, the MiniMind-O training data, SenseVoice and emotion2vec. Each one is
+recorded with what its card claims, why we did not take that at face value, and
+what would settle it, in:
+
+    configs/release/licence.json
+
+That file is the authority. This one is the summary.

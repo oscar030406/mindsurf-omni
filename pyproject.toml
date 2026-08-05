@@ -15,6 +15,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    # The metric tests exercise CER end to end, so the folding dependencies are
+    # part of what it takes to run this suite. CI installs only the declared
+    # sets on purpose -- a package the code imports and nobody declared is the
+    # fault that job exists to catch, and for twelve days this was that fault.
+    "mindsurf-omni[metrics]",
     "pytest>=8",
     "pytest-asyncio>=0.24",
     "ruff>=0.15",
@@ -39,7 +44,12 @@ train = ["torch>=2.6", "pyarrow>=15", "safetensors>=0.4", "transformers>=4.57"]
 # cn2an is the same correction one notation over: a synthesiser that reads
 # 2021 as 二零二一 is right, and unfolded the metric charges it a substitution
 # per digit. Opt-in (--fold-numerals), so it is a dependency of the flag.
-evaluate = ["openai-whisper>=20231117", "zhconv>=1.4", "cn2an>=0.5"]
+evaluate = ["openai-whisper>=20231117", "mindsurf-omni[metrics]"]
+# Script folding and numeral folding, which CER cannot be computed without.
+# Split out of `evaluate` because that set also drags openai-whisper: CI runs
+# the metric tests and has no business installing a 2 GB recogniser to do it.
+# Both are small and pure Python, so the set is cheap to depend on.
+metrics = ["zhconv>=1.4", "cn2an>=0.5"]
 # The cascade path's recogniser. Separate from the runtime set because the
 # native path does not need it, and funasr pulls in torch.
 asr = ["funasr>=1.3", "librosa>=0.10"]
