@@ -106,8 +106,24 @@ sft_merge = sft_graft_frozen + Δ(质量 DPO) + Δ(长度 DPO)
 
 契约定义在 [`src/mindsurf_omni/contract.py`](src/mindsurf_omni/contract.py)，
 
+### 接之前必须知道的四件事
+
+这四条决定用户觉得这套东西好不好用，每一条都有量出来的依据，
+而每一条都能在接线时被无意中踩掉。展开见[接入指南 §0](docs/INTEGRATION.md)。
+
+1. **默认走级联，不要默认走原生。** 原生首音快一个数量级（145 ms），
+   但声音明显更糙：自己发音 CER 0.0962 ± 0.0176（仅报告，分辨 0.0529 够不着 0.0500）、
+   人耳 MOS 2.738，而级联走 edge-tts 是 CER 0.0359 ± 0.0087、MOS 4.023。
+   「与上游官方无法区分」是我们和上游打平，不是好听。
+2. **12 个音色只投放 6 个。** `cherry`、`ethan`、`chelsie`、`momo` 的 12 选 1 认人
+   只有 ≤ 2/20，塌向 serena 和 moon，摆进选择器会被当成 bug 报回来。
+3. **原生路径的情绪不是旋钮。** 只能整条换一条带情绪的参考，而参考同时决定身份。
+   情绪滑块只能挂在级联上。
+4. **判断用户是否插话是客户端的活。** 模型说停就真停，但「谁判断该停」我们没有做。
+
 ### HTTP
 
+```
 POST /v1/audio/transcriptions  语音转文本（Whisper API 兼容）
 POST /v1/chat/completions  文本对话，支持 stream=true（SSE）
 POST /v1/audio/speech  文本转语音
@@ -115,13 +131,16 @@ GET /v1/models  当前活跃路径、组件身份、许可
 GET /v1/voices  可用音色
 GET /v1/token-spec  特殊 token 规格（机器可读）
 GET /v1/licence  完整许可链，含尚未核实的那几项
+```
 
 `GET /health` 报就绪度，逐部件。降级返回 200，全不可用才 503——
 能转写、能出声的实例不该被摘出轮转。
 
 ### WebSocket
 
+```
 WS /v1/realtime
+```
 
 事件名沿用 OpenAI Realtime API 的子集：
 
@@ -287,13 +306,22 @@ python scripts/verify_delivery.py      # 交付齐备、文档与代码一致、
 
 ## 7. 仓库里有什么
 
+```
 src/           推理服务与评测库
 scripts/       训练、评测、复现用的命令行工具
-tests/         631 项，契约与仪器的回归
+tests/         594 项，契约与仪器的回归
 configs/       探针集、语音系统提示、release/ 下的模型卡与对外数字真源
 artifacts/     每个数字的逐条读数（音频与权重不入库）
+docs/          三份给接线的人看的：接入指南、运行手册、能力边界
 assets/        tokenizer
 examples/      一份能跑的客户端，抄走改
+```
+
+要接线的人从这三份开始：
+
+- [接入指南](docs/INTEGRATION.md)：契约、推理参数、接之前必须知道的四件事
+- [运行手册](docs/RUNBOOK.md)：出问题按症状查，每条都写了怎么确认
+- [能力边界](docs/CAPABILITIES.md)：打断、情绪、音色克隆，模型侧到哪为止
 
 权重在 [`oscar0403/mindsurf-omni`](https://huggingface.co/oscar0403/mindsurf-omni)。
 

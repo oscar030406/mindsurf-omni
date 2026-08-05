@@ -48,7 +48,11 @@ coverage.xml
 # 拿到这个仓库的人要的是成品、数据、以及怎么用这两样重算我们报的数。
 # 我们怎么走到这一步、走过哪些弯路、内部怎么交接，对他们没有用。
 # 文件都还在磁盘上，只是不入库。
-/docs/
+/docs/*
+# 例外：这三份是给要接线的人看的，不是过程记录。后端和前端拿仓库就该拿到它们。
+!/docs/INTEGRATION.md
+!/docs/RUNBOOK.md
+!/docs/CAPABILITIES.md
 /PROJECT_RULES.md
 # artifacts/ 装的是逐条读数，不装叙事。这一份是被撤回的筛查笔记，同理留本地。
 artifacts/thinker-comparison-2026-07-28.md

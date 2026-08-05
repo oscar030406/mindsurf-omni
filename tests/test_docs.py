@@ -14,14 +14,24 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
+# What a stranger reads: the front page and the two cards that travel with the
+# weights and the listening packs.
 DOCS = [
     ROOT / "README.md",
     ROOT / "configs" / "release" / "MODEL_CARD.md",
     ROOT / "configs" / "release" / "LISTENING_DATASET_CARD.md",
 ]
+# Plus the three the backend and the frontend read to wire this up. They quote
+# figures inside tables where the qualifier sits in a neighbouring column, so
+# they get the link and script checks but not the bare-number one.
+SHIPPED = DOCS + [
+    ROOT / "docs" / "INTEGRATION.md",
+    ROOT / "docs" / "RUNBOOK.md",
+    ROOT / "docs" / "CAPABILITIES.md",
+]
 
 
-@pytest.mark.parametrize("doc", DOCS, ids=lambda path: path.name)
+@pytest.mark.parametrize("doc", SHIPPED, ids=lambda path: path.name)
 def test_every_script_a_document_cites_exists(doc: Path) -> None:
     text = doc.read_text(encoding="utf-8")
 
@@ -34,13 +44,16 @@ def test_every_script_a_document_cites_exists(doc: Path) -> None:
     assert not missing, f"{doc.name} cites scripts that do not exist: {missing}"
 
 
-@pytest.mark.parametrize("doc", DOCS, ids=lambda path: path.name)
+@pytest.mark.parametrize("doc", SHIPPED, ids=lambda path: path.name)
 def test_every_repository_path_a_document_links_exists(doc: Path) -> None:
     text = doc.read_text(encoding="utf-8")
+    base = doc.parent
 
     missing = []
-    for target in re.findall(r"\]\(([a-z][a-z_/]*(?:\.(?:md|py|json|toml|yml))?)\)", text):
-        if not (ROOT / target).exists():
+    for target in re.findall(
+        r"\]\((\.\./[A-Za-z][\w./-]*|[a-z][a-z_/]*(?:\.(?:md|py|json|toml|yml))?)\)", text
+    ):
+        if not (base / target).resolve().exists():
             missing.append(target)
 
     assert not missing, f"{doc.name} links to missing files: {missing}"
