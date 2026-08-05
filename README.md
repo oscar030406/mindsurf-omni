@@ -294,7 +294,7 @@ python scripts/listening_test.py score \
 
 ```bash
 uv sync --extra dev --extra tts
-.venv/Scripts/python -m pytest -q      # 594 passed / 7 skipped
+.venv/Scripts/python -m pytest -q      # 600 passed / 7 skipped
 python scripts/verify_delivery.py      # 交付齐备、文档与代码一致、数字的证据都在
 ```
 
@@ -309,7 +309,7 @@ python scripts/verify_delivery.py      # 交付齐备、文档与代码一致、
 ```
 src/           推理服务与评测库
 scripts/       训练、评测、复现用的命令行工具
-tests/         594 项，契约与仪器的回归
+tests/         600 项，契约与仪器的回归
 configs/       探针集、语音系统提示、release/ 下的模型卡与对外数字真源
 artifacts/     每个数字的逐条读数（音频与权重不入库）
 docs/          三份给接线的人看的：接入指南、运行手册、能力边界
