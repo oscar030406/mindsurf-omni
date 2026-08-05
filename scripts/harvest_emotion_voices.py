@@ -62,6 +62,15 @@ SAME_SPEAKER = 0.93
 # A reference this short conditions on almost nothing once the model right-
 # aligns it into the prompt.
 MINIMUM_FRAMES = 60
+# The tail of the reference, and only the tail, is what the model reads.
+# speak_forced right-aligns the strip so it ends just before the assistant's
+# first position and drops whatever does not fit, which on a typical prompt
+# leaves about forty frames. A twenty-four second clip therefore contributes
+# its last three seconds, while an F0 measured over the whole clip describes
+# twenty-one seconds the model never sees. So clips are cut to their tail
+# before anything is measured, at the length the shipped packs already use
+# (5.9 to 9.4 seconds).
+MAXIMUM_FRAMES = 125
 
 
 def is_chinese(text: str, share: float = 0.5) -> bool:
@@ -183,7 +192,7 @@ def harvest(args: argparse.Namespace) -> dict[str, Any]:
     for number, members in enumerate(clusters[: args.clusters]):
         measured = []
         for index in members[: args.clips_per_cluster]:
-            codes = unpack(rows[index][0])
+            codes = unpack(rows[index][0])[:, -MAXIMUM_FRAMES:]
             with torch.no_grad():
                 # .float() before .numpy(): the codec's output dtype follows
                 # whatever torch and transformers negotiate, and a newer pair
