@@ -1,11 +1,9 @@
 """Emotional references harvested from real audio instead of manufactured from it.
 
-The manufactured route is dead and the autopsy is in
-docs/experiments/2026-07-29-emotion-pack-attempt.md: signal-processing a
-neutral reference into an emotional one destroys the clip before the model ever
-sees it, 15 of 20 variants above CER 0.6, and the damage is the phase vocoder
-rather than the pitch shift -- so formant correction, which works, does not
-reach it.
+The manufactured route is dead. Signal-processing a neutral reference into an
+emotional one destroys the clip before the model ever sees it: 15 of 20 variants
+land above CER 0.6, and the damage is the phase vocoder rather than the pitch
+shift, so formant correction, which works, does not reach it.
 
 This takes the other key. Every corpus row carries a speaker vector beside its
 reference clip, and the corpus repeats speakers heavily: 80% of rows have a

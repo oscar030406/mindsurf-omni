@@ -13,6 +13,7 @@ import pytest
 from scripts.verify_delivery import (
     Findings,
     check_documents_match_code,
+    check_headline_numbers_are_traceable,
     check_licence_is_consistent,
 )
 
@@ -37,6 +38,7 @@ def test_the_real_repository_passes_every_check() -> None:
     findings = Findings()
     check_documents_match_code(findings)
     check_licence_is_consistent(findings)
+    check_headline_numbers_are_traceable(findings)
 
     assert findings.gaps == []
 
@@ -48,11 +50,10 @@ def test_a_documented_endpoint_that_does_not_exist_is_caught(
     import scripts.verify_delivery as verify
 
     (tmp_path / "src" / "mindsurf_omni" / "service").mkdir(parents=True)
-    (tmp_path / "docs").mkdir()
     (tmp_path / "src" / "mindsurf_omni" / "service" / "app.py").write_text(
         '@app.get("/v1/models")\n', encoding="utf-8"
     )
-    (tmp_path / "docs" / "INTEGRATION.md").write_text(
+    (tmp_path / "README.md").write_text(
         "| `GET /v1/models` | x |\n| `GET /v1/invented` | y |\n", encoding="utf-8"
     )
     monkeypatch.setattr(verify, "ROOT", tmp_path)
@@ -101,3 +102,32 @@ def test_a_missing_deliverable_is_caught(tmp_path: Path, monkeypatch: pytest.Mon
 
     assert len(findings.gaps) >= 10
     assert findings.ok == []
+
+
+def test_a_headline_number_whose_evidence_is_missing_is_caught(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A citation to a file left out of the release still reads as a citation."""
+    import scripts.verify_delivery as verify
+
+    (tmp_path / "configs" / "release").mkdir(parents=True)
+    (tmp_path / "artifacts").mkdir()
+    (tmp_path / "artifacts" / "present.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "configs" / "release" / "headline_numbers.json").write_text(
+        json.dumps(
+            {
+                "kept": {"value": 1, "source": "artifacts/present.json"},
+                "lost": {"value": 2, "source": "artifacts/gone.json"},
+                "in_words": {"value": 3, "source": "无读数可指：语料里没有这一列"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(verify, "ROOT", tmp_path)
+
+    findings = Findings()
+    check_headline_numbers_are_traceable(findings)
+
+    assert findings.gaps
+    assert "artifacts/gone.json" in findings.gaps[0][1]
+    assert "present.json" not in findings.gaps[0][1]

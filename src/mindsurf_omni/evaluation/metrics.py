@@ -36,9 +36,8 @@ def fold_numerals(text: str) -> str:
     both sides pass through it. What it cannot do is context: a handful of
     sentences fold asymmetrically and score worse, 3 of 160 on each arm.
 
-    Off by default. The retrain's acceptance thresholds were calibrated on the
-    unfolded metric, and moving the ruler after the run is the thing
-    PROJECT_RULES.md section 7 forbids.
+    Off by default. The acceptance thresholds were calibrated on the unfolded
+    metric, and moving the ruler after the run is not allowed here.
     """
     import cn2an
 
@@ -177,9 +176,8 @@ def cluster_bootstrap_noise_floor(
     The unit that varies is the voice, so the voice is what gets resampled.
 
     This is the difference between "240 clips" and "12 voices", and on the
-    identification measurement it is an order of magnitude: see section 16.7 of
-    docs/experiments/2026-07-30-emotion-harvest-gate.md, where a per-row floor
-    of +/-0.1750 was already too wide to gate and the honest one is wider still.
+    identification measurement it is an order of magnitude: a per-row floor of
+    +/-0.1750 was already too wide to gate, and the honest one is wider still.
     """
     populated = [group for group in groups if group]
     if len(populated) < 2:

@@ -3,8 +3,7 @@
 Signal processing was ruled out twice -- a reworked reference clip loses
 intelligibility, and the reference code strip turned out to carry no prosody at
 all, so a perfect vocoder would still have nothing to ride on. What does reach
-the model is the speaker vector, and prosody rides it: see sections 9 and 12 of
-docs/experiments/2026-07-30-emotion-harvest-gate.md.
+the model is the speaker vector, and prosody rides it.
 
 So the deliverable is arithmetic, not audio::
 

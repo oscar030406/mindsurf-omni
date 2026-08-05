@@ -2,8 +2,7 @@
 
 The product problem is that the median reply takes half a minute to say. A
 system prompt could not move it -- 30.0 to 30.9 seconds, and it tripled
-fabrication on the way (docs/experiments/2026-08-01-field-comparison.md section
-8). What is left is training, and the cheapest training signal is already
+fabrication on the way. What is left is training, and the cheapest training signal is already
 sitting in the sampling this project did for the last DPO round: four seeds per
 prompt, whose lengths differ by 74 characters at the median.
 

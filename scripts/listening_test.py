@@ -278,9 +278,7 @@ def score(args: argparse.Namespace) -> None:
         abs(a - b)
         for token in key_blob["repeats"]
         for rater in {r for r, _, _, _ in ratings.get(token, [])}
-        for a, b in [
-            tuple(v for r, v, _, _ in ratings[token] if r == rater)[:2]
-        ]
+        for a, b in [tuple(v for r, v, _, _ in ratings[token] if r == rater)[:2]]
         if len([v for r, v, _, _ in ratings[token] if r == rater]) >= 2
     ]
     if spreads:

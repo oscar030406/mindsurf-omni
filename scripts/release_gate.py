@@ -1,12 +1,11 @@
-"""Enforce the publication rules in PROJECT_RULES.md sections 7 and 11.
+"""Refuse to publish what should not leave this machine.
 
-Those sections already define what may not reach the shared repository: agent
-process records, personal usernames, internal addresses, absolute paths, SSH
-details, credentials, and model or dataset blobs. They were written as a manual
-checklist, which is why a blunt local exclude of an entire directory was
-standing in for them: a directory rule cannot tell a compliant experiment
-report from a leaked absolute path, so it discarded documentation while the
-real traces went through untouched.
+Seven things may not reach the shared repository: local tooling state, personal
+usernames, internal addresses, absolute paths, SSH details, credentials, and
+model or dataset blobs. A blunt exclude of a whole directory used to stand in
+for this and it does not work: a directory rule cannot tell a clean report from
+one carrying a leaked absolute path, so it discards good files while the real
+traces go through untouched.
 
 Run this against the staged set before committing, or against a commit range
 before pushing to the shared branch::
@@ -28,11 +27,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# PROJECT_RULES.md documents the first two as the standard's own text. The gate
-# and its tests state the forbidden patterns by necessity: a test that pins
-# "this credential shape is caught" has to contain that shape.
+# The gate and its tests state the forbidden patterns by necessity: a test that
+# pins "this credential shape is caught" has to contain that shape.
 EXEMPT = {
-    "PROJECT_RULES.md",
     "scripts/release_gate.py",
     "tests/test_release_gate.py",
     # Same reason one level down: the scrubber's test has to hold the personal
@@ -50,13 +47,13 @@ EXEMPT = {
 RULE_EXEMPT_PATHS: dict[str, re.Pattern[str]] = {
     "internal_address": re.compile(r"(^|/)(uv|poetry|Cargo)\.lock$|-lock\.json$"),
     # A provenance record names who wrote a reference set, and sometimes that
-    # author is a model. PROJECT_RULES section 6 requires the name to be there:
-    # authorship cannot be inferred after the fact -- measured, a model does not
-    # reproduce its own old replies, so the record is a declaration or it is
-    # nothing. That rule exists because a set one of the compared arms had
-    # written was once used as a holdout, and every arm scored best on its own
-    # text. Stripping the name to satisfy the agent-trace rule would hand back
-    # exactly that failure. These files are small and structured; the exemption
+    # author is a model. The name has to be there: authorship cannot be inferred
+    # after the fact -- measured, a model does not reproduce its own old replies,
+    # so the record is a declaration or it is nothing. Stripping the name to
+    # satisfy the agent-trace rule would hand back the failure the record exists
+    # to prevent: a set written by one of the compared arms, used as a holdout,
+    # with every arm scoring best on its own text. These files are small and
+    # structured; the exemption
     # is per file, not per rule.
     "agent_process_record": re.compile(r"\.provenance\.json$"),
 }

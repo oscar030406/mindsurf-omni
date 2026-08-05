@@ -3,10 +3,10 @@
 `chat_nll` cannot judge a length intervention. It scores how closely a
 checkpoint's distribution matches one author's way of writing, and a way of
 writing includes how long it is, so an intervention aimed at length changes the
-number in a direction the reference set picks rather than the model does
-(docs/experiments/2026-08-01-length-dpo.md section 6.2.2). Stratifying by
-reference length was tried and falsified in section 7.3, and replacing the
-guardrail with blind preference collapses it into criterion B.
+number in a direction the reference set picks rather than the model does.
+Stratifying by reference length was tried and falsified: once length is
+controlled the two neutral authors agree on 1.9% of probes. Replacing the
+guardrail with blind preference collapses it into the main criterion.
 
 So this asks a different question, one length cannot answer for: did the reply
 address what was asked. The wording comes from the filter that built the
@@ -14,10 +14,9 @@ preference data, which already had to be neutral about length for the same
 reason and states so in the prompt.
 
 **The criteria below are registered before the instrument is run.** They decide
-whether it may gate at all, not whether any checkpoint passes. PROJECT_RULES
-section 6 requires invariance, discrimination, noise floor and sample size
-before a measurement is allowed to judge, and this project has paid for skipping
-that step more than once.
+whether it may gate at all, not whether any checkpoint passes. An instrument
+states its invariance, discrimination, noise floor and sample size before it is
+allowed to decide anything.
 
     1. Invariance: judging the same replies twice agrees on at least 95% of
        probes. Below that the instrument's own flicker is larger than the effect
@@ -143,7 +142,9 @@ def validate(
     # readings of one arm, it cannot resolve between two arms either.
     deltas = [float(b) - float(a) for a, b in zip(intact, again, strict=True)]
     paired = compare_paired(
-        "answerable_rate(重判自比)", deltas, lower_is_better=False,
+        "answerable_rate(重判自比)",
+        deltas,
+        lower_is_better=False,
         effect_of_interest=EFFECT_OF_INTEREST,
     )
     resolves = float(paired.split("±")[1].split(",")[0]) if "±" in paired else float("inf")

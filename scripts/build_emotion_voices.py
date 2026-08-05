@@ -2,8 +2,7 @@
 
 The native path turned out to support emotion without any training: prosody
 rides the same reference channel as identity, so a reference clip that sounds
-excited produces speech that sounds excited. See
-docs/experiments/2026-07-29-emotion-through-the-reference.md.
+excited produces speech that sounds excited.
 
 One constraint from that measurement decides the whole design. Emotion and
 identity are entangled in the speaker vector -- the same synthetic voice

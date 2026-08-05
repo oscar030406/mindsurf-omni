@@ -47,10 +47,9 @@ def check_deliverables(findings: Findings) -> None:
         ("推理服务", "src/mindsurf_omni/service/app.py"),
         ("容器定义", "Dockerfile"),
         ("编排文件", "docker-compose.yml"),
-        ("接入指南", "docs/INTEGRATION.md"),
-        ("运行手册", "docs/RUNBOOK.md"),
-        ("评测说明", "docs/EVALUATION.md"),
-        ("决策记录", "docs/DECISIONS.md"),
+        ("说明", "README.md"),
+        ("模型卡", "configs/release/MODEL_CARD.md"),
+        ("对外数字真源", "configs/release/headline_numbers.json"),
         ("许可记录", "configs/release/licence.json"),
         ("探针集", "configs/speech_probes_zh_v1.jsonl"),
         ("冒烟脚本", "scripts/smoke_service.py"),
@@ -62,7 +61,7 @@ def check_deliverables(findings: Findings) -> None:
 def check_documents_match_code(findings: Findings) -> None:
     """A guide that names a missing endpoint sends the reader to a 404."""
     app = (ROOT / "src" / "mindsurf_omni" / "service" / "app.py").read_text(encoding="utf-8")
-    guide = (ROOT / "docs" / "INTEGRATION.md").read_text(encoding="utf-8")
+    guide = (ROOT / "README.md").read_text(encoding="utf-8")
 
     implemented = set(re.findall(r'@app\.(?:get|post|websocket)\("(/v1/[^"]+)"', app))
     documented = set(re.findall(r"(?:POST|GET|WS) (/v1/[a-z/-]+)", guide))
@@ -97,7 +96,8 @@ def check_nothing_claims_more_than_it_measured(findings: Findings) -> None:
     """Capability wording must trace to an instrument that may gate."""
     forbidden = [
         ("README.md", "达到"),
-        ("docs/INTEGRATION.md", "达到"),
+        ("configs/release/MODEL_CARD.md", "达到"),
+        ("configs/release/LISTENING_DATASET_CARD.md", "达到"),
     ]
     for name, phrase in forbidden:
         text = (ROOT / name).read_text(encoding="utf-8")
@@ -111,6 +111,42 @@ def check_nothing_claims_more_than_it_measured(findings: Findings) -> None:
             not offenders,
             f"疑似断言: {offenders[:2]}",
         )
+
+
+def check_headline_numbers_are_traceable(findings: Findings) -> None:
+    """A number whose evidence file is missing is a number nobody can check.
+
+    Every figure we publish carries a ``source``. This walks them and confirms
+    the paths are actually in the repository, because the failure we care about
+    is silent: a file gets moved or left out of the release and the citation
+    still reads as if it points somewhere.
+    """
+    record = json.loads(
+        (ROOT / "configs" / "release" / "headline_numbers.json").read_text(encoding="utf-8")
+    )
+
+    missing: list[str] = []
+
+    def visit(node: object, where: str) -> None:
+        if not isinstance(node, dict):
+            return
+        for key, value in node.items():
+            if key != "source":
+                visit(value, f"{where}.{key}")
+                continue
+            entries = value if isinstance(value, list) else [value]
+            for entry in entries:
+                for candidate in str(entry).split(","):
+                    # Sources may carry a section marker (" §8-§11") or say in
+                    # words that no reading exists; only bare paths are checked.
+                    path = candidate.strip().split(" ")[0].rstrip("/")
+                    if not path or "/" not in path:
+                        continue
+                    if not (ROOT / path).exists():
+                        missing.append(f"{where}: {path}")
+
+    visit(record, "headline_numbers")
+    findings.check("对外数字的证据都在", not missing, "; ".join(missing))
 
 
 def check_secrets_are_absent(findings: Findings) -> None:
@@ -139,6 +175,7 @@ def main() -> None:
     check_documents_match_code(findings)
     check_licence_is_consistent(findings)
     check_nothing_claims_more_than_it_measured(findings)
+    check_headline_numbers_are_traceable(findings)
     check_secrets_are_absent(findings)
     sys.exit(findings.report())
 

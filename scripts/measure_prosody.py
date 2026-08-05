@@ -1,17 +1,14 @@
 """Did the prosody difference in the references survive the model? Paired per text.
 
-The emotional-reference result -- give the model a reference with the emotion
-in it and the output carries pitch, spread and rate -- was measured by a
-throwaway script on the training host that hard-coded two directories, printed
-a table, and reported no noise floor. Every other instrument in this project
-has to state what it can resolve before it may judge
-(PROJECT_RULES.md section 6), and this one was about to gate a deliverable.
+The result being checked: give the model a reference with the emotion in it and
+the output carries pitch, spread and rate. Every instrument here has to state
+what it can resolve before it may judge, so the arithmetic is the same
+``compare_paired`` every other paired comparison uses, and the protocol carries
+one addition a bare before-and-after table cannot have: **a control arm**.
 
-So the arithmetic is the same ``compare_paired`` every other paired comparison
-here uses, and the protocol carries one addition the throwaway version could
-not have: **a control arm**. Generation is sampled, so two runs from the *same*
-reference already differ, and without knowing by how much a +20 Hz separation
-between two different references means nothing. Run the same reference twice
+Generation is sampled, so two runs from the *same* reference already differ, and
+without knowing by how much, a +20 Hz separation between two different
+references means nothing. Run the same reference twice
 under different seeds, pass it as an arm, and it must come back
 ``indistinguishable``. If it does not, nothing else in the run is readable.
 

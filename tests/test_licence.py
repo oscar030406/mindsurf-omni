@@ -117,13 +117,22 @@ def test_every_component_that_ships_in_a_checkpoint_is_listed() -> None:
     assert "upstream_talker_weights" in {asset["name"] for asset in RECORD["assets"]}
 
 
-@pytest.mark.parametrize("document", ["README.md", "docs/INTEGRATION.md", "docs/EVALUATION.md"])
+@pytest.mark.parametrize(
+    "document",
+    [
+        "README.md",
+        "configs/release/MODEL_CARD.md",
+        "configs/release/LISTENING_DATASET_CARD.md",
+    ],
+)
 def test_the_restriction_appears_wherever_someone_might_start(document: str) -> None:
-    """A restriction stated in one place is one that gets missed."""
+    """A restriction stated in one place is one that gets missed.
+
+    These three are the only documents a stranger reads: the repository's front
+    page and the two cards that travel with the weights and the listening packs.
+    """
     text = (ROOT / document).read_text(encoding="utf-8")
 
-    if document == "docs/EVALUATION.md":
-        return  # evaluation does not distribute anything
     assert "CC-BY-NC" in text or "commercial_use_permitted" in text
 
 

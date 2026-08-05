@@ -4,8 +4,7 @@ The labelling pilot answered two of its three questions from a keyboard --
 how many clips carry a non-neutral label, and how long a full pass costs. The
 third one, whether the labels are right, needs ears, and the automatic stand-in
 could not settle it: per-label F0 ordered the way you would expect but every
-contrast came back reported-only. See section 5 of
-docs/experiments/2026-08-01-emotion-labels.md.
+contrast came back reported-only.
 
 So this builds the pack a person can actually score. The shape follows the MOS
 pack that already exists (anonymous tokens, one sheet per rater, a key nobody

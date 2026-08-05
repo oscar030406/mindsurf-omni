@@ -2,7 +2,8 @@
   "_": [
     "对外数字的唯一真源。README、模型卡、答辩材料、PPT 一律从这里取，",
     "不要各写各的——同一个准确率散落六处、彼此差 0.001，是评审最容易抓住的破绽。",
-    "每一条都带 source，指向产出它的证据文件或实验记录。改数字要连 source 一起改。"
+    "每一条的 source 指向 artifacts/ 里产出它的原始读数，拿那些文件可以自己重算。",
+    "改数字要连 source 一起改。"
   ],
   "delivery": {
     "checkpoint": "sft_merge_768.pth",
@@ -12,7 +13,7 @@
       "sft_dpo2": "五条判据全过、无星号，但中位回复念 24 秒——量出来的产品缺陷没解决",
       "sft_len": "已退出候选：merge 每条都不劣于它，且长度控住后头对头赢它 59.2%"
     },
-    "source": "docs/experiments/2026-08-03-merged-thinker.md"
+    "source": "artifacts/merge/, artifacts/blind608/"
   },
   "model": {
     "total_parameters": 139083522,
@@ -20,7 +21,7 @@
     "talker_parameters": 47050754,
     "kpi_limit": 200000000,
     "note": "KPI-2 是 ≤200M，不是 =200M；用更小做到更好按 OKR 是加分",
-    "source": "docs/experiments/2026-07-26-graft-acceptance.md"
+    "source": "artifacts/graft-t2a-report-2026-07-26.json"
   },
   "latency": {
     "ttf_audio_ms_mean": 145.1,
@@ -28,33 +29,46 @@
     "ttf_audio_noise_ms": 4.1,
     "budget_ms": 3000,
     "barge_in_cancel_to_stop_ms_p50": 0.26,
-    "barge_in_cancel_to_stop_ms_p95": 0.40,
+    "barge_in_cancel_to_stop_ms_p95": 0.4,
     "barge_in_budget_ms": 200,
     "barge_in_turns": 40,
     "barge_in_wall_clock_full_ms": 4953,
     "barge_in_wall_clock_cancelled_ms": 132,
     "barge_in_gpu_after_cancel": "41% -> 0%（0.5 秒内）",
     "source": [
-      "docs/experiments/2026-07-28-the-service-leaked-generations.md",
-      "docs/experiments/2026-08-03-barge-in.md"
+      "artifacts/latency-native-leak-fixed-2026-07-28.json",
+      "artifacts/barge_in/barge-in-40-2026-08-03.json",
+      "artifacts/barge_in/compute-stopped-proof-2026-08-03.txt"
     ]
   },
   "speech": {
-    "cer": 0.0902,
-    "cer_noise": 0.0153,
+    "_": [
+      "2026-08-05 更正：cer 此前写 0.0902 ± 0.0153，那是情绪 checkpoint sft_emo 的读数，",
+      "不是成品的。成品 sft_merge 在同一批 160 句上是 0.0962 ± 0.0176。",
+      "单臂 CER 分辨 0.0529、关心 0.0500，够不着，所以它仅报告；",
+      "有判定资格的是下面那两条配对读数，它们本来就是 merge 的，没有受影响。"
+    ],
+    "cer": 0.0962,
+    "cer_noise": 0.0176,
+    "cer_status": "仅报告（分辨 0.0529 > 关心 0.0500）",
+    "cer_median": 0.0678,
+    "cer_over_0_3": "7/160",
     "cer_judge": "paraformer-zh（独立于被测模型）",
     "cer_n": 160,
     "silent_rate": 0.0,
+    "utmos": 2.4399,
+    "utmos_noise": 0.0498,
     "cer_vs_parent_paired": "indistinguishable (+0.0059, within ±0.0314, paired n=160)",
     "utmos_vs_parent_paired": "indistinguishable (-0.0127, within ±0.0985, paired n=160)",
-    "source": "artifacts/merge/, artifacts/emo-a2a-2026-08-03.jsonl"
+    "how_to_reproduce": "python scripts/evaluate_speech.py --candidate artifacts/merge/speech-sft_merge-mos.jsonl --reference artifacts/merge/speech-parent-mos.jsonl",
+    "source": "artifacts/merge/"
   },
   "human_mos": {
     "_": "四位评分员、盲听、每人一份随机顺序。这是本项目唯一一把人耳尺子。",
     "ours_graft": 2.738,
-    "ours_graft_ci95": 0.120,
+    "ours_graft_ci95": 0.12,
     "official_upstream": 2.738,
-    "official_upstream_ci95": 0.120,
+    "official_upstream_ci95": 0.12,
     "edge_tts_reference": 4.023,
     "voxcpm": 3.476,
     "defect_flags_ours": 43,
@@ -65,11 +79,11 @@
   "voice_clone": {
     "seen_cosine": 0.6487,
     "unseen_cosine": 0.6044,
-    "parent_seen": 0.6470,
+    "parent_seen": 0.647,
     "parent_unseen": 0.6054,
     "vs_official": "improved，12/12 音色逐个比全赢（sft_graft 那一轮）",
     "ceiling_note": "编解码器天花板 0.8409，上游报的 seen 0.6472 应读成天花板的 76%",
-    "source": "docs/experiments/2026-07-28-voice-clone.md, artifacts/merge/clone-merge.json"
+    "source": "artifacts/clone-graft-2026-07-28.json, artifacts/merge/clone-merge.json"
   },
   "conversation": {
     "blind_preference_vs_parent": 0.6424,
@@ -80,7 +94,7 @@
     "length_controlled_noise": 0.0664,
     "length_controlled_status": "赢，位置 0.5138 与长度偏差 0.5092 均干净",
     "judge": "deepseek-ai/DeepSeek-V3.2，提示词 sha256 与选边种子进产出",
-    "source": "docs/experiments/2026-08-03-probe-budget.md"
+    "source": "artifacts/blind608/"
   },
   "product_metrics": {
     "_": "同一批 608 条探针上重算，口径与 field-comparison §8.4 一致（用户说 1.9 秒）",
@@ -108,19 +122,19 @@
         "长度配平参考：修好了原病灶（同号 94.9%）但掉进镜像混淆"
       ],
       "what_would_close_it": "约 3600 条探针，现有 608",
-      "source": "docs/experiments/2026-08-03-merged-thinker.md §8-§11"
+      "source": "artifacts/blind608/, artifacts/short_refs/, artifacts/answerable-real-floor-2026-08-03.json"
     },
     "emotion_not_controllable": {
       "claim": "情绪能力存在（参考通路 F0 +54.7 Hz、12/12、零训练），但做不成可控旋钮",
       "human_evidence": "人耳与 emotion2vec 标签一致率 31–42%，而人与人 41–65%——标签系统性偏离人耳",
       "why_not_retrain": "重训的前提是标签可信，人工盲听证伪了这个前提",
       "field_position": "情绪-音色纠缠是学界公开问题；解法要独立编码器+解耦损失+重训，本项目排除了架构改动",
-      "source": "docs/experiments/2026-08-01-emotion-labels.md, docs/CAPABILITIES.md §3"
+      "source": "artifacts/listening_returned/, artifacts/emotion-conditioned/, artifacts/emotion-labels-pilot-2026-08-01.json"
     },
     "barge_in_judgment_missing": {
       "claim": "打断的执行闭环了，判断没有——「能停」不等于「会判断该停」",
       "why": "需要重叠音频+打断标注的语料，两份语料都没有；合成重叠只等于 VAD",
-      "source": "docs/CAPABILITIES.md §1"
+      "source": "无读数可指：两份训练语料都没有重叠音频与打断标注"
     },
     "emotion_pack_had_english": "盲听 50 条里 6 条是英语（SenseVoice 语种），发包时未声明；无粤语，带口音普通话排除不了"
   },

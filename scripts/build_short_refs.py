@@ -112,8 +112,7 @@ def main() -> int:
                 "median_chars": lengths[len(lengths) // 2] if lengths else None,
                 "note": (
                     "Author is neither a compared arm nor the blind-preference judge. "
-                    "Authorship is declared because it cannot be inferred afterwards "
-                    "(PROJECT_RULES section 6)."
+                    "Authorship is declared because it cannot be inferred afterwards."
                 ),
                 **judge.provenance(WRITE),
             },

@@ -85,12 +85,19 @@ def test_a_generating_run_records_how_it_sampled() -> None:
 
     settings = generation_settings(
         Namespace(
-            generate=True, temperature=0.7, top_p=0.9, max_tokens=512, seed=1000,
+            generate=True,
+            temperature=0.7,
+            top_p=0.9,
+            max_tokens=512,
+            seed=1000,
             system_prompt=None,
         )
     )
     assert settings == {
-        "temperature": 0.7, "top_p": 0.9, "max_tokens": 512, "seed": 1000,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "max_tokens": 512,
+        "seed": 1000,
         "system_prompt": None,
     }
 

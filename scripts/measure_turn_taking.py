@@ -4,10 +4,10 @@ Every quality number here answers "does it sound good". None of them answers
 "does it hold the floor too long", and a practitioner running a voice agent in
 production for eight months reports that half of what users call "robotic" is
 turn-taking rather than voice -- the agent stepping on people or leaving dead
-air (docs/experiments/2026-08-01-field-comparison.md section 6.1).
+air.
 
 We are turn-based by contract, so the stepping-on-people half is the client's
-endpoint decision and not ours (docs/DECISIONS.md section 11). What IS ours is
+endpoint decision and not ours. What IS ours is
 the other half: once we start talking, how long do we hold the floor, and what
 does a user who runs out of patience lose by cutting us off.
 

@@ -57,7 +57,7 @@ def test_version_quads_in_lock_files_are_exempted_by_path() -> None:
 
     assert _hits("internal_address", "nvidia-curand-cu12 10.3.5.147")
     assert RULE_EXEMPT_PATHS["internal_address"].search("uv.lock")
-    assert not RULE_EXEMPT_PATHS["internal_address"].search("docs/ACTION_PLAN.md")
+    assert not RULE_EXEMPT_PATHS["internal_address"].search("notes/plan.md")
 
 
 @pytest.mark.parametrize(
@@ -105,7 +105,7 @@ def test_a_provenance_record_may_name_a_model_as_the_author() -> None:
     exempt = RULE_EXEMPT_PATHS["agent_process_record"]
     assert exempt.search("configs/chat_refs_external_v1.jsonl.provenance.json")
     # And nowhere else: a plan or a transcript is still a trace.
-    assert not exempt.search("docs/PLAN.md")
+    assert not exempt.search("notes/plan.md")
     assert not exempt.search("configs/chat_refs_external_v1.jsonl")
 
 
@@ -126,8 +126,7 @@ def test_the_scrubber_test_may_hold_the_paths_it_catches() -> None:
 def test_a_committed_merge_conflict_is_caught() -> None:
     """This shipped once: a doc went to a public branch with both markers in it."""
     conflicted = (
-        "before\n<<<<<<< Updated upstream\nours\n"
-        "=======\ntheirs\n>>>>>>> Stashed changes\n"
+        "before\n<<<<<<< Updated upstream\nours\n=======\ntheirs\n>>>>>>> Stashed changes\n"
     )
     hits = [
         rule
@@ -141,8 +140,6 @@ def test_a_committed_merge_conflict_is_caught() -> None:
 def test_seven_equals_alone_is_not_read_as_a_conflict() -> None:
     """Markdown underlines a setext heading the same way git marks a midpoint."""
     hits = [
-        rule
-        for rule, pattern, _ in CONTENT_RULES
-        if re.search(pattern, "=======", re.IGNORECASE)
+        rule for rule, pattern, _ in CONTENT_RULES if re.search(pattern, "=======", re.IGNORECASE)
     ]
     assert "merge_conflict" not in hits

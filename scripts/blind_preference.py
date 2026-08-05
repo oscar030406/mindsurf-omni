@@ -1,13 +1,9 @@
 """Blind pairwise preference between two arms, with the judge on the record.
 
-This comparison decided two DPO rounds and it was run outside the repository.
-The pairs survive on disk, the verdicts survive, and who judged them does not --
-searching both machines for anything that produced those numbers returns the
-output files and nothing else. PROJECT_RULES section 6 requires a reference
-set's author to be declared because authorship cannot be recovered afterwards;
-the same argument applies to a judge, and this had no such record. So the
-measurement is a script now, and its result carries the judge's identity, the
-endpoint, the seed that chose the sides and a hash of the prompt that was sent.
+A verdict is worth only as much as the record of who produced it, and a judge's
+identity cannot be recovered after the fact. So every result this writes carries
+the judge's identity, the endpoint, the seed that chose the sides, and a hash of
+the prompt that was sent.
 
 What it does not fix: a re-judgement by a different judge that disagrees does
 not mean the old number was wrong. It means the verdict depends on the judge,

@@ -71,8 +71,7 @@ def generation_settings(args: Any) -> dict[str, Any] | None:
     Recorded because it cannot be recovered afterwards. Extending this probe set
     had to answer "were the new replies sampled the way the old ones were", and
     the existing reports could not say: temperature, top-p, seed and the token
-    cap all defaulted silently and none were written down. PROJECT_RULES section
-    7 records the same failure for training hyperparameters -- the cost is never
+    cap all defaulted silently and none were written down. The cost is never
     picking a wrong value, it is being unable to tell afterwards which was
     picked.
 
@@ -242,10 +241,10 @@ def score(checkpoint: Path, probes: list[dict[str, str]], args: argparse.Namespa
     # The first attempt to extend this probe set had to answer "were the new
     # replies sampled the same way as the old ones", and the reports could not
     # say -- temperature, top-p, seed and the token cap all defaulted silently
-    # and none of them were written down. That is the same failure PROJECT_RULES
-    # section 7 records for training hyperparameters, in a different script: the
-    # cost is not picking a wrong value, it is being unable to tell afterwards
-    # which value was picked. Only present when --generate ran; a likelihood
+    # and none of them were written down. The cost is not picking a wrong value,
+    # it is being unable to tell afterwards which value was picked. The same
+    # applies to training hyperparameters, one script over. Only present when
+    # --generate ran; a likelihood
     # pass samples nothing.
     return {
         "checkpoint": checkpoint.name,

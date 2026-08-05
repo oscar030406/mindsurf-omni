@@ -71,9 +71,7 @@ def normalised_already(arm: dict[str, Any], target_peak: float = 0.95) -> bool:
     """
     expected = target_peak * 32768
     peaks = arm["peak"]
-    return bool(peaks) and all(
-        abs(peaks[f"p{p}"] - expected) <= expected * 0.02 for p in (50, 100)
-    )
+    return bool(peaks) and all(abs(peaks[f"p{p}"] - expected) <= expected * 0.02 for p in (50, 100))
 
 
 def measure(directory: Path) -> dict[str, Any]:

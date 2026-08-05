@@ -7,7 +7,7 @@ check, so these tests hold the widened version to catching what it was built to
 catch.
 
 The magnitudes here come from injecting each fault into the real released
-weights and measuring; see docs/CONVERSION.md.
+weights and measuring.
 """
 
 from __future__ import annotations

@@ -1,11 +1,9 @@
 """Write the training corpus back out with an emotion instruction in each user turn.
 
 The labels exist now (scripts/label_emotion.py over all 414,024 rows). This is
-what turns them into something the model can be trained on, and the shape of
-that was decided before the labelling ran -- section 7 of
-docs/experiments/2026-08-01-emotion-labels.md picks a natural-language
-instruction on the USER side, over a vocabulary token or an assistant-side
-prefix, for three reasons that all still hold:
+what turns them into something the model can be trained on. The shape was
+decided before the labelling ran: a natural-language instruction on the USER
+side, over a vocabulary token or an assistant-side prefix, for three reasons:
 
 * it changes no vocabulary, so the frozen-Thinker recipe applies unchanged --
   and freezing is what stopped A2A costing 1.52 nat of prose;

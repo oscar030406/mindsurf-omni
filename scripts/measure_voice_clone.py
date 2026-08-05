@@ -156,9 +156,8 @@ def identify(
     The similarity to a clip's own voice is a number on a scale nobody set: a
     voice whose codec ceiling is 0.79 and one whose ceiling is 0.90 cannot be
     held to the same line, and a band drawn at "the tier mean minus the mean's
-    own noise" rejects half the tier by construction -- see section 15 of
-    docs/experiments/2026-07-30-emotion-harvest-gate.md, which is what this
-    exists to replace.
+    own noise" rejects half the tier by construction. That is what this exists
+    to replace.
 
     Asking instead which voice the clip is closest to needs no chosen
     threshold: the boundary comes from the other voices in the pack. The
@@ -482,8 +481,8 @@ def main() -> None:
         type=float,
         default=0.10,
         help="the rank-1 difference the identification axis has to resolve to be "
-        "allowed to gate. Written down before the first cluster-bootstrap run, in "
-        "the fourth-round queue of docs/ACTION_PLAN.md; do not tune it to a result",
+        "allowed to gate. Written down before the first cluster-bootstrap run; "
+        "do not tune it to a result",
     )
     parser.add_argument(
         "--ceiling-report",

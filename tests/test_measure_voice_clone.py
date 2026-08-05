@@ -74,9 +74,7 @@ def _voices(
 def test_identification_names_the_nearest_voice_and_prices_the_margin() -> None:
     import torch
 
-    voices = _voices(
-        {"dylan": [1.0, 0.0], "moon": [0.0, 1.0]}, {"dylan": "seen", "moon": "unseen"}
-    )
+    voices = _voices({"dylan": [1.0, 0.0], "moon": [0.0, 1.0]}, {"dylan": "seen", "moon": "unseen"})
 
     own = identify(torch.tensor([0.9, 0.1]), "dylan", voices)
     assert own is not None and own["hit"] and own["nearest"] == "dylan"

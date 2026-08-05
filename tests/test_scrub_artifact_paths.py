@@ -79,9 +79,7 @@ def test_naming_one_file_scans_it_rather_than_reporting_nothing(tmp_path: Path) 
     import sys
 
     evidence = tmp_path / "evidence.jsonl"
-    evidence.write_text(
-        '{"audio_path": "/home/someone/run/zh000.wav"}\n', encoding="utf-8"
-    )
+    evidence.write_text('{"audio_path": "/home/someone/run/zh000.wav"}\n', encoding="utf-8")
     result = subprocess.run(
         [sys.executable, "scripts/scrub_artifact_paths.py", "--check", str(evidence)],
         capture_output=True,

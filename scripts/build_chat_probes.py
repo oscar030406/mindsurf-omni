@@ -3,7 +3,6 @@
 The main criterion resolves +/-9.6 points at 158 probes and needs about 5, which
 is a sample size problem and nothing else -- blind preference has a binomial
 floor, so it falls as 1/sqrt(n) with no argument. About 600 probes gets there.
-The plan and its review are in docs/experiments/2026-08-03-probe-budget.md.
 
 Three things about the new probes matter more than how many there are.
 
@@ -45,9 +44,18 @@ from mindsurf_omni.evaluation.judge import Judge  # noqa: E402
 # The taxonomy the second DPO round already used, so the two sets can be
 # compared by theme without inventing a second vocabulary for the same idea.
 THEMES = (
-    "人际与家常沟通", "养宠与花草", "出行与交通", "季节与生活应对",
-    "安全与应急", "情绪与状态", "文娱与创作", "消费与办事",
-    "生活法律与办事常识", "算术与逻辑", "育儿与教育", "语言文字",
+    "人际与家常沟通",
+    "养宠与花草",
+    "出行与交通",
+    "季节与生活应对",
+    "安全与应急",
+    "情绪与状态",
+    "文娱与创作",
+    "消费与办事",
+    "生活法律与办事常识",
+    "算术与逻辑",
+    "育儿与教育",
+    "语言文字",
 )
 
 CLASSIFY = """把下面这个口语提问归到一个类别里。
@@ -250,9 +258,7 @@ def main() -> int:
                 print(f"  {key}: {value}")
         worst = max(report["theme_drift"].items(), key=lambda kv: abs(kv[1]))
         print(f"  最偏的主题: {worst[0]} {worst[1]:+.3f}")
-        args.output.write_text(
-            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0
 
     judge = Judge(credentials=args.credentials, model=args.model, timeout=args.timeout)

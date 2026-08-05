@@ -15,7 +15,7 @@ the synthesiser and 0.0325 is no longer the reference frame it was.
 
 Latency is recorded per utterance and is *reported only*. The instrument for
 that is a quiet card, and this laptop has read 291 / 960 / 2488 ms out of the
-same code; see docs/experiments/2026-07-25-latency-attribution.md.
+same code.
 """
 
 from __future__ import annotations

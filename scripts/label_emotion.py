@@ -2,15 +2,14 @@
 
 Native emotion has one honest route left. Prosody in this model rides the
 speaker vector, and that vector *is* identity -- two independently designed
-gates both said the price is a voice that no longer identifies as itself
-(docs/experiments/2026-07-30-emotion-harvest-gate.md sections 14 and 16). The
+gates both said the price is a voice that no longer identifies as itself. The
 way out is to stop making emotion share an input with identity and give it one
 of its own, which needs a corpus that says what emotion each clip carries. Ours
 does not: there is no emotion column, and that part was always true.
 
 emotion2vec can write that column. This script is the pilot that decides
 whether the full pass is worth ten hours of card, and the criterion is written
-before it runs (section 5 of the fourth-round queue in docs/ACTION_PLAN.md):
+before it runs:
 
     fewer than 10% of clips carrying a non-neutral label kills the route.
 
@@ -112,7 +111,7 @@ def pick_rows(path: Path, wanted: int, seed: int) -> list[dict[str, Any]]:
 
     The T2A corpus turned out to be stored in language blocks -- English row
     groups, then Chinese, then English again -- and nobody knew until it was
-    checked (docs/experiments/2026-07-26-t2a-corpus.md). A prefix of this file
+    checked. A prefix of this file
     could be one language, one speaker, or one source, and a label distribution
     measured on that would describe the prefix rather than the corpus.
     """
