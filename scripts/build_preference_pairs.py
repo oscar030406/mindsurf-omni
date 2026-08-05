@@ -29,6 +29,7 @@ import argparse
 import collections
 import json
 import random
+import statistics
 import sys
 from pathlib import Path
 from typing import Any
@@ -52,16 +53,37 @@ def usable(reply: str) -> tuple[bool, str]:
     return True, ""
 
 
-def draw_pairs(drafts: list[str], per_prompt: int, rng: random.Random) -> list[tuple[int, int]]:
+def draw_pairs(
+    drafts: list[str],
+    per_prompt: int,
+    rng: random.Random,
+    max_length_gap: int | None = None,
+) -> list[tuple[int, int]]:
     """Which drafts to put in front of a judge, without judging every pair.
 
     All-pairs grows quadratically and buys little: the ranking a judge produces
     on a handful of drafts is dominated by the extremes. A random sample of
     distinct pairs keeps the cost linear in the number of prompts.
+
+    ``max_length_gap`` drops pairs whose two drafts differ by more than that
+    many characters, and it is what separates a quality round from a length
+    round. A judge shown a long draft against a short one is partly ranking
+    length -- that is measured, not assumed: the length-controlled diagnostic
+    on this project put the judge's own length bias at 0.5092 only once the two
+    arms were within a character of each other at the median. Leave the gap
+    open and the gradient carries length whether or not anyone intended it, and
+    then the conversation guardrail loses its eligibility again, because
+    ``chat_nll`` cannot judge a length intervention.
     """
     if len(drafts) < 2:
         return []
     everything = [(i, j) for i in range(len(drafts)) for j in range(i + 1, len(drafts))]
+    if max_length_gap is not None:
+        everything = [
+            pair
+            for pair in everything
+            if abs(len(drafts[pair[0]]) - len(drafts[pair[1]])) <= max_length_gap
+        ]
     rng.shuffle(everything)
     return everything[:per_prompt]
 
@@ -96,7 +118,10 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         if len(kept) < 2:
             reasons["too few usable drafts"] += 1
             continue
-        for nth, (left, right) in enumerate(draw_pairs(kept, args.pairs_per_prompt, rng)):
+        drawn = draw_pairs(kept, args.pairs_per_prompt, rng, getattr(args, "max_length_gap", None))
+        if not drawn:
+            reasons["no pair within the length gap"] += 1
+        for nth, (left, right) in enumerate(drawn):
             # Sides are shuffled here, once, and the key is kept separately --
             # a judge shown the same model's drafts always in the same order
             # would be ranking position.
@@ -154,6 +179,13 @@ def resolve(args: argparse.Namespace) -> dict[str, Any]:
             continue
         triples.append({"prompt": item["prompt"], "chosen": chosen, "rejected": rejected})
 
+    # What the gradient will carry about length, measured rather than intended.
+    # A round meant to be about quality can still hand the model a systematic
+    # length signal -- the judge has its own preference and the sampler its own
+    # spread -- and the only place that shows up is here, before training.
+    gaps = [len(row["chosen"]) - len(row["rejected"]) for row in triples]
+    drift = statistics.fmean(gaps) if gaps else 0.0
+
     return {
         # Carried through, not dropped. The on-policy invariant is enforced two
         # files upstream and the trainer has no other way to re-assert it: with
@@ -163,6 +195,10 @@ def resolve(args: argparse.Namespace) -> dict[str, Any]:
         "triples": triples,
         "dropped_ties": ties,
         "unmatched_judgements": unmatched,
+        "chosen_minus_rejected_chars": drift,
+        "chosen_longer_share": (
+            statistics.fmean([1.0 if gap > 0 else 0.0 for gap in gaps]) if gaps else 0.0
+        ),
     }
 
 
@@ -179,6 +215,13 @@ def main() -> None:
         help="measure_chat_loss --generate reports, all from ONE checkpoint, one per sampling seed",
     )
     pair.add_argument("--pairs-per-prompt", type=int, default=2)
+    pair.add_argument(
+        "--max-length-gap",
+        type=int,
+        help="drop pairs whose drafts differ by more than this many characters. "
+        "Without it a quality round is partly a length round, and a length round "
+        "costs the conversation guardrail its eligibility",
+    )
     pair.add_argument("--seed", type=int, default=17)
     pair.add_argument("--output", type=Path, required=True)
 
@@ -196,6 +239,14 @@ def main() -> None:
             print(f"  丢弃的草稿: {report['dropped_drafts']}")
     else:
         print(f"{len(report['triples'])} 个三元组，丢弃平局 {report['dropped_ties']}")
+        drift = report["chosen_minus_rejected_chars"]
+        share = report["chosen_longer_share"]
+        print(f"  长度漂移: 选中减被弃 {drift:+.1f} 字，选中更长的占 {share:.1%}")
+        if abs(drift) > 5:
+            print(
+                "  ⚠ 这一轮带着长度信号。要当质量轮读，先收紧 --max-length-gap 重建；"
+                "否则「对话建模不退」那一轴又会失去判定资格"
+            )
         if report["unmatched_judgements"]:
             print(f"  对不上的判决 {report['unmatched_judgements']} 条")
 
