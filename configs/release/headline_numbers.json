@@ -1,0 +1,134 @@
+{
+  "_": [
+    "对外数字的唯一真源。README、模型卡、答辩材料、PPT 一律从这里取，",
+    "不要各写各的——同一个准确率散落六处、彼此差 0.001，是评审最容易抓住的破绽。",
+    "每一条都带 source，指向产出它的证据文件或实验记录。改数字要连 source 一起改。"
+  ],
+  "delivery": {
+    "checkpoint": "sft_merge_768.pth",
+    "decided_on": "2026-08-05",
+    "what_it_is": "sft_graft_frozen + Δ(质量 DPO) + Δ(长度 DPO)，权重相加不是重训",
+    "why_not_the_alternatives": {
+      "sft_dpo2": "五条判据全过、无星号，但中位回复念 24 秒——量出来的产品缺陷没解决",
+      "sft_len": "已退出候选：merge 每条都不劣于它，且长度控住后头对头赢它 59.2%"
+    },
+    "source": "docs/experiments/2026-08-03-merged-thinker.md"
+  },
+  "model": {
+    "total_parameters": 139083522,
+    "thinker_parameters": 89864448,
+    "talker_parameters": 47050754,
+    "kpi_limit": 200000000,
+    "note": "KPI-2 是 ≤200M，不是 =200M；用更小做到更好按 OKR 是加分",
+    "source": "docs/experiments/2026-07-26-graft-acceptance.md"
+  },
+  "latency": {
+    "ttf_audio_ms_mean": 145.1,
+    "ttf_audio_ms_p95": 189,
+    "ttf_audio_noise_ms": 4.1,
+    "budget_ms": 3000,
+    "barge_in_cancel_to_stop_ms_p50": 0.26,
+    "barge_in_cancel_to_stop_ms_p95": 0.40,
+    "barge_in_budget_ms": 200,
+    "barge_in_turns": 40,
+    "barge_in_wall_clock_full_ms": 4953,
+    "barge_in_wall_clock_cancelled_ms": 132,
+    "barge_in_gpu_after_cancel": "41% -> 0%（0.5 秒内）",
+    "source": [
+      "docs/experiments/2026-07-28-the-service-leaked-generations.md",
+      "docs/experiments/2026-08-03-barge-in.md"
+    ]
+  },
+  "speech": {
+    "cer": 0.0902,
+    "cer_noise": 0.0153,
+    "cer_judge": "paraformer-zh（独立于被测模型）",
+    "cer_n": 160,
+    "silent_rate": 0.0,
+    "cer_vs_parent_paired": "indistinguishable (+0.0059, within ±0.0314, paired n=160)",
+    "utmos_vs_parent_paired": "indistinguishable (-0.0127, within ±0.0985, paired n=160)",
+    "source": "artifacts/merge/, artifacts/emo-a2a-2026-08-03.jsonl"
+  },
+  "human_mos": {
+    "_": "四位评分员、盲听、每人一份随机顺序。这是本项目唯一一把人耳尺子。",
+    "ours_graft": 2.738,
+    "ours_graft_ci95": 0.120,
+    "official_upstream": 2.738,
+    "official_upstream_ci95": 0.120,
+    "edge_tts_reference": 4.023,
+    "voxcpm": 3.476,
+    "defect_flags_ours": 43,
+    "defect_flags_official": 42,
+    "headline": "我们的成品与上游官方发布权重人耳打分到小数点后三位相同，缺陷标记 43 对 42",
+    "source": "artifacts/listening_returned/"
+  },
+  "voice_clone": {
+    "seen_cosine": 0.6487,
+    "unseen_cosine": 0.6044,
+    "parent_seen": 0.6470,
+    "parent_unseen": 0.6054,
+    "vs_official": "improved，12/12 音色逐个比全赢（sft_graft 那一轮）",
+    "ceiling_note": "编解码器天花板 0.8409，上游报的 seen 0.6472 应读成天花板的 76%",
+    "source": "docs/experiments/2026-07-28-voice-clone.md, artifacts/merge/clone-merge.json"
+  },
+  "conversation": {
+    "blind_preference_vs_parent": 0.6424,
+    "blind_preference_noise": 0.0468,
+    "blind_preference_n_probes": 608,
+    "blind_preference_status": "仅报告——注册的位置检查未过；残余偏倚实测 -0.0033",
+    "length_controlled_vs_sft_len": 0.5918,
+    "length_controlled_noise": 0.0664,
+    "length_controlled_status": "赢，位置 0.5138 与长度偏差 0.5092 均干净",
+    "judge": "deepseek-ai/DeepSeek-V3.2，提示词 sha256 与选边种子进产出",
+    "source": "docs/experiments/2026-08-03-probe-budget.md"
+  },
+  "product_metrics": {
+    "_": "同一批 608 条探针上重算，口径与 field-comparison §8.4 一致（用户说 1.9 秒）",
+    "median_reply_chars": 55,
+    "median_reply_seconds": 11.8,
+    "parent_median_seconds": 26.0,
+    "sft_dpo2_median_seconds": 24.2,
+    "occupancy_ratio": 6.2,
+    "parent_occupancy_ratio": 13.7,
+    "unfinished_at_5s": 0.81,
+    "parent_unfinished_at_5s": 0.93,
+    "empty_replies": 0,
+    "looping_replies": 1,
+    "source": "artifacts/blind608/"
+  },
+  "known_limits": {
+    "_": "这些是量到底的边界，不是欠账。写进正文不要写进脚注。",
+    "conversation_guardrail_uncertifiable": {
+      "claim": "对改变长度的干预，「对话建模不退」这一轴在本项目预算内不可认证",
+      "rulers_tried": 4,
+      "deaths": [
+        "chat_nll：两作者逐条同号 20.3%，机制是参考长度（r=+0.601）",
+        "按参考长度分层：证伪，控住后同号率掉到 1.9%",
+        "答得上率：读不出已认证塌方（+0.0872 落在 ±0.1061 内）",
+        "长度配平参考：修好了原病灶（同号 94.9%）但掉进镜像混淆"
+      ],
+      "what_would_close_it": "约 3600 条探针，现有 608",
+      "source": "docs/experiments/2026-08-03-merged-thinker.md §8-§11"
+    },
+    "emotion_not_controllable": {
+      "claim": "情绪能力存在（参考通路 F0 +54.7 Hz、12/12、零训练），但做不成可控旋钮",
+      "human_evidence": "人耳与 emotion2vec 标签一致率 31–42%，而人与人 41–65%——标签系统性偏离人耳",
+      "why_not_retrain": "重训的前提是标签可信，人工盲听证伪了这个前提",
+      "field_position": "情绪-音色纠缠是学界公开问题；解法要独立编码器+解耦损失+重训，本项目排除了架构改动",
+      "source": "docs/experiments/2026-08-01-emotion-labels.md, docs/CAPABILITIES.md §3"
+    },
+    "barge_in_judgment_missing": {
+      "claim": "打断的执行闭环了，判断没有——「能停」不等于「会判断该停」",
+      "why": "需要重叠音频+打断标注的语料，两份语料都没有；合成重叠只等于 VAD",
+      "source": "docs/CAPABILITIES.md §1"
+    },
+    "emotion_pack_had_english": "盲听 50 条里 6 条是英语（SenseVoice 语种），发包时未声明；无粤语，带口音普通话排除不了"
+  },
+  "licence": {
+    "binding": "CC-BY-NC-4.0",
+    "commercial_use_permitted": false,
+    "why": "文本基座继承语料许可，传导到所有衍生物",
+    "unverified": "上游 Talker 权重的 apache-2.0 声明未独立核实——用可以，再分发要先核",
+    "source": "configs/release/licence.json"
+  }
+}
