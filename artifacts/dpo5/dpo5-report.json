@@ -1,0 +1,33 @@
+{
+  "checkpoint": "sft_merge_768.pth",
+  "pairs": 1441,
+  "dropped_pairs": 0,
+  "beta": 0.1,
+  "learning_rate": 5e-06,
+  "epochs": 2,
+  "history": [
+    {
+      "epoch": 0,
+      "loss": 0.6775384434265531,
+      "ordered": 0.5968077723802915,
+      "mean_chosen_logp": -36.9289040356192,
+      "mean_rejected_logp": -39.05279773436513,
+      "heldout_loss": 0.6550148634240032,
+      "heldout_ordered": 0.7
+    },
+    {
+      "epoch": 1,
+      "loss": 0.4972339250576488,
+      "ordered": 0.9430950728660652,
+      "mean_chosen_logp": -35.188203705010686,
+      "mean_rejected_logp": -41.781206933596664,
+      "heldout_loss": 0.6315165214240551,
+      "heldout_ordered": 0.7
+    }
+  ],
+  "thinker_tensors_replaced": 91,
+  "thinker_tensors_changed": 91,
+  "max_weight_displacement": 0.0011725462973117828,
+  "fp16_ulp_at_weight_scale": 0.0001220703125,
+  "heldout_pairs": 160
+}

@@ -1,0 +1,7 @@
+{
+  "what": "2026-08-06 用今天的打分器重打 merge 的 240 个克隆片段，对 2026-08-03 留档",
+  "n": 240,
+  "similarity_max_abs_diff": 0.0,
+  "rank1_hit_identical": 240,
+  "verdict": "打分器未漂移；D2 的两臂比较是干净的"
+}

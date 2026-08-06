@@ -1,0 +1,31 @@
+{
+  "authors": {
+    "ext": {
+      "candidate": "sft_dpo5_768.pth",
+      "candidate_chat_nll": 4.003079844530298,
+      "candidate_entropy": 2.282593857674372,
+      "n": 158,
+      "reference": "sft_merge_768.pth",
+      "reference_chat_nll": 3.9552067764221674,
+      "reference_entropy": 2.321792541042207,
+      "verdict": "chat_nll[ext]: regressed (+0.0485 against ±0.0214, paired n=158) —— 仅报告：低于关心的效应 0.0500"
+    },
+    "up": {
+      "candidate": "sft_dpo5_768.pth",
+      "candidate_chat_nll": 3.217566113280311,
+      "candidate_entropy": 1.994754817077036,
+      "n": 158,
+      "reference": "sft_merge_768.pth",
+      "reference_chat_nll": 3.187911689623738,
+      "reference_entropy": 2.0372670316813517,
+      "verdict": "chat_nll[up]: regressed (+0.0296 against ±0.0205, paired n=158) —— 仅报告：低于关心的效应 0.0500"
+    }
+  },
+  "cross_reference_agreement": {
+    "agreement": 0.7721518987341772,
+    "gating_eligible": true,
+    "n": 158,
+    "noise": 0.07796461384922154,
+    "note": "the two reference sets rank probes alike often enough to gate"
+  }
+}

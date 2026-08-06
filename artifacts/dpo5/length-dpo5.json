@@ -1,0 +1,32 @@
+{
+  "paired": {
+    "n": 608,
+    "mean_char_change": -3.411184210526316,
+    "median_char_change": 0.0,
+    "registered_line_3sigma_chars": 6.181217554503292,
+    "registered_verdict": "indistinguishable",
+    "project_instrument": "reply_chars: indistinguishable (-3.4112, within ±12.0271, paired n=608)"
+  },
+  "retired_median_seconds": {
+    "candidate_median_chars": 49.0,
+    "reference_median_chars": 55.0,
+    "candidate_seconds": 10.492505353319057,
+    "reference_seconds": 11.777301927194861,
+    "moved_seconds": 1.284796573875803,
+    "old_line_seconds": 1.5,
+    "old_verdict": "过",
+    "eligibility": {
+      "line_chars": 7.005,
+      "reference_median_bootstrap_3sigma_chars": [
+        47.0,
+        63.0
+      ],
+      "gating_eligible": false,
+      "note": "参照臂中位数自身的 3σ 宽于判据线时，判的是采样不是模型"
+    }
+  },
+  "arms": {
+    "candidate": "artifacts/dpo5/blind-dpo5-608.json",
+    "reference": "artifacts/blind608/chat-sft_merge-608.json（同一份 608 条 merge 回复）"
+  }
+}

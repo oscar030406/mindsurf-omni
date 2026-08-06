@@ -1,0 +1,9 @@
+{
+  "what": "2026-08-06 新生成的 sft_merge 语音臂 对 2026-08-03 的留档逐样本行",
+  "why": "evaluate_talker.py 之后加过说话人 CFG（guidance=1.0 按注释是逐位不变的路径）。注释不是证据，所以量。",
+  "n": 160,
+  "transcript_identical": 160,
+  "steps_identical": 160,
+  "utmos_max_abs_diff": 0.0,
+  "verdict": "工具未漂移；第五轮据此复用 merge 的 240 个克隆 wav（判据见 round5 §2.4）"
+}

@@ -1,0 +1,40 @@
+{
+ "n_clips": 240,
+ "n_voices": 12,
+ "similarity": "clone_similarity: indistinguishable (+0.0007, within ±0.0099, paired n=240 in 12 clusters)",
+ "rank1_hit": "clone_rank1_hit: indistinguishable (-0.0042, within ±0.0562, paired n=240 in 12 clusters)",
+ "per_voice_similarity_mean": {
+  "arthur": -0.007449612021446228,
+  "chelsie": -0.008829724788665772,
+  "cherry": 0.0019763782620429993,
+  "dylan": -0.002909669280052185,
+  "eric": 0.007114692032337189,
+  "ethan": -0.0006718561053276062,
+  "jennifer": -0.0007458105683326721,
+  "momo": 0.007379461824893951,
+  "moon": 0.003406772017478943,
+  "serena": -0.0009184509515762329,
+  "uncle_fu": 0.011731159687042237,
+  "vivian": -0.0021716445684432984
+ },
+ "per_voice_hit_change": {
+  "arthur": -1.0,
+  "chelsie": 0.0,
+  "cherry": 0.0,
+  "dylan": 1.0,
+  "eric": 0.0,
+  "ethan": 0.0,
+  "jennifer": 1.0,
+  "momo": 0.0,
+  "moon": -1.0,
+  "serena": 0.0,
+  "uncle_fu": 0.0,
+  "vivian": -1.0
+ },
+ "arms": {
+  "candidate": "clone-dpo5.json",
+  "reference": "clone-merge-rescored.json"
+ },
+ "note": "按音色聚类算噪声底。逐行底会把二十条同音色的片段当成二十份独立证据。",
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
+}
