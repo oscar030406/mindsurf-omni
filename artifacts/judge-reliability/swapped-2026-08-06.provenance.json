@@ -1,0 +1,10 @@
+{
+  "model": "deepseek-ai/DeepSeek-V3.2",
+  "endpoint": "https://api.siliconflow.cn/v1",
+  "prompt_sha256": "4a2d839091a7e4ffb30867b45121ee1ef4e43a7b3abd926fca7ae1d0e0c2340e",
+  "pairs_from": "artifacts/judge-reliability/swapped-judged-pairs-2026-08-06.json",
+  "judged": 900,
+  "ties": 270,
+  "note": "判官是外部模型，不是被比较的任何一臂。key 本身从不进记录，只记有过一个。",
+  "first_round": "artifacts/judge-length-sensitivity/judged-pairs-2026-08-06.json"
+}

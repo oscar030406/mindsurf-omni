@@ -1,0 +1,74 @@
+{
+  "sigma": 3.0,
+  "bins": {
+    "far": {
+      "n": 300,
+      "decided_twice": 250,
+      "flips": 65,
+      "transitions": {
+        "decided_decided": 250,
+        "decided_tie": 20,
+        "tie_decided": 20,
+        "tie_tie": 10
+      },
+      "flip_rate": 0.26,
+      "noise": 0.09486832980505137,
+      "coin_toss_share": 0.52
+    },
+    "mid": {
+      "n": 300,
+      "decided_twice": 187,
+      "flips": 40,
+      "transitions": {
+        "decided_decided": 187,
+        "decided_tie": 34,
+        "tie_decided": 33,
+        "tie_tie": 46
+      },
+      "flip_rate": 0.21390374331550802,
+      "noise": 0.1096908636190696,
+      "coin_toss_share": 0.42780748663101603
+    },
+    "near": {
+      "n": 300,
+      "decided_twice": 108,
+      "flips": 26,
+      "transitions": {
+        "decided_decided": 108,
+        "decided_tie": 45,
+        "tie_decided": 32,
+        "tie_tie": 115
+      },
+      "flip_rate": 0.24074074074074073,
+      "noise": 0.14433756729740643,
+      "coin_toss_share": 0.48148148148148145
+    }
+  },
+  "unmatched": 0,
+  "flip_shape": {
+    "flips": 131,
+    "left_twice": 82,
+    "right_twice": 49,
+    "left_share": 0.6259541984732825,
+    "noise": 0.1310556084991557,
+    "reads_as": "对称，分不开噪声与座位偏好",
+    "at_1_96_sigma": "座位偏好"
+  },
+  "verdict": {
+    "line": "R3",
+    "why": "最高的「far」箱 0.2600，落在 0.10 与 0.30 之间",
+    "flip_rates": {
+      "far": 0.26,
+      "mid": 0.21390374331550802,
+      "near": 0.24074074074074073
+    },
+    "prediction_near_gt_mid_gt_far": {
+      "held": false,
+      "observed_order": {
+        "near": 0.24074074074074073,
+        "mid": 0.21390374331550802,
+        "far": 0.26
+      }
+    }
+  }
+}
