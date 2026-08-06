@@ -1,0 +1,47 @@
+{
+  "A": {
+    "line": "对 sft_merge 的中位朗读时长，移动不超过 ±1.5 秒",
+    "chars_per_second": 4.67,
+    "reference_seconds": 11.777301927194861,
+    "candidate_seconds": 10.171306209850107,
+    "moved": 1.6059957173447543,
+    "passed": false,
+    "eligibility": {
+      "median_bootstrap_3sigma_chars": {
+        "merge": [
+          47.0,
+          63.0
+        ],
+        "dpo4": [
+          41.0,
+          55.0
+        ]
+      },
+      "line_in_chars": 7.005,
+      "verdict": "无判定资格：中位数的 3σ 噪声宽于要判的效应，按 assess() 该标为仅报告",
+      "note": "这条不用来改上面的 passed，注册在前"
+    },
+    "paired_alternative": {
+      "mean_char_change": -4.577302631578948,
+      "noise_3sigma_chars": 6.141426072791586,
+      "n": 608,
+      "verdict": "indistinguishable",
+      "round3_for_comparison": -4.56
+    }
+  },
+  "E": {
+    "line": "空 0、循环 ≤ 1、中位字数 ≥ 30",
+    "empty": 0,
+    "looping": 1,
+    "median_chars": 47.5,
+    "passed": true
+  },
+  "D": {
+    "run": false,
+    "reason": "A 不过、C 作废，这一轮不可能是交付候选；「未跑」不是「过」"
+  },
+  "C": {
+    "read": false,
+    "reason": "注册规则：A 不过就不读 C"
+  }
+}

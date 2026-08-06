@@ -1,0 +1,35 @@
+{
+  "round": 4,
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55,
+    66,
+    77,
+    88
+  ],
+  "pairs_per_prompt": 4,
+  "max_length_gap": 10,
+  "build_seed": 20260806,
+  "checkpoint": "sft_merge_768.pth",
+  "pairs_judged": 3255,
+  "dropped_ties": 1654,
+  "triples": 1601,
+  "chosen_minus_rejected_chars": -0.03185509056839475,
+  "chosen_longer_share": 0.46283572767020614,
+  "P1": {
+    "line": "均值 |选中 − 被弃| ≤ 5 字，且选中更长的占比在 0.45–0.55",
+    "drift_ok": true,
+    "share_ok": true,
+    "passed": true
+  },
+  "round3_for_comparison": {
+    "pairs_judged": 1190,
+    "triples": 587,
+    "pairs_per_prompt": 2,
+    "max_length_gap": 10,
+    "note": "第三轮这些参数没落盘，是从 pairs.json 的字数差反推的"
+  }
+}
