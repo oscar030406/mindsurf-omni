@@ -2,6 +2,7 @@
 license: cc-by-nc-4.0
 language:
   - zh
+  - en
 pretty_name: 人工盲听（MOS 与情绪标签核验）
 task_categories:
   - text-to-speech
