@@ -1,0 +1,10 @@
+{
+ "model": "deepseek-ai/DeepSeek-V3.2",
+ "endpoint": "https://api.siliconflow.cn/v1",
+ "prompt_sha256": "4a2d839091a7e4ffb30867b45121ee1ef4e43a7b3abd926fca7ae1d0e0c2340e",
+ "pairs_from": "pairs.json",
+ "judged": 1190,
+ "ties": 603,
+ "note": "判官是外部模型，不是被比较的任何一臂。key 本身从不进记录，只记有过一个。",
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
+}

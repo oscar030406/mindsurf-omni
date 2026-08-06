@@ -1,0 +1,27 @@
+{
+  "n_pairs": 608,
+  "tie": 193,
+  "n_decided": 415,
+  "dpo3_wins": 218,
+  "dpo3_share": 0.5253012048192771,
+  "noise": 0.048106307980033965,
+  "position_right_share": 0.46987951807228917,
+  "seating": {
+    "side_bias": 0.03175990675990675,
+    "left_seat_share": 0.46987951807228917,
+    "residual_bias": -0.0019132473951751047,
+    "seat_balanced_share": 0.5272144522144522
+  },
+  "verdict": "未胜出",
+  "judge": {
+    "model": "deepseek-ai/DeepSeek-V3.2",
+    "endpoint": "https://api.siliconflow.cn/v1",
+    "prompt_sha256": "4a2d839091a7e4ffb30867b45121ee1ef4e43a7b3abd926fca7ae1d0e0c2340e",
+    "side_seed": 20260803,
+    "note": "判官是外部模型，不是被比较的任何一臂"
+  },
+  "arms": {
+    "first": "merge",
+    "second": "dpo3"
+  }
+}
