@@ -1,0 +1,50 @@
+{
+  "sigma": 3.0,
+  "bins": {
+    "far": {
+      "n": 300,
+      "same_length_dropped": 0,
+      "tie": 30,
+      "tie_rate": 0.1,
+      "n_decided": 270,
+      "gap_median": 76,
+      "longer_wins": 123,
+      "longer_share": 0.45555555555555555,
+      "noise": 0.09128709291752768,
+      "noise_at_bin_size": 0.08660254037844387,
+      "longer_on_left_share": 0.48
+    },
+    "mid": {
+      "n": 300,
+      "same_length_dropped": 0,
+      "tie": 79,
+      "tie_rate": 0.2633333333333333,
+      "n_decided": 221,
+      "gap_median": 33,
+      "longer_wins": 101,
+      "longer_share": 0.45701357466063347,
+      "noise": 0.10090091909944687,
+      "noise_at_bin_size": 0.08660254037844387,
+      "longer_on_left_share": 0.45
+    },
+    "near": {
+      "n": 280,
+      "same_length_dropped": 20,
+      "tie": 136,
+      "tie_rate": 0.4857142857142857,
+      "n_decided": 144,
+      "gap_median": 4,
+      "longer_wins": 59,
+      "longer_share": 0.4097222222222222,
+      "noise": 0.125,
+      "noise_at_bin_size": 0.08964214570007953,
+      "longer_on_left_share": 0.5142857142857142
+    }
+  },
+  "verdict": {
+    "line": "L2",
+    "why": "三个箱都落在 0.50 ± 各自噪声内，我事前那个推论在这条上被证伪",
+    "floor_sensitive": "按注册时那个「每箱 300 对」的噪声底重读，落在 0.50 内的只有 ['far', 'mid']——这一条的判词依赖用哪个 n 算底"
+  },
+  "judged_pairs_from": "artifacts\\judge-length-sensitivity\\judged-pairs-2026-08-06.json"
+}

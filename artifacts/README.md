@@ -36,6 +36,7 @@
 | `barge_in/` | 打断的 40 轮读数，加「计算真的停了」那份墙钟与 GPU 证明 |
 | `emotion-gate/` `emotion-conditioned/` `emotion-harvest/` `emotion-pack/` | 情绪四条路各自的读数 |
 | `chat-matrix/` | 每个臂给每个臂的文本打分，对角线自我偏好就在这张表里 |
+| `judge-length-sensitivity/` | 判官对回答长度有多敏感：900 对按字数差分三箱的逐对判词、聚合报告、判官出处 |
 | `dpo/` | DPO 各轮的训练与验收读数 |
 | 其余按臂命名的目录 | 该臂生成的一批样本的转写与打分 |
 

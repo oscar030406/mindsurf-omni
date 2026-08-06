@@ -162,6 +162,143 @@ def judge_one(client: Any, model: str, pair: dict[str, Any]) -> str:
     return "tie"
 
 
+def pair_key(pair: dict[str, Any]) -> str:
+    """What a judgement is filed under, for both shapes of input."""
+    return str(pair.get("key") or pair["id"])
+
+
+def load_partial(path: Path) -> dict[str, str]:
+    """Judgements from a run that was killed before it could write its output.
+
+    A run holds every verdict in memory and writes once at the end, so losing
+    the process loses the whole spend -- 575 of 900 calls, the first time this
+    bit. The handover already carries the ssh version of this lesson; the
+    session-scoped background job is the same failure with a different rope.
+
+    Nothing here is a checkpoint format. It is the same {key, winner} rows the
+    output carries, one per line, appended as they land, deleted once the real
+    output exists. A truncated last line is dropped rather than repaired: one
+    re-judged pair costs a fraction of a cent, and a half-parsed one is a wrong
+    verdict attached to a real key.
+    """
+    if not path.exists():
+        return {}
+    done: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if row.get("winner") in ("left", "right", "tie"):
+            done[str(row["key"])] = row["winner"]
+    return done
+
+
+def bin_tally(pairs: list[dict[str, Any]], sigma: float = 3.0) -> dict[str, Any]:
+    """How often the longer draft won, per character-gap bin.
+
+    This measures **sensitivity, not bias**. The share of wins landing on the
+    longer draft mixes a judge that rewards length with a longer draft that
+    genuinely answered more, and this corpus cannot separate them: every
+    operation that makes a reply longer also changes what it says. The number
+    below is the first quantity, and the write-up is only allowed to claim it.
+
+    Pairs whose two drafts are the same length are dropped, not counted as a
+    loss for the longer one -- there is no longer one. They are reported so the
+    drop is visible rather than silently shrinking a bin.
+
+    The noise floor is ``sigma`` binomial standard deviations, defaulting to the
+    3 the criteria were registered against rather than the 1.96 ``tally`` uses
+    for a pass/fail on one comparison. Two different questions, two floors; the
+    one that was written down before the run is the one that counts here.
+    """
+    report: dict[str, Any] = {"sigma": sigma, "bins": {}}
+    for name in sorted({p["bin"] for p in pairs}):
+        rows = [p for p in pairs if p["bin"] == name]
+        even = [p for p in rows if p.get("gap", 0) == 0]
+        rows = [p for p in rows if p.get("gap", 0) != 0]
+        decided = [p for p in rows if p.get("winner") in ("left", "right")]
+        entry: dict[str, Any] = {
+            "n": len(rows),
+            "same_length_dropped": len(even),
+            "tie": len(rows) - len(decided),
+            "tie_rate": (len(rows) - len(decided)) / len(rows) if rows else None,
+            "n_decided": len(decided),
+            "gap_median": sorted(p["gap"] for p in rows)[len(rows) // 2] if rows else None,
+        }
+        if decided:
+            longer = sum(1 for p in decided if p["winner"] == p["longer_side"])
+            entry["longer_wins"] = longer
+            entry["longer_share"] = longer / len(decided)
+            entry["noise"] = sigma * math.sqrt(0.25 / len(decided))
+            # The floor a criterion gets registered against is the bin size,
+            # because that is the number you can plan. The floor the estimate
+            # actually has is over the pairs the judge separated, and ties took
+            # half of one bin here. The second is the right one -- the share is
+            # a share of decided pairs -- but it is also the wider one, which
+            # makes "inside the noise" easier to reach than it was registered to
+            # be. Both are recorded so that gap is read rather than discovered.
+            entry["noise_at_bin_size"] = sigma * math.sqrt(0.25 / len(rows))
+            # Sides were assigned when the pairs were formed; if the longer draft
+            # sat on one seat far more often, a seat preference would read as a
+            # length effect. Reported so that confusion is checkable, not assumed.
+            entry["longer_on_left_share"] = sum(
+                1 for p in rows if p["longer_side"] == "left"
+            ) / len(rows)
+        report["bins"][name] = entry
+    return report
+
+
+def bin_verdict(report: dict[str, Any]) -> dict[str, Any]:
+    """Land L1 / L2 / L3, the three lines registered before the run."""
+    bins = report["bins"]
+    near, far = bins.get("near"), bins.get("far")
+    if not (near and far and "longer_share" in near and "longer_share" in far):
+        return {"line": "L3", "why": "缺箱或某箱全平局，三条线都判不了"}
+
+    within = [
+        name
+        for name, entry in bins.items()
+        if "longer_share" in entry and abs(entry["longer_share"] - 0.5) <= entry["noise"]
+    ]
+    spread = far["longer_share"] - near["longer_share"]
+    if far["longer_share"] >= 0.60 and spread > far["noise"] + near["noise"]:
+        return {
+            "line": "L1",
+            "why": f"远箱 {far['longer_share']:.4f} ≥ 0.60，且高出近箱 {spread:+.4f}"
+            f"（两者噪声之和 {far['noise'] + near['noise']:.4f}）",
+        }
+    # The same three lines read against the floor the criteria were planned on.
+    # It is not the right floor for the estimate, but if the answer changes
+    # between the two, that is the finding, and it does not get to be silent.
+    planned = [
+        name
+        for name, entry in bins.items()
+        if "longer_share" in entry
+        and abs(entry["longer_share"] - 0.5) <= entry["noise_at_bin_size"]
+    ]
+    fragile = (
+        None
+        if sorted(planned) == sorted(within)
+        else f"按注册时那个「每箱 300 对」的噪声底重读，落在 0.50 内的只有 "
+        f"{sorted(planned)}——这一条的判词依赖用哪个 n 算底"
+    )
+
+    if len(within) == len(bins):
+        return {
+            "line": "L2",
+            "why": "三个箱都落在 0.50 ± 各自噪声内，我事前那个推论在这条上被证伪",
+            "floor_sensitive": fragile,
+        }
+    return {
+        "line": "L3",
+        "why": f"既不满足 L1 也不满足 L2：落在 0.50 噪声内的箱 {sorted(within)}，"
+        f"远箱 {far['longer_share']:.4f}，远近之差 {spread:+.4f}"
+        f"（噪声之和 {far['noise'] + near['noise']:.4f}）",
+        "floor_sensitive": fragile,
+    }
+
+
 def tally(pairs: list[dict[str, Any]], second_arm: str) -> dict[str, Any]:
     decided = [p for p in pairs if p.get("winner") in ("left", "right")]
     ties = len(pairs) - len(decided)
@@ -233,6 +370,13 @@ def main() -> int:
         "Writes the [{key, winner}] list that its resolve step reads, and a "
         "provenance sidecar beside it",
     )
+    parser.add_argument(
+        "--tally-bins",
+        type=Path,
+        metavar="JUDGED_PAIRS",
+        help="no judging: read a judged --pairs file whose pairs carry bin/gap/"
+        "longer_side and report how often the longer draft won, per bin",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pairs", type=Path, help="write every judged pair here too")
     parser.add_argument(
@@ -242,6 +386,29 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--limit", type=int, help="first N pairs, for a smoke run")
     args = parser.parse_args()
+
+    if args.tally_bins:
+        # A reading, not a judging: no key, no endpoint, no spend.
+        judged = json.loads(args.tally_bins.read_text(encoding="utf-8"))
+        judged = judged["pairs"] if isinstance(judged, dict) else judged
+        report = bin_tally(judged)
+        report["verdict"] = bin_verdict(report)
+        report["judged_pairs_from"] = str(args.tally_bins)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        for name, entry in report["bins"].items():
+            if "longer_share" in entry:
+                print(
+                    f"  {name:5s} n={entry['n_decided']:3d}(判) 较长者胜 "
+                    f"{entry['longer_share']:.4f} ± {entry['noise']:.4f}"
+                    f"  平局率 {entry['tie_rate']:.4f}"
+                    f"  字数差中位 {entry['gap_median']}"
+                )
+            else:
+                print(f"  {name:5s} 全部平局，判不了")
+        print(f"  {report['verdict']['line']}: {report['verdict']['why']}")
+        print(f"写入 {args.output}")
+        return 0
 
     if bool(args.arm) == bool(args.judge_pairs):
         raise SystemExit("要么给两个 --arm，要么给一个 --judge-pairs，不能都给也不能都不给")
@@ -269,6 +436,19 @@ def main() -> int:
         pairs = pairs[: args.limit]
     print(f"{len(pairs)} 对，判官 {model} @ {base}")
 
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    partial_path = args.output.with_suffix(".partial.jsonl")
+    already = load_partial(partial_path)
+    todo = []
+    for pair in pairs:
+        cached = already.get(pair_key(pair))
+        if cached is None:
+            todo.append(pair)
+        else:
+            pair["winner"] = cached
+    if already:
+        print(f"  续上 {len(pairs) - len(todo)} 对已判的，还剩 {len(todo)} 对")
+
     import httpx
 
     with (
@@ -276,17 +456,23 @@ def main() -> int:
             base_url=base, timeout=120.0, headers={"Authorization": f"Bearer {key}"}
         ) as client,
         concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool,
+        partial_path.open("a", encoding="utf-8") as partial,
     ):
-        futures = {pool.submit(judge_one, client, model, p): p for p in pairs}
+        futures = {pool.submit(judge_one, client, model, p): p for p in todo}
         for done, future in enumerate(concurrent.futures.as_completed(futures), start=1):
-            futures[future]["winner"] = future.result()
+            pair = futures[future]
+            pair["winner"] = future.result()
+            partial.write(
+                json.dumps({"key": pair_key(pair), "winner": pair["winner"]}, ensure_ascii=False)
+                + "\n"
+            )
+            partial.flush()
             if done % 25 == 0:
-                print(f"  判了 {done}/{len(pairs)}", flush=True)
+                print(f"  判了 {done}/{len(todo)}", flush=True)
 
     if args.judge_pairs:
         # The shape resolve reads, and nothing else: a winner keyed to the pair
         # the judge was shown.
-        args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
             json.dumps(
                 [{"key": p["key"], "winner": p["winner"]} for p in pairs],
@@ -312,6 +498,7 @@ def main() -> int:
         print(f"出处 {args.output.with_suffix('.provenance.json')}")
         if args.pairs:
             args.pairs.write_text(json.dumps(pairs, ensure_ascii=False, indent=2), encoding="utf-8")
+        partial_path.unlink(missing_ok=True)
         return 0
 
     summary = tally(pairs, arms[1][0])
@@ -327,6 +514,7 @@ def main() -> int:
     args.output.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     if args.pairs:
         args.pairs.write_text(json.dumps(pairs, ensure_ascii=False, indent=2), encoding="utf-8")
+    partial_path.unlink(missing_ok=True)
 
     seat = summary.get("seating", {})
     if seat.get("residual_bias") is not None:
