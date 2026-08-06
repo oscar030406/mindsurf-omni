@@ -111,6 +111,30 @@ def build_pairs(
     return pairs
 
 
+def load_prebuilt(path: Path) -> list[dict[str, Any]]:
+    """Pairs that ``build_preference_pairs.py pairs`` already formed.
+
+    That step draws several drafts of one checkpoint against each other, which
+    is a shape this file cannot build: it pairs two arms. Judging them had no
+    entry point here, so the previous rounds were judged outside the repository
+    and the judge's identity did not survive -- the failure this module's
+    docstring is about. It has one now, and it writes the same record.
+
+    Sides were shuffled when the pairs were formed and the key kept separate,
+    so nothing here re-randomises them; doing so would detach the judgement
+    from the pair the judge saw.
+    """
+    blob = json.loads(path.read_text(encoding="utf-8"))
+    pairs = blob["pairs"] if isinstance(blob, dict) else blob
+    missing = [p for p in pairs if not p.get("key")]
+    if missing:
+        raise SystemExit(
+            f"{path} 里有 {len(missing)} 个对没有 key。判决是按 key 贴回去的，"
+            "没有 key 的话半数标签会落到判官没看过的那一对上"
+        )
+    return list(pairs)
+
+
 def judge_one(client: Any, model: str, pair: dict[str, Any]) -> str:
     text = PROMPT.format(prompt=pair["prompt"], left=pair["left"], right=pair["right"])
     for attempt in range(4):
@@ -201,7 +225,14 @@ def tally(pairs: list[dict[str, Any]], second_arm: str) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--arm", action="append", required=True, metavar="LABEL=PATH")
+    parser.add_argument("--arm", action="append", metavar="LABEL=PATH")
+    parser.add_argument(
+        "--judge-pairs",
+        type=Path,
+        help="judge a pairs file from build_preference_pairs instead of two arms. "
+        "Writes the [{key, winner}] list that its resolve step reads, and a "
+        "provenance sidecar beside it",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pairs", type=Path, help="write every judged pair here too")
     parser.add_argument(
@@ -212,7 +243,9 @@ def main() -> int:
     parser.add_argument("--limit", type=int, help="first N pairs, for a smoke run")
     args = parser.parse_args()
 
-    if len(args.arm) != 2:
+    if bool(args.arm) == bool(args.judge_pairs):
+        raise SystemExit("要么给两个 --arm，要么给一个 --judge-pairs，不能都给也不能都不给")
+    if args.arm and len(args.arm) != 2:
         raise SystemExit("要正好两个 --arm")
     settings = load_credentials(args.credentials)
     key = settings.get("api_key")
@@ -225,10 +258,13 @@ def main() -> int:
     model = settings.get("model") or "deepseek-chat"
 
     arms = []
-    for spec in args.arm:
-        label, _, path = spec.partition("=")
-        arms.append((label, load_replies(Path(path))))
-    pairs = build_pairs(arms[0], arms[1], args.seed)
+    if args.judge_pairs:
+        pairs = load_prebuilt(args.judge_pairs)
+    else:
+        for spec in args.arm:
+            label, _, path = spec.partition("=")
+            arms.append((label, load_replies(Path(path))))
+        pairs = build_pairs(arms[0], arms[1], args.seed)
     if args.limit:
         pairs = pairs[: args.limit]
     print(f"{len(pairs)} 对，判官 {model} @ {base}")
@@ -246,6 +282,37 @@ def main() -> int:
             futures[future]["winner"] = future.result()
             if done % 25 == 0:
                 print(f"  判了 {done}/{len(pairs)}", flush=True)
+
+    if args.judge_pairs:
+        # The shape resolve reads, and nothing else: a winner keyed to the pair
+        # the judge was shown.
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            json.dumps(
+                [{"key": p["key"], "winner": p["winner"]} for p in pairs],
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        record = {
+            "model": model,
+            "endpoint": base,
+            "prompt_sha256": hashlib.sha256(PROMPT.encode("utf-8")).hexdigest(),
+            "pairs_from": str(args.judge_pairs),
+            "judged": len(pairs),
+            "ties": sum(1 for p in pairs if p["winner"] == "tie"),
+            "note": "判官是外部模型，不是被比较的任何一臂。key 本身从不进记录，只记有过一个。",
+        }
+        args.output.with_suffix(".provenance.json").write_text(
+            json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"判了 {len(pairs)} 对，平局 {record['ties']}")
+        print(f"写入 {args.output}")
+        print(f"出处 {args.output.with_suffix('.provenance.json')}")
+        if args.pairs:
+            args.pairs.write_text(json.dumps(pairs, ensure_ascii=False, indent=2), encoding="utf-8")
+        return 0
 
     summary = tally(pairs, arms[1][0])
     summary["judge"] = {

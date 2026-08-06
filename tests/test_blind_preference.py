@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from scripts.blind_preference import build_pairs, tally
+import json
+from pathlib import Path
+
+import pytest
+from scripts.blind_preference import build_pairs, load_prebuilt, tally
 
 
 def arm(reply: str) -> dict[str, dict[str, str]]:
@@ -93,3 +97,39 @@ def test_one_sided_seating_reports_that_it_cannot_be_estimated() -> None:
 
     assert seat["side_bias"] is None
     assert "无法" in seat["note"]
+
+
+def test_prebuilt_pairs_without_keys_are_refused(tmp_path: Path) -> None:
+    """A judgement is attached by key, so a pair without one lands on the wrong text.
+
+    One prompt contributes several pairs. Keying by prompt id silently collapses
+    them and half the labels end up on a pair the judge never saw -- which is why
+    build_preference_pairs makes the key unique per pair and refuses duplicates.
+    """
+    path = tmp_path / "pairs.json"
+    path.write_text(
+        json.dumps({"pairs": [{"id": "a", "prompt": "问", "left": "甲", "right": "乙"}]}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit, match="key"):
+        load_prebuilt(path)
+
+
+def test_prebuilt_pairs_are_not_reshuffled(tmp_path: Path) -> None:
+    """Sides were assigned when the pairs were formed, and the key kept apart.
+
+    Re-randomising here would detach the judgement from the pair the judge was
+    shown, which is the same failure as keying by prompt, arrived at differently.
+    """
+    pairs = [
+        {"key": "a#0", "id": "a", "prompt": "问", "left": "甲", "right": "乙"},
+        {"key": "a#1", "id": "a", "prompt": "问", "left": "丙", "right": "丁"},
+    ]
+    path = tmp_path / "pairs.json"
+    path.write_text(json.dumps({"pairs": pairs}), encoding="utf-8")
+
+    loaded = load_prebuilt(path)
+
+    assert [p["key"] for p in loaded] == ["a#0", "a#1"]
+    assert [(p["left"], p["right"]) for p in loaded] == [("甲", "乙"), ("丙", "丁")]
