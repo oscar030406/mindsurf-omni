@@ -11,6 +11,8 @@ grows", not "never changes".
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from mindsurf_omni.contract import (
     AUDIO_ENCODING,
     CLIENT_EVENTS,
@@ -66,6 +68,9 @@ def test_the_realtime_events_a_client_may_send_have_not_shrunk() -> None:
         "input_audio_buffer.append",
         "input_audio_buffer.commit",
         "response.cancel",
+        # Documented since the guide's first version, and missing from this set
+        # until 2026-08-10 -- the backend had to patch it into their copy.
+        "session.clear",
     } <= CLIENT_EVENTS
 
 
@@ -78,6 +83,27 @@ def test_the_realtime_events_a_client_waits_for_have_not_shrunk() -> None:
         "response.done",
         "error",
     } <= SERVER_EVENTS
+
+
+def test_every_declared_server_event_has_somewhere_that_sends_it() -> None:
+    """A declared event nobody emits is the same hang, arrived at from the other side.
+
+    Four of these were fiction until 2026-08-10: speech_started, speech_stopped
+    and response.text.done had no emit site anywhere in the service, and the
+    transcription event was declared for a transcript the cascade threw away.
+    The subset assertions above cannot catch that -- they only check nothing
+    went missing, not that everything listed is real.
+    """
+    source = (
+        Path(__file__).resolve().parent.parent / "src" / "mindsurf_omni" / "service" / "app.py"
+    ).read_text(encoding="utf-8")
+
+    # Anchored on the key it is sent under, not on the name appearing anywhere:
+    # "error" is also a payload key, and a name left behind in a comment or in
+    # a constant would answer for a branch that had been deleted.
+    missing = [event for event in SERVER_EVENTS if f'"type": "{event}"' not in source]
+
+    assert not missing, f"declared but never sent: {sorted(missing)}"
 
 
 def test_the_token_spec_shape_is_stable() -> None:

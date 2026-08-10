@@ -266,3 +266,38 @@ def test_a_consumer_that_stops_stops_the_generation() -> None:
     assert len(seen) == 2
     assert finished.wait(timeout=5), "the producer never noticed the consumer had left"
     assert len(produced) < total, "generation ran to completion after the consumer stopped"
+
+
+def test_history_would_be_overwritten_by_the_audio_so_it_is_not_passed() -> None:
+    """Why respond() ignores its history argument, pinned rather than left in prose.
+
+    The placeholder replaces the *last* user turn. With history present that
+    turn is the previous question, so passing history would delete the earlier
+    question and drop the current one -- the model answers the wrong turn, and
+    nothing raises. This is what the next person to think "the argument is
+    right there, use it" will run into.
+    """
+    from mindsurf_omni.service.native import AUDIO_PLACEHOLDER, NativeEngine
+
+    class Recorder:
+        def apply_chat_template(self, messages, **kwargs):  # type: ignore[no-untyped-def]
+            return "|".join(f"{turn['role']}:{turn['content']}" for turn in messages)
+
+    engine = NativeEngine.__new__(NativeEngine)
+    engine._tokenizer = Recorder()  # type: ignore[attr-defined]
+
+    history = [
+        {"role": "user", "content": "这个杯子好看吗"},
+        {"role": "assistant", "content": "挺好看的。"},
+    ]
+
+    prompt = engine._prompt([*history, {"role": "user", "content": ""}], audio_frames=2)
+
+    # The audio landed on the empty turn appended for it, not on the question.
+    assert "这个杯子好看吗" in prompt
+    assert prompt.count(AUDIO_PLACEHOLDER) == 2
+
+    # And without that appended turn -- history passed as-is -- it lands on the
+    # previous question instead. Hence respond() passes None.
+    damaged = engine._prompt(history, audio_frames=2)
+    assert "这个杯子好看吗" not in damaged

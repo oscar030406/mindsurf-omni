@@ -55,7 +55,11 @@ class FakeEngine(SpeechEngine):
         yield SpeechChunk(pcm=b"\x00\x01" * 8, text=text, is_final=True)
 
     async def respond(  # type: ignore[override]
-        self, pcm: bytes, sample_rate: int, settings: GenerationSettings
+        self,
+        pcm: bytes,
+        sample_rate: int,
+        settings: GenerationSettings,
+        history: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[SpeechChunk]:
         yield SpeechChunk(pcm=b"\x00\x01" * 8, text="今天天气很好。", is_final=True)
 
@@ -428,7 +432,11 @@ class SlowEngine(FakeEngine):
         self.closed = False
 
     async def respond(  # type: ignore[override]
-        self, pcm: bytes, sample_rate: int, settings: GenerationSettings
+        self,
+        pcm: bytes,
+        sample_rate: int,
+        settings: GenerationSettings,
+        history: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[SpeechChunk]:
         try:
             for index in range(50):
@@ -510,3 +518,169 @@ def test_the_partial_reply_enters_history_as_what_was_said() -> None:
                 break
 
     assert event["context"]["turns"] >= 2
+
+
+class RecordingEngine(FakeEngine):
+    """Reports what the session handed it, and what it heard."""
+
+    def __init__(self) -> None:
+        self.histories: list[list[dict[str, str]]] = []
+
+    async def respond(  # type: ignore[override]
+        self,
+        pcm: bytes,
+        sample_rate: int,
+        settings: GenerationSettings,
+        history: list[dict[str, str]] | None = None,
+    ) -> AsyncIterator[SpeechChunk]:
+        self.histories.append(list(history or []))
+        yield SpeechChunk(pcm=b"", transcript="那它多少钱")
+        yield SpeechChunk(pcm=b"\x00\x01" * 8, text="两百块。", is_final=True)
+
+
+def test_the_second_turn_carries_the_first_one_into_the_prompt() -> None:
+    """The session counted turns it never sent, so every turn was the first one.
+
+    A caller asking "那它多少钱" after "这个杯子好看吗" gets an answer about
+    nothing unless the history reaches the prompt. The context figures in
+    response.done described a history that was bookkeeping only.
+    """
+    engine = RecordingEngine()
+    client = TestClient(create_app(engine))
+
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()  # session.created
+        for _ in range(2):
+            socket.send_json(
+                {
+                    "type": "input_audio_buffer.append",
+                    "audio": base64.b64encode(b"\x00" * 8).decode(),
+                }
+            )
+            socket.send_json({"type": "input_audio_buffer.commit"})
+            while socket.receive_json()["type"] != "response.done":
+                pass
+
+    assert engine.histories[0] == []
+    assert engine.histories[1] == [
+        {"role": "user", "content": "那它多少钱"},
+        {"role": "assistant", "content": "两百块。"},
+    ]
+
+
+def test_the_transcript_is_reported_so_a_client_can_show_what_it_heard() -> None:
+    """Declared in SERVER_EVENTS from the start and never sent until 2026-08-10."""
+    client = TestClient(create_app(RecordingEngine()))
+
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        events = []
+        while (event := socket.receive_json())["type"] != "response.done":
+            events.append(event)
+
+    heard = [
+        event for event in events if event["type"].endswith("input_audio_transcription.completed")
+    ]
+    assert [event["transcript"] for event in heard] == ["那它多少钱"]
+
+
+def test_clearing_a_session_repeats_the_sample_rates() -> None:
+    """A client reads them in one place: the session.created branch.
+
+    Sending a second, thinner session.created leaves that branch reading
+    undefined and the playback rate is what it sets from it.
+    """
+    client = TestClient(create_app(FakeEngine()))
+
+    with client.websocket_connect("/v1/realtime") as socket:
+        opening = socket.receive_json()
+        socket.send_json({"type": "session.clear"})
+        cleared = socket.receive_json()
+
+    assert cleared["type"] == "session.created"
+    for field in ("input_sample_rate", "output_sample_rate", "encoding"):
+        assert cleared[field] == opening[field]
+    assert cleared["context"]["turns"] == 0
+
+
+def test_clearing_a_session_stops_the_history_reaching_the_next_caller() -> None:
+    """The reason session.clear exists, and the one thing the wiring must not lose.
+
+    Before history reached the prompt this line cost nothing to break. Now a
+    clear that does not clear puts one caller's words in the next caller's
+    prompt.
+    """
+    engine = RecordingEngine()
+    client = TestClient(create_app(engine))
+
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        while socket.receive_json()["type"] != "response.done":
+            pass
+        socket.send_json({"type": "session.clear"})
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        while socket.receive_json()["type"] != "response.done":
+            pass
+
+    assert engine.histories[1] == []
+
+
+def test_a_cancelled_turn_still_remembers_what_the_caller_said() -> None:
+    """Barge-in is the main path, so the turn it interrupts has to enter history.
+
+    The transcript is yielded before any audio for exactly this reason: a turn
+    cut off halfway still happened, and the next one has to know what it was
+    about.
+    """
+
+    class SlowAfterTranscript(FakeEngine):
+        def __init__(self) -> None:
+            self.histories: list[list[dict[str, str]]] = []
+
+        async def respond(  # type: ignore[override]
+            self,
+            pcm: bytes,
+            sample_rate: int,
+            settings: GenerationSettings,
+            history: list[dict[str, str]] | None = None,
+        ) -> AsyncIterator[SpeechChunk]:
+            self.histories.append(list(history or []))
+            yield SpeechChunk(pcm=b"", transcript="那它多少钱")
+            for _ in range(50):
+                yield SpeechChunk(pcm=b"\x00\x01" * 8, text="两")
+                await asyncio.sleep(0.05)
+
+    engine = SlowAfterTranscript()
+    client = TestClient(create_app(engine))
+
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        while socket.receive_json()["type"] != "response.text.delta":
+            pass
+        socket.send_json({"type": "response.cancel"})
+        while socket.receive_json()["type"] != "response.done":
+            pass
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        while socket.receive_json()["type"] != "response.done":
+            pass
+
+    assert engine.histories[1][0] == {"role": "user", "content": "那它多少钱"}

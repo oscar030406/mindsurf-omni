@@ -66,6 +66,8 @@ async def test_first_audio_arrives_long_before_the_reply_finishes() -> None:
 
     first = None
     async for chunk in engine.respond(b"", 16_000, GenerationSettings()):
+        if chunk.transcript is not None:
+            continue  # the transcript rides ahead of the audio, by design
         first = chunk
         break
 
@@ -82,7 +84,7 @@ async def test_a_reply_with_no_sentence_end_is_still_spoken() -> None:
 
     chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
 
-    assert [chunk.text for chunk in chunks] == ["好的"]
+    assert [chunk.text for chunk in chunks if chunk.text] == ["好的"]
     assert chunks[-1].is_final
 
 
@@ -117,7 +119,9 @@ async def test_an_empty_reply_produces_no_audio() -> None:
 
     chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
 
-    assert chunks == []
+    assert [chunk for chunk in chunks if chunk.pcm] == []
+    # The turn still happened, and the session needs to know what was said.
+    assert [chunk.transcript for chunk in chunks if chunk.transcript is not None] == ["你好"]
 
 
 @pytest.mark.asyncio
@@ -176,3 +180,79 @@ async def test_without_a_streaming_synthesiser_nothing_changes() -> None:
 
     assert len(spoken) == 1
     assert spoken[0].text == "今天天气很好。"
+
+
+@pytest.mark.asyncio
+async def test_history_reaches_the_prompt_and_this_turn_is_appended_to_it() -> None:
+    """Without this the session's bookkeeping described a history nobody read.
+
+    The service counted turns, trimmed them and reported dropped_turns, while
+    every prompt was built from the current utterance alone -- so the model
+    answered each turn as the first one and the context budget measured
+    nothing.
+    """
+    seen: list[list[dict[str, str]]] = []
+
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "那它多少钱", "zh"
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        seen.append(list(messages))
+        for character in "两百块。":
+            yield character
+
+    async def synthesise(text: str, settings: object) -> bytes:
+        return text.encode("utf-8")
+
+    engine = CascadeEngine(transcribe, generate, synthesise, [], SPEC)  # type: ignore[arg-type]
+    history = [
+        {"role": "user", "content": "这个杯子好看吗"},
+        {"role": "assistant", "content": "挺好看的。"},
+    ]
+
+    chunks = [
+        chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings(), history=history)
+    ]
+
+    assert seen == [[*history, {"role": "user", "content": "那它多少钱"}]]
+    # The transcript comes back out, because the caller holding the history has
+    # no other way to learn what the user said on this path.
+    assert [chunk.transcript for chunk in chunks if chunk.transcript is not None] == ["那它多少钱"]
+
+
+@pytest.mark.asyncio
+async def test_a_streaming_synthesiser_is_used_by_speak_too() -> None:
+    """speak() served the HTTP path and the backend's per-clause loop.
+
+    It waited for the whole clause while respond() streamed, so the same
+    synthesiser was fast on one entry point and slow on the other.
+    """
+    pieces = [b"one", b"two"]
+
+    async def stream(text: str, settings: object) -> AsyncIterator[bytes]:
+        for piece in pieces:
+            yield piece
+
+    async def synthesise(text: str, settings: object) -> bytes:
+        raise AssertionError("the streaming synthesiser was available and unused")
+
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "你好", "zh"
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        yield "好"
+
+    engine = CascadeEngine(
+        transcribe,  # type: ignore[arg-type]
+        generate,  # type: ignore[arg-type]
+        synthesise,  # type: ignore[arg-type]
+        [],
+        SPEC,
+        stream_synthesiser=stream,  # type: ignore[arg-type]
+    )
+
+    chunks = [chunk async for chunk in engine.speak("今天天气很好。", GenerationSettings())]
+
+    assert [chunk.pcm for chunk in chunks if chunk.pcm] == pieces
+    assert chunks[0].text == "今天天气很好。"
+    assert chunks[-1].is_final

@@ -291,7 +291,9 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         # dropped rather than left to wonder why the model forgot.
         from mindsurf_omni.service.session import Conversation, Turn
 
-        conversation = Conversation()
+        # The cascade sends transcripts, so its history costs text; the native
+        # path sends the audio itself and pays Mimi's 12.5 tokens a second.
+        conversation = Conversation(counts_audio=engine.describe().path == "native")
 
         # An event heard while a response was streaming but not consumed there.
         # Cancelling the listener races its completion, and a message that
@@ -315,8 +317,18 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                     settings.emotion = event.get("emotion", settings.emotion)
                 elif kind == "session.clear":
                     conversation.clear()
+                    # The same shape as the connection's own session.created,
+                    # sample rates included: a client handles this event in one
+                    # place, and a second version missing half the fields is how
+                    # the playback rate ends up undefined after a clear.
                     await websocket.send_json(
-                        {"type": "session.created", "context": conversation.summary()}
+                        {
+                            "type": "session.created",
+                            "input_sample_rate": INPUT_SAMPLE_RATE,
+                            "output_sample_rate": OUTPUT_SAMPLE_RATE,
+                            "encoding": AUDIO_ENCODING,
+                            "context": conversation.summary(),
+                        }
                     )
                 elif kind == "response.cancel":
                     # Cancel with no response streaming: a turn that never
@@ -339,9 +351,31 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                     # and it belongs to the next turn rather than to this one.
                     buffer.clear()
                     parts: list[str] = []
+                    # Passed in rather than closed over, like `texts` below:
+                    # this runs in a task, and the loop that owns the name has
+                    # to read what the task appended.
+                    said: list[str] = []
 
-                    async def stream(pcm: bytes, texts: list[str]) -> None:
-                        async for chunk in engine.respond(pcm, INPUT_SAMPLE_RATE, settings):
+                    async def stream(pcm: bytes, texts: list[str], heard: list[str]) -> None:
+                        async for chunk in engine.respond(
+                            pcm, INPUT_SAMPLE_RATE, settings, history=conversation.messages()
+                        ):
+                            # Truthy, not "is not None": silence recognises as
+                            # an empty string, and an empty transcript event is
+                            # a blank bubble in the caller's transcript view.
+                            if chunk.transcript:
+                                heard.append(chunk.transcript)
+                                # Spelled out rather than named: the contract
+                                # test looks for the literal where it is sent,
+                                # and a constant would answer for a branch that
+                                # had been deleted. Too long for the line limit
+                                # at this depth, and moving it is the bug.
+                                await websocket.send_json(
+                                    {
+                                        "type": "conversation.item.input_audio_transcription.completed",  # noqa: E501
+                                        "transcript": chunk.transcript,
+                                    }
+                                )
                             if chunk.text:
                                 texts.append(chunk.text)
                                 await websocket.send_json(
@@ -368,7 +402,7 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                     # the task abandons the generator, and the engine's
                     # producer watches for exactly that (the leak fix), so the
                     # GPU stops with it.
-                    speaking = asyncio.create_task(stream(turn_pcm, parts))
+                    speaking = asyncio.create_task(stream(turn_pcm, parts, said))
                     cancelled = False
                     while not speaking.done():
                         listener = asyncio.create_task(websocket.receive_json())
@@ -424,7 +458,17 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                         raise failure
 
                     reply = "".join(parts)
-                    conversation.append(Turn(role="user", text="", audio_seconds=spoken_seconds))
+                    # The transcript when the path produced one, so the next
+                    # turn's prompt carries what the user actually said. The
+                    # native path leaves it empty: there is no text to keep,
+                    # and the turn is recorded for the token budget alone.
+                    conversation.append(
+                        Turn(
+                            role="user",
+                            text=said[0] if said else "",
+                            audio_seconds=spoken_seconds,
+                        )
+                    )
                     # The partial reply enters history as what was actually
                     # said: the model spoke those words before it was cut off,
                     # and the next turn's context should not pretend otherwise.

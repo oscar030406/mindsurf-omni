@@ -121,6 +121,9 @@ def test_a_checkpoint_without_a_checkout_is_refused_at_assembly(tmp_path: Path) 
 
     for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
         (tmp_path / name).mkdir(exist_ok=True)
+    # The refusal under test is the missing checkout, so the checkpoint has to
+    # be real -- assembly now checks that a named one is on disk.
+    (tmp_path / "sft.pth").write_bytes(b"")
     settings = Settings.from_environment(
         {
             "MINDSURF_ENGINE": "cascade",
@@ -138,6 +141,9 @@ def test_the_generator_stops_being_unwired_once_a_checkpoint_is_named(tmp_path: 
 
     for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
         (tmp_path / name).mkdir(exist_ok=True)
+    (tmp_path / "sft.pth").write_bytes(b"")
+    (tmp_path / "model").mkdir(exist_ok=True)
+    (tmp_path / "model" / "model_minimind.py").write_text("", encoding="utf-8")
     common = {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": str(tmp_path)}
 
     without = factory.build(Settings.from_environment(common))
@@ -169,6 +175,9 @@ def test_a_named_checkpoint_without_torch_says_so(tmp_path: Path) -> None:
 
     for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
         (tmp_path / name).mkdir(exist_ok=True)
+    (tmp_path / "sft.pth").write_bytes(b"")
+    (tmp_path / "model").mkdir(exist_ok=True)
+    (tmp_path / "model" / "model_minimind.py").write_text("", encoding="utf-8")
     real = factory._importable
     factory._importable = lambda module: module != "torch" and real(module)  # type: ignore[assignment]
     try:

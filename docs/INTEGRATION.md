@@ -114,6 +114,18 @@ ws.send(JSON.stringify({ type: "response.cancel" }));
 
 不认识的事件会收到 `error` 而不是被忽略。
 
+### 多轮：级联带历史，原生不带
+
+同一条连接上，级联路径会把之前的轮次一起送进模型，所以第二句可以用指代
+（「它多少钱」）。每轮的转写会单独发一条事件回来，方便界面显示「我听到的是」：
+
+```json
+{ "type": "conversation.item.input_audio_transcription.completed", "transcript": "那它多少钱" }
+```
+
+**原生路径是单轮的。** 它从不产出转写，用户那一轮在模型眼里是音频 token，
+而这个接口只能传文本历史，所以历史传不过去。要多轮就走级联。
+
 ### 上下文会被裁剪但显式
 
 `response.done` 带 `context`：
@@ -138,7 +150,11 @@ ws.send(JSON.stringify({ type: "response.cancel" }));
 ws.send(JSON.stringify({ type: "session.clear" }));
 ```
 
-不发的话，上一个人说过的内容会留在下一个人的上下文里。
+不发的话，在级联路径上，上一个人说过的话会进下一个人的 prompt。
+原生路径上进不去（历史根本没传），但计数还是上一个人的，`dropped_turns` 会读不懂。
+两条路都发，不用判断当前是哪条。
+
+回执和连接建立时一样是 `session.created`，采样率三个字段照样带，客户端一个分支处理即可。
 
 目前只测到三轮，三轮之内不崩，也不需要去压缩历史。
 逐轮的测试结果在 §9.3，十轮以上没测过。
@@ -517,7 +533,12 @@ nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader   # 空闲时必须
 先看是不是发了服务端不认识的事件——不认识的事件会收到 `error` 帧，不会静默。
 收不到任何帧则是连接问题。
 
-打断没生效：`response.cancel` 会取消正在跑的生成并清空缓冲区。
+打断没生效：`response.cancel` 会取消正在跑的生成。
+
+缓冲区的处理分两种，别记反了：**回复正在播的时候取消（真正的打断），缓冲区保留**——
+那段音频正是用户插的话，丢掉就等于吃掉他的下一句；**空闲时取消，缓冲区清空**——
+那是一轮没开始的对话，留着会漏进下一轮。所以打断之后不要假设缓冲区是空的，
+要重新开始录就先发一条 `input_audio_buffer.clear`。
 
 ```bash
 nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader -l 1   # 应在半秒内归零

@@ -25,14 +25,21 @@ class Turn:
     text: str
     audio_seconds: float = 0.0
 
-    def token_cost(self, characters_per_token: float = 1.5) -> int:
+    def token_cost(self, characters_per_token: float = 1.5, count_audio: bool = True) -> int:
         """Roughly what this turn occupies in the sequence.
 
         Approximate on purpose: an exact count needs the tokenizer, and this
         runs on every append during a live conversation. It errs high, because
         under-counting is what produces the failure it exists to prevent.
+
+        ``count_audio`` is false where the history that reaches the model is
+        text: the cascade sends transcripts, so charging ten seconds of speech
+        125 tokens there evicts turns while the real prompt is an eighth of the
+        budget. The native path does send audio, and pays for it.
         """
         text_tokens = int(len(self.text) / characters_per_token) + 1
+        if not count_audio:
+            return text_tokens
         audio_tokens = int(self.audio_seconds * AUDIO_TOKENS_PER_SECOND)
         return text_tokens + audio_tokens
 
@@ -49,13 +56,17 @@ class Conversation:
     reserve_for_reply: int = 512
     turns: list[Turn] = field(default_factory=list)
     dropped: int = 0
+    # Whether the audio itself reaches the model. True on the native path,
+    # where a turn is audio tokens; false on the cascade, where what travels
+    # is the transcript.
+    counts_audio: bool = True
 
     @property
     def budget(self) -> int:
         return max(0, self.max_tokens - self.reserve_for_reply)
 
     def used_tokens(self) -> int:
-        return sum(turn.token_cost() for turn in self.turns)
+        return sum(turn.token_cost(count_audio=self.counts_audio) for turn in self.turns)
 
     def append(self, turn: Turn) -> None:
         self.turns.append(turn)
@@ -73,7 +84,16 @@ class Conversation:
         self.dropped = 0
 
     def messages(self) -> list[dict[str, str]]:
-        return [{"role": turn.role, "content": turn.text} for turn in self.turns]
+        """The history as a prompt, without the turns that have no text.
+
+        A turn can be empty two ways: the native path never transcribes, and
+        the cascade produces nothing for silence or for a barge-in that landed
+        before recognition finished. Either way an empty turn renders as a bare
+        ``<|im_start|>user<|im_end|>`` the model has never seen, and it would
+        ride in every prompt for the rest of the session. The turn stays in the
+        ledger -- it happened, and it occupied the sequence.
+        """
+        return [{"role": turn.role, "content": turn.text} for turn in self.turns if turn.text]
 
     def summary(self) -> dict[str, int]:
         """What a caller needs to see that history was silently shortened."""

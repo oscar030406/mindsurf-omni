@@ -224,6 +224,9 @@ def test_the_native_path_refuses_a_checkout_it_cannot_find(tmp_path: Path) -> No
 
     for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
         (tmp_path / name).mkdir(exist_ok=True)
+    # The checkout is the thing missing here; the checkpoint has to exist or
+    # assembly refuses for that instead.
+    (tmp_path / "sft.pth").write_bytes(b"")
     settings = Settings.from_environment(
         {
             "MINDSURF_ENGINE": "native",

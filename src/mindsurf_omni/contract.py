@@ -145,16 +145,20 @@ CLIENT_EVENTS = {
     "input_audio_buffer.clear",
     "response.cancel",  # barge-in: stop speaking now
     "session.update",  # {"voice": ..., "emotion": ...}
+    "session.clear",  # forget this conversation; the next caller is someone else
 }
 
+# Only what the service actually sends. An event declared here and never
+# emitted is worse than a missing one: a client written against the list waits
+# for it. This set was four entries longer until 2026-08-10, and the four were
+# fiction -- speech_started, speech_stopped and response.text.done had no emit
+# site anywhere, and the transcription event is emitted now rather than
+# declared and skipped.
 SERVER_EVENTS = {
     "session.created",
-    "input_audio_buffer.speech_started",
-    "input_audio_buffer.speech_stopped",
-    "conversation.item.input_audio_transcription.completed",
+    "conversation.item.input_audio_transcription.completed",  # cascade only
     "response.created",
     "response.text.delta",
-    "response.text.done",
     "response.audio.delta",  # {"audio": base64 PCM16 24 kHz mono}
     "response.audio.done",
     "response.done",

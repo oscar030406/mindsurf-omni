@@ -39,6 +39,12 @@ class SpeechChunk:
     pcm: bytes  # PCM16 little-endian, mono, OUTPUT_SAMPLE_RATE
     text: str | None = None  # the text this audio speaks, when known
     is_final: bool = False
+    # What the caller said, on the first chunk of a turn, when the path
+    # produced a transcript at all. The cascade has one and used to throw it
+    # away, which left the session with no record of the user's words and made
+    # every turn the first one. The native path never materialises text for
+    # the audio it hears, so this stays None there.
+    transcript: str | None = None
 
 
 @dataclass(slots=True)
@@ -86,7 +92,11 @@ class SpeechEngine(abc.ABC):
 
     @abc.abstractmethod
     def respond(
-        self, pcm: bytes, sample_rate: int, settings: GenerationSettings
+        self,
+        pcm: bytes,
+        sample_rate: int,
+        settings: GenerationSettings,
+        history: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[SpeechChunk]:
         """Speech in, speech out.
 
@@ -94,6 +104,11 @@ class SpeechEngine(abc.ABC):
         the cascade path implements it as transcribe, complete, speak. Keeping
         it as one method is what lets the native path skip work the cascade
         cannot.
+
+        ``history`` is the turns before this one. The cascade prepends them to
+        the prompt; the native path ignores them, because its history is audio
+        tokens and this argument can only carry text -- prior user turns there
+        have no text to carry.
         """
 
 

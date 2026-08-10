@@ -165,13 +165,25 @@ class NativeEngine(SpeechEngine):
         )
 
     async def respond(  # type: ignore[override]
-        self, pcm: bytes, sample_rate: int, settings: GenerationSettings
+        self,
+        pcm: bytes,
+        sample_rate: int,
+        settings: GenerationSettings,
+        history: list[dict[str, str]] | None = None,
     ) -> AsyncIterator[SpeechChunk]:
         """Speech in, speech out, with no transcript in between.
 
         This is the path's whole argument. The reply's text and its audio come
         out of one forward pass, so the audio starts flowing while the sentence
         is still being decided rather than after it is finished.
+
+        ``history`` is accepted and not used. It carries text, and on this path
+        the user's turns are audio that was never transcribed, so what it can
+        carry is the model's own replies and a run of empty user turns. Feeding
+        that would also fight the prompt builder, which writes the audio
+        placeholder over the *last* user turn -- with history present that is
+        the previous question, which the audio would overwrite. Multi-turn here
+        needs audio history, which this service does not keep.
         """
         frames: list[list[int]] = []
         emitted = 0

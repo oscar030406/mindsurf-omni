@@ -156,3 +156,29 @@ def test_no_checkpoint_reports_no_digest_rather_than_a_wrong_one(tmp_path: Path)
 
     assert describe_components(settings)[0].sha256 is None
     assert checkpoint_digest(tmp_path / "absent.pth") is None
+
+
+def test_a_checkpoint_that_is_not_on_disk_is_refused_at_startup(tmp_path: Path) -> None:
+    """A typo in the path used to surface as the model failing mid-conversation.
+
+    verify() only asked whether the variable was set, so a mistyped or
+    unmounted checkpoint started the service, passed the health check and
+    raised FileNotFoundError on the first thing a user said -- by which point
+    the caller is looking at the model rather than at the path.
+    """
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_THINKER": str(tmp_path / "typo.pth"),
+        }
+    )
+    assert settings is not None
+
+    with pytest.raises(ConfigurationError, match="typo.pth"):
+        settings.verify()
+
+    (tmp_path / "typo.pth").write_bytes(b"")
+    settings.verify()

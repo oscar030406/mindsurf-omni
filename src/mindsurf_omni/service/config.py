@@ -114,6 +114,24 @@ class Settings:
 
     def verify(self) -> None:
         missing = self.paths.missing()
+        # A checkpoint that was named and is not there used to pass this check:
+        # assembly only asked whether the variable was set. The service then
+        # started, reported ready, and raised FileNotFoundError on the first
+        # thing a user said -- which reads as the model failing rather than as
+        # a typo in a path.
+        # is_file, not exists: a directory at the checkpoint's path passes the
+        # weaker check, and then the digest in /v1/models is null -- which is
+        # the field that says which weights a measurement was taken on.
+        if self.thinker is not None and not self.thinker.is_file():
+            missing = [*missing, f"thinker={self.thinker}"]
+        # The cascade's Thinker loads lazily, so a mistyped checkout used to
+        # surface as the connection dropping on the first thing a caller said.
+        # The native path already refuses this at assembly, with a message
+        # about the checkout specifically -- leave that one to it.
+        if self.path == "cascade" and self.minimind_root is not None:
+            definition = self.minimind_root / "model" / "model_minimind.py"
+            if not definition.is_file():
+                missing = [*missing, f"minimind_root={self.minimind_root} (no {definition.name})"]
         if missing:
             raise ConfigurationError(
                 f"the {self.path} path needs these, and they are not on disk: "
