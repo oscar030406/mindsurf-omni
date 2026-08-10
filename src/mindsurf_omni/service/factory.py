@@ -113,6 +113,12 @@ def _build_generator(settings: Settings) -> Any:
         minimind_root=settings.minimind_root,
         device=settings.device,
     )
+    # Loaded here rather than on the first request. Lazily, the service reports
+    # ready while the weights are still on disk, and the first caller pays for
+    # the load: measured at 32 s on a laptop card against 31 ms warm, and the
+    # caller reads that as the model being slow. Startup is the honest place to
+    # spend it -- an orchestrator waits for ready, a user does not.
+    thinker.load()
     return thinker.generate
 
 

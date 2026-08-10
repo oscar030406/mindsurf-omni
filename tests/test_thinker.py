@@ -149,9 +149,16 @@ def test_the_generator_stops_being_unwired_once_a_checkpoint_is_named(tmp_path: 
     without = factory.build(Settings.from_environment(common))
 
     # torch is not in this environment; the text stage runs on a host that has
-    # it, so the presence check is answered rather than the test skipped.
+    # it, so the presence check is answered rather than the test skipped. The
+    # load is stubbed for the same reason: assembly reads the weights now
+    # (so "ready" means loaded), and there are none here -- what this test is
+    # about is which stages come out wired.
+    from mindsurf_omni.service.thinker import ThinkerGenerator
+
     real = factory._importable
+    real_load = ThinkerGenerator.load
     factory._importable = lambda module: module == "torch" or real(module)  # type: ignore[assignment]
+    ThinkerGenerator.load = lambda self: None  # type: ignore[assignment, method-assign]
     try:
         with_thinker = factory.build(
             Settings.from_environment(
@@ -164,6 +171,7 @@ def test_the_generator_stops_being_unwired_once_a_checkpoint_is_named(tmp_path: 
         )
     finally:
         factory._importable = real  # type: ignore[assignment]
+        ThinkerGenerator.load = real_load  # type: ignore[method-assign]
 
     assert "generator" in without.unwired  # type: ignore[union-attr]
     assert "generator" not in with_thinker.unwired  # type: ignore[union-attr]

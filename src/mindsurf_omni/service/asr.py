@@ -57,6 +57,17 @@ class SenseVoiceRecogniser:
         self._model = AutoModel(model=str(self.model_dir), device=self.device, disable_update=True)
 
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        # On a thread, because funasr is synchronous and holds the GIL for the
+        # length of the utterance. Run inline it stops the event loop, which on
+        # a live service is not "this request is slow": every other session
+        # stops receiving, the heartbeat stops ticking, and health checks stop
+        # answering. Measured at 94 ms for a short turn and minutes for a long
+        # one, and the long one is what a stuck microphone sends.
+        import asyncio
+
+        return await asyncio.to_thread(self._transcribe, pcm)
+
+    def _transcribe(self, pcm: bytes) -> tuple[str, str | None]:
         import numpy as np
 
         self.load()
