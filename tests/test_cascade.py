@@ -52,10 +52,9 @@ async def test_speech_starts_at_the_first_clause_not_the_end() -> None:
 
     chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
 
-    assert [chunk.text for chunk in chunks if chunk.text] == [
-        "今天天气真好。",
-        "我们出去走走吧。",
-    ]
+    # Text arrives as it is decided; the audio that speaks it follows.
+    assert "".join(chunk.text for chunk in chunks if chunk.text) == "今天天气真好。我们出去走走吧。"
+    assert len([chunk for chunk in chunks if chunk.pcm]) == 2
     assert chunks[-1].is_final
 
 
@@ -64,14 +63,13 @@ async def test_first_audio_arrives_long_before_the_reply_finishes() -> None:
     """A 40-character reply must not cost 40 characters of latency."""
     engine = _engine("今天天气真好。" + "很" * 60 + "。", token_delay=0.002)
 
-    first = None
+    first_audio = None
     async for chunk in engine.respond(b"", 16_000, GenerationSettings()):
-        if chunk.transcript is not None:
-            continue  # the transcript rides ahead of the audio, by design
-        first = chunk
-        break
+        if chunk.pcm:
+            first_audio = chunk
+            break
 
-    assert first is not None and first.text == "今天天气真好。"
+    assert first_audio is not None
     # Roughly the seven characters of the first clause, not the sixty-eight of
     # the whole reply.
     assert engine.last_timings.time_to_first_audio_ms < 60
@@ -84,7 +82,8 @@ async def test_a_reply_with_no_sentence_end_is_still_spoken() -> None:
 
     chunks = [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings())]
 
-    assert [chunk.text for chunk in chunks if chunk.text] == ["好的"]
+    assert "".join(chunk.text for chunk in chunks if chunk.text) == "好的"
+    assert [chunk.pcm for chunk in chunks if chunk.pcm] == ["好的".encode()]
     assert chunks[-1].is_final
 
 
@@ -163,10 +162,10 @@ async def test_a_streaming_synthesiser_speaks_before_the_clause_is_finished() ->
     audio = [chunk for chunk in chunks if chunk.pcm]
 
     assert [chunk.pcm for chunk in audio] == pieces
-    # The clause's text rides on the first piece only: repeated, a client
-    # renders the sentence three times; dropped, it loses the alignment.
-    assert audio[0].text == "今天天气很好。"
-    assert [chunk.text for chunk in audio[1:]] == [None, None]
+    # Audio carries no text: it already went out with the deltas, and a client
+    # that rendered both would show the sentence twice.
+    assert [chunk.text for chunk in audio] == [None, None, None]
+    assert "".join(chunk.text for chunk in chunks if chunk.text) == "今天天气很好。"
     assert engine.last_timings.time_to_first_audio_ms > 0
 
 
@@ -179,7 +178,8 @@ async def test_without_a_streaming_synthesiser_nothing_changes() -> None:
     spoken = [chunk for chunk in chunks if chunk.pcm]
 
     assert len(spoken) == 1
-    assert spoken[0].text == "今天天气很好。"
+    assert spoken[0].text is None
+    assert "".join(chunk.text for chunk in chunks if chunk.text) == "今天天气很好。"
 
 
 @pytest.mark.asyncio
@@ -256,3 +256,39 @@ async def test_a_streaming_synthesiser_is_used_by_speak_too() -> None:
     assert [chunk.pcm for chunk in chunks if chunk.pcm] == pieces
     assert chunks[0].text == "今天天气很好。"
     assert chunks[-1].is_final
+
+
+@pytest.mark.asyncio
+async def test_text_reaches_the_caller_before_any_audio_does() -> None:
+    """The reason the text is no longer bound to its audio.
+
+    Synthesis is a network round trip: measured live, the first word appeared
+    at 1748 ms and the first audio at 1752 ms, so a reader watched a blank
+    screen for the whole trip while the words had been decided since 100 ms.
+    """
+    synthesis_started = asyncio.Event()
+
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "你好", "zh"
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        for character in "今天天气很好。":
+            yield character
+
+    async def synthesise(text: str, settings: object) -> bytes:
+        synthesis_started.set()
+        await asyncio.sleep(0.05)  # the round trip
+        return text.encode("utf-8")
+
+    engine = CascadeEngine(transcribe, generate, synthesise, [], SPEC)  # type: ignore[arg-type]
+
+    order: list[str] = []
+    async for chunk in engine.respond(b"", 16_000, GenerationSettings()):
+        if chunk.text:
+            order.append("text")
+        if chunk.pcm:
+            order.append("audio")
+
+    assert order, "nothing came back"
+    assert order[0] == "text"
+    assert order.index("audio") > 0, "audio arrived before any text"

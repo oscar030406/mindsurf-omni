@@ -134,6 +134,12 @@ class CascadeEngine(SpeechEngine):
         spoken_anything = False
 
         async for delta in self._generate(messages, settings):
+            # Text goes out as it is decided, not when its audio is ready.
+            # Bound to the audio it measured 1748 ms against 1752 ms on a live
+            # run: the reader saw nothing for the whole synthesis round trip,
+            # while the words had been available since 100 ms. Audio chunks
+            # below carry no text, so nothing is rendered twice.
+            yield SpeechChunk(pcm=b"", text=delta)
             pending += delta
             clause = split_first_utterance(pending)
             if clause is None:
@@ -150,25 +156,15 @@ class CascadeEngine(SpeechEngine):
                     timings.first_synthesis_ms = (time.perf_counter() - synthesis_started) * 1000
                     timings.time_to_first_audio_ms = (time.perf_counter() - started) * 1000
                     spoken_anything = True
-                yield SpeechChunk(pcm=audio, text=clause)
+                yield SpeechChunk(pcm=audio)
                 continue
 
-            # The clause's text rides on its first piece only. Repeating it on
-            # every piece would make a client render the same sentence several
-            # times, and dropping it entirely would lose the alignment between
-            # what was said and what was played.
-            said = False
             async for piece in self._stream_synthesise(clause, settings):
                 if not spoken_anything:
                     timings.first_synthesis_ms = (time.perf_counter() - synthesis_started) * 1000
                     timings.time_to_first_audio_ms = (time.perf_counter() - started) * 1000
                     spoken_anything = True
-                yield SpeechChunk(pcm=piece, text=None if said else clause)
-                said = True
-            if not said:
-                # A clause that produced nothing still happened, and a client
-                # tracking text against audio would otherwise never see it.
-                yield SpeechChunk(pcm=b"", text=clause)
+                yield SpeechChunk(pcm=piece)
 
         # Whatever is left has no sentence end -- say it anyway rather than
         # dropping the tail of the reply.
@@ -177,7 +173,8 @@ class CascadeEngine(SpeechEngine):
             audio = await self._synthesise(remainder, settings)
             if not spoken_anything:
                 timings.time_to_first_audio_ms = (time.perf_counter() - started) * 1000
-            yield SpeechChunk(pcm=audio, text=remainder, is_final=True)
+            # No text: it went out with the deltas that produced it.
+            yield SpeechChunk(pcm=audio, is_final=True)
         elif spoken_anything:
             yield SpeechChunk(pcm=b"", is_final=True)
 
