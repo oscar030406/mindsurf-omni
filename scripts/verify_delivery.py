@@ -61,7 +61,10 @@ def check_deliverables(findings: Findings) -> None:
 def check_documents_match_code(findings: Findings) -> None:
     """A guide that names a missing endpoint sends the reader to a 404."""
     app = (ROOT / "src" / "mindsurf_omni" / "service" / "app.py").read_text(encoding="utf-8")
-    guide = (ROOT / "README.md").read_text(encoding="utf-8")
+    # The endpoint table moved out of the README on 2026-08-06. It was a second
+    # copy of the integration guide's, and the copy that is not the one people
+    # wire against is the one that goes stale.
+    guide = (ROOT / "docs" / "INTEGRATION.md").read_text(encoding="utf-8")
 
     implemented = set(re.findall(r'@app\.(?:get|post|websocket)\("(/v1/[^"]+)"', app))
     documented = set(re.findall(r"(?:POST|GET|WS) (/v1/[a-z/-]+)", guide))

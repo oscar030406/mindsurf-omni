@@ -3,25 +3,16 @@
 语音 AI 产品的算法侧。输入是麦克风里的中文语音，输出是文本和语音回复。
 模型内部把音频当作一种语言，音频 token 与文本 token 在同一条自回归序列里。
 
-这是训练组的交付仓库。推理后端和前端需要的[接口契约](#4-接口契约)。
+这是训练组的交付仓库。
 
 ---
 
-## 1. 交付产物
+## 1. 交付物
 
-成品 `sft_merge_768.pth`，139,083,522 参数，我们自己的 Thinker 89.86M
-加上游的 Talker 47.05M。
-
-它不是重训出来的。父模型 `sft_graft_frozen` 上我们做过两次 DPO，
-一次冲质量一次冲长度，两次都只动 Thinker，所以可以直接在权重上相加：
-
-```
-sft_merge = sft_graft_frozen + Δ(质量 DPO) + Δ(长度 DPO)
-```
-
-相加之前先量了两个 Δ 会不会互相抵消。91 个张量上余弦 +0.1329，近乎正交，
-所以两个效应都能保住。语音那半（Talker 加 `audio_proj`，104 个张量）与父逐位相同。
-一个配置跑完，没扫参数。
+成品 `sft_merge_768.pth`，139,083,522 参数（我们自己的 Thinker 89.86M
+加上游的 Talker 47.05M，两半之和 136.92M，其余 2.17M 是把两半接起来的部分，
+不计入任何一半）。它不是重训出来的，是在父模型上加两次 DPO 的权重差，
+怎么来的见[训练说明 §2](docs/TRAINING.md)。
 
 | | 地址 |
 | --- | --- |
@@ -29,305 +20,116 @@ sft_merge = sft_graft_frozen + Δ(质量 DPO) + Δ(长度 DPO)
 | 权重、tokenizer、配置 | [`oscar0403/mindsurf-omni`](https://huggingface.co/oscar0403/mindsurf-omni) |
 | 人工盲听材料 | [`oscar0403/mindsurf-omni-listening`](https://huggingface.co/datasets/oscar0403/mindsurf-omni-listening) |
 
-| | 状态 |
-| --- | --- |
-| 文本基座（89,864,448 参数，中文为主） | 已训练、已发布、已验证可接入 |
-| 接口契约与桩服务 | 已冻结，后端可据此开工 |
-| 原生音频路径（Thinker-Talker） | 已验收。我们的 Thinker 配上游的 Talker，重训中间那座桥 |
-| 级联兜底路径（ASR → LLM → TTS） | 三段都接了：SenseVoice、Thinker（指 `MINDSURF_THINKER`）、合成器两选一（`MINDSURF_TTS=edge` 托管或 `voxcpm` 本地，默认不选） |
-
-文本基座来自[上游预训练仓库](https://github.com/io-wy/MindSurf/tree/pretrain)，
-权重在它的 Release 里。已实测该基座可直接加载进 MiniMind 的模型类，
-最大绝对 logit 差 0.0；tokenizer 与 MiniMind / MiniMind-O 逐字节相同
-（SHA-256 `71f32c68…`）。
+两条路径都能出声：原生（Thinker-Talker 端到端）和级联（SenseVoice → Thinker → 合成器）。
+切换是配置，调用方分辨不出。接口契约已冻结。
 
 ---
 
-## 2. 多模态表现
+## 2. 指标
 
-- 延迟表现最好。首音 145.1 ± 4.1 ms，P95 189，预算 3000，余量 16 倍,噪声底 ±4.1 ms。
-- 打断：调用方说停就真停。取消到停 P50 0.26 ms、P95 0.40 ms，40 轮，预算 200 ms。
-  特意把"停了"和"说自己停了"分开量：GPU 占用 0.5 秒内从 41% 掉到 0，
-  同一轮完整跑完要 4953 ms，取消之后墙钟只有 132 ms。停的是计算本身。
-- 音色克隆：seen 0.6487、unseen 0.6044，对父不劣化。更早那一轮对上游官方发布权重，
-  12 个音色逐个比全赢。编解码器天花板是 0.8409，作为参考上限。
-- 情绪：能力在，旋钮做不出来，见下面第二条边界。
-- 中位回复从父模型的 26.0 秒降到 11.8 秒，
- 占用比从 13.7× 降到 6.2×，5 秒时还没说完的比例从 93% 降到 81%。空回复 0，循环 1。
+| | 值 | 参照 |
+| --- | ---: | --- |
+| 参数量 | 139.08M | 上限 200M |
+| 首个音频 | 145.1 ms（测量误差 ±4.1，P95 189） | 预算 3000 ms |
+| 打断：取消到停 | 0.26 ms（P50）、0.40 ms（P95），40 轮 | 预算 200 ms |
+| **人工盲听 MOS** | **2.738** | **上游官方发布权重 2.738** |
+| 中位回复时长 | 11.8 秒 | 父模型 26.0 秒 |
 
-### 人工盲听
+**人工盲听的含金量最高。** 四个人各自拿一份随机顺序，我们的成品和上游官方权重
+到小数点后三位相同，缺陷标记 43 对 42，参照上限 edge-tts 是 4.023。
 
-四个人盲听，每人各自挑选一份随机顺序。我们的成品和上游官方发布权重打 2.738 对 2.738，
-到小数点后三位相同，缺陷标记 43 对 42。参照上限 edge-tts 是 4.023。
+音色克隆对父模型不退化；对上游官方权重 12 个音色逐个比全赢，
+那一轮比的是嫁接体 `sft_graft`，不是成品。
 
----
+**但 12 个里只有 6 个能投放**，名单和三档划分在[接入指南 §10.3](docs/INTEGRATION.md)。
 
-## 3. 三条边界
-
-这三条不是欠账,而是评价基线未过关。
-
-**一、对改变长度的干预，"对话建模不退"这一轴在我们的预算内不可认证。**
-四把尺子，四种死法。`chat_nll` 原版死在两个中立作者逐条同号只有 20.3%，
-机制查出来是参考长度（r=+0.601）；按参考长度分层这条被证伪，控住之后同号率掉到 1.9%；
-答得上率连一次已经认证过的塌方都读不出（+0.0872 落在 ±0.1061 里）；
-长度配平版把原病灶修好了（同号 94.9%），却掉进镜像混淆，
-分不开"建模更好"和"语域更配"。要闭合大概需要 3600 条探针，我们有 608，差六倍。
-所以这不是"这一条没测"，是测了四次、每次都拿到了它为什么测不了。
-
-选 `sft_merge` 就是选了这个代价。另一个候选 `sft_dpo2` 五条判据全过、没有星号，
-它那一轴是认证过的，因为它没改长度。代价是中位回复仍然念 24.2 秒，
-而 30 秒级的回复是我们唯一量出来的、会让人不想用第二次的缺陷。
-两个都写进模型卡，只发一个的权重。
-
-**二、情绪能力存在，但做不成可控旋钮。**
-参考通路是真的：同一个说话人的两条不同情绪的参考喂进去，输出 F0 +54.7 Hz，
-12 个音色全正，零训练。卡住的是条件化重训的前提。那个前提是标签可信，
-而四个人的盲听把它证伪了：人对 `emotion2vec` 标签的一致率 31–42%，人对人 41–65%。
-两个数都低说明任务本来就难；人彼此对得上、却都对不上标签，那是标签系统性偏离人耳。
-条件化 A2A 我们也真跑过一轮，主判据 F0 零效应，而对照臂先过了，所以是真零不是读不出。
-情绪和音色纠缠是学界的公开问题，解法要独立编码器加解耦损失再重训，
-架构改动我们一开始就排除了。
-
-**三、打断做到了执行，没做到判断。**
-能停不等于会判断该停。后者要重叠音频加打断标注的语料，我们手上两份语料都没有，
-合成的重叠只等于 VAD。
-
-这一页的数字全部取自
+数字全部取自
 [`configs/release/headline_numbers.json`](configs/release/headline_numbers.json)，
 每条带 `source` 指向 [`artifacts/`](artifacts) 里产出它的逐条读数。
-判定只有改善、劣化、无法区分三种；分辨不了我们关心的效应时标成仅报告，不参与判定。
-阈值一律写在跑之前，中途没有改过。**怎么自己重算见 §6。**
+判定只有三种：改善、劣化、无法区分；指标分辨不了我们关心的差别时标成「仅报告」，印出来但不参与通过或失败。
 
 ---
 
-## 4. 接口契约
+## 3. 边界
 
-采用OpenAI接口方式。
+具体看[训练说明 §4](docs/TRAINING.md)。
 
-契约定义在 [`src/mindsurf_omni/contract.py`](src/mindsurf_omni/contract.py)，
-
-### 接之前必须知道的四件事
-
-这四条决定用户觉得这套东西好不好用，每一条都有量出来的依据，
-而每一条都能在接线时被无意中踩掉。展开见[接入指南 §0](docs/INTEGRATION.md)。
-
-1. **默认走级联，不要默认走原生。** 原生首音快一个数量级（145 ms），
-   但声音更糙：人耳 MOS 2.738 对级联 edge-tts 的 4.023。
-   **CER 那两个数别直接比**——原生 0.0962 ± 0.0176、级联 0.0359 ± 0.0087，
-   而含阿拉伯数字的 71 条贡献了大半（0.1482 对其余 0.0548），
-   那是「2021 念成二零二一」被判官罚，两条路都被同样罚。人耳那条才是可比的。
-   「与上游官方无法区分」是我们和上游打平，不是好听。
-2. **12 个音色只投放 6 个**（serena、eric、uncle_fu、dylan、arthur、moon）。
-   `cherry`、`ethan`、`momo` 在成品上 12 选 1 认人是 **0/20**、`chelsie` 是 1/20，
-   塌向 serena 和 moon，摆进选择器会被当成 bug 报回来。`vivian` 16/20 刚过线、
-   `jennifer` 6/20，两个都要自己听过再决定。名单见[能力边界](docs/CAPABILITIES.md)。
-3. **原生路径的情绪不是旋钮。** 只能整条换一条带情绪的参考，而参考同时决定身份。
-   情绪滑块只能挂在级联上。
-4. **判断用户是否插话是客户端的活。** 模型说停就真停，但「谁判断该停」我们没有做。
-
-### HTTP
-
-```
-POST /v1/audio/transcriptions  语音转文本（Whisper API 兼容）
-POST /v1/chat/completions  文本对话，支持 stream=true（SSE）
-POST /v1/audio/speech  文本转语音
-GET /v1/models  当前活跃路径、组件身份、许可
-GET /v1/voices  可用音色
-GET /v1/token-spec  特殊 token 规格（机器可读）
-GET /v1/licence  完整许可链，含尚未核实的那几项
-```
-
-`GET /health` 报就绪度，逐部件。降级返回 200，全不可用才 503——
-能转写、能出声的实例不该被摘出轮转。
-
-### WebSocket
-
-```
-WS /v1/realtime
-```
-
-事件名沿用 OpenAI Realtime API 的子集：
-
-| 上行 | 含义 |
-| --- | --- |
-| `input_audio_buffer.append` | 追加音频（base64 PCM16） |
-| `input_audio_buffer.commit` | 说完了，开始回复 |
-| `response.cancel` | 打断，立刻停止发声 |
-| `session.update` | 改音色或情绪 |
-
-| 下行 | 含义 |
-| --- | --- |
-| `response.text.delta` | 文本增量 |
-| `response.audio.delta` | 音频增量（base64 PCM16），边生成边下发 |
-| `response.audio.done` / `response.done` | 结束 |
-| `error` | 出错，含可读原因 |
-
-### 音频格式（写死，不协商）
-
-| 方向 | 格式 |
-| --- | --- |
-| 上行 | PCM16 / 16 kHz / 单声道（SenseVoice 要 16k） |
-| 下行 | PCM16 / 24 kHz / 单声道（Mimi 出 24k） |
-
-重采样在服务端做。客户端不需要判断该用哪个采样率，需要判断就会有人判断错。
-
-### 推理参数：文本能调，音频不能
-
-| 轴 | 参数 | 值 | 谁定 |
-| --- | --- | ---: | --- |
-| 文本 | `temperature` | 0.7 | 你调（契约默认） |
-| | `top_p` | 0.9 | 你调 |
-| | `max_tokens` | 512 | 你调 |
-| | 重复惩罚 | 1.0（关） | 写死，文本不加惩罚 |
-| 音频 | temperature | 0.2 | 写死在 `stream_generate` 里 |
-| | `top_k` | 50 | 写死 |
-| | 重复惩罚 | 1.05 / 最近 3 码 | 写死 |
-
-**`temperature` 和 `top_p` 碰不到音频。** 提高它期待"语音更有表现力"，
-会得到完全一样的音频和更飘的文本。
-
-音频那三个值扫过七组（在上游官方权重上，每组 24 条交替轮转），
-没有一组打得过继承值，也没有一组被证明更差。
-其中"去掉重复惩罚"那组有三条样本炸掉（逐例 CER 0.095 到 0.881、0.118 到 0.487、
-0.067 到 0.420），失败模式是退化性重复——**那个重复惩罚不是装饰，别当死代码删掉**。
-文本那三个值是契约默认，从没扫过，要调就调，但请自己测。
-
-### 两条路径，同一个接口
-
-```text
-                 ┌── native   Thinker-Talker 端到端，不经过文本
-/v1/realtime ────┤
-                 └── cascade  SenseVoice → Thinker → 合成器（edge / voxcpm）
-```
-
-切换是配置，不是改代码。调用方分辨不出是哪条在答，除非去问 `GET /v1/models`，
-那里如实报告 `"path": "native" | "cascade"`。
-
-两条都做是有意的。139M 规模能否把中文语音说好没有先例（MiniMind-O 自己也说中文
-Talker 明显比英文难），而级联已被姊妹项目实测到端到端 P95 1.93 s。
-产品不能只有一条能出声的路。
+1. **把回复变短之后，没法证明对话能力没跟着退。**
+   不是退了，是测不出来——衡量对话能力的办法本身也在衡量长度。
+   四种办法都试过，要测得准约需 3600 条测试提问，我们有608条。
+2. **情绪能力存在，但做不到「只动情绪、不动身份」。**
+   换一条带情绪的参考，输出就带情绪；但那条参考同时决定说话人是谁。
+3. **打断做到了执行，没做到判断。**
+   调用方说停就真停，但「什么时候该停」缺语料，两份训练语料都没有重叠音频。
 
 ---
 
-## 5. 许可
+## 4. 许可
 
-| 资产 | 许可 | 可商用 | 核实过 |
-| --- | --- | :-: | :-: |
-| 文本基座 | CC-BY-NC-4.0（继承自训练数据） | 否 | 是 |
-| MiniMind-O 代码 | Apache-2.0 | 是 | 是 |
-| Mimi | CC-BY-4.0，要署名 | 是 | 是 |
-| CAM++ | Apache-2.0 | 是 | 是 |
-| 上游 Talker 权重 | 发布卡声明 apache-2.0 | 不明 | 否 |
-| MiniMind-O 数据 | 卡上同时声明 apache-2.0 和 gpl-3.0，无逐文件映射 | 不明 | 否 |
-| SenseVoice / emotion2vec | FunASR Model Open Source License Agreement v1.1 | 不明 | 否 |
-
-权重继承数据的许可，且传导到所有微调结果。这条链上最严的是 CC-BY-NC，
-所以当前产出物默认不可商用。`GET /v1/models` 会在响应里带上
+**当前产出物不可商用。** 文本基座继承训练数据的 CC-BY-NC-4.0，
+并传导到所有微调结果。`GET /v1/models` 会在响应里带上
 `commercial_use_permitted: false`，让这件事不可能被忽略。
 
-要做商业产品，得先换掉基座的训练数据。那是另一个项目，不是这一轮能解决的。
-
-逐条依据、开放问题、以及要怎样才能改掉这个结论，写在
-[`configs/release/licence.json`](configs/release/licence.json)。
-
 ---
 
-## 6. 怎么自己重算我们报的数
+## 5. 怎么复测
 
-上面每一个数字的逐条读数都在 [`artifacts/`](artifacts) 里，不用重跑训练、
-也不用有卡就能核。`headline_numbers.json` 每一条的 `source` 指的就是那些文件。
-
-### 语音：CER、UTMOS、静音率，以及对父模型的配对判定
-
-```bash
-python scripts/evaluate_speech.py   --candidate artifacts/merge/speech-sft_merge-mos.jsonl   --reference artifacts/merge/speech-parent-mos.jsonl
-```
-
-打印候选与参照各自的读数、噪声底、每个指标有没有门控资格，最后是逐样本配对的判定。
-判官是 `paraformer-zh`，独立于被测模型——用模型自己的编码器给自己打分是循环论证，
-共享的失败模式会互相抵消。
-
-### 对话盲评：608 条探针
-
-判过的每一对、判官身份、提示词 sha256、选边种子，全部落在
-[`artifacts/blind608/`](artifacts/blind608)。`blind-merge-608.json` 是聚合结果
-（608 对、169 平、赢 282，胜率 0.6424、噪声 0.0468、位置右侧占比 0.4465），
-`blind-merge-608-pairs.json` 是逐对的原始判词。
-
-重判要判官的 API key：
-
-```bash
-JUDGE_API_KEY=... python scripts/blind_preference.py   --arm parent=artifacts/blind608/chat-sft_graft_frozen-608.json   --arm merge=artifacts/blind608/chat-sft_merge-608.json   --output <你的输出>.json
-```
-
-换个判官重判如果结论不同，那不代表旧数字错了，代表这个判定依赖判官。
-
-### 延迟与打断
-
-`artifacts/latency-native-leak-fixed-2026-07-28.json` 是首音的逐轮读数，
-[`artifacts/barge_in/`](artifacts/barge_in) 是打断的 40 轮读数
-加上"计算真的停了"那份证明（墙钟对比与 GPU 占用采样）。
-两件事分开量是有意的：只证明服务答得快，排除不了"先说停了、线程继续在卡上解完"。
-
-### 人工盲听包
-
-四个人、三个包、十二份表，原件在
-[`artifacts/listening_returned/`](artifacts/listening_returned)，
-材料本身在 [`oscar0403/mindsurf-omni-listening`](https://huggingface.co/datasets/oscar0403/mindsurf-omni-listening)。
-
-揭盲表也在，`artifacts/listening_<包名>/key.json`。评分期间它是不入库的：
-评分员拿得到这个仓库，答案入库等于把答案发给被测的人。
-十二份表收齐之后那个理由到期了，所以现在它在，这一项可以自己重算：
-
-```bash
-uv sync --extra listening   # 交回来的表有 xlsx，读它要 openpyxl
-python scripts/listening_test.py score \
-  --pack artifacts/listening_returned/listening_models \
-  --key artifacts/listening_models/key.json
-```
-
-打出 `edge-tts 4.023 / graft 2.738 / official 2.738`，缺陷标记 43 对 42。
-把 `models` 换成 `synthesiser` 得到 `edge 3.871 / voxcpm 3.476`。
-
-它打两个平均，**这两个数不一样，差的不是舍入**。评分条数不均衡（重复片段让
-有的片段五条评分、有的四条），按片段均值再平均会把权重挪向听的人少的那些片段。
-**对外报的是逐条评分那个**，每条评分只数一次；按片段的那个是 UTMOS 排序检查要用的，
-一条片段一个值。
-
-### 环境与自检
+逐条读数都在 [`artifacts/`](artifacts)，不用重跑训练。
 
 ```bash
 uv sync --extra dev --extra tts
-.venv/Scripts/python -m pytest -q      # 600 passed / 7 skipped
-python scripts/verify_delivery.py      # 交付齐备、文档与代码一致、数字的证据都在
+
+# 语音：CER、UTMOS、静音率，以及对父模型的逐条对照
+python scripts/evaluate_speech.py \
+  --candidate artifacts/merge/speech-sft_merge-mos.jsonl \
+  --reference artifacts/merge/speech-parent-mos.jsonl
+
+# 人工盲听（读 xlsx 要 openpyxl）
+uv sync --extra listening
+python scripts/listening_test.py score \
+  --pack artifacts/listening_returned/listening_models \
+  --key artifacts/listening_models/key.json
+
+# 自检
+.venv/Scripts/python -m pytest -q
+python scripts/verify_delivery.py
 ```
 
-别用 `uv run pytest`：这个项目的 dev 依赖是 extra 不是 group，`uv run` 不装它，
-本机装了全局 pytest 时会静默拿全局解释器跑，那个环境没有 `soundfile`，
-于是测的是另一个环境。
+盲听那条会打出两组数，因为有两种算平均的办法，**我们对外报的是第一种**：
+
+| 办法 | 我们的成品 对 官方 |
+| --- | --- |
+| **逐条评分平均**（每一条打分各算一次） | **2.738 对 2.738** |
+| 按片段均值再平均（每条片段各算一票） | 2.731 对 2.737 |
+
+两个数不一样不是舍入。盲听包里故意混了重复片段，用来查评分员自己前后状况是否发生变化，
+所以每条片段被打分的次数不等（有的五次有的四次）。
+按片段那种算法会把听的人少的片段和听的人多的算成一样的加权。
+**我们平均的是人的判断，不是片段的质量，所以每条打分各算一次。**
+参照上限 edge-tts 是 4.023。
+
+对话盲评要打分模型的 API key，命令和逐对判词在
+[`artifacts/blind608/`](artifacts/blind608)。换一个打分模型重判如果结论不同，
+那不代表旧数字错了，代表这个结论取决于用哪个模型来判。
+
+**别用 `uv run pytest`**：dev 依赖是 extra 不是 group，`uv run` 不装它。
 
 ---
 
-## 7. 仓库里有什么
+## 6. 仓库地图
 
-```
+```text
 src/           推理服务与评测库
 scripts/       训练、评测、复现用的命令行工具
-tests/         600 项，契约与仪器的回归
-configs/       探针集、语音系统提示、release/ 下的模型卡与对外数字真源
+tests/         664 项，契约与仪器的回归
+configs/       测试提问集、语音系统提示、release/ 下的模型卡与数字来源
 artifacts/     每个数字的逐条读数（音频与权重不入库）
-docs/          三份给接线的人看的：接入指南、运行手册、能力边界
+docs/          两份正文：接入指南、训练说明
 assets/        tokenizer
-examples/      一份能跑的客户端，抄走改
+examples/      一份能跑的客户端
 ```
 
-要接线的人从这三份开始：
-
-- [接入指南](docs/INTEGRATION.md)：契约、推理参数、接之前必须知道的四件事
-- [运行手册](docs/RUNBOOK.md)：出问题按症状查，每条都写了怎么确认
-- [能力边界](docs/CAPABILITIES.md)：打断、情绪、音色克隆，模型侧到哪为止
-
-权重在 [`oscar0403/mindsurf-omni`](https://huggingface.co/oscar0403/mindsurf-omni)。
+`configs/release/` 下那两份 `*_CARD.md` 是 Hugging Face 两个仓的 README。
 
 上游：[预训练仓库](https://github.com/io-wy/MindSurf/tree/pretrain)（基座怎么来的）、
 [MiniMind-O](https://github.com/jingyaogong/minimind-o)（音频架构，Apache-2.0）、

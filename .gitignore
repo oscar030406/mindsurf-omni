@@ -51,8 +51,7 @@ coverage.xml
 /docs/*
 # 例外：这三份是给要接线的人看的，不是过程记录。后端和前端拿仓库就该拿到它们。
 !/docs/INTEGRATION.md
-!/docs/RUNBOOK.md
-!/docs/CAPABILITIES.md
+!/docs/TRAINING.md
 /PROJECT_RULES.md
 # artifacts/ 装的是逐条读数，不装叙事。这一份是被撤回的筛查笔记，同理留本地。
 artifacts/thinker-comparison-2026-07-28.md

@@ -21,13 +21,14 @@ DOCS = [
     ROOT / "configs" / "release" / "MODEL_CARD.md",
     ROOT / "configs" / "release" / "LISTENING_DATASET_CARD.md",
 ]
-# Plus the three the backend and the frontend read to wire this up. They quote
-# figures inside tables where the qualifier sits in a neighbouring column, so
-# they get the link and script checks but not the bare-number one.
+# Plus the one the backend and the frontend read to wire this up. It quotes
+# figures inside tables where the qualifier sits in a neighbouring column, so it
+# gets the link and script checks but not the bare-number one. It was three
+# files until 2026-08-06 -- capabilities and the runbook were folded in, because
+# one audience reading three documents kept them out of sync with each other.
 SHIPPED = DOCS + [
     ROOT / "docs" / "INTEGRATION.md",
-    ROOT / "docs" / "RUNBOOK.md",
-    ROOT / "docs" / "CAPABILITIES.md",
+    ROOT / "docs" / "TRAINING.md",
 ]
 
 
@@ -157,7 +158,9 @@ def test_the_inference_recommendation_matches_the_code_it_recommends() -> None:
     advising values the service no longer uses, and nobody finds out, because
     both halves look internally consistent.
     """
-    guide = (ROOT / "README.md").read_text(encoding="utf-8")
+    # The table moved out of the README on 2026-08-06: it was a second copy of
+    # the integration guide's, and two copies of one table drift.
+    guide = (ROOT / "docs" / "INTEGRATION.md").read_text(encoding="utf-8")
     contract = (ROOT / "src" / "mindsurf_omni" / "contract.py").read_text(encoding="utf-8")
     native = (ROOT / "src" / "mindsurf_omni" / "service" / "native.py").read_text(encoding="utf-8")
 
@@ -168,7 +171,7 @@ def test_the_inference_recommendation_matches_the_code_it_recommends() -> None:
     # and is not reachable from the request.
     assert "rp=1.0," in native
 
-    recommendation = guide[guide.index("### 推理参数") : guide.index("### 两条路径")]
+    recommendation = guide[guide.index("### 7.2") : guide.index("### 7.3")]
     for value in ("0.7", "0.9", "512", "1.0", "0.2", "50", "1.05"):
         assert value in recommendation, value
     # The load-bearing sentence: the request's sampling knobs do not reach the

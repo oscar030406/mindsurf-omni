@@ -53,7 +53,8 @@ def test_a_documented_endpoint_that_does_not_exist_is_caught(
     (tmp_path / "src" / "mindsurf_omni" / "service" / "app.py").write_text(
         '@app.get("/v1/models")\n', encoding="utf-8"
     )
-    (tmp_path / "README.md").write_text(
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "INTEGRATION.md").write_text(
         "| `GET /v1/models` | x |\n| `GET /v1/invented` | y |\n", encoding="utf-8"
     )
     monkeypatch.setattr(verify, "ROOT", tmp_path)
