@@ -36,6 +36,12 @@ class Recogniser(Protocol):
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]: ...
 
 
+# Below this the buffer holds no speech: digital silence is 0.0 and a quiet
+# room reads around 0.001. Ordinary speech sits two orders of magnitude above
+# it, so this drops the button pressed by mistake without dropping a whisper.
+SILENCE_RMS = 0.002
+
+
 @dataclass(slots=True)
 class SenseVoiceRecogniser:
     """The product's recogniser. Not eligible to score the product."""
@@ -69,6 +75,17 @@ class SenseVoiceRecogniser:
 
     def _transcribe(self, pcm: bytes) -> tuple[str, str | None]:
         import numpy as np
+
+        from mindsurf_omni.service.vad import frame_energy
+
+        # Silence in, nothing out. Asked to read a room with nobody in it,
+        # SenseVoice does not return empty -- it invents. Measured on three
+        # seconds of digital silence: it returned the Korean "그.", the model
+        # answered that in English, and the caller heard a 9.6-second reply to
+        # a button they pressed by accident. The recogniser is where this
+        # belongs: every path into it has the same problem.
+        if frame_energy(pcm) < SILENCE_RMS:
+            return "", None
 
         self.load()
         audio = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
