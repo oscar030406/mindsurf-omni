@@ -40,7 +40,10 @@ class ChatCompletionRequest(BaseModel):
     model: str = "mindsurf-omni"
     messages: list[ChatMessage]
     stream: bool = False
-    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    # 0.4 rather than the upstream 0.7: measured 2026-08-10 on 12 questions
+    # asked three times each, agreement between the repeats went 0.270 to
+    # 0.418 while 0.2 bought no more of it and made replies longer.
+    temperature: float = Field(default=0.4, ge=0.0, le=2.0)
     top_p: float = Field(default=0.9, gt=0.0, le=1.0)
     max_tokens: int = Field(default=512, ge=1, le=4096)
 

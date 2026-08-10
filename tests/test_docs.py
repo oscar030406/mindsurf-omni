@@ -164,7 +164,7 @@ def test_the_inference_recommendation_matches_the_code_it_recommends() -> None:
     contract = (ROOT / "src" / "mindsurf_omni" / "contract.py").read_text(encoding="utf-8")
     native = (ROOT / "src" / "mindsurf_omni" / "service" / "native.py").read_text(encoding="utf-8")
 
-    assert "temperature: float = Field(default=0.7" in contract
+    assert "temperature: float = Field(default=0.4" in contract
     assert "top_p: float = Field(default=0.9" in contract
     assert "max_tokens: int = Field(default=512" in contract
     # Text carries no repetition penalty; the audio path's 1.05 is upstream's
@@ -172,7 +172,7 @@ def test_the_inference_recommendation_matches_the_code_it_recommends() -> None:
     assert "rp=1.0," in native
 
     recommendation = guide[guide.index("### 7.2") : guide.index("### 7.3")]
-    for value in ("0.7", "0.9", "512", "1.0", "0.2", "50", "1.05"):
+    for value in ("0.4", "0.9", "512", "1.0", "0.2", "50", "1.05"):
         assert value in recommendation, value
     # The load-bearing sentence: the request's sampling knobs do not reach the
     # audio path. A backend that misses this raises temperature expecting

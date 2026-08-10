@@ -49,7 +49,7 @@ class SpeechChunk:
 
 @dataclass(slots=True)
 class GenerationSettings:
-    temperature: float = 0.7
+    temperature: float = 0.4  # see contract.py for where this came from
     top_p: float = 0.9
     max_tokens: int = 512
     voice: str = "default"
