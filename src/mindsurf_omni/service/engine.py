@@ -49,7 +49,12 @@ class SpeechChunk:
 
 @dataclass(slots=True)
 class GenerationSettings:
-    temperature: float = 0.4  # see contract.py for where this came from
+    temperature: float = 0.0  # see contract.py for where this came from
+    # Text needs one, and 1.0 is off. Greedy decoding without it looped on
+    # 2 of 608 replies, one of them saying the same word for 486
+    # characters; at 1.1 that is 0 of 608 with the longest repeat 10
+    # characters. 1.2 also works and makes replies longer for nothing.
+    repetition_penalty: float = 1.1
     top_p: float = 0.9
     max_tokens: int = 512
     voice: str = "default"

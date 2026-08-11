@@ -1,0 +1,41 @@
+{
+ "_": "采样默认值改动的证据。回复正文不入库，只留计数与判词。",
+ "probes": "configs/blind_probes_zh_v1.jsonl（608 条）",
+ "checkpoint": "sft_merge_768.pth",
+ "measured_on": "2026-08-10",
+ "arms": {
+  "T=0.4 rp=1.0": {
+   "n": 608,
+   "degenerate_replies": 1,
+   "longest_repeat_chars": 226,
+   "median_chars": 55
+  },
+  "T=0.0 rp=1.05": {
+   "n": 608,
+   "degenerate_replies": 2,
+   "longest_repeat_chars": 486,
+   "median_chars": 59
+  },
+  "T=0.0 rp=1.1": {
+   "n": 608,
+   "degenerate_replies": 0,
+   "longest_repeat_chars": 10,
+   "median_chars": 59
+  },
+  "T=0.0 rp=1.2": {
+   "n": 608,
+   "degenerate_replies": 0,
+   "longest_repeat_chars": 0,
+   "median_chars": 69
+  }
+ },
+ "decision": "默认改为 T=0.0 + repetition_penalty 1.1",
+ "judged": {
+  "vs_T04_rp10": {
+   "file": "blind-t04-vs-t00rp11-608.json",
+   "share": 0.5073,
+   "noise": 0.0529,
+   "verdict": "无法区分"
+  }
+ }
+}

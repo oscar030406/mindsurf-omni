@@ -307,3 +307,60 @@ def test_an_unknown_variant_is_refused_by_name() -> None:
     # so without it this would pass on the missing checkout instead.
     with pytest.raises(ConfigurationError, match="unknown Thinker variant"):
         generator.load()
+
+
+def test_the_sampling_settings_reach_the_model() -> None:
+    """Three knobs that decide what the caller hears, and nothing pinned them.
+
+    The repetition penalty especially: text ran at 1.0 (off) while the audio
+    path ran 1.05, and at temperature 0 the difference is one reply in 608
+    saying 「键盘」 486 characters in a row against none at all.
+    """
+    import asyncio
+
+    pytest.importorskip("torch")
+    pytest.importorskip("transformers")
+
+    import torch
+
+    from mindsurf_omni.service.engine import GenerationSettings
+
+    seen: dict[str, Any] = {}
+
+    class _Tokeniser:
+        def __call__(self, text: str, return_tensors: str = "pt") -> Any:
+            return type("_Encoded", (), {"input_ids": torch.zeros((1, 1), dtype=torch.long)})()
+
+        def decode(self, value: Any, **kwargs: Any) -> str:
+            return "字"
+
+    class _Model:
+        def generate(self, **kwargs: Any) -> None:
+            seen.update(kwargs)
+            kwargs["streamer"].end()
+
+    class _Generator(ThinkerGenerator):
+        def load(self) -> None:
+            pass
+
+        def prompt(self, messages: list[dict[str, str]]) -> str:
+            return "问"
+
+    generator = _Generator(
+        checkpoint=Path("unused"), tokenizer_dir=Path("unused"), minimind_root=Path("unused")
+    )
+    generator._model = _Model()
+    generator._tokenizer = _Tokeniser()
+
+    async def run() -> None:
+        settings = GenerationSettings(temperature=0.0, top_p=0.8, repetition_penalty=1.1)
+        async for _ in generator.generate([{"role": "user", "content": "问"}], settings):
+            pass
+
+    asyncio.run(run())
+
+    assert seen["repetition_penalty"] == 1.1
+    assert seen["top_p"] == 0.8
+    # Zero means greedy, and transformers wants sampling switched off for it
+    # rather than a temperature of zero it would divide by.
+    assert seen["do_sample"] is False

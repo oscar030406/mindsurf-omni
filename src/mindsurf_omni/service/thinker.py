@@ -215,6 +215,7 @@ class ThinkerGenerator:
                     max_new_tokens=settings.max_tokens,
                     temperature=max(settings.temperature, 1e-5),
                     top_p=settings.top_p,
+                    repetition_penalty=settings.repetition_penalty,
                     do_sample=settings.temperature > 0,
                     eos_token_id=IM_END,
                     streamer=streamer,
