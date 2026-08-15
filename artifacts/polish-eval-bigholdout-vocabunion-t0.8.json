@@ -1,0 +1,14 @@
+{
+ "arms": [
+  "artifacts\\polish_train\\val_bigholdout_polish6.jsonl",
+  "artifacts\\polish_train\\val_bigholdout_taggerv3_t0.8.jsonl"
+ ],
+ "cer_after": 0.04695067481779446,
+ "cer_before": 0.11227604154379586,
+ "content_kept": 0.9656801330840006,
+ "empty": 1,
+ "filler_removed_rate": 0.9134125636672326,
+ "invented": 0.030785982770105774,
+ "mode": "vocabulary-union",
+ "n": 986
+}

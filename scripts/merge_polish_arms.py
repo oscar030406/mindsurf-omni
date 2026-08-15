@@ -10,6 +10,14 @@ seventh training run. Five minutes buys a whole row of the frontier.
   least -- the previous round's best working point was a union.
 * **Intersection** deletes only what both agreed on. Keeps the most content,
   and is the only shape that ever cleared the retention line.
+* **Vocabulary union** takes the first arm's deletions whole, and from the
+  later arms only the spans that spell a filler word. It exists because the
+  complementarity is not symmetric and the asymmetry can be named: measured on
+  986 sentences, the tagger clears 0.983 of the vocabulary filler and 0.437 of
+  the repetition, while the generator reads 0.914 and 0.603. A per-token head
+  recognises 嗯 from the token; it cannot compare two spans. So take the head's
+  verdict where it is strong and ignore it everywhere else, instead of paying
+  its content damage across the whole sentence.
 
 Deletions are read off the alignment rather than trusted from a field: an arm
 under a copy constraint only ever deletes, so source-to-output is exactly a
@@ -36,7 +44,11 @@ sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
 from mindsurf_omni.evaluation.metrics import character_error_rate  # noqa: E402
+from mindsurf_omni.service.polish import BRIDGING_FILLERS, LEADING_FILLERS  # noqa: E402
 from scripts.measure_polish import content_kept, filler_removed, invented  # noqa: E402
+
+# Longest first, so 你知道吧 is matched before 你知道 would be.
+VOCABULARY = tuple(sorted((*LEADING_FILLERS, *BRIDGING_FILLERS), key=len, reverse=True))
 
 
 def dropped(source: str, output: str) -> set[int]:
@@ -55,17 +67,45 @@ def dropped(source: str, output: str) -> set[int]:
     return set(range(len(source))) - kept
 
 
+def vocabulary_spans(source: str, drop: set[int]) -> set[int]:
+    """The part of ``drop`` that spells a whole filler word.
+
+    Whole rather than partial: half a filler is the defect this is meant to
+    avoid, not one to import. 你知道吧 deleted down to 你知道 reads worse than
+    leaving it alone.
+    """
+    kept: set[int] = set()
+    for word in VOCABULARY:
+        start = source.find(word)
+        while start != -1:
+            span = range(start, start + len(word))
+            if all(index in drop for index in span):
+                kept.update(span)
+            start = source.find(word, start + 1)
+    return kept
+
+
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
     source = rows[0]["source"]
     drops = [dropped(source, row["polished"]) for row in rows]
-    combined = set.union(*drops) if mode == "union" else set.intersection(*drops)
+    if mode == "union":
+        combined = set.union(*drops)
+    elif mode == "intersection":
+        combined = set.intersection(*drops)
+    else:
+        # The first arm whole, the rest only where they spell a filler.
+        combined = set(drops[0])
+        for drop in drops[1:]:
+            combined |= vocabulary_spans(source, drop)
     return "".join(char for index, char in enumerate(source) if index not in combined)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arm", required=True, action="append", type=Path, help="two or more")
-    parser.add_argument("--mode", choices=("union", "intersection"), required=True)
+    parser.add_argument(
+        "--mode", choices=("union", "intersection", "vocabulary-union"), required=True
+    )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()

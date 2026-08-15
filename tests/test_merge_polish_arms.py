@@ -47,3 +47,32 @@ def test_a_replaced_span_counts_as_dropped() -> None:
     """Under the copy constraint an arm cannot substitute, so a replacement in
     the alignment is a deletion the matcher paired with unrelated context."""
     assert 0 in dropped("那个天气", "天气")
+
+
+def test_vocabulary_union_takes_the_head_only_where_it_is_strong() -> None:
+    """The tagger clears 0.983 of vocabulary filler and 0.437 of repetition.
+    So take its deletions on filler words and ignore the rest of its opinion."""
+    source = "嗯，今天今天天气好"
+    generator = {"source": source, "polished": "嗯，今天天气好"}  # removed the repeat
+    tagger = {"source": source, "polished": "今天今天天气好"}  # removed 嗯，
+
+    # 嗯 comes in from the tagger; the comma it also dropped is not a filler word
+    # and stays.
+    assert merge([generator, tagger], "vocabulary-union") == "，今天天气好"
+
+
+def test_a_partly_deleted_filler_is_not_imported() -> None:
+    """Half a filler is the defect this avoids, not one to bring along."""
+    source = "你知道吧今天天气好"
+    generator = {"source": source, "polished": source}
+    tagger = {"source": source, "polished": "你知道今天天气好"}  # dropped only 吧
+
+    assert merge([generator, tagger], "vocabulary-union") == source
+
+
+def test_the_first_arm_is_taken_whole() -> None:
+    source = "今天今天天气好"
+    generator = {"source": source, "polished": "今天天气好"}
+    tagger = {"source": source, "polished": source}
+
+    assert merge([generator, tagger], "vocabulary-union") == "今天天气好"
