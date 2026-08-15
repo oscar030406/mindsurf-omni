@@ -79,13 +79,25 @@ def word_boundaries(clause: str) -> list[int]:
 
 
 def inject(
-    text: str, rng: random.Random, rate: float, cap: int
+    text: str,
+    rng: random.Random,
+    rate: float,
+    cap: int,
+    repetition_share: float = 1 / 3,
 ) -> tuple[str, list[dict[str, Any]]]:
     """The same sentence as someone would say it out loud, and what was added.
 
     Repetition is included because it is the second thing every transcript of
     real speech has and the polisher has to remove it too -- 我我觉得 is not a
     filler word, and a model trained only on 嗯 and 那个 would leave it in.
+
+    ``repetition_share`` is a knob because the two halves are not equally
+    learned. Measured on 986 held-out sentences, the best arm clears 0.995 of
+    the vocabulary filler and 0.749 of the repetition; the tagger reaches 0.983
+    on filler and 0.437 on repetition, because a per-token head can recognise 嗯
+    from the token alone but cannot compare two spans. Repetition is what the
+    filler-clearance line is now failing on, and it is a third as frequent as
+    filler in the training data.
     """
     injections: list[dict[str, Any]] = []
     spoken = []
@@ -98,7 +110,7 @@ def inject(
             # synthesiser runs it into the next word.
             spoken.append(f"{token}，")
             injections.append({"kind": "filler", "token": token, "clause": index})
-        if len(injections) < cap and rng.random() < rate / 3:
+        if len(injections) < cap and rng.random() < rate * repetition_share:
             head = clause[: 2 if len(clause) > 3 else 1]
             if head.strip("，。！？；：、"):
                 spoken.append(head)
@@ -139,6 +151,14 @@ def main() -> None:
         "in every two clauses, which is the order spontaneous Mandarin sits at",
     )
     parser.add_argument("--cap", type=int, default=3, help="most injections in one sentence")
+    parser.add_argument(
+        "--repetition-share",
+        type=float,
+        default=1 / 3,
+        help="repetition chance as a share of --rate. The default third is what "
+        "the first three rounds used; repetition is the half the filler line now "
+        "fails on, so this is the knob for testing whether more of it is learnable",
+    )
     parser.add_argument("--seed", type=int, default=20260815)
     args = parser.parse_args()
 
@@ -155,7 +175,7 @@ def main() -> None:
         # Seeded per row rather than per file: adding a sentence tomorrow must
         # not change what was injected into the ones already synthesised.
         rng = random.Random(f"{args.seed}:{row['id']}")
-        spoken, injections = inject(row["text"], rng, args.rate, args.cap)
+        spoken, injections = inject(row["text"], rng, args.rate, args.cap, args.repetition_share)
         written.append(
             {
                 **row,

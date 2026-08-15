@@ -95,3 +95,19 @@ def test_the_pause_lands_between_words_not_inside_one() -> None:
     assert all(2 <= cut <= len(clause) - 2 for cut in cuts)
     # 微波炉 is one word: no cut inside it.
     assert 1 not in cuts and 2 not in cuts
+
+
+def test_the_repetition_share_is_a_knob() -> None:
+    """Repetition is the half the filler-clearance line now fails on: the best
+    arm clears 0.995 of vocabulary filler and 0.749 of repetition."""
+    text = "阳台的花需要阳光和水分，所以要保持充足的水分。"
+
+    def count(share: float) -> int:
+        total = 0
+        for index in range(60):
+            _spoken, injections = inject(text, random.Random(f"share:{index}"), 0.9, 3, share)
+            total += sum(1 for item in injections if item["kind"] == "repetition")
+        return total
+
+    assert count(0.0) == 0
+    assert count(1 / 3) < count(1.0)

@@ -1,0 +1,44 @@
+{
+  "checkpoint": "sft_merge_768.pth",
+  "pairs_trained": 732,
+  "pairs_heldout": 156,
+  "pairs_dropped": 0,
+  "instruction": "把下面这段语音转写整理成通顺的文字。只删掉口语词和重复，不要改写内容，不要添加任何东西。",
+  "project_targets": false,
+  "targets_projected": 0,
+  "learning_rate": 1e-05,
+  "epochs": 5,
+  "history": [
+    {
+      "epoch": 0,
+      "heldout_loss": 0.4076915269192213
+    },
+    {
+      "epoch": 1,
+      "loss": 0.21747672633468962,
+      "heldout_loss": 0.1477087962706812
+    },
+    {
+      "epoch": 2,
+      "loss": 0.1018173839822806,
+      "heldout_loss": 0.12108977870770897
+    },
+    {
+      "epoch": 3,
+      "loss": 0.06280603130607894,
+      "heldout_loss": 0.10832452808487385
+    },
+    {
+      "epoch": 4,
+      "loss": 0.043172161980284646,
+      "heldout_loss": 0.10288132803991455
+    },
+    {
+      "epoch": 5,
+      "loss": 0.031457895247204944,
+      "heldout_loss": 0.0998290578078386
+    }
+  ],
+  "max_weight_displacement": 0.003735288977622986,
+  "fp16_ulp_at_weight_scale": 0.0001220703125
+}
