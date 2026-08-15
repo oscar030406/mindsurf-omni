@@ -18,6 +18,7 @@ from __future__ import annotations
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
+from typing import Any
 
 from mindsurf_omni.contract import ComponentInfo, TokenSpec
 from mindsurf_omni.service.engine import (
@@ -63,6 +64,7 @@ class CascadeEngine(SpeechEngine):
         token_spec: TokenSpec,
         unwired: tuple[str, ...] = (),
         stream_synthesiser: StreamingSynthesiser | None = None,
+        polisher: Any = None,
     ) -> None:
         self._transcribe = transcriber
         self._generate = generator
@@ -70,6 +72,10 @@ class CascadeEngine(SpeechEngine):
         # Absent is the ordinary case, not a degraded one: assembly passes this
         # only when the wired synthesiser produces audio incrementally.
         self._stream_synthesise = stream_synthesiser
+        # The dictation path's second stage. None is the ordinary case -- the
+        # cascade also serves conversation, where polishing a question would
+        # edit the user's words for no reason.
+        self._polisher = polisher
         self._components = components
         self._token_spec = token_spec
         # Which of the three stages will refuse if called. Assembly knows this
@@ -87,6 +93,17 @@ class CascadeEngine(SpeechEngine):
 
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         return await self._transcribe(pcm, sample_rate)
+
+    async def polish(self, transcript: str) -> str | None:
+        """The transcript tidied, or None when no polisher is wired.
+
+        None rather than the transcript unchanged: a caller has to be able to
+        tell "this service does not polish" from "this text needed no polish",
+        and the dictation product routes on that difference.
+        """
+        if self._polisher is None:
+            return None
+        return await self._polisher.polish(transcript)
 
     def complete(
         self, messages: list[dict[str, str]], settings: GenerationSettings

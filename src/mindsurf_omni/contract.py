@@ -98,6 +98,10 @@ class SpeechRequest(BaseModel):
 
 class TranscriptionResponse(BaseModel):
     text: str
+    # Extension: what the polish stage made of it, for the dictation product.
+    # Null means no polisher is wired -- which a caller must be able to tell
+    # apart from "this text needed no polishing".
+    polished: str | None = None
     # Extension: the language the encoder actually detected, so a caller can
     # notice when Chinese audio was read as English before the answer is wrong.
     language: str | None = None

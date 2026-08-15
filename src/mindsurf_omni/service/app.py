@@ -173,8 +173,10 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         if not pcm:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "request body carried no audio")
         text, language = await engine.transcribe(pcm, INPUT_SAMPLE_RATE)
+        polish = getattr(engine, "polish", None)
         return TranscriptionResponse(
             text=text,
+            polished=await polish(text) if polish is not None else None,
             language=language,
             duration_seconds=len(pcm) / 2 / INPUT_SAMPLE_RATE,
         )

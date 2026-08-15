@@ -251,3 +251,40 @@ def test_the_engine_carries_the_token_spec_clients_need(tmp_path: Path) -> None:
     assert spec.audio_codebooks == 8
     assert spec.input_sample_rate == 16_000
     assert spec.output_sample_rate == 24_000
+
+
+def test_the_configured_reference_reaches_the_local_synthesiser(tmp_path: Path) -> None:
+    """The variables are only worth having if assembly passes them on."""
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    clip = tmp_path / "reference.wav"
+    clip.write_bytes(b"RIFF")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_TTS": "voxcpm",
+            "MINDSURF_TTS_PROMPT_WAV": str(clip),
+            "MINDSURF_TTS_PROMPT_TEXT": "参考音频说的话",
+        }
+    )
+    from mindsurf_omni.service import factory, tts
+
+    built: list[dict[str, object]] = []
+
+    class _Recorder:
+        def __init__(self, **options: object) -> None:
+            built.append(options)
+
+        async def synthesise(self, utterance: object) -> bytes:
+            return b""
+
+    real_import, real_class = factory._importable, tts.VoxCPMSynthesiser
+    factory._importable = lambda module: module == "voxcpm" or real_import(module)
+    tts.VoxCPMSynthesiser = _Recorder  # type: ignore[misc]
+    try:
+        build(settings)
+    finally:
+        factory._importable, tts.VoxCPMSynthesiser = real_import, real_class  # type: ignore[misc]
+
+    assert built == [{"device": "cpu", "prompt_wav": str(clip), "prompt_text": "参考音频说的话"}]

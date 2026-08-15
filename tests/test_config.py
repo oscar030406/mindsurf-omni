@@ -182,3 +182,77 @@ def test_a_checkpoint_that_is_not_on_disk_is_refused_at_startup(tmp_path: Path) 
 
     (tmp_path / "typo.pth").write_bytes(b"")
     settings.verify()
+
+
+def test_half_a_clone_prompt_is_refused_rather_than_ignored(tmp_path: Path) -> None:
+    """VoxCPM drops a clip without its text, and then draws a speaker per call.
+
+    Which is the failure the reference exists to remove: an operator who sets
+    the clip and forgets the text gets the same changing voice back, with a
+    configuration that says a reference is wired.
+    """
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    clip = tmp_path / "reference.wav"
+    clip.write_bytes(b"")
+
+    for environment in (
+        {"MINDSURF_TTS_PROMPT_WAV": str(clip)},
+        {"MINDSURF_TTS_PROMPT_TEXT": "参考音频说的话"},
+    ):
+        settings = Settings.from_environment(
+            {
+                "MINDSURF_ENGINE": "cascade",
+                "MINDSURF_WEIGHTS": str(tmp_path),
+                "MINDSURF_TTS": "voxcpm",
+                **environment,
+            }
+        )
+        assert settings is not None
+        with pytest.raises(ConfigurationError, match="go together"):
+            settings.verify()
+
+
+def test_a_reference_clip_that_is_not_on_disk_is_refused_at_startup(tmp_path: Path) -> None:
+    """Same reason as the checkpoint: VoxCPM would raise on the first utterance."""
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_TTS": "voxcpm",
+            "MINDSURF_TTS_PROMPT_WAV": str(tmp_path / "typo.wav"),
+            "MINDSURF_TTS_PROMPT_TEXT": "参考音频说的话",
+        }
+    )
+    assert settings is not None
+
+    with pytest.raises(ConfigurationError, match="typo.wav"):
+        settings.verify()
+
+    (tmp_path / "typo.wav").write_bytes(b"")
+    settings.verify()
+
+
+def test_the_reference_clip_is_named_in_the_component_list(tmp_path: Path) -> None:
+    """Swapping the clip changes the voice in every sample a report is about."""
+    from mindsurf_omni.service.config import describe_components
+
+    clip = tmp_path / "reference.wav"
+    clip.write_bytes(b"RIFF")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_TTS": "voxcpm",
+            "MINDSURF_TTS_PROMPT_WAV": str(clip),
+            "MINDSURF_TTS_PROMPT_TEXT": "参考音频说的话",
+        }
+    )
+    assert settings is not None
+
+    spoke = [c for c in describe_components(settings) if c.name == "tts-voxcpm"]
+
+    assert len(spoke) == 1
+    assert spoke[0].sha256 is not None and len(spoke[0].sha256) == 64

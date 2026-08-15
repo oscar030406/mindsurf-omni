@@ -71,6 +71,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         unwired.append("transcriber")
 
     return CascadeEngine(
+        polisher=_build_polisher(settings),
         transcriber=transcribe,
         generator=generate,  # type: ignore[arg-type]
         synthesiser=synthesise,
@@ -79,6 +80,39 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         token_spec=token_spec(),
         unwired=tuple(unwired),
     )
+
+
+def _build_polisher(settings: Settings) -> Any:
+    """The dictation path's second stage, or None when none was named.
+
+    Loaded at assembly rather than on the first request: unlike the
+    synthesiser, this one is not optional once configured -- a dictation turn
+    that arrives before the weights are resident would pay the whole load, and
+    the operator asked for it by naming a checkpoint.
+    """
+    if settings.polish is None:
+        return None
+    if settings.minimind_root is None:
+        raise ConfigurationError(
+            "MINDSURF_POLISH is set but MINIMIND_O_ROOT is not; the polisher is built from "
+            "MiniMind's own model class rather than a copy of it, so the checkout is needed"
+        )
+    if not _importable("torch"):
+        raise ConfigurationError(
+            "MINDSURF_POLISH is set but torch is not installed; the image carries the "
+            "runtime set only, so the polish stage runs on a host with the 'train' extra"
+        )
+
+    from mindsurf_omni.service.polish import Polisher
+
+    polisher = Polisher(
+        checkpoint=settings.polish,
+        tokenizer_dir=settings.paths.tokenizer,
+        minimind_root=settings.minimind_root,
+        device=settings.device,
+    )
+    polisher.load()
+    return polisher
 
 
 def _build_generator(settings: Settings) -> Any:
@@ -188,7 +222,11 @@ def _build_synthesiser(settings: Settings) -> Any:
         # Weights load on the first request, not here: the card may be busy at
         # process start, and a 503 that says so beats a container that will not
         # boot.
-        else VoxCPMSynthesiser(device=settings.device)
+        else VoxCPMSynthesiser(
+            device=settings.device,
+            prompt_wav=str(settings.tts_prompt_wav) if settings.tts_prompt_wav else None,
+            prompt_text=settings.tts_prompt_text,
+        )
     )
 
     async def speak(text: str, generation: GenerationSettings) -> bytes:

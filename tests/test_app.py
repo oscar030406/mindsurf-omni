@@ -684,3 +684,29 @@ def test_a_cancelled_turn_still_remembers_what_the_caller_said() -> None:
             pass
 
     assert engine.histories[1][0] == {"role": "user", "content": "那它多少钱"}
+
+
+def test_transcription_carries_the_polished_text_when_a_polisher_is_wired() -> None:
+    """The dictation product reads this field; null means the stage is absent."""
+
+    class _Polishing(FakeEngine):
+        async def polish(self, transcript: str) -> str:
+            return transcript.replace("那个", "")
+
+    body = (
+        TestClient(create_app(_Polishing()))
+        .post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000)
+        .json()
+    )
+
+    assert body["text"] == "今天天气怎么样"
+    assert body["polished"] == "今天天气怎么样"
+
+
+def test_transcription_says_null_rather_than_echoing_when_no_polisher_is_wired(
+    client: TestClient,
+) -> None:
+    """ "Not wired" and "nothing to change" must not look the same to the caller."""
+    body = client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000).json()
+
+    assert body["polished"] is None

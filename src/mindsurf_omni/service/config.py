@@ -77,6 +77,16 @@ class Settings:
     # exists, at which point the text stage stops being the unwired one.
     thinker: Path | None = None
     minimind_root: Path | None = None
+    # The clip the local synthesiser clones, and what it says. Unset, VoxCPM
+    # draws a speaker per call, so a reply changes voice between clauses -- the
+    # "怪声" the fourth meeting raised. The knob exists in the synthesiser
+    # already; what was missing was a way for an operator to reach it.
+    tts_prompt_wav: Path | None = None
+    tts_prompt_text: str | None = None
+    # The dictation path's polish stage: a Thinker fine-tuned to delete spoken
+    # filler. Unset means the service transcribes and stops there, which is what
+    # the conversation product wants.
+    polish: Path | None = None
 
     @classmethod
     def from_environment(cls, environment: dict[str, str] | None = None) -> Settings | None:
@@ -110,6 +120,13 @@ class Settings:
             minimind_root=(
                 Path(source["MINIMIND_O_ROOT"]) if source.get("MINIMIND_O_ROOT") else None
             ),
+            tts_prompt_wav=(
+                Path(source["MINDSURF_TTS_PROMPT_WAV"])
+                if source.get("MINDSURF_TTS_PROMPT_WAV")
+                else None
+            ),
+            tts_prompt_text=(source.get("MINDSURF_TTS_PROMPT_TEXT") or "").strip() or None,
+            polish=Path(source["MINDSURF_POLISH"]) if source.get("MINDSURF_POLISH") else None,
         )
 
     def verify(self) -> None:
@@ -132,6 +149,24 @@ class Settings:
             definition = self.minimind_root / "model" / "model_minimind.py"
             if not definition.is_file():
                 missing = [*missing, f"minimind_root={self.minimind_root} (no {definition.name})"]
+        # Both or neither. VoxCPM rejects a clip without its text, and it is
+        # right to -- the text is what tells it which sounds belong to which
+        # characters. Refused here rather than at the first request, because
+        # half a reference is silently ignored by the model that receives it
+        # and the service would then run the very failure this fixes.
+        if (self.tts_prompt_wav is None) != (self.tts_prompt_text is None):
+            raise ConfigurationError(
+                "MINDSURF_TTS_PROMPT_WAV and MINDSURF_TTS_PROMPT_TEXT go together; "
+                f"only {'the clip' if self.tts_prompt_wav else 'the text'} was set, and a "
+                "clip without its text clones nothing"
+            )
+        if self.tts_prompt_wav is not None and not self.tts_prompt_wav.is_file():
+            missing = [*missing, f"tts_prompt_wav={self.tts_prompt_wav}"]
+        # Same reason as the Thinker's: a mistyped path would otherwise surface
+        # as the first dictation coming back unpolished, which reads as the
+        # model doing nothing rather than as a path that is not there.
+        if self.polish is not None and not self.polish.is_file():
+            missing = [*missing, f"polish={self.polish}"]
         if missing:
             raise ConfigurationError(
                 f"the {self.path} path needs these, and they are not on disk: "
@@ -193,9 +228,30 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
             ComponentInfo(name="mimi-codec", frozen=True),
         ]
     components.append(ComponentInfo(name="sensevoice-small", parameters=234_000_000, frozen=True))
+    if settings.polish is not None:
+        # Named and hashed like the Thinker: the polish stage rewrites what the
+        # user sees, so which weights did it belongs in the same list.
+        components.append(
+            ComponentInfo(
+                name="polisher",
+                parameters=89_864_448,
+                sha256=checkpoint_digest(settings.polish),
+                frozen=False,
+            )
+        )
     if settings.path == "cascade" and settings.tts:
         # Named, because CER measures whether the synthesiser said the reply.
         # A report that does not say which one spoke has not measured anything
-        # that can be compared to the next report.
-        components.append(ComponentInfo(name=f"tts-{settings.tts}", frozen=True))
+        # that can be compared to the next report. The digest is the reference
+        # clip when there is one: with a clone prompt the voice in every sample
+        # comes from that file, so swapping it changes the audio a report is
+        # about as surely as swapping the synthesiser does. Null means no
+        # prompt, which for VoxCPM means a different speaker each call.
+        components.append(
+            ComponentInfo(
+                name=f"tts-{settings.tts}",
+                sha256=checkpoint_digest(settings.tts_prompt_wav),
+                frozen=True,
+            )
+        )
     return components
