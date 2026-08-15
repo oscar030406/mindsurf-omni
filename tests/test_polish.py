@@ -155,3 +155,72 @@ def test_a_projected_target_is_reachable_by_a_deletion_only_decoder() -> None:
     remaining = iter(source)
     assert all(character in remaining for character in projected)
     assert "气" not in projected  # unreachable, and no longer asked for
+
+
+def test_a_long_dictation_is_polished_one_sentence_at_a_time() -> None:
+    """164 seconds of speech is 718 characters and the model was trained on
+    single sentences. Fed the whole buffer it returned 18 of them."""
+    from mindsurf_omni.service.polish import split_sentences
+
+    pieces = split_sentences("你好。今天天气怎么样？出门吧")
+    assert pieces == ["你好。", "今天天气怎么样？", "出门吧"]
+    # Joining the pieces back has to reproduce the transcript exactly, or the
+    # split itself would lose text.
+    text = "第一句。第二句！第三句？还没写完"
+    assert "".join(split_sentences(text)) == text
+
+
+def test_a_comma_does_not_end_a_sentence() -> None:
+    """Cutting at every comma would take away the context the model needs to
+    tell a filler 就是 from a copula one."""
+    from mindsurf_omni.service.polish import split_sentences
+
+    assert split_sentences("就是，我想说的是这个") == ["就是，我想说的是这个"]
+
+
+def test_consumed_reads_how_far_the_decode_got() -> None:
+    """Exact, not approximate: the output is always a subsequence of the input."""
+    from mindsurf_omni.service.polish import consumed
+
+    assert consumed("今天天气怎么样", "今天天气怎么样") == 1.0
+    assert consumed("今天天气怎么样", "今天") < 0.5
+    assert consumed("", "") == 1.0
+
+
+class _Stub(Polisher):
+    """A polisher whose model returns whatever the test tells it to."""
+
+    def _polish(self, transcript: str) -> str:  # type: ignore[override]
+        return self.answers.get(transcript, transcript)  # type: ignore[attr-defined]
+
+
+async def test_a_piece_the_model_truncated_is_thrown_away() -> None:
+    """A dictation tool that silently drops what the user said is worse than
+    one that leaves the filler in. Measured end to end: 74 s of speech came
+    back at 0.39 of the transcript, 164 s at 0.03, HTTP 200 both times."""
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    polisher.answers = {"嗯，第一句很长很长很长很长很长。": "嗯，第一"}  # type: ignore[attr-defined]
+
+    out = await polisher.polish("嗯，第一句很长很长很长很长很长。")
+
+    assert out == "嗯，第一句很长很长很长很长很长。"
+
+
+async def test_a_piece_the_model_polished_properly_is_kept() -> None:
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    polisher.answers = {"嗯，今天天气怎么样？": "今天天气怎么样？"}  # type: ignore[attr-defined]
+
+    assert await polisher.polish("嗯，今天天气怎么样？") == "今天天气怎么样？"
+
+
+def test_the_door_opens_for_the_spellings_the_recogniser_writes() -> None:
+    """11.3% of the filler that reaches a transcript is not spelled the way it
+    was said: SenseVoice writes 呃 as 饿 恶 鄂 扼 and 嗯 as 恩 摁 温."""
+    from mindsurf_omni.service.polish import RECOGNISED_FILLERS
+
+    assert "摁" in RECOGNISED_FILLERS
+    # Left out on purpose: 温 appears 289 times in the corpus as an ordinary
+    # word (水温), 饿 12 times (是不是饿了), 啊 11. A door onto those is a door
+    # onto content.
+    for ordinary in ("温", "饿", "啊"):
+        assert ordinary not in RECOGNISED_FILLERS

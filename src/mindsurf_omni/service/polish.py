@@ -25,6 +25,7 @@ these words, and a caller who changes them is running a different model.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -42,6 +43,63 @@ LOOKAHEAD = 6
 # and a second list would let those two drift apart.
 LEADING_FILLERS = ("嗯", "呃", "那个", "这个", "就是", "然后", "反正", "其实", "我觉得")
 BRIDGING_FILLERS = ("你知道吧", "怎么说呢", "对吧")
+
+# How the recogniser actually spells the above. The two lists were the same
+# thing until the service was driven by hand: 11.3% of the filler that reaches
+# a transcript is not spelled the way it was said. SenseVoice writes 呃 as
+# 饿 恶 啊 鄂 扼 2 and 嗯 as 恩 摁 温, so the decoder's door -- which matches the
+# vocabulary literally -- never opened for one occurrence in nine.
+#
+# Only the spellings that never occur in the corpus as ordinary words are here.
+# Counted over both pools, 4168 sentences: 摁 鄂 唉 哎 呐 appear zero times, so
+# stepping over one can only ever be removing filler. 温 (289), 饿 (12) and
+# 啊 (11) are left out for exactly the opposite reason -- 水温 and 是不是饿了 are
+# what a user said, and a door that opens on them is a door onto content.
+RECOGNISED_FILLERS = ("摁", "鄂", "唉", "哎", "呐")
+
+
+# Where a sentence ends, for splitting a long dictation into pieces the model
+# was actually trained on. Commas are not here on purpose: a clause is not a
+# sentence, and cutting at every comma would take away the context the model
+# needs to tell a filler 就是 from a copula one.
+_SENTENCE_END = re.compile(r"[。！？；\n]+")
+
+# How much of a piece the output has to have consumed to be trusted. Not tuned:
+# an output that reached less than nine tenths of its input has dropped a
+# clause, and dropping a clause is the failure this floor exists to refuse.
+FLOOR = 0.90
+
+
+def split_sentences(text: str) -> list[str]:
+    """Sentences with their end marks kept, in order.
+
+    Kept rather than stripped so that joining the pieces back reproduces the
+    transcript exactly when nothing is removed.
+    """
+    pieces, start = [], 0
+    for match in _SENTENCE_END.finditer(text):
+        pieces.append(text[start : match.end()])
+        start = match.end()
+    if start < len(text):
+        pieces.append(text[start:])
+    return pieces
+
+
+def consumed(source: str, output: str) -> float:
+    """Share of ``source`` the output reached, matching greedily in order.
+
+    Exact rather than approximate: under the copy constraint the output is
+    always a subsequence of the input, so walking one against the other says
+    how much of it the decode got through before it stopped.
+    """
+    if not source:
+        return 1.0
+    pointer = 0
+    for char in output:
+        while pointer < len(source) and source[pointer] != char:
+            pointer += 1
+        pointer = min(pointer + 1, len(source))
+    return pointer / len(source)
 
 
 def build_prompt(transcript: str) -> str:
@@ -160,14 +218,45 @@ class Polisher:
 
         if not transcript.strip():
             return transcript
-        return await asyncio.to_thread(self._polish, transcript)
+        return await asyncio.to_thread(self._polish_whole, transcript)
+
+    def _polish_whole(self, transcript: str) -> str:
+        """One sentence at a time, and never less text than came in.
+
+        Both guards come from driving the running service with real dictation
+        rather than from any of the four acceptance numbers, which are read on
+        single corpus sentences of at most 160 characters.
+
+        **Sentence at a time.** 164 seconds of speech is 718 characters, and
+        the model was trained on single sentences. Fed the whole buffer it
+        returned 18 characters -- 97% of the dictation gone, HTTP 200, no
+        error. Measured end to end through the service: 74 s came back at 0.39
+        of the transcript, 164 s at 0.03, while 243 s and 335 s came back
+        untouched. Not a length cap, and not monotonic: it is a model a long
+        way outside the distribution it was trained on. Splitting on sentence
+        marks puts every call back inside it.
+
+        **Never shorter than it should be.** A dictation tool that silently
+        drops what the user said is worse than one that leaves the filler in,
+        so a piece whose output consumed less than ``FLOOR`` of its input is
+        discarded and the input kept. The copy constraint makes that test exact
+        -- the output is always a subsequence of the input.
+        """
+        out = []
+        for piece in split_sentences(transcript):
+            if not piece.strip():
+                out.append(piece)
+                continue
+            polished = self._polish(piece)
+            out.append(polished if consumed(piece, polished) >= FLOOR else piece)
+        return "".join(out)
 
     def _filler_spans(self) -> tuple[tuple[int, ...], ...]:
         """The filler vocabulary as token ids, tokenised once per process."""
         if self._fillers is None:
             self._fillers = tuple(
                 tuple(self._tokeniser(word).input_ids)
-                for word in (*LEADING_FILLERS, *BRIDGING_FILLERS)
+                for word in (*LEADING_FILLERS, *BRIDGING_FILLERS, *RECOGNISED_FILLERS)
             )
         return self._fillers
 

@@ -70,7 +70,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     if not recogniser_available:
         unwired.append("transcriber")
 
-    return CascadeEngine(
+    engine = CascadeEngine(
         polisher=_build_polisher(settings),
         transcriber=transcribe,
         generator=generate,  # type: ignore[arg-type]
@@ -80,6 +80,10 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         token_spec=token_spec(),
         unwired=tuple(unwired),
     )
+    # Handed to the engine rather than called here: assembly must not block on
+    # a network-mounted checkpoint, and the app warms it at startup instead.
+    engine._warm_recogniser = recogniser.load if recogniser_available else None
+    return engine
 
 
 def _build_polisher(settings: Settings) -> Any:

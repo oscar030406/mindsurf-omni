@@ -94,6 +94,17 @@ class CascadeEngine(SpeechEngine):
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         return await self._transcribe(pcm, sample_rate)
 
+    def warm(self) -> None:
+        """Load what the first request would otherwise wait for.
+
+        Called once at startup and never again. Only the recogniser: the
+        polisher is already loaded at assembly, and the synthesiser is a third
+        party's latency that the operator may not want paid at boot.
+        """
+        loader = getattr(self, "_warm_recogniser", None)
+        if loader is not None:
+            loader()
+
     async def polish(self, transcript: str) -> str | None:
         """The transcript tidied, or None when no polisher is wired.
 

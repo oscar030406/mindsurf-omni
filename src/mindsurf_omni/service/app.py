@@ -16,6 +16,7 @@ import contextlib
 import json
 import time
 import uuid
+from collections.abc import AsyncIterator
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, status
@@ -53,7 +54,31 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     than raised at startup: a container that crash-loops gives an operator no
     log to read and no health check to consult.
     """
-    app = FastAPI(title="MindSurf Omni", version="0.1.0")
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        """Pull the recogniser's weights in while nobody is waiting on them.
+
+        The recogniser loads lazily so that a container which cannot reach its
+        weights still starts and explains itself, and that is worth keeping.
+        But deferring the load is not the same as deferring it *into a request*
+        -- measured on the machine that hosts the model, SenseVoice takes
+        7272 ms to load, and every one of those milliseconds lands on the first
+        user to press record. Warming here keeps the behaviour on a missing
+        checkpoint exactly as it was (the failure still surfaces at the first
+        request) and takes the wait off the person.
+
+        Failure is swallowed on purpose: this is a warm-up, and a service that
+        refuses to start because a warm-up failed is the crash-loop the lazy
+        load exists to avoid.
+        """
+        warm_up = getattr(app.state.engine, "warm", None)
+        if warm_up is not None:
+            with contextlib.suppress(Exception):
+                await asyncio.to_thread(warm_up)
+        yield
+
+    app = FastAPI(title="MindSurf Omni", version="0.1.0", lifespan=lifespan)
 
     if engine is None:
         from mindsurf_omni.service.config import Settings
