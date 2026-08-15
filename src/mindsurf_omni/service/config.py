@@ -210,18 +210,25 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
     Which components are frozen decides what a result can be attributed to, so
     it belongs in the response rather than in a document beside it.
     """
-    components = [
-        ComponentInfo(
-            name="thinker",
-            parameters=89_864_448,
-            # Which weights spoke. Without it two evaluation runs -- one on the
-            # pretrained base, one on the fine-tuned checkpoint -- produce
-            # byte-identical provenance, and the report comparing them is
-            # comparing two things it cannot name.
-            sha256=checkpoint_digest(settings.thinker),
-            frozen=False,
-        ),
-    ]
+    components = []
+    # Listed only when it exists, the same rule the polisher below follows.
+    # Listing it unconditionally made /health answer "thinker: ready" beside
+    # "generator: not wired" -- two statements about one stage, contradicting
+    # each other, in one payload an operator is meant to act on. Nothing was
+    # checking readiness; the entry was a constant.
+    if settings.thinker is not None:
+        components.append(
+            ComponentInfo(
+                name="thinker",
+                parameters=89_864_448,
+                # Which weights spoke. Without it two evaluation runs -- one on
+                # the pretrained base, one on the fine-tuned checkpoint --
+                # produce byte-identical provenance, and the report comparing
+                # them is comparing two things it cannot name.
+                sha256=checkpoint_digest(settings.thinker),
+                frozen=False,
+            )
+        )
     if settings.path == "native":
         components += [
             ComponentInfo(name="talker", frozen=False),

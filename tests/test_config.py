@@ -96,9 +96,13 @@ def test_audio_special_ids_sit_above_the_codebook() -> None:
     assert min(AUDIO_SPECIAL_TOKENS.values()) >= 2048
 
 
-def test_components_mark_what_is_frozen() -> None:
+def test_components_mark_what_is_frozen(tmp_path: Path) -> None:
     """Which pieces are frozen decides what a result can be attributed to."""
-    settings = Settings.from_environment({"MINDSURF_ENGINE": "native"})
+    checkpoint = tmp_path / "thinker.pth"
+    checkpoint.write_bytes(b"weights")
+    settings = Settings.from_environment(
+        {"MINDSURF_ENGINE": "native", "MINDSURF_THINKER": str(checkpoint)}
+    )
     assert settings is not None
 
     components = {c.name: c for c in describe_components(settings)}
@@ -106,6 +110,16 @@ def test_components_mark_what_is_frozen() -> None:
     assert components["thinker"].frozen is False
     assert components["mimi-codec"].frozen is True
     assert components["sensevoice-small"].frozen is True
+
+
+def test_a_thinker_that_was_never_configured_is_not_listed() -> None:
+    """Listing it unconditionally made /health answer "thinker: ready" beside
+    "generator: not wired" -- two statements about one stage, contradicting
+    each other, in one payload an operator is meant to act on."""
+    settings = Settings.from_environment({"MINDSURF_ENGINE": "cascade"})
+    assert settings is not None
+
+    assert "thinker" not in {c.name for c in describe_components(settings)}
 
 
 def test_the_cascade_path_does_not_claim_a_talker() -> None:
