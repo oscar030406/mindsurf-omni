@@ -87,3 +87,17 @@ Thumbs.db
 
 # 判官凭据。本地一份，永不入库——密钥不进源码，也不该进全局环境变量。
 configs/judge.local.json
+
+# 润色这条线上离线算得出来的中间产物：脚本是确定性的，秒级重跑，
+# 入库只会让仓库大一倍（实测这批 44.7 MB，占该分支体积的 62%）。
+# 怎么重跑写在 artifacts/polish_train/README.txt 里。汇总数照常入库。
+artifacts/polish_train/val_*_ceiling.jsonl
+artifacts/polish_train/val_bigholdout_nothing.jsonl
+artifacts/polish_train/val_bigholdout_union_t*.jsonl
+artifacts/polish_train/val_bigholdout_intersection_t*.jsonl
+artifacts/polish_train/val_bigholdout_vocabunion_t*.jsonl
+artifacts/polish_train/val_bigholdout_veto_t*.jsonl
+artifacts/polish_train/dict_*.jsonl
+artifacts/polish_train/nondict_*.jsonl
+artifacts/polish_train/pairs_v4.jsonl
+artifacts/polish_train/pairs_v3_0.*.jsonl
