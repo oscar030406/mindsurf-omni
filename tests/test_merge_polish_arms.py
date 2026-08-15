@@ -76,3 +76,39 @@ def test_the_first_arm_is_taken_whole() -> None:
     tagger = {"source": source, "polished": source}
 
     assert merge([generator, tagger], "vocabulary-union") == "今天天气好"
+
+
+def test_veto_keeps_a_deletion_only_where_the_other_arm_agrees() -> None:
+    """The head's confidence protects content instead of removing more of it."""
+    source = "阳台的花要浇水"
+    generator = {"source": source, "polished": "的花要浇水"}  # dropped 阳台
+    tagger = {"source": source, "polished": source}  # kept everything
+
+    assert merge([generator, tagger], "veto") == source
+
+
+def test_veto_never_blocks_a_repetition() -> None:
+    """A per-token head cannot see 时间时间 at all, so it would veto every time.
+    The tagger clears 0.437 of injected repetition against the generator's 0.603."""
+    source = "时间时间上选星月前后"
+    generator = {"source": source, "polished": "时间上选星月前后"}
+    tagger = {"source": source, "polished": source}
+
+    assert merge([generator, tagger], "veto") == "时间上选星月前后"
+
+
+def test_veto_never_blocks_a_whole_filler_word() -> None:
+    source = "嗯今天天气好"
+    generator = {"source": source, "polished": "今天天气好"}
+    tagger = {"source": source, "polished": source}
+
+    assert merge([generator, tagger], "veto") == "今天天气好"
+
+
+def test_one_repeated_character_is_not_a_repetition() -> None:
+    """今天天气 holds 天天 and 看看 is an ordinary word. A floor of one buys
+    0.003 of filler clearance, inside the noise, and pays with this."""
+    from scripts.merge_polish_arms import repetition_spans
+
+    assert repetition_spans("今天天气好", {1}) == set()
+    assert repetition_spans("时间时间上", {0, 1}) == {0, 1}

@@ -10,6 +10,12 @@ seventh training run. Five minutes buys a whole row of the frontier.
   least -- the previous round's best working point was a union.
 * **Intersection** deletes only what both agreed on. Keeps the most content,
   and is the only shape that ever cleared the retention line.
+* **Veto** goes the other way: keep the first arm's deletion only where the
+  later arms agree, so the head's confidence is used to protect content rather
+  than to remove more of it. Two kinds of deletion are exempt from the veto,
+  and both for the same reason as above -- a filler word the head cannot have
+  missed, and an exact adjacent repetition, which a per-token head cannot see
+  at all and would therefore veto every time.
 * **Vocabulary union** takes the first arm's deletions whole, and from the
   later arms only the spans that spell a filler word. It exists because the
   complementarity is not symmetric and the asymmetry can be named: measured on
@@ -85,6 +91,32 @@ def vocabulary_spans(source: str, drop: set[int]) -> set[int]:
     return kept
 
 
+def repetition_spans(source: str, drop: set[int], shortest: int = 2, longest: int = 5) -> set[int]:
+    """Deletions that remove one copy of an exact adjacent repetition.
+
+    Exempt from the veto because a per-token head cannot represent the
+    judgement at all -- it reads one position at a time and 时间时间 looks like
+    two ordinary words. Measured: the tagger clears 0.437 of the injected
+    repetition against the generator's 0.603, and letting it veto that work
+    costs the whole difference.
+
+    Two characters and up, because one is not a repetition in Chinese: 今天天气
+    holds 天天 and 看看 is an ordinary word. Measured both ways over 986 sentences
+    -- a floor of one reads 0.9083 filler clearance against two's 0.9055, same
+    retention to four places -- so the shorter floor buys 0.003 that is inside
+    the noise and pays for it with a class of false positive that is not.
+    """
+    found: set[int] = set()
+    for size in range(shortest, longest + 1):
+        for start in range(len(source) - 2 * size + 1):
+            span = range(start, start + size)
+            if not all(index in drop for index in span):
+                continue
+            if source[start : start + size] == source[start + size : start + 2 * size]:
+                found.update(span)
+    return found
+
+
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
     source = rows[0]["source"]
     drops = [dropped(source, row["polished"]) for row in rows]
@@ -92,6 +124,11 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
         combined = set.union(*drops)
     elif mode == "intersection":
         combined = set.intersection(*drops)
+    elif mode == "veto":
+        exempt = repetition_spans(source, drops[0])
+        for drop in drops:
+            exempt |= vocabulary_spans(source, drop)
+        combined = set.intersection(*drops) | exempt
     else:
         # The first arm whole, the rest only where they spell a filler.
         combined = set(drops[0])
@@ -104,7 +141,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arm", required=True, action="append", type=Path, help="two or more")
     parser.add_argument(
-        "--mode", choices=("union", "intersection", "vocabulary-union"), required=True
+        "--mode",
+        choices=("union", "intersection", "vocabulary-union", "veto"),
+        required=True,
     )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report", type=Path)
