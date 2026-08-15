@@ -80,6 +80,50 @@ FLOOR = 0.90
 # CER for nothing, since none of them was long enough to need splitting.
 TRAINED_LENGTH = 160
 
+# Spellings that mean the model might have work to do here. Wider than the
+# decoder's door on purpose: the door decides whether a span may be deleted, so
+# a wrong entry costs content, while this decides whether the model is called at
+# all, so a wrong entry costs one decode. The costs are not symmetric and the
+# lists should not be either -- 饿 恶 啊 温 are here and not in the door.
+#
+# Measured over 986 held-out transcripts: skipping the pieces that match nothing
+# here removes 46.7% of the calls and the four numbers do not get worse -- CER
+# 0.0566 to 0.0537, retention 0.9683 to 0.9717. The model was editing sentences
+# with nothing to remove, and by construction those edits were over-deletion.
+_WORTH_A_LOOK = (
+    *LEADING_FILLERS,
+    *BRIDGING_FILLERS,
+    *RECOGNISED_FILLERS,
+    "饿",
+    "恶",
+    "啊",
+    "恩",
+    "扼",
+    "温",
+    "反证",
+    "其是",
+    "奇实",
+)
+
+
+def worth_polishing(piece: str, longest_repeat: int = 5) -> bool:
+    """Whether this piece holds anything the stage could remove.
+
+    Filler word or an exact adjacent repetition. Nothing else is in scope --
+    substitution was given up on purpose (DECISIONS §16) and punctuation is the
+    recogniser's to write.
+    """
+    if any(word in piece for word in _WORTH_A_LOOK):
+        return True
+    # From one character, unlike the merge rule's exemption. There the cost of
+    # calling 天天 a repetition is keeping a deletion; here it is one decode,
+    # while missing 我我想问一下 means never removing it at all.
+    return any(
+        piece[start : start + size] == piece[start + size : start + 2 * size]
+        for size in range(1, longest_repeat + 1)
+        for start in range(len(piece) - 2 * size + 1)
+    )
+
 
 def split_sentences(text: str) -> list[str]:
     """Sentences with their end marks kept, in order.
@@ -279,14 +323,14 @@ class Polisher:
         -- the output is always a subsequence of the input.
         """
         pieces = group_sentences(transcript)
-        polished = self._polish_batch([p for p in pieces if p.strip()])
-        answers = iter(polished)
+        wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]
+        answers = dict(zip(wanted, self._polish_batch(wanted), strict=True))
         out = []
         for piece in pieces:
-            if not piece.strip():
+            if not piece.strip() or piece not in answers:
                 out.append(piece)
                 continue
-            answer = next(answers)
+            answer = answers[piece]
             out.append(answer if consumed(piece, answer) >= FLOOR else piece)
         return "".join(out)
 

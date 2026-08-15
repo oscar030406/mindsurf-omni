@@ -258,3 +258,25 @@ def test_a_single_sentence_past_the_line_is_left_whole() -> None:
 
     text = "没有标点的一长串字" * 30
     assert group_sentences(text, longest=50) == [text]
+
+
+def test_a_piece_with_nothing_to_remove_never_reaches_the_model() -> None:
+    """Skipping them removes 46.7% of the calls and the four numbers do not get
+    worse -- the model was editing sentences with nothing to remove, and by
+    construction those edits were over-deletion."""
+    from mindsurf_omni.service.polish import worth_polishing
+
+    assert not worth_polishing("会议纪要发群里了，麻烦大家今天下班前确认一下")
+    assert worth_polishing("嗯，会议纪要发群里了")
+    assert worth_polishing("我我想问一下报销流程")  # repetition, no filler word
+    # 饿 is in the skip list but not in the decoder's door: calling the model on
+    # 是不是饿了 costs one decode, opening the door on it costs the word.
+    assert worth_polishing("鹦鹉一直叫是不是饿了")
+
+
+async def test_the_skipped_pieces_come_back_untouched() -> None:
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    polisher.answers = {}  # type: ignore[attr-defined]
+    clean = "会议纪要发群里了。麻烦大家确认一下。"
+
+    assert await polisher.polish(clean) == clean
