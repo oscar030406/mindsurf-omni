@@ -57,13 +57,22 @@ def main() -> None:
     parser.add_argument("--rows", required=True, type=Path, help="a val_*.jsonl of per-row output")
     parser.add_argument("--pool", required=True, type=Path, help="the pool, for the source field")
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--by-pool-text",
+        action="store_true",
+        help="judge the register on the pool's sentence rather than the row's "
+        "target. Needed for the retargeted pairs: their target is the "
+        "transcript with the filler taken out, and SenseVoice writes no line "
+        "breaks, so the multi-line rule cannot fire on it",
+    )
     args = parser.parse_args()
 
-    source_of = {}
+    source_of, text_of = {}, {}
     for line in args.pool.read_text(encoding="utf-8").splitlines():
         if line.strip():
             row = json.loads(line)
             source_of[row["id"]] = row.get("source", "")
+            text_of[row["id"]] = row.get("text", "")
 
     rows = [
         json.loads(line)
@@ -75,7 +84,10 @@ def main() -> None:
         for row in rows
         # The target rather than the transcript: what the person meant is what
         # decides the register, and the transcript carries injected filler.
-        if is_dictation(row["target"], source_of.get(row["id"], ""))
+        if is_dictation(
+            text_of.get(row["id"], row["target"]) if args.by_pool_text else row["target"],
+            source_of.get(row["id"], ""),
+        )
     ]
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
