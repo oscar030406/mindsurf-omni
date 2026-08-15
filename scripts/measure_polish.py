@@ -145,9 +145,7 @@ def copy_only_generate(
         ids = (
             prompt_ids
             if not produced
-            else torch.cat(
-                [prompt_ids, torch.tensor([produced], device=prompt_ids.device)], dim=1
-            )
+            else torch.cat([prompt_ids, torch.tensor([produced], device=prompt_ids.device)], dim=1)
         )
         logits = model(input_ids=ids).logits[0, -1].float()
         pointer = subsequence_pointer(source, produced)

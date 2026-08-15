@@ -126,7 +126,7 @@ def test_the_verdicts_follow_the_written_lines_not_the_numbers() -> None:
 
 
 def test_punctuation_agreement_asks_where_not_whether() -> None:
-    """"Came back punctuated" and "broke in the right places" are different claims."""
+    """ "Came back punctuated" and "broke in the right places" are different claims."""
     rows = [
         _row("a", "你好，今天天气怎么样？", "你好，今天天气怎么样？"),
         _row("b", "你好，今天天气怎么样？", "你好今天，天气怎么样？"),
