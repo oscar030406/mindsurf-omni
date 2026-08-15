@@ -1,0 +1,76 @@
+{
+  "audio_seconds": null,
+  "base": "http://127.0.0.1:8003",
+  "caveat": "单卡、单进程、同一份权重；合成器不在链路里。并发 1 的读数不是延迟基准（那要独占卡 + measure_latency.py）",
+  "max_tokens": 512,
+  "points": [
+    {
+      "concurrency": 1,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 162.15433704201132,
+      "mean_ms": 147.5313445644133,
+      "median_characters": 73.0,
+      "p50_ms": 147.54822000395507,
+      "p95_ms": 159.43492698716,
+      "requests": 32,
+      "seconds": 4.7216787179932,
+      "throughput_per_second": 6.777250615984433
+    },
+    {
+      "concurrency": 2,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 345.5313789891079,
+      "mean_ms": 328.0421678427956,
+      "median_characters": 73.0,
+      "p50_ms": 327.3242579889484,
+      "p95_ms": 338.5961329913698,
+      "requests": 32,
+      "seconds": 5.2540712769841775,
+      "throughput_per_second": 6.090515014552279
+    },
+    {
+      "concurrency": 4,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 1100.228612020146,
+      "mean_ms": 1032.71127134758,
+      "median_characters": 73.0,
+      "p50_ms": 1036.7937040282413,
+      "p95_ms": 1097.657245991286,
+      "requests": 32,
+      "seconds": 8.29812693601707,
+      "throughput_per_second": 3.856291937534441
+    },
+    {
+      "concurrency": 8,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 3233.0026130075566,
+      "mean_ms": 2451.856320747538,
+      "median_characters": 73.0,
+      "p50_ms": 2394.117324030958,
+      "p95_ms": 3029.0010169846937,
+      "requests": 32,
+      "seconds": 10.040994115988724,
+      "throughput_per_second": 3.186935439892846
+    },
+    {
+      "concurrency": 16,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 6494.177344953641,
+      "mean_ms": 5953.949337028462,
+      "median_characters": 73.0,
+      "p50_ms": 5960.933041991666,
+      "p95_ms": 6305.97480898723,
+      "requests": 32,
+      "seconds": 12.046679118007887,
+      "throughput_per_second": 2.656333723720178
+    }
+  ],
+  "prompt": "请介绍一下你自己，并说说你能帮我做些什么",
+  "requests_per_level": 32,
+  "stage": "llm"
+}

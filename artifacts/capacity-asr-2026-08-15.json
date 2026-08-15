@@ -1,0 +1,71 @@
+{
+  "audio_seconds": 3.0,
+  "base": "http://127.0.0.1:8003",
+  "caveat": "单卡、单进程、同一份权重；合成器不在链路里。并发 1 的读数不是延迟基准（那要独占卡 + measure_latency.py）",
+  "max_tokens": null,
+  "points": [
+    {
+      "concurrency": 1,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 65.02571899909526,
+      "mean_ms": 54.535714434678084,
+      "p50_ms": 53.93059004563838,
+      "p95_ms": 62.384334043599665,
+      "requests": 32,
+      "seconds": 1.7452625969890505,
+      "throughput_per_second": 18.335349680447408
+    },
+    {
+      "concurrency": 2,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 88.10463000554591,
+      "mean_ms": 79.3312812147633,
+      "p50_ms": 79.67621402349323,
+      "p95_ms": 87.87079103058204,
+      "requests": 32,
+      "seconds": 1.2750328570255078,
+      "throughput_per_second": 25.097392450459665
+    },
+    {
+      "concurrency": 4,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 184.41360298311338,
+      "mean_ms": 148.95087047625566,
+      "p50_ms": 151.98646998032928,
+      "p95_ms": 175.21352804033086,
+      "requests": 32,
+      "seconds": 1.217668141995091,
+      "throughput_per_second": 26.279738211405885
+    },
+    {
+      "concurrency": 8,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 515.1302810409106,
+      "mean_ms": 390.7775580937596,
+      "p50_ms": 379.9490400124341,
+      "p95_ms": 507.24220398114994,
+      "requests": 32,
+      "seconds": 1.6061808930244297,
+      "throughput_per_second": 19.923036153010248
+    },
+    {
+      "concurrency": 16,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 1140.1686510071158,
+      "mean_ms": 896.7244875020697,
+      "p50_ms": 885.616519022733,
+      "p95_ms": 1107.6408079825342,
+      "requests": 32,
+      "seconds": 1.8534857879858464,
+      "throughput_per_second": 17.264766855738287
+    }
+  ],
+  "prompt": null,
+  "requests_per_level": 32,
+  "stage": "asr"
+}

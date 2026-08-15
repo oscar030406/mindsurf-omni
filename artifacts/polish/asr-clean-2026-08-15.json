@@ -1,0 +1,17 @@
+{
+  "by_language": {
+    "zh": {
+      "mean": 0.010610830393917099,
+      "n": 160
+    }
+  },
+  "caveat": "synthetic speech only; a floor on the error rate, not an estimate",
+  "cer": 0.010610830393917099,
+  "median": 0.0072203107079553755,
+  "noise_floor": 0.002509958834598874,
+  "recogniser": "sensevoice-small",
+  "sample_size": 160,
+  "threshold": 0.15,
+  "upper_bound_3sigma": 0.018140706897713722,
+  "verdict": "过"
+}

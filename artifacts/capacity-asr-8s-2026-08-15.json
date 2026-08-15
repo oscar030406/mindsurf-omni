@@ -1,0 +1,76 @@
+{
+  "audio_seconds": 8.0,
+  "base": "http://127.0.0.1:8003",
+  "caveat": "单卡、单进程、同一份权重；合成器不在链路里。并发 1 的读数不是延迟基准（那要独占卡 + measure_latency.py）",
+  "max_tokens": null,
+  "points": [
+    {
+      "concurrency": 1,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 66.9350849930197,
+      "mean_ms": 61.8768071562954,
+      "median_characters": 2.0,
+      "p50_ms": 61.578162014484406,
+      "p95_ms": 66.49343599565327,
+      "requests": 32,
+      "seconds": 1.980633769009728,
+      "throughput_per_second": 16.156444720216637
+    },
+    {
+      "concurrency": 2,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 96.55199700500816,
+      "mean_ms": 77.80504230868246,
+      "median_characters": 2.0,
+      "p50_ms": 75.26783703360707,
+      "p95_ms": 88.3455200237222,
+      "requests": 32,
+      "seconds": 1.2563924780115485,
+      "throughput_per_second": 25.469748155962666
+    },
+    {
+      "concurrency": 4,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 215.61485499842092,
+      "mean_ms": 168.8178566218994,
+      "median_characters": 2.0,
+      "p50_ms": 167.43625595699996,
+      "p95_ms": 200.941763992887,
+      "requests": 32,
+      "seconds": 1.3713470610091463,
+      "throughput_per_second": 23.33472022498218
+    },
+    {
+      "concurrency": 8,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 549.9025869648904,
+      "mean_ms": 427.48962928271794,
+      "median_characters": 2.0,
+      "p50_ms": 421.91036604344845,
+      "p95_ms": 539.3102319794707,
+      "requests": 32,
+      "seconds": 1.7466230440186337,
+      "throughput_per_second": 18.321068252010654
+    },
+    {
+      "concurrency": 16,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 1277.5915379752405,
+      "mean_ms": 946.8690525645798,
+      "median_characters": 2.0,
+      "p50_ms": 938.375620986335,
+      "p95_ms": 1260.0361310178414,
+      "requests": 32,
+      "seconds": 1.9496442849631421,
+      "throughput_per_second": 16.413250482051374
+    }
+  ],
+  "prompt": null,
+  "requests_per_level": 32,
+  "stage": "asr"
+}

@@ -1,0 +1,6 @@
+{
+  "checkpoint": "sft_polish2_768.pth",
+  "latency_ms_median": 64.6414480288513,
+  "latency_ms_p95": 352.1927669644356,
+  "n": 155
+}

@@ -1,0 +1,77 @@
+{
+  "audio_file": "/home/oscar/omni/stimulus/zh002.wav",
+  "audio_seconds": 4.9959375,
+  "base": "http://127.0.0.1:8003",
+  "caveat": "单卡、单进程、同一份权重；合成器不在链路里。并发 1 的读数不是延迟基准（那要独占卡 + measure_latency.py）",
+  "max_tokens": null,
+  "points": [
+    {
+      "concurrency": 1,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 107.03241999726743,
+      "mean_ms": 59.48861578326614,
+      "median_characters": 30.0,
+      "p50_ms": 57.209547027014196,
+      "p95_ms": 72.74745596805587,
+      "requests": 32,
+      "seconds": 1.904196467017755,
+      "throughput_per_second": 16.804988641805746
+    },
+    {
+      "concurrency": 2,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 89.76240002084523,
+      "mean_ms": 75.0059557849454,
+      "median_characters": 30.0,
+      "p50_ms": 75.85983700118959,
+      "p95_ms": 88.03382300538942,
+      "requests": 32,
+      "seconds": 1.2096496589947492,
+      "throughput_per_second": 26.453940413286972
+    },
+    {
+      "concurrency": 4,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 202.19374995213002,
+      "mean_ms": 161.6925891576102,
+      "median_characters": 30.0,
+      "p50_ms": 160.93877999810502,
+      "p95_ms": 184.72419201862067,
+      "requests": 32,
+      "seconds": 1.3146103370236233,
+      "throughput_per_second": 24.34181376699837
+    },
+    {
+      "concurrency": 8,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 560.9026050078683,
+      "mean_ms": 418.9164787148911,
+      "median_characters": 30.0,
+      "p50_ms": 408.27206696849316,
+      "p95_ms": 519.9040449806489,
+      "requests": 32,
+      "seconds": 1.7004796199616976,
+      "throughput_per_second": 18.81822023878227
+    },
+    {
+      "concurrency": 16,
+      "failed": 0,
+      "failures": [],
+      "max_ms": 1248.474496009294,
+      "mean_ms": 949.2607706288254,
+      "median_characters": 30.0,
+      "p50_ms": 934.4883119920269,
+      "p95_ms": 1236.4371629664674,
+      "requests": 32,
+      "seconds": 1.9547595899784938,
+      "throughput_per_second": 16.370299531489735
+    }
+  ],
+  "prompt": null,
+  "requests_per_level": 32,
+  "stage": "asr"
+}

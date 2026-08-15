@@ -1,0 +1,89 @@
+{
+  "arms": {
+    "edge": {
+      "directory": "artifacts/tts_edge",
+      "rate": {
+        "maximum": 5.196078431372549,
+        "median": 4.668558821682055,
+        "minimum": 3.136200716845878,
+        "n": 160,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9429979920387268,
+        "median": 0.956587553024292,
+        "minimum": 0.6442887187004089,
+        "n": 160,
+        "noise_floor": 0.004969489743848041,
+        "p05": 0.8308324813842773,
+        "pairs": 12720
+      }
+    },
+    "voxcpm_noref": {
+      "directory": "artifacts/voxcpm_arms/noref",
+      "rate": {
+        "maximum": 7.894736842105263,
+        "median": 4.975246922590376,
+        "minimum": 3.5357142857142856,
+        "n": 160,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": {
+        "clips": [],
+        "n": 160,
+        "rate": 0.0
+      },
+      "timbre": {
+        "mean": 0.4313594698905945,
+        "median": 0.42172664403915405,
+        "minimum": -0.034807488322257996,
+        "n": 160,
+        "noise_floor": 0.010517189191332592,
+        "p05": 0.18167932331562042,
+        "pairs": 12720
+      }
+    },
+    "voxcpm_ref": {
+      "directory": "artifacts/voxcpm_arms/ref",
+      "rate": {
+        "maximum": 5.84045584045584,
+        "median": 4.73964126807564,
+        "minimum": 2.142857142857143,
+        "n": 160,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": {
+        "clips": [],
+        "n": 160,
+        "rate": 0.0
+      },
+      "timbre": {
+        "mean": 0.8634752035140991,
+        "median": 0.8956228494644165,
+        "minimum": 0.202522873878479,
+        "n": 160,
+        "noise_floor": 0.011551189809057965,
+        "p05": 0.6645516157150269,
+        "pairs": 12720
+      }
+    }
+  },
+  "caveat": "CAM++ 量的是说话人身份，不是好不好听；语速离群只抓粗大缺陷。「达不达得到 edge 那一档」要人耳，这里只给数",
+  "thresholds": {
+    "fixed_voice": 0.9,
+    "rate_ceiling": 12.0,
+    "rate_floor": 2.0,
+    "scattered_voice": 0.6
+  },
+  "verdicts": {
+    "语速": "没有落在人类区间外的片段",
+    "音色": "没修好：带参考 0.8956 < 0.9"
+  }
+}

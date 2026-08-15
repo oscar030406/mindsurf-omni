@@ -1,0 +1,417 @@
+{
+  "arms": {
+    "clean": {
+      "cer": 0.003862058080808081,
+      "cer_folded": 0.0038620580808080814,
+      "digits": {
+        "with_digits": {
+          "cer": 0.0,
+          "n": 1
+        },
+        "without_digits": {
+          "cer": 0.0038863477542722827,
+          "n": 159
+        }
+      },
+      "errors": {
+        "deleted": 0,
+        "inserted": 0,
+        "substituted": 6,
+        "top_confusions": [
+          {
+            "heard": "带",
+            "n": 1,
+            "reference": "待"
+          },
+          {
+            "heard": "丽丽",
+            "n": 1,
+            "reference": "粒粒"
+          },
+          {
+            "heard": "的",
+            "n": 1,
+            "reference": "得"
+          },
+          {
+            "heard": "包",
+            "n": 1,
+            "reference": "剥"
+          },
+          {
+            "heard": "血",
+            "n": 1,
+            "reference": "雪"
+          }
+        ]
+      },
+      "exact": 155,
+      "median_folded": 0.0,
+      "n": 160,
+      "noise_floor": 0.0033712121212121217,
+      "punctuated": 1.0,
+      "punctuation_agreement": {
+        "heard_breaks": 162,
+        "matched": 0,
+        "precision": 0.0,
+        "recall": null,
+        "reference_breaks": 0
+      },
+      "reference": "reference_text",
+      "worst": [
+        {
+          "cer": 0.18181818181818182,
+          "id": "zh111"
+        },
+        {
+          "cer": 0.125,
+          "id": "zh156"
+        },
+        {
+          "cer": 0.1111111111111111,
+          "id": "zh086"
+        },
+        {
+          "cer": 0.1,
+          "id": "zh139"
+        },
+        {
+          "cer": 0.1,
+          "id": "zh141"
+        }
+      ]
+    },
+    "filler_vs_clean": {
+      "cer": 0.10886030636030636,
+      "cer_folded": 0.10886030636030637,
+      "digits": {
+        "with_digits": {
+          "cer": 0.0,
+          "n": 1
+        },
+        "without_digits": {
+          "cer": 0.10954496237515106,
+          "n": 159
+        }
+      },
+      "errors": {
+        "deleted": 0,
+        "inserted": 152,
+        "substituted": 5,
+        "top_confusions": [
+          {
+            "heard": "我觉得",
+            "n": 8,
+            "reference": ""
+          },
+          {
+            "heard": "嗯",
+            "n": 8,
+            "reference": ""
+          },
+          {
+            "heard": "这个",
+            "n": 7,
+            "reference": ""
+          },
+          {
+            "heard": "反正",
+            "n": 7,
+            "reference": ""
+          },
+          {
+            "heard": "如何",
+            "n": 5,
+            "reference": ""
+          },
+          {
+            "heard": "怎么",
+            "n": 4,
+            "reference": ""
+          },
+          {
+            "heard": "然后",
+            "n": 4,
+            "reference": ""
+          },
+          {
+            "heard": "其实",
+            "n": 4,
+            "reference": ""
+          },
+          {
+            "heard": "那个",
+            "n": 3,
+            "reference": ""
+          },
+          {
+            "heard": "就是",
+            "n": 3,
+            "reference": ""
+          },
+          {
+            "heard": "给我",
+            "n": 1,
+            "reference": ""
+          },
+          {
+            "heard": "长途",
+            "n": 1,
+            "reference": ""
+          },
+          {
+            "heard": "周末",
+            "n": 1,
+            "reference": ""
+          },
+          {
+            "heard": "植物",
+            "n": 1,
+            "reference": ""
+          },
+          {
+            "heard": "西湖",
+            "n": 1,
+            "reference": ""
+          }
+        ]
+      },
+      "exact": 88,
+      "median_folded": 0.0,
+      "n": 160,
+      "noise_floor": 0.02203790133477633,
+      "punctuated": 1.0,
+      "punctuation_agreement": {
+        "heard_breaks": 173,
+        "matched": 0,
+        "precision": 0.0,
+        "recall": null,
+        "reference_breaks": 0
+      },
+      "reference": "clean_text",
+      "worst": [
+        {
+          "cer": 0.6666666666666666,
+          "id": "zh071"
+        },
+        {
+          "cer": 0.45454545454545453,
+          "id": "zh112"
+        },
+        {
+          "cer": 0.4444444444444444,
+          "id": "zh033"
+        },
+        {
+          "cer": 0.4444444444444444,
+          "id": "zh122"
+        },
+        {
+          "cer": 0.4,
+          "id": "zh097"
+        }
+      ]
+    },
+    "filler_vs_spoken": {
+      "cer": 0.004619998057498058,
+      "cer_folded": 0.004619998057498058,
+      "digits": {
+        "with_digits": {
+          "cer": 0.0,
+          "n": 1
+        },
+        "without_digits": {
+          "cer": 0.004649054649054649,
+          "n": 159
+        }
+      },
+      "errors": {
+        "deleted": 0,
+        "inserted": 0,
+        "substituted": 8,
+        "top_confusions": [
+          {
+            "heard": "嗯",
+            "n": 2,
+            "reference": "呃"
+          },
+          {
+            "heard": "时",
+            "n": 1,
+            "reference": "什"
+          },
+          {
+            "heard": "丽丽",
+            "n": 1,
+            "reference": "粒粒"
+          },
+          {
+            "heard": "的",
+            "n": 1,
+            "reference": "得"
+          },
+          {
+            "heard": "包",
+            "n": 1,
+            "reference": "剥"
+          },
+          {
+            "heard": "血",
+            "n": 1,
+            "reference": "雪"
+          }
+        ]
+      },
+      "exact": 153,
+      "median_folded": 0.0,
+      "n": 160,
+      "noise_floor": 0.0032525980963480964,
+      "punctuated": 1.0,
+      "punctuation_agreement": {
+        "heard_breaks": 173,
+        "matched": 12,
+        "precision": 0.06936416184971098,
+        "recall": 0.23529411764705882,
+        "reference_breaks": 51
+      },
+      "reference": "reference_text",
+      "worst": [
+        {
+          "cer": 0.15384615384615385,
+          "id": "zh111"
+        },
+        {
+          "cer": 0.1111111111111111,
+          "id": "zh126"
+        },
+        {
+          "cer": 0.1,
+          "id": "zh139"
+        },
+        {
+          "cer": 0.1,
+          "id": "zh141"
+        },
+        {
+          "cer": 0.1,
+          "id": "zh156"
+        }
+      ]
+    }
+  },
+  "caveat": "合成语音、注入式口语词：真人的重启和拖音比这难，所以纠错这一侧是下界，而口语词保留率是上界（读得清清楚楚的 那个 是识别器最容易留住的情况）",
+  "retention": {
+    "by_kind": {
+      "filler": {
+        "injected": 51,
+        "kept": 49,
+        "retention": 0.9607843137254902
+      },
+      "repetition": {
+        "injected": 25,
+        "kept": 24,
+        "retention": 0.96
+      }
+    },
+    "by_token": {
+      "为什": {
+        "injected": 4,
+        "kept": 3
+      },
+      "介绍": {
+        "injected": 1,
+        "kept": 1
+      },
+      "其实": {
+        "injected": 6,
+        "kept": 6
+      },
+      "反正": {
+        "injected": 7,
+        "kept": 7
+      },
+      "呃": {
+        "injected": 3,
+        "kept": 1
+      },
+      "周末": {
+        "injected": 1,
+        "kept": 1
+      },
+      "哪种": {
+        "injected": 1,
+        "kept": 1
+      },
+      "嗯": {
+        "injected": 6,
+        "kept": 6
+      },
+      "如何": {
+        "injected": 5,
+        "kept": 5
+      },
+      "就是": {
+        "injected": 3,
+        "kept": 3
+      },
+      "怎么": {
+        "injected": 7,
+        "kept": 7
+      },
+      "我觉得": {
+        "injected": 9,
+        "kept": 9
+      },
+      "植物": {
+        "injected": 1,
+        "kept": 1
+      },
+      "然后": {
+        "injected": 4,
+        "kept": 4
+      },
+      "给我": {
+        "injected": 1,
+        "kept": 1
+      },
+      "行李": {
+        "injected": 1,
+        "kept": 1
+      },
+      "西湖": {
+        "injected": 1,
+        "kept": 1
+      },
+      "这个": {
+        "injected": 8,
+        "kept": 8
+      },
+      "那个": {
+        "injected": 5,
+        "kept": 5
+      },
+      "长途": {
+        "injected": 1,
+        "kept": 1
+      },
+      "隔夜": {
+        "injected": 1,
+        "kept": 1
+      }
+    },
+    "injected": 76,
+    "kept": 73,
+    "retention": 0.9605263157894737
+  },
+  "thresholds": {
+    "correction_small": 0.02,
+    "punctuation_missing": 0.1,
+    "retention_moot": 0.3,
+    "retention_real": 0.7
+  },
+  "verdicts": {
+    "口语词": "口语词剔除是真活（保留率 0.961 ≥ 0.7）",
+    "断句": "转写自带标点（1.000），断句不是主要缺口",
+    "纠错": "纠错收益小（折叠 CER 0.0039 ≤ 0.02）"
+  }
+}

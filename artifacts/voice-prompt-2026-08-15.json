@@ -1,0 +1,33 @@
+{
+  "chosen_because": [
+    "5.44 秒，落在 VoxCPM 参考片段的常用长度里（几秒足够定音色，长了只是多花一次编码）",
+    "转写完整、无数字：SenseVoice 读回 '您好，请问您有什么需要帮忙的问题吗？'，18 字 3.31 字/秒，没有截断也没有乱码",
+    "来自训练语料自己的说话人，不是别家 TTS 的嗓子——克隆商用 TTS 的音色是另一个问题"
+  ],
+  "level": {
+    "peak_of_full_scale": 0.212,
+    "finding": "克隆把响度和音色一起复制：带这条参考的输出峰值中位只有 0.19 满幅，edge 是 0.70。级联路径没有响度归一化（peak_normalise 只在原生路径，且按设计只衰减不放大）",
+    "candidates_peak_range": "语料出来的六条候选参考峰值 0.21–0.47，没有一条是正常电平",
+    "loud_variant": {
+      "path_server": "~/omni/voice_prompt/reference_zh_5s_loud.wav",
+      "sha256": "3848bce50174800ee5aa1b28f6511248a6b226b87320c7d84773b707682dd341",
+      "gain": 4.25,
+      "peak_of_full_scale": 0.9,
+      "why": "只动电平不动音色，验输出电平回不回来、UTMOS 掉不掉（放大也放大了编解码底噪）"
+    }
+  },
+  "limits": [
+    "这段音频是从语料的 ref_audios 用 Mimi 解码出来的，本身带编解码底噪；克隆出来的音色继承它",
+    "配套文本是 SenseVoice 转写的，不是原始标注——语料里 ref_audios 没有配对原文",
+    "只挑了一条。另一条候选是 speaker2_calm.wav（5.92 秒，'您好，当地天气晴朗啊，气温约30度左右。'），因为带数字没选"
+  ],
+  "path_local": "scratchpad/speaker0_lively.wav",
+  "path_server": "~/omni/voice_prompt/reference_zh_5s.wav",
+  "sample_rate": 16000,
+  "seconds": 5.44,
+  "sha256": "504756ea11b91fa73647eb74e2a85f5b679dcd3c5a208657129471f59555f7a6",
+  "source": "~/omni/harvested_zh2/speaker0_lively.wav —— 2026-07-29 那轮情绪参考采集从训练语料聚出来的说话人片段",
+  "text": "您好，请问您有什么需要帮忙的问题吗？",
+  "text_source": "sensevoice-small，2026-08-15 本机 5070 转写",
+  "why": "voxcpm 不给参考就每次调用随机抽说话人，同一段回复逐句换人声。这条参考是那把锁的钥匙：MINDSURF_TTS_PROMPT_WAV / MINDSURF_TTS_PROMPT_TEXT 指向它，音色就固定"
+}

@@ -1,0 +1,160 @@
+{"clean_text": "今天天气怎么样", "filler_count": 0, "id": "zh000", "injections": [], "repetition_count": 0, "text": "今天天气怎么样"}
+{"clean_text": "帮我推荐一部电影", "filler_count": 0, "id": "zh001", "injections": [], "repetition_count": 0, "text": "帮我推荐一部电影"}
+{"clean_text": "北京有什么好玩的地方", "filler_count": 1, "id": "zh002", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}], "repetition_count": 0, "text": "这个，北京有什么好玩的地方"}
+{"clean_text": "怎么煮一碗好吃的面", "filler_count": 1, "id": "zh003", "injections": [{"clause": 0, "kind": "filler", "token": "那个"}], "repetition_count": 0, "text": "那个，怎么煮一碗好吃的面"}
+{"clean_text": "机器学习到底在学什么", "filler_count": 0, "id": "zh004", "injections": [], "repetition_count": 0, "text": "机器学习到底在学什么"}
+{"clean_text": "明天要下雨吗", "filler_count": 0, "id": "zh005", "injections": [], "repetition_count": 0, "text": "明天要下雨吗"}
+{"clean_text": "附近有什么餐厅", "filler_count": 0, "id": "zh006", "injections": [], "repetition_count": 0, "text": "附近有什么餐厅"}
+{"clean_text": "给我讲个笑话", "filler_count": 0, "id": "zh007", "injections": [{"clause": 0, "kind": "repetition", "token": "给我"}], "repetition_count": 1, "text": "给我给我讲个笑话"}
+{"clean_text": "怎么才能睡得好一点", "filler_count": 1, "id": "zh008", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，怎么才能睡得好一点"}
+{"clean_text": "最近有什么好书", "filler_count": 0, "id": "zh009", "injections": [], "repetition_count": 0, "text": "最近有什么好书"}
+{"clean_text": "中秋节是怎么来的", "filler_count": 1, "id": "zh010", "injections": [{"clause": 0, "kind": "filler", "token": "那个"}], "repetition_count": 0, "text": "那个，中秋节是怎么来的"}
+{"clean_text": "如何缓解肩颈酸痛", "filler_count": 0, "id": "zh011", "injections": [], "repetition_count": 0, "text": "如何缓解肩颈酸痛"}
+{"clean_text": "帮我写一句生日祝福", "filler_count": 0, "id": "zh012", "injections": [], "repetition_count": 0, "text": "帮我写一句生日祝福"}
+{"clean_text": "地铁几点开始运营", "filler_count": 1, "id": "zh013", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}], "repetition_count": 0, "text": "这个，地铁几点开始运营"}
+{"clean_text": "怎么挑选一个好西瓜", "filler_count": 1, "id": "zh014", "injections": [{"clause": 0, "kind": "filler", "token": "嗯"}], "repetition_count": 0, "text": "嗯，怎么挑选一个好西瓜"}
+{"clean_text": "什么运动适合初学者", "filler_count": 0, "id": "zh015", "injections": [], "repetition_count": 0, "text": "什么运动适合初学者"}
+{"clean_text": "汇率涨跌对我有什么影响", "filler_count": 1, "id": "zh016", "injections": [{"clause": 0, "kind": "filler", "token": "就是"}], "repetition_count": 0, "text": "就是，汇率涨跌对我有什么影响"}
+{"clean_text": "猫为什么喜欢纸箱", "filler_count": 0, "id": "zh017", "injections": [], "repetition_count": 0, "text": "猫为什么喜欢纸箱"}
+{"clean_text": "如何做番茄炒蛋", "filler_count": 0, "id": "zh018", "injections": [{"clause": 0, "kind": "repetition", "token": "如何"}], "repetition_count": 1, "text": "如何如何做番茄炒蛋"}
+{"clean_text": "长途飞行怎么少倒时差", "filler_count": 0, "id": "zh019", "injections": [{"clause": 0, "kind": "repetition", "token": "长途"}], "repetition_count": 1, "text": "长途长途飞行怎么少倒时差"}
+{"clean_text": "介绍一下敦煌莫高窟", "filler_count": 1, "id": "zh020", "injections": [{"clause": 0, "kind": "filler", "token": "嗯"}], "repetition_count": 0, "text": "嗯，介绍一下敦煌莫高窟"}
+{"clean_text": "咖啡和茶哪个提神", "filler_count": 0, "id": "zh021", "injections": [], "repetition_count": 0, "text": "咖啡和茶哪个提神"}
+{"clean_text": "怎么记住新学的单词", "filler_count": 0, "id": "zh022", "injections": [{"clause": 0, "kind": "repetition", "token": "怎么"}], "repetition_count": 1, "text": "怎么怎么记住新学的单词"}
+{"clean_text": "家里绿萝叶子黄了怎么办", "filler_count": 0, "id": "zh023", "injections": [], "repetition_count": 0, "text": "家里绿萝叶子黄了怎么办"}
+{"clean_text": "数字签名有什么用", "filler_count": 0, "id": "zh024", "injections": [], "repetition_count": 0, "text": "数字签名有什么用"}
+{"clean_text": "孩子不爱吃饭怎么办", "filler_count": 0, "id": "zh025", "injections": [], "repetition_count": 0, "text": "孩子不爱吃饭怎么办"}
+{"clean_text": "周末怎么安排不浪费", "filler_count": 0, "id": "zh026", "injections": [{"clause": 0, "kind": "repetition", "token": "周末"}], "repetition_count": 1, "text": "周末周末怎么安排不浪费"}
+{"clean_text": "如何练好普通话", "filler_count": 0, "id": "zh027", "injections": [], "repetition_count": 0, "text": "如何练好普通话"}
+{"clean_text": "植物是怎么把阳光变成养分的", "filler_count": 0, "id": "zh028", "injections": [{"clause": 0, "kind": "repetition", "token": "植物"}], "repetition_count": 1, "text": "植物植物是怎么把阳光变成养分的"}
+{"clean_text": "相机的光圈是什么意思", "filler_count": 0, "id": "zh029", "injections": [], "repetition_count": 0, "text": "相机的光圈是什么意思"}
+{"clean_text": "怎么快速消除水肿", "filler_count": 0, "id": "zh030", "injections": [], "repetition_count": 0, "text": "怎么快速消除水肿"}
+{"clean_text": "西湖有哪些景点", "filler_count": 0, "id": "zh031", "injections": [{"clause": 0, "kind": "repetition", "token": "西湖"}], "repetition_count": 1, "text": "西湖西湖有哪些景点"}
+{"clean_text": "如何挑选一双跑鞋", "filler_count": 1, "id": "zh032", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}], "repetition_count": 0, "text": "这个，如何挑选一双跑鞋"}
+{"clean_text": "为什么天空是蓝色的", "filler_count": 1, "id": "zh033", "injections": [{"clause": 0, "kind": "filler", "token": "其实"}, {"clause": 0, "kind": "repetition", "token": "为什"}], "repetition_count": 1, "text": "其实，为什为什么天空是蓝色的"}
+{"clean_text": "帮我想个团队口号", "filler_count": 1, "id": "zh034", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，帮我想个团队口号"}
+{"clean_text": "怎么保存切开的牛油果", "filler_count": 0, "id": "zh035", "injections": [], "repetition_count": 0, "text": "怎么保存切开的牛油果"}
+{"clean_text": "介绍一下故宫的历史", "filler_count": 0, "id": "zh036", "injections": [], "repetition_count": 0, "text": "介绍一下故宫的历史"}
+{"clean_text": "什么时候适合看星星", "filler_count": 1, "id": "zh037", "injections": [{"clause": 0, "kind": "filler", "token": "然后"}], "repetition_count": 0, "text": "然后，什么时候适合看星星"}
+{"clean_text": "如何整理杂乱的衣柜", "filler_count": 0, "id": "zh038", "injections": [], "repetition_count": 0, "text": "如何整理杂乱的衣柜"}
+{"clean_text": "存款利息是按什么算出来的", "filler_count": 1, "id": "zh039", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}], "repetition_count": 0, "text": "这个，存款利息是按什么算出来的"}
+{"clean_text": "怎么泡一杯好喝的茶", "filler_count": 0, "id": "zh040", "injections": [], "repetition_count": 0, "text": "怎么泡一杯好喝的茶"}
+{"clean_text": "狗狗掉毛严重怎么办", "filler_count": 0, "id": "zh041", "injections": [], "repetition_count": 0, "text": "狗狗掉毛严重怎么办"}
+{"clean_text": "早晨听什么音乐清醒", "filler_count": 1, "id": "zh042", "injections": [{"clause": 0, "kind": "filler", "token": "嗯"}], "repetition_count": 0, "text": "嗯，早晨听什么音乐清醒"}
+{"clean_text": "垃圾分类真的有意义吗", "filler_count": 1, "id": "zh043", "injections": [{"clause": 0, "kind": "filler", "token": "其实"}], "repetition_count": 0, "text": "其实，垃圾分类真的有意义吗"}
+{"clean_text": "如何写一封得体的邮件", "filler_count": 0, "id": "zh044", "injections": [], "repetition_count": 0, "text": "如何写一封得体的邮件"}
+{"clean_text": "为什么会打嗝", "filler_count": 1, "id": "zh045", "injections": [{"clause": 0, "kind": "filler", "token": "其实"}], "repetition_count": 0, "text": "其实，为什么会打嗝"}
+{"clean_text": "介绍一下四川的美食", "filler_count": 0, "id": "zh046", "injections": [], "repetition_count": 0, "text": "介绍一下四川的美食"}
+{"clean_text": "怎么判断水果熟没熟", "filler_count": 0, "id": "zh047", "injections": [], "repetition_count": 0, "text": "怎么判断水果熟没熟"}
+{"clean_text": "如何缓解眼睛疲劳", "filler_count": 0, "id": "zh048", "injections": [], "repetition_count": 0, "text": "如何缓解眼睛疲劳"}
+{"clean_text": "春运为什么这么难抢票", "filler_count": 0, "id": "zh049", "injections": [], "repetition_count": 0, "text": "春运为什么这么难抢票"}
+{"clean_text": "钱为什么会越来越不值钱", "filler_count": 0, "id": "zh050", "injections": [], "repetition_count": 0, "text": "钱为什么会越来越不值钱"}
+{"clean_text": "怎么给植物换盆", "filler_count": 0, "id": "zh051", "injections": [{"clause": 0, "kind": "repetition", "token": "怎么"}], "repetition_count": 1, "text": "怎么怎么给植物换盆"}
+{"clean_text": "露营要带哪些装备", "filler_count": 1, "id": "zh052", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}], "repetition_count": 0, "text": "这个，露营要带哪些装备"}
+{"clean_text": "如何拍好一张人像照片", "filler_count": 1, "id": "zh053", "injections": [{"clause": 0, "kind": "filler", "token": "呃"}], "repetition_count": 0, "text": "呃，如何拍好一张人像照片"}
+{"clean_text": "为什么海水是咸的", "filler_count": 0, "id": "zh054", "injections": [], "repetition_count": 0, "text": "为什么海水是咸的"}
+{"clean_text": "怎么练习深呼吸", "filler_count": 1, "id": "zh055", "injections": [{"clause": 0, "kind": "filler", "token": "嗯"}], "repetition_count": 0, "text": "嗯，怎么练习深呼吸"}
+{"clean_text": "介绍一下端午节的习俗", "filler_count": 1, "id": "zh056", "injections": [{"clause": 0, "kind": "filler", "token": "呃"}], "repetition_count": 0, "text": "呃，介绍一下端午节的习俗"}
+{"clean_text": "笔记本电脑怎么挑", "filler_count": 0, "id": "zh057", "injections": [], "repetition_count": 0, "text": "笔记本电脑怎么挑"}
+{"clean_text": "孩子几岁开始学游泳合适", "filler_count": 0, "id": "zh058", "injections": [], "repetition_count": 0, "text": "孩子几岁开始学游泳合适"}
+{"clean_text": "云计算是把东西放在哪里了", "filler_count": 0, "id": "zh059", "injections": [], "repetition_count": 0, "text": "云计算是把东西放在哪里了"}
+{"clean_text": "怎么做一份简单的早餐", "filler_count": 0, "id": "zh060", "injections": [{"clause": 0, "kind": "repetition", "token": "怎么"}], "repetition_count": 1, "text": "怎么怎么做一份简单的早餐"}
+{"clean_text": "为什么树叶秋天会变黄", "filler_count": 0, "id": "zh061", "injections": [], "repetition_count": 0, "text": "为什么树叶秋天会变黄"}
+{"clean_text": "早上跑还是晚上跑好", "filler_count": 0, "id": "zh062", "injections": [], "repetition_count": 0, "text": "早上跑还是晚上跑好"}
+{"clean_text": "如何清洗羽绒服", "filler_count": 1, "id": "zh063", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}], "repetition_count": 0, "text": "这个，如何清洗羽绒服"}
+{"clean_text": "介绍一下苏州园林", "filler_count": 0, "id": "zh064", "injections": [], "repetition_count": 0, "text": "介绍一下苏州园林"}
+{"clean_text": "米饭和面条哪个更顶饱", "filler_count": 1, "id": "zh065", "injections": [{"clause": 0, "kind": "filler", "token": "反正"}], "repetition_count": 0, "text": "反正，米饭和面条哪个更顶饱"}
+{"clean_text": "怎么让房间显得更大", "filler_count": 1, "id": "zh066", "injections": [{"clause": 0, "kind": "filler", "token": "其实"}], "repetition_count": 0, "text": "其实，怎么让房间显得更大"}
+{"clean_text": "如何应对面试紧张", "filler_count": 0, "id": "zh067", "injections": [], "repetition_count": 0, "text": "如何应对面试紧张"}
+{"clean_text": "为什么会失眠", "filler_count": 0, "id": "zh068", "injections": [], "repetition_count": 0, "text": "为什么会失眠"}
+{"clean_text": "和小孩一起能做点什么", "filler_count": 0, "id": "zh069", "injections": [], "repetition_count": 0, "text": "和小孩一起能做点什么"}
+{"clean_text": "5G 比 4G 快在哪里", "filler_count": 0, "id": "zh070", "injections": [], "repetition_count": 0, "text": "5G 比 4G 快在哪里"}
+{"clean_text": "怎么处理烫伤", "filler_count": 1, "id": "zh071", "injections": [{"clause": 0, "kind": "filler", "token": "其实"}, {"clause": 0, "kind": "repetition", "token": "怎么"}], "repetition_count": 1, "text": "其实，怎么怎么处理烫伤"}
+{"clean_text": "行李箱买多大合适", "filler_count": 0, "id": "zh072", "injections": [{"clause": 0, "kind": "repetition", "token": "行李"}], "repetition_count": 1, "text": "行李行李箱买多大合适"}
+{"clean_text": "介绍一下黄山的风景", "filler_count": 0, "id": "zh073", "injections": [], "repetition_count": 0, "text": "介绍一下黄山的风景"}
+{"clean_text": "为什么要早睡早起", "filler_count": 0, "id": "zh074", "injections": [], "repetition_count": 0, "text": "为什么要早睡早起"}
+{"clean_text": "怎么给自行车换胎", "filler_count": 0, "id": "zh075", "injections": [], "repetition_count": 0, "text": "怎么给自行车换胎"}
+{"clean_text": "基金定投适合什么样的人", "filler_count": 1, "id": "zh076", "injections": [{"clause": 0, "kind": "filler", "token": "反正"}], "repetition_count": 0, "text": "反正，基金定投适合什么样的人"}
+{"clean_text": "如何让米饭更好吃", "filler_count": 0, "id": "zh077", "injections": [], "repetition_count": 0, "text": "如何让米饭更好吃"}
+{"clean_text": "全家一起看什么片合适", "filler_count": 0, "id": "zh078", "injections": [], "repetition_count": 0, "text": "全家一起看什么片合适"}
+{"clean_text": "为什么冬天嘴唇容易干", "filler_count": 1, "id": "zh079", "injections": [{"clause": 0, "kind": "filler", "token": "反正"}], "repetition_count": 0, "text": "反正，为什么冬天嘴唇容易干"}
+{"clean_text": "怎么开始学一门乐器", "filler_count": 0, "id": "zh080", "injections": [], "repetition_count": 0, "text": "怎么开始学一门乐器"}
+{"clean_text": "介绍一下西安的历史", "filler_count": 1, "id": "zh081", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}], "repetition_count": 0, "text": "这个，介绍一下西安的历史"}
+{"clean_text": "如何减少塑料使用", "filler_count": 0, "id": "zh082", "injections": [], "repetition_count": 0, "text": "如何减少塑料使用"}
+{"clean_text": "心率多少算运动有效", "filler_count": 0, "id": "zh083", "injections": [], "repetition_count": 0, "text": "心率多少算运动有效"}
+{"clean_text": "怎么挑选新鲜的鱼", "filler_count": 0, "id": "zh084", "injections": [{"clause": 0, "kind": "repetition", "token": "怎么"}], "repetition_count": 1, "text": "怎么怎么挑选新鲜的鱼"}
+{"clean_text": "为什么手机电池不耐用", "filler_count": 0, "id": "zh085", "injections": [{"clause": 0, "kind": "repetition", "token": "为什"}], "repetition_count": 1, "text": "为什为什么手机电池不耐用"}
+{"clean_text": "哪种地方待着最放松", "filler_count": 0, "id": "zh086", "injections": [{"clause": 0, "kind": "repetition", "token": "哪种"}], "repetition_count": 1, "text": "哪种哪种地方待着最放松"}
+{"clean_text": "如何整理手机相册", "filler_count": 0, "id": "zh087", "injections": [], "repetition_count": 0, "text": "如何整理手机相册"}
+{"clean_text": "人工智能和自动化有什么不同", "filler_count": 1, "id": "zh088", "injections": [{"clause": 0, "kind": "filler", "token": "反正"}], "repetition_count": 0, "text": "反正，人工智能和自动化有什么不同"}
+{"clean_text": "怎么让绿植长得更好", "filler_count": 0, "id": "zh089", "injections": [], "repetition_count": 0, "text": "怎么让绿植长得更好"}
+{"clean_text": "介绍一下丽江古城", "filler_count": 1, "id": "zh090", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，介绍一下丽江古城"}
+{"clean_text": "为什么会流鼻血", "filler_count": 0, "id": "zh091", "injections": [], "repetition_count": 0, "text": "为什么会流鼻血"}
+{"clean_text": "如何做好会议记录", "filler_count": 0, "id": "zh092", "injections": [{"clause": 0, "kind": "repetition", "token": "如何"}], "repetition_count": 1, "text": "如何如何做好会议记录"}
+{"clean_text": "在图书馆怎么专心", "filler_count": 0, "id": "zh093", "injections": [], "repetition_count": 0, "text": "在图书馆怎么专心"}
+{"clean_text": "怎么判断一件衣服的质量", "filler_count": 1, "id": "zh094", "injections": [{"clause": 0, "kind": "filler", "token": "嗯"}], "repetition_count": 0, "text": "嗯，怎么判断一件衣服的质量"}
+{"clean_text": "风力发电怎么并入电网", "filler_count": 0, "id": "zh095", "injections": [], "repetition_count": 0, "text": "风力发电怎么并入电网"}
+{"clean_text": "如何练习写字好看", "filler_count": 0, "id": "zh096", "injections": [], "repetition_count": 0, "text": "如何练习写字好看"}
+{"clean_text": "为什么猫的眼睛会发光", "filler_count": 1, "id": "zh097", "injections": [{"clause": 0, "kind": "filler", "token": "那个"}, {"clause": 0, "kind": "repetition", "token": "为什"}], "repetition_count": 1, "text": "那个，为什为什么猫的眼睛会发光"}
+{"clean_text": "介绍一下杭州的春天", "filler_count": 0, "id": "zh098", "injections": [], "repetition_count": 0, "text": "介绍一下杭州的春天"}
+{"clean_text": "怎么快速入睡", "filler_count": 0, "id": "zh099", "injections": [], "repetition_count": 0, "text": "怎么快速入睡"}
+{"clean_text": "怎么挑选一台笔记本电脑", "filler_count": 0, "id": "zh100", "injections": [], "repetition_count": 0, "text": "怎么挑选一台笔记本电脑"}
+{"clean_text": "如何整理衣柜更省空间", "filler_count": 1, "id": "zh101", "injections": [{"clause": 0, "kind": "filler", "token": "嗯"}], "repetition_count": 0, "text": "嗯，如何整理衣柜更省空间"}
+{"clean_text": "怎么给绿萝换盆", "filler_count": 0, "id": "zh102", "injections": [], "repetition_count": 0, "text": "怎么给绿萝换盆"}
+{"clean_text": "为什么飞机要逆风起飞", "filler_count": 0, "id": "zh103", "injections": [], "repetition_count": 0, "text": "为什么飞机要逆风起飞"}
+{"clean_text": "推荐几本适合入门的历史书", "filler_count": 1, "id": "zh104", "injections": [{"clause": 0, "kind": "filler", "token": "反正"}], "repetition_count": 0, "text": "反正，推荐几本适合入门的历史书"}
+{"clean_text": "怎么判断西瓜熟没熟", "filler_count": 0, "id": "zh105", "injections": [], "repetition_count": 0, "text": "怎么判断西瓜熟没熟"}
+{"clean_text": "充电宝可以带上飞机吗", "filler_count": 0, "id": "zh106", "injections": [], "repetition_count": 0, "text": "充电宝可以带上飞机吗"}
+{"clean_text": "台风的名字是怎么起的", "filler_count": 0, "id": "zh107", "injections": [], "repetition_count": 0, "text": "台风的名字是怎么起的"}
+{"clean_text": "怎么练习普通话发音", "filler_count": 1, "id": "zh108", "injections": [{"clause": 0, "kind": "filler", "token": "就是"}], "repetition_count": 0, "text": "就是，怎么练习普通话发音"}
+{"clean_text": "隔夜的茶还能不能喝", "filler_count": 0, "id": "zh109", "injections": [{"clause": 0, "kind": "repetition", "token": "隔夜"}], "repetition_count": 1, "text": "隔夜隔夜的茶还能不能喝"}
+{"clean_text": "如何安排一次短途旅行", "filler_count": 0, "id": "zh110", "injections": [], "repetition_count": 0, "text": "如何安排一次短途旅行"}
+{"clean_text": "怎么煮出粒粒分明的米饭", "filler_count": 1, "id": "zh111", "injections": [{"clause": 0, "kind": "filler", "token": "然后"}], "repetition_count": 0, "text": "然后，怎么煮出粒粒分明的米饭"}
+{"clean_text": "为什么树木冬天要刷白漆", "filler_count": 1, "id": "zh112", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}, {"clause": 0, "kind": "repetition", "token": "为什"}], "repetition_count": 1, "text": "我觉得，为什为什么树木冬天要刷白漆"}
+{"clean_text": "介绍一下二十四节气", "filler_count": 0, "id": "zh113", "injections": [], "repetition_count": 0, "text": "介绍一下二十四节气"}
+{"clean_text": "如何培养每天阅读的习惯", "filler_count": 1, "id": "zh114", "injections": [{"clause": 0, "kind": "filler", "token": "其实"}], "repetition_count": 0, "text": "其实，如何培养每天阅读的习惯"}
+{"clean_text": "怎么挑选合适的跑鞋", "filler_count": 1, "id": "zh115", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，怎么挑选合适的跑鞋"}
+{"clean_text": "为什么下雨前蜻蜓飞得低", "filler_count": 0, "id": "zh116", "injections": [], "repetition_count": 0, "text": "为什么下雨前蜻蜓飞得低"}
+{"clean_text": "如何清洗厨房油污", "filler_count": 0, "id": "zh117", "injections": [], "repetition_count": 0, "text": "如何清洗厨房油污"}
+{"clean_text": "介绍一下景德镇的瓷器", "filler_count": 1, "id": "zh118", "injections": [{"clause": 0, "kind": "filler", "token": "然后"}], "repetition_count": 0, "text": "然后，介绍一下景德镇的瓷器"}
+{"clean_text": "怎么让阳台的花开得更久", "filler_count": 0, "id": "zh119", "injections": [], "repetition_count": 0, "text": "怎么让阳台的花开得更久"}
+{"clean_text": "为什么高原上水烧不开", "filler_count": 1, "id": "zh120", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，为什么高原上水烧不开"}
+{"clean_text": "如何准备一次演讲", "filler_count": 0, "id": "zh121", "injections": [{"clause": 0, "kind": "repetition", "token": "如何"}], "repetition_count": 1, "text": "如何如何准备一次演讲"}
+{"clean_text": "怎么区分感冒和过敏", "filler_count": 1, "id": "zh122", "injections": [{"clause": 0, "kind": "filler", "token": "那个"}, {"clause": 0, "kind": "repetition", "token": "怎么"}], "repetition_count": 1, "text": "那个，怎么怎么区分感冒和过敏"}
+{"clean_text": "介绍一下西湖的由来", "filler_count": 0, "id": "zh123", "injections": [], "repetition_count": 0, "text": "介绍一下西湖的由来"}
+{"clean_text": "为什么面包放久了会变硬", "filler_count": 0, "id": "zh124", "injections": [], "repetition_count": 0, "text": "为什么面包放久了会变硬"}
+{"clean_text": "如何选择适合自己的运动", "filler_count": 1, "id": "zh125", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，如何选择适合自己的运动"}
+{"clean_text": "为什么彩虹是弯的", "filler_count": 1, "id": "zh126", "injections": [{"clause": 0, "kind": "filler", "token": "呃"}], "repetition_count": 0, "text": "呃，为什么彩虹是弯的"}
+{"clean_text": "介绍一下泉州的老街", "filler_count": 0, "id": "zh127", "injections": [], "repetition_count": 0, "text": "介绍一下泉州的老街"}
+{"clean_text": "如何提高打字速度", "filler_count": 0, "id": "zh128", "injections": [{"clause": 0, "kind": "repetition", "token": "如何"}], "repetition_count": 1, "text": "如何如何提高打字速度"}
+{"clean_text": "干燥天气该怎么护理皮肤", "filler_count": 0, "id": "zh129", "injections": [], "repetition_count": 0, "text": "干燥天气该怎么护理皮肤"}
+{"clean_text": "为什么有些树叶秋天不掉", "filler_count": 0, "id": "zh130", "injections": [], "repetition_count": 0, "text": "为什么有些树叶秋天不掉"}
+{"clean_text": "如何做一份简单的早餐", "filler_count": 0, "id": "zh131", "injections": [], "repetition_count": 0, "text": "如何做一份简单的早餐"}
+{"clean_text": "雨伞坏了还能修吗", "filler_count": 0, "id": "zh132", "injections": [], "repetition_count": 0, "text": "雨伞坏了还能修吗"}
+{"clean_text": "怎么减少手机使用时间", "filler_count": 1, "id": "zh133", "injections": [{"clause": 0, "kind": "filler", "token": "这个"}, {"clause": 0, "kind": "repetition", "token": "怎么"}], "repetition_count": 1, "text": "这个，怎么怎么减少手机使用时间"}
+{"clean_text": "为什么铁会生锈", "filler_count": 0, "id": "zh134", "injections": [], "repetition_count": 0, "text": "为什么铁会生锈"}
+{"clean_text": "如何挑选新鲜的鱼", "filler_count": 0, "id": "zh135", "injections": [], "repetition_count": 0, "text": "如何挑选新鲜的鱼"}
+{"clean_text": "介绍一下成都的茶馆", "filler_count": 0, "id": "zh136", "injections": [{"clause": 0, "kind": "repetition", "token": "介绍"}], "repetition_count": 1, "text": "介绍介绍一下成都的茶馆"}
+{"clean_text": "怎么给房间除湿", "filler_count": 0, "id": "zh137", "injections": [], "repetition_count": 0, "text": "怎么给房间除湿"}
+{"clean_text": "为什么星星会眨眼睛", "filler_count": 1, "id": "zh138", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，为什么星星会眨眼睛"}
+{"clean_text": "怎么让衣服晾干得更快", "filler_count": 0, "id": "zh139", "injections": [], "repetition_count": 0, "text": "怎么让衣服晾干得更快"}
+{"clean_text": "介绍一下大理的洱海", "filler_count": 0, "id": "zh140", "injections": [], "repetition_count": 0, "text": "介绍一下大理的洱海"}
+{"clean_text": "为什么剥洋葱会流眼泪", "filler_count": 0, "id": "zh141", "injections": [], "repetition_count": 0, "text": "为什么剥洋葱会流眼泪"}
+{"clean_text": "如何规划每个月的开销", "filler_count": 0, "id": "zh142", "injections": [], "repetition_count": 0, "text": "如何规划每个月的开销"}
+{"clean_text": "怎么挑选一把好用的菜刀", "filler_count": 0, "id": "zh143", "injections": [], "repetition_count": 0, "text": "怎么挑选一把好用的菜刀"}
+{"clean_text": "为什么蜂蜜不会变质", "filler_count": 1, "id": "zh144", "injections": [{"clause": 0, "kind": "filler", "token": "反正"}], "repetition_count": 0, "text": "反正，为什么蜂蜜不会变质"}
+{"clean_text": "介绍一下哈尔滨的冬天", "filler_count": 0, "id": "zh145", "injections": [], "repetition_count": 0, "text": "介绍一下哈尔滨的冬天"}
+{"clean_text": "如何照顾一只刚到家的小猫", "filler_count": 0, "id": "zh146", "injections": [], "repetition_count": 0, "text": "如何照顾一只刚到家的小猫"}
+{"clean_text": "怎么防止镜子起雾", "filler_count": 0, "id": "zh147", "injections": [], "repetition_count": 0, "text": "怎么防止镜子起雾"}
+{"clean_text": "为什么面条煮久了会坨", "filler_count": 0, "id": "zh148", "injections": [], "repetition_count": 0, "text": "为什么面条煮久了会坨"}
+{"clean_text": "介绍一下福建的土楼", "filler_count": 0, "id": "zh149", "injections": [], "repetition_count": 0, "text": "介绍一下福建的土楼"}
+{"clean_text": "如何在家做简单的拉伸", "filler_count": 0, "id": "zh150", "injections": [], "repetition_count": 0, "text": "如何在家做简单的拉伸"}
+{"clean_text": "怎么挑选一床合适的被子", "filler_count": 1, "id": "zh151", "injections": [{"clause": 0, "kind": "filler", "token": "反正"}], "repetition_count": 0, "text": "反正，怎么挑选一床合适的被子"}
+{"clean_text": "为什么鸟能停在电线上不触电", "filler_count": 0, "id": "zh152", "injections": [], "repetition_count": 0, "text": "为什么鸟能停在电线上不触电"}
+{"clean_text": "介绍一下重庆的地形", "filler_count": 0, "id": "zh153", "injections": [], "repetition_count": 0, "text": "介绍一下重庆的地形"}
+{"clean_text": "如何让绿茶泡得不苦", "filler_count": 0, "id": "zh154", "injections": [], "repetition_count": 0, "text": "如何让绿茶泡得不苦"}
+{"clean_text": "怎么收纳数据线不打结", "filler_count": 1, "id": "zh155", "injections": [{"clause": 0, "kind": "filler", "token": "我觉得"}], "repetition_count": 0, "text": "我觉得，怎么收纳数据线不打结"}
+{"clean_text": "为什么雪是白色的", "filler_count": 1, "id": "zh156", "injections": [{"clause": 0, "kind": "filler", "token": "然后"}], "repetition_count": 0, "text": "然后，为什么雪是白色的"}
+{"clean_text": "介绍一下青海湖的秋天", "filler_count": 1, "id": "zh157", "injections": [{"clause": 0, "kind": "filler", "token": "就是"}], "repetition_count": 0, "text": "就是，介绍一下青海湖的秋天"}
+{"clean_text": "如何挑选一只合适的背包", "filler_count": 0, "id": "zh158", "injections": [{"clause": 0, "kind": "repetition", "token": "如何"}], "repetition_count": 1, "text": "如何如何挑选一只合适的背包"}
+{"clean_text": "怎么让米饭剩饭变好吃", "filler_count": 1, "id": "zh159", "injections": [{"clause": 0, "kind": "filler", "token": "那个"}], "repetition_count": 0, "text": "那个，怎么让米饭剩饭变好吃"}

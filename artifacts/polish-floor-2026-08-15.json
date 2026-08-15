@@ -1,0 +1,744 @@
+{
+  "arms": {
+    "clean": {
+      "cer": 0.010610830393917099,
+      "cer_folded": 0.006304629747334485,
+      "digits": {
+        "with_digits": {
+          "cer": 0.007086380975157937,
+          "n": 71
+        },
+        "without_digits": {
+          "cer": 0.005680985509407912,
+          "n": 89
+        }
+      },
+      "errors": {
+        "deleted": 6,
+        "inserted": 4,
+        "substituted": 82,
+        "top_confusions": [
+          {
+            "heard": "他",
+            "n": 8,
+            "reference": "它"
+          },
+          {
+            "heard": "的",
+            "n": 7,
+            "reference": "地"
+          },
+          {
+            "heard": "",
+            "n": 5,
+            "reference": "�"
+          },
+          {
+            "heard": "至",
+            "n": 4,
+            "reference": ""
+          },
+          {
+            "heard": "秀文",
+            "n": 4,
+            "reference": "嗅闻"
+          },
+          {
+            "heard": "粘",
+            "n": 3,
+            "reference": "黏"
+          },
+          {
+            "heard": "的",
+            "n": 3,
+            "reference": "得"
+          },
+          {
+            "heard": "计",
+            "n": 3,
+            "reference": "剂"
+          },
+          {
+            "heard": "盒子",
+            "n": 2,
+            "reference": "和籽"
+          },
+          {
+            "heard": "文",
+            "n": 2,
+            "reference": "闻"
+          },
+          {
+            "heard": "方",
+            "n": 2,
+            "reference": "坊"
+          },
+          {
+            "heard": "你",
+            "n": 1,
+            "reference": "您"
+          },
+          {
+            "heard": "边",
+            "n": 1,
+            "reference": "煸"
+          },
+          {
+            "heard": "示",
+            "n": 1,
+            "reference": "式"
+          },
+          {
+            "heard": "导",
+            "n": 1,
+            "reference": "倒"
+          }
+        ]
+      },
+      "exact": 112,
+      "median_folded": 0.0,
+      "n": 160,
+      "noise_floor": 0.0020586653524571844,
+      "punctuated": 1.0,
+      "punctuation_agreement": {
+        "heard_breaks": 1868,
+        "matched": 1687,
+        "precision": 0.9031049250535332,
+        "recall": 0.9393095768374164,
+        "reference_breaks": 1796
+      },
+      "reference": "reference_text",
+      "worst": [
+        {
+          "cer": 0.09473684210526316,
+          "id": "zh135"
+        },
+        {
+          "cer": 0.05426356589147287,
+          "id": "zh080"
+        },
+        {
+          "cer": 0.04938271604938271,
+          "id": "zh131"
+        },
+        {
+          "cer": 0.046511627906976744,
+          "id": "zh141"
+        },
+        {
+          "cer": 0.043478260869565216,
+          "id": "zh116"
+        }
+      ]
+    },
+    "filler_vs_clean": {
+      "cer": 0.07568515593832091,
+      "cer_folded": 0.07151279318206308,
+      "digits": {
+        "with_digits": {
+          "cer": 0.057510510247793946,
+          "n": 71
+        },
+        "without_digits": {
+          "cer": 0.0826831537251317,
+          "n": 89
+        }
+      },
+      "errors": {
+        "deleted": 6,
+        "inserted": 762,
+        "substituted": 96,
+        "top_confusions": [
+          {
+            "heard": "就是",
+            "n": 31,
+            "reference": ""
+          },
+          {
+            "heard": "嗯",
+            "n": 30,
+            "reference": ""
+          },
+          {
+            "heard": "我觉得",
+            "n": 28,
+            "reference": ""
+          },
+          {
+            "heard": "反正",
+            "n": 26,
+            "reference": ""
+          },
+          {
+            "heard": "其实",
+            "n": 25,
+            "reference": ""
+          },
+          {
+            "heard": "那个",
+            "n": 22,
+            "reference": ""
+          },
+          {
+            "heard": "这个",
+            "n": 21,
+            "reference": ""
+          },
+          {
+            "heard": "然后",
+            "n": 20,
+            "reference": ""
+          },
+          {
+            "heard": "怎么说呢",
+            "n": 16,
+            "reference": ""
+          },
+          {
+            "heard": "对吧",
+            "n": 15,
+            "reference": ""
+          },
+          {
+            "heard": "你知道吧",
+            "n": 15,
+            "reference": ""
+          },
+          {
+            "heard": "2",
+            "n": 10,
+            "reference": ""
+          },
+          {
+            "heard": "的",
+            "n": 7,
+            "reference": "地"
+          },
+          {
+            "heard": "他",
+            "n": 7,
+            "reference": "它"
+          },
+          {
+            "heard": "1",
+            "n": 7,
+            "reference": ""
+          }
+        ]
+      },
+      "exact": 12,
+      "median_folded": 0.058394160583941604,
+      "n": 160,
+      "noise_floor": 0.008108439584327921,
+      "punctuated": 1.0,
+      "punctuation_agreement": {
+        "heard_breaks": 1909,
+        "matched": 1483,
+        "precision": 0.7768465165007857,
+        "recall": 0.8257238307349666,
+        "reference_breaks": 1796
+      },
+      "reference": "clean_text",
+      "worst": [
+        {
+          "cer": 0.4,
+          "id": "zh065"
+        },
+        {
+          "cer": 0.28125,
+          "id": "zh079"
+        },
+        {
+          "cer": 0.25,
+          "id": "zh034"
+        },
+        {
+          "cer": 0.2,
+          "id": "zh037"
+        },
+        {
+          "cer": 0.1935483870967742,
+          "id": "zh045"
+        }
+      ]
+    },
+    "filler_vs_spoken": {
+      "cer": 0.012465351673582327,
+      "cer_folded": 0.008029880011651891,
+      "digits": {
+        "with_digits": {
+          "cer": 0.00865638595061965,
+          "n": 71
+        },
+        "without_digits": {
+          "cer": 0.007530083138992217,
+          "n": 89
+        }
+      },
+      "errors": {
+        "deleted": 7,
+        "inserted": 6,
+        "substituted": 110,
+        "top_confusions": [
+          {
+            "heard": "他",
+            "n": 8,
+            "reference": "它"
+          },
+          {
+            "heard": "的",
+            "n": 7,
+            "reference": "地"
+          },
+          {
+            "heard": "饿",
+            "n": 5,
+            "reference": "呃"
+          },
+          {
+            "heard": "",
+            "n": 5,
+            "reference": "�"
+          },
+          {
+            "heard": "2",
+            "n": 5,
+            "reference": "呃"
+          },
+          {
+            "heard": "你",
+            "n": 4,
+            "reference": "您"
+          },
+          {
+            "heard": "至",
+            "n": 4,
+            "reference": ""
+          },
+          {
+            "heard": "的",
+            "n": 4,
+            "reference": "得"
+          },
+          {
+            "heard": "秀文",
+            "n": 4,
+            "reference": "嗅闻"
+          },
+          {
+            "heard": "粘",
+            "n": 3,
+            "reference": "黏"
+          },
+          {
+            "heard": "计",
+            "n": 3,
+            "reference": "剂"
+          },
+          {
+            "heard": "盒子",
+            "n": 2,
+            "reference": "和籽"
+          },
+          {
+            "heard": "",
+            "n": 2,
+            "reference": "0"
+          },
+          {
+            "heard": "嗯",
+            "n": 2,
+            "reference": "呃"
+          },
+          {
+            "heard": "文",
+            "n": 2,
+            "reference": "闻"
+          }
+        ]
+      },
+      "exact": 97,
+      "median_folded": 0.0,
+      "n": 160,
+      "noise_floor": 0.0021990596736772847,
+      "punctuated": 1.0,
+      "punctuation_agreement": {
+        "heard_breaks": 1909,
+        "matched": 1707,
+        "precision": 0.894185437401781,
+        "recall": 0.8179204599904168,
+        "reference_breaks": 2087
+      },
+      "reference": "reference_text",
+      "worst": [
+        {
+          "cer": 0.10526315789473684,
+          "id": "zh135"
+        },
+        {
+          "cer": 0.06716417910447761,
+          "id": "zh080"
+        },
+        {
+          "cer": 0.047619047619047616,
+          "id": "zh015"
+        },
+        {
+          "cer": 0.046511627906976744,
+          "id": "zh141"
+        },
+        {
+          "cer": 0.0449438202247191,
+          "id": "zh131"
+        }
+      ]
+    }
+  },
+  "caveat": "合成语音、注入式口语词：真人的重启和拖音比这难，所以纠错这一侧是下界，而口语词保留率是上界（读得清清楚楚的 那个 是识别器最容易留住的情况）",
+  "retention": {
+    "by_kind": {
+      "filler": {
+        "injected": 281,
+        "kept": 266,
+        "retention": 0.9466192170818505
+      },
+      "repetition": {
+        "injected": 88,
+        "kept": 76,
+        "retention": 0.8636363636363636
+      }
+    },
+    "by_token": {
+      "1": {
+        "injected": 10,
+        "kept": 1
+      },
+      "2": {
+        "injected": 6,
+        "kept": 6
+      },
+      "3": {
+        "injected": 2,
+        "kept": 2
+      },
+      "4": {
+        "injected": 1,
+        "kept": 1
+      },
+      "6": {
+        "injected": 1,
+        "kept": 1
+      },
+      "不": {
+        "injected": 1,
+        "kept": 1
+      },
+      "为了": {
+        "injected": 1,
+        "kept": 1
+      },
+      "也可": {
+        "injected": 1,
+        "kept": 0
+      },
+      "也被": {
+        "injected": 1,
+        "kept": 1
+      },
+      "以便": {
+        "injected": 2,
+        "kept": 2
+      },
+      "但是": {
+        "injected": 1,
+        "kept": 1
+      },
+      "作为": {
+        "injected": 2,
+        "kept": 2
+      },
+      "你知道吧": {
+        "injected": 17,
+        "kept": 17
+      },
+      "使得": {
+        "injected": 1,
+        "kept": 1
+      },
+      "例如": {
+        "injected": 1,
+        "kept": 1
+      },
+      "倒入": {
+        "injected": 1,
+        "kept": 1
+      },
+      "做一": {
+        "injected": 1,
+        "kept": 1
+      },
+      "做手": {
+        "injected": 1,
+        "kept": 1
+      },
+      "其实": {
+        "injected": 28,
+        "kept": 27
+      },
+      "加入": {
+        "injected": 1,
+        "kept": 1
+      },
+      "包括": {
+        "injected": 2,
+        "kept": 2
+      },
+      "北半": {
+        "injected": 1,
+        "kept": 1
+      },
+      "去除": {
+        "injected": 1,
+        "kept": 1
+      },
+      "反正": {
+        "injected": 27,
+        "kept": 27
+      },
+      "可以": {
+        "injected": 2,
+        "kept": 2
+      },
+      "后": {
+        "injected": 1,
+        "kept": 1
+      },
+      "呃": {
+        "injected": 17,
+        "kept": 4
+      },
+      "嗯": {
+        "injected": 29,
+        "kept": 29
+      },
+      "因为": {
+        "injected": 1,
+        "kept": 1
+      },
+      "因其": {
+        "injected": 1,
+        "kept": 1
+      },
+      "土壤": {
+        "injected": 1,
+        "kept": 1
+      },
+      "天": {
+        "injected": 1,
+        "kept": 1
+      },
+      "天气": {
+        "injected": 1,
+        "kept": 1
+      },
+      "天空": {
+        "injected": 1,
+        "kept": 1
+      },
+      "好": {
+        "injected": 1,
+        "kept": 1
+      },
+      "如仔": {
+        "injected": 1,
+        "kept": 0
+      },
+      "如动": {
+        "injected": 1,
+        "kept": 1
+      },
+      "存储": {
+        "injected": 1,
+        "kept": 1
+      },
+      "对吧": {
+        "injected": 15,
+        "kept": 15
+      },
+      "就是": {
+        "injected": 33,
+        "kept": 32
+      },
+      "岩画": {
+        "injected": 1,
+        "kept": 1
+      },
+      "建议": {
+        "injected": 2,
+        "kept": 2
+      },
+      "怎么说呢": {
+        "injected": 18,
+        "kept": 18
+      },
+      "怪": {
+        "injected": 1,
+        "kept": 1
+      },
+      "感冒": {
+        "injected": 1,
+        "kept": 1
+      },
+      "成都": {
+        "injected": 1,
+        "kept": 1
+      },
+      "我觉得": {
+        "injected": 29,
+        "kept": 29
+      },
+      "或者": {
+        "injected": 1,
+        "kept": 1
+      },
+      "手机": {
+        "injected": 1,
+        "kept": 1
+      },
+      "投资": {
+        "injected": 1,
+        "kept": 1
+      },
+      "拉力": {
+        "injected": 1,
+        "kept": 1
+      },
+      "提高": {
+        "injected": 1,
+        "kept": 1
+      },
+      "新鲜": {
+        "injected": 1,
+        "kept": 1
+      },
+      "是农": {
+        "injected": 1,
+        "kept": 1
+      },
+      "最好": {
+        "injected": 1,
+        "kept": 1
+      },
+      "材": {
+        "injected": 1,
+        "kept": 0
+      },
+      "树木": {
+        "injected": 1,
+        "kept": 1
+      },
+      "植物": {
+        "injected": 1,
+        "kept": 1
+      },
+      "死亡": {
+        "injected": 1,
+        "kept": 1
+      },
+      "每天": {
+        "injected": 1,
+        "kept": 1
+      },
+      "气温": {
+        "injected": 1,
+        "kept": 1
+      },
+      "游": {
+        "injected": 1,
+        "kept": 1
+      },
+      "然后": {
+        "injected": 22,
+        "kept": 22
+      },
+      "煮至": {
+        "injected": 1,
+        "kept": 1
+      },
+      "猫的": {
+        "injected": 1,
+        "kept": 1
+      },
+      "眼睛": {
+        "injected": 1,
+        "kept": 1
+      },
+      "短途": {
+        "injected": 1,
+        "kept": 1
+      },
+      "网易": {
+        "injected": 1,
+        "kept": 1
+      },
+      "节约": {
+        "injected": 1,
+        "kept": 1
+      },
+      "茶": {
+        "injected": 1,
+        "kept": 1
+      },
+      "被": {
+        "injected": 1,
+        "kept": 1
+      },
+      "西湖": {
+        "injected": 1,
+        "kept": 1
+      },
+      "该窟": {
+        "injected": 1,
+        "kept": 1
+      },
+      "质地": {
+        "injected": 1,
+        "kept": 1
+      },
+      "还有": {
+        "injected": 1,
+        "kept": 1
+      },
+      "这个": {
+        "injected": 23,
+        "kept": 23
+      },
+      "这是": {
+        "injected": 1,
+        "kept": 1
+      },
+      "那个": {
+        "injected": 24,
+        "kept": 24
+      },
+      "长途": {
+        "injected": 1,
+        "kept": 1
+      }
+    },
+    "injected": 369,
+    "kept": 342,
+    "retention": 0.926829268292683
+  },
+  "thresholds": {
+    "correction_small": 0.02,
+    "punctuation_missing": 0.1,
+    "retention_moot": 0.3,
+    "retention_real": 0.7
+  },
+  "verdicts": {
+    "口语词": "口语词剔除是真活（保留率 0.927 ≥ 0.7）",
+    "断句": "转写自带标点（1.000），断句不是主要缺口",
+    "纠错": "纠错收益小（折叠 CER 0.0063 ≤ 0.02）"
+  }
+}
