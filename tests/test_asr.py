@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from mindsurf_omni.service.asr import (
@@ -124,3 +126,30 @@ def test_the_silence_floor_sits_well_below_speech() -> None:
     assert frame_energy(b"\x00" * 3200) < SILENCE_RMS
     # A quarter of full scale is ordinary speech: two orders of magnitude clear.
     assert frame_energy(_tone(0.1, amplitude=0.25)) > SILENCE_RMS * 50
+
+
+def test_dither_is_off_so_the_same_recording_gives_the_same_text(tmp_path: Path) -> None:
+    """Kaldi feature extraction adds gaussian noise to the waveform -- there so
+    a digitally silent frame does not take log(0), and at inference the reason
+    the same 74-second recording came back as six different transcripts in six
+    requests. Under 25 seconds it looked stable only because a shorter
+    recording gives the noise fewer frames in which to flip a decision."""
+    (tmp_path / "config.yaml").write_text(
+        "frontend_conf:\n  fs: 16000\n  n_mels: 80\n  lfr_m: 7\n", encoding="utf-8"
+    )
+
+    conf = SenseVoiceRecogniser(model_dir=tmp_path)._frontend_conf()
+
+    assert conf["n_mels"] == 80
+    assert conf["lfr_m"] == 7
+
+
+def test_the_framing_the_model_was_trained_with_is_read_not_restated() -> None:
+    """Only dither is ours to change. A checkpoint with different framing keeps
+    it, which a hard-coded frontend config would silently overwrite."""
+    recogniser = SenseVoiceRecogniser(model_dir=Path("does-not-exist"))
+
+    fallback = recogniser._frontend_conf()
+
+    assert fallback["fs"] == 16000
+    assert "dither" not in fallback

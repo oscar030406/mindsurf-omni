@@ -60,7 +60,55 @@ class SenseVoiceRecogniser:
             return
         from funasr import AutoModel
 
-        self._model = AutoModel(model=str(self.model_dir), device=self.device, disable_update=True)
+        # Kaldi-style feature extraction adds dither -- gaussian noise on the
+        # waveform, which exists so a digitally silent frame does not take
+        # log(0). At inference it makes the recogniser answer differently every
+        # time. Driving the running service, the same 74-second recording came
+        # back as six different transcripts in six requests, and at 164 seconds
+        # as six again; under 25 seconds it looks stable only because a shorter
+        # recording gives the noise fewer frames in which to flip a decision.
+        # A dictation tool that returns different text for the same recording
+        # is a bug the user sees and cannot explain.
+        #
+        # Set at construction, not after: funasr builds the frontend from this
+        # config inside AutoModel, and assigning to the built object (or
+        # passing dither to generate) is silently replaced. Measured both ways
+        # -- fbank still received 1.0 -- so this is the only place it takes.
+        conf = dict(self._frontend_conf())
+        conf["dither"] = 0.0
+        self._model = AutoModel(
+            model=str(self.model_dir),
+            device=self.device,
+            disable_update=True,
+            frontend_conf=conf,
+        )
+
+    def _frontend_conf(self) -> dict[str, object]:
+        """The model's own frontend settings, read from the checkpoint's config.
+
+        Read rather than restated so that a checkpoint with different framing
+        keeps it. Only ``dither`` is ours to change, and the fallback below is
+        the SenseVoice default for the case where the config cannot be parsed.
+        """
+        import yaml
+
+        for name in ("config.yaml", "configuration.json"):
+            path = self.model_dir / name
+            if not path.is_file():
+                continue
+            try:
+                loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001 - a config we cannot read is not fatal
+                continue
+            conf = (loaded or {}).get("frontend_conf")
+            if isinstance(conf, dict):
+                conf = dict(conf)
+                # Overwritten, not defaulted: the config records the path on
+                # the machine that trained it, which is not this one.
+                cmvn = self.model_dir / "am.mvn"
+                conf["cmvn_file"] = str(cmvn) if cmvn.is_file() else conf.get("cmvn_file")
+                return conf
+        return {"fs": 16000, "window": "hamming", "n_mels": 80, "lfr_m": 7, "lfr_n": 6}
 
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         # On a thread, because funasr is synchronous and holds the GIL for the
