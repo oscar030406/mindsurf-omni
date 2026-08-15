@@ -21,7 +21,7 @@
   "text_source": "fixed",
   "texts_sha256": "0d7937637987eb7e78d58893f15ac6e1acecf8528787284099709960f91655b9",
   "voice_prompt": {
-   "path": "/home/oscar/omni/voice_prompt/reference_zh_5s_loud.wav",
+   "path": "reference_zh_5s_loud.wav",
    "sha256": "3848bce50174800ee5aa1b28f6511248a6b226b87320c7d84773b707682dd341",
    "text": "您好，请问您有什么需要帮忙的问题吗？"
   }
@@ -348,5 +348,6 @@
    "prompt": "存款利息是按什么算出来的",
    "reference_text": "存款利息是按年利率计算的。"
   }
- ]
+ ],
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
 }

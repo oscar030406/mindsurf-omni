@@ -21,7 +21,7 @@
   "text_source": "fixed",
   "texts_sha256": "0d7937637987eb7e78d58893f15ac6e1acecf8528787284099709960f91655b9",
   "voice_prompt": {
-   "path": "/home/oscar/omni/voice_prompt/reference_zh_5s.wav",
+   "path": "reference_zh_5s.wav",
    "sha256": "504756ea11b91fa73647eb74e2a85f5b679dcd3c5a208657129471f59555f7a6",
    "text": "您好，请问您有什么需要帮忙的问题吗？"
   }
@@ -1308,5 +1308,6 @@
    "prompt": "怎么让米饭剩饭变好吃",
    "reference_text": "1. 切好米饭。\n2. 用锅加热水，煮沸后加入米饭，煮至半熟。\n3. 煮熟后，将米饭倒入碗中，加入少量盐和酱油，拌匀即可。"
   }
- ]
+ ],
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
 }
