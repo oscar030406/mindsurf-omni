@@ -39,3 +39,28 @@ def test_filler_clearance_weighs_by_how_much_filler_arrived() -> None:
 
 def test_a_set_with_no_filler_reads_zero_rather_than_dividing_by_it() -> None:
     assert numbers([_row(filler_arrived=0, filler_removed=0)])["口语词清除"] == 0.0
+
+
+def test_punctuation_kept_is_measured_against_the_ceiling_not_the_corpus() -> None:
+    """The punctuation a polisher should keep is the recogniser's, minus
+    whatever arrived attached to an injected filler."""
+    from scripts.polish_frontier import punctuation_kept, surviving_punctuation
+
+    # The ceiling drops 然后， entirely and keeps the rest.
+    ceiling = {
+        "a": {"id": "a", "source": "然后，今天天气好，我出门", "polished": "今天天气好，我出门"}
+    }
+    # This arm also ate the second comma.
+    arm = [{"id": "a", "source": "然后，今天天气好，我出门", "polished": "今天天气好我出门"}]
+
+    assert surviving_punctuation("然后，今天天气好，我出门", "今天天气好，我出门") == {8}
+    assert punctuation_kept(arm, ceiling) == 0.0
+
+
+def test_an_arm_that_keeps_every_comma_scores_one() -> None:
+    from scripts.polish_frontier import punctuation_kept
+
+    ceiling = {"a": {"id": "a", "source": "嗯，今天好，我出门", "polished": "今天好，我出门"}}
+    arm = [{"id": "a", "source": "嗯，今天好，我出门", "polished": "今天好，我出门"}]
+
+    assert punctuation_kept(arm, ceiling) == 1.0

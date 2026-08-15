@@ -16,6 +16,7 @@ clearance, then read what it cost.
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import random
 import statistics
@@ -26,6 +27,46 @@ from typing import Any
 # read on its own. They are pinned in measure_polish.py and do not move.
 LINES = {"CER": 0.02, "口语词清除": 0.90, "内容保留": 0.98, "编造": 0.02}
 LOWER_IS_BETTER = {"CER", "编造"}
+
+PUNCTUATION = set("，。！？；：、")
+
+
+def surviving_punctuation(source: str, output: str) -> set[int]:
+    """Indices of the transcript's punctuation that reached the output."""
+    kept: set[int] = set()
+    for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(
+        None, source, output, autojunk=False
+    ).get_opcodes():
+        if tag == "equal":
+            kept.update(range(i1, i2))
+    return {index for index in kept if source[index] in PUNCTUATION}
+
+
+def punctuation_kept(
+    rows: list[dict[str, Any]], ceiling: dict[str, dict[str, Any]]
+) -> float | None:
+    """How much of the punctuation a perfect polisher keeps this arm also kept.
+
+    None of the four acceptance numbers can see this: ``normalise_for_cer``
+    strips punctuation from both sides, so an arm that eats every comma scores
+    exactly the same as one that keeps them all. For a dictation product that
+    is the difference between usable and not, which is why it is measured here
+    rather than left to the criteria.
+
+    The reference is the ceiling arm rather than the corpus sentence, because
+    the punctuation a polisher should keep is the recogniser's -- minus
+    whatever came in attached to an injected filler.
+    """
+    should = kept = 0
+    for row in rows:
+        reference = ceiling.get(row["id"])
+        if reference is None:
+            continue
+        wanted = surviving_punctuation(reference["source"], reference["polished"])
+        mine = surviving_punctuation(row["source"], row["polished"])
+        should += len(wanted)
+        kept += len(wanted & mine)
+    return kept / should if should else None
 
 
 def numbers(rows: list[dict[str, Any]]) -> dict[str, float]:
@@ -109,6 +150,7 @@ def main() -> None:
     ends = None
     if args.ceiling and args.floor:
         ends = (numbers(load(args.floor)), numbers(load(args.ceiling)))
+    reference = {row["id"]: row for row in load(args.ceiling)} if args.ceiling else {}
 
     table = []
     for entry in args.arm:
@@ -125,6 +167,7 @@ def main() -> None:
                 "臂": name,
                 "n": len(rows),
                 "空输出": sum(1 for row in rows if not row["polished"].strip()),
+                "标点保住率": punctuation_kept(rows, reference) if reference else None,
                 **{
                     key: {
                         "值": round(point[key], 4),
@@ -152,6 +195,15 @@ def main() -> None:
         print(f"{row['臂']:<22}{cells}{row['空输出']:>4}")
     print(f"{'线':<22}{'≤ 0.02':>20}{'≥ 0.90':>20}{'≥ 0.98':>20}{'≤ 0.02':>20}{'0':>4}")
     print("✅ = 95% 区间整体在线的正确一侧；~ = 点估计过了但区间跨线；空白 = 不过")
+
+    if reference:
+        print("\n标点保住率：判据看不见的一维（normalise_for_cer 两边都剥标点）")
+        print(f"{'臂':<22}{'标点保住率':>14}")
+        for row in table:
+            rate = row["标点保住率"]
+            if rate is not None:
+                print(f"{row['臂']:<22}{rate:>14.4f}")
+        print("参照是完美删除那条臂保住的标点：识别器写的、不属于任何注入口语词的那些")
 
     if ends:
         print("\n达成率：从「什么都不做」到「完美删除」这段距离，这条臂走了多少")
