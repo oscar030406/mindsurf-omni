@@ -710,3 +710,49 @@ def test_transcription_says_null_rather_than_echoing_when_no_polisher_is_wired(
     body = client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000).json()
 
     assert body["polished"] is None
+
+
+async def test_a_stage_that_refuses_answers_503_even_when_it_streams() -> None:
+    """An async generator runs no code until first iterated, so a refusal
+    raised inside a StreamingResponse lands after the headers. Driving the real
+    service with no synthesiser and no thinker: the non-streaming chat path
+    answered 503 with the variables to set, while streaming chat, wav speech
+    and pcm speech all returned an empty 200 the caller reads as
+    IncompleteRead."""
+    from mindsurf_omni.service.app import first_and_rest
+    from mindsurf_omni.service.config import ConfigurationError
+
+    async def refuses():
+        raise ConfigurationError("no synthesiser is wired")
+        yield  # pragma: no cover - unreachable, makes this a generator
+
+    with pytest.raises(ConfigurationError):
+        await first_and_rest(refuses())
+
+
+async def test_an_empty_source_is_not_an_error() -> None:
+    """Silence recognises as no audio and no text."""
+    from mindsurf_omni.service.app import first_and_rest
+
+    async def nothing():
+        return
+        yield  # pragma: no cover - unreachable, makes this a generator
+
+    head, rest = await first_and_rest(nothing())
+
+    assert head is None
+    assert [item async for item in rest] == []
+
+
+async def test_the_item_taken_for_the_check_is_put_back() -> None:
+    """Taking it to move the refusal in front of the headers must not eat it."""
+    from mindsurf_omni.service.app import first_and_rest
+
+    async def three():
+        for value in ("a", "b", "c"):
+            yield value
+
+    head, rest = await first_and_rest(three())
+
+    assert head == "a"
+    assert [item async for item in rest] == ["b", "c"]

@@ -40,6 +40,32 @@ from mindsurf_omni.service.audio import frames, to_wav
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine
 
+
+async def first_and_rest(source: Any) -> tuple[Any, Any]:
+    """Pull one item out before the response starts, and hand back the rest.
+
+    An ``async def`` generator runs no code until it is first iterated, so a
+    stage that refuses -- "no synthesiser is wired" -- raises inside the
+    StreamingResponse, after the headers are gone. The caller then reads zero
+    bytes off a 200 and sees ``IncompleteRead``, which names nothing it could
+    act on. Measured against a service with no synthesiser and no thinker: the
+    non-streaming chat path answered 503 with the environment variables to set,
+    while streaming chat, wav speech and pcm speech all returned the empty
+    stream.
+
+    Taking the first item here moves the refusal back in front of the headers,
+    where the ConfigurationError handler can turn it into that same 503.
+    ``None`` for the first item means the source was empty, which is not an
+    error -- silence recognises as no audio and no text.
+    """
+    iterator = source.__aiter__()
+    try:
+        head = await iterator.__anext__()
+    except StopAsyncIteration:
+        return None, iterator
+    return head, iterator
+
+
 UNAVAILABLE = (
     "no speech engine is configured; set MINDSURF_ENGINE to 'native' or 'cascade' "
     "and point it at a checkpoint"
@@ -230,8 +256,20 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                 ],
             )
 
+        # Before the headers, so a stage that refuses still answers 503 rather
+        # than an empty 200 the caller reads as IncompleteRead.
+        head, rest = await first_and_rest(engine.complete(messages, settings))
+
         async def stream() -> Any:
-            async for delta in engine.complete(messages, settings):
+            async def deltas() -> Any:
+                # The first item was taken before the headers so a refusal
+                # could still become a 503; it has to be put back in front.
+                if head is not None:
+                    yield head
+                async for item in rest:
+                    yield item
+
+            async for delta in deltas():
                 payload = {
                     "id": completion_id,
                     "object": "chat.completion.chunk",
@@ -263,6 +301,8 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         # happens after the headers are out. The caller then sees a truncated
         # body instead of the 503 that names the reason.
         speaking = engine.speak(body.input, settings)
+        # Before the headers, so a stage that refuses still answers 503.
+        head, rest = await first_and_rest(speaking)
 
         async def stream() -> Any:
             # wav is buffered so the header can carry a real length; pcm
@@ -279,12 +319,14 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             # evaluation harness writes this response straight to a .wav, so
             # the whole chain came back with empty transcripts.
             if as_wav:
-                spoken = bytearray()
-                async for chunk in speaking:
+                spoken = bytearray(head.pcm if head is not None else b"")
+                async for chunk in rest:
                     spoken += chunk.pcm
                 yield to_wav(bytes(spoken), OUTPUT_SAMPLE_RATE)
                 return
-            async for chunk in speaking:
+            if head is not None and head.pcm:
+                yield head.pcm
+            async for chunk in rest:
                 if chunk.pcm:
                     yield chunk.pcm
 
