@@ -188,10 +188,14 @@ def test_consumed_reads_how_far_the_decode_got() -> None:
 
 
 class _Stub(Polisher):
-    """A polisher whose model returns whatever the test tells it to."""
+    """A polisher whose model returns whatever the test tells it to.
 
-    def _polish(self, transcript: str) -> str:  # type: ignore[override]
-        return self.answers.get(transcript, transcript)  # type: ignore[attr-defined]
+    Overrides the batch entry point, not the single one: that is what the
+    service path calls, and a stub on the road nobody drives tests nothing.
+    """
+
+    def _polish_batch(self, pieces: list[str]) -> list[str]:  # type: ignore[override]
+        return [self.answers.get(piece, piece) for piece in pieces]  # type: ignore[attr-defined]
 
 
 async def test_a_piece_the_model_truncated_is_thrown_away() -> None:
@@ -224,3 +228,33 @@ def test_the_door_opens_for_the_spellings_the_recogniser_writes() -> None:
     # onto content.
     for ordinary in ("温", "饿", "啊"):
         assert ordinary not in RECOGNISED_FILLERS
+
+
+def test_a_transcript_the_model_was_trained_on_is_not_split() -> None:
+    """Splitting every sentence cost 0.039 of filler clearance over 986
+    held-out transcripts, none of which was long enough to need it."""
+    from mindsurf_omni.service.polish import TRAINED_LENGTH, group_sentences
+
+    text = "嗯，今天天气怎么样？我想出门散步。"
+    assert len(text) < TRAINED_LENGTH
+    assert group_sentences(text) == [text]
+
+
+def test_a_long_transcript_is_grouped_not_shredded() -> None:
+    """Pieces up to the trained length, not one sentence per call."""
+    from mindsurf_omni.service.polish import group_sentences
+
+    text = "这是一句测试用的句子。" * 40
+    pieces = group_sentences(text, longest=100)
+
+    assert len(pieces) > 1
+    assert all(len(piece) <= 100 for piece in pieces)
+    assert "".join(pieces) == text
+
+
+def test_a_single_sentence_past_the_line_is_left_whole() -> None:
+    """A piece starting halfway through a sentence is worse input than a long one."""
+    from mindsurf_omni.service.polish import group_sentences
+
+    text = "没有标点的一长串字" * 30
+    assert group_sentences(text, longest=50) == [text]

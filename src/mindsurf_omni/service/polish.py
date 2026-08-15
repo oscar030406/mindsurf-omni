@@ -69,6 +69,17 @@ _SENTENCE_END = re.compile(r"[。！？；\n]+")
 # clause, and dropping a clause is the failure this floor exists to refuse.
 FLOOR = 0.90
 
+# The longest text the model was trained on. The pool that built the pairs
+# dropped anything past 160 characters, so this is not a guess about capacity --
+# it is the edge of what the weights have seen. Below it the transcript goes in
+# whole; above it, consecutive sentences are grouped up to this length.
+#
+# Grouping rather than one sentence per call, because a sentence on its own is
+# also out of distribution: measured over 986 held-out transcripts, splitting
+# every sentence cost 0.039 of filler clearance (0.8625 to 0.8234) and 0.007 of
+# CER for nothing, since none of them was long enough to need splitting.
+TRAINED_LENGTH = 160
+
 
 def split_sentences(text: str) -> list[str]:
     """Sentences with their end marks kept, in order.
@@ -82,6 +93,31 @@ def split_sentences(text: str) -> list[str]:
         start = match.end()
     if start < len(text):
         pieces.append(text[start:])
+    return pieces
+
+
+def group_sentences(text: str, longest: int = TRAINED_LENGTH) -> list[str]:
+    """The text in pieces the model was trained on, splitting only when it must.
+
+    A transcript inside ``longest`` comes back as one piece, so the ordinary
+    dictation is polished exactly as it was before any of this existed. Past
+    that, consecutive sentences are grouped until adding the next would cross
+    the line -- and a single sentence longer than the line is left whole rather
+    than cut mid-clause, because a piece that starts halfway through a sentence
+    is worse input than a long one.
+    """
+    if len(text) <= longest:
+        return [text]
+    pieces: list[str] = []
+    current = ""
+    for sentence in split_sentences(text):
+        if current and len(current) + len(sentence) > longest:
+            pieces.append(current)
+            current = sentence
+        else:
+            current += sentence
+    if current:
+        pieces.append(current)
     return pieces
 
 
@@ -242,14 +278,107 @@ class Polisher:
         discarded and the input kept. The copy constraint makes that test exact
         -- the output is always a subsequence of the input.
         """
+        pieces = group_sentences(transcript)
+        polished = self._polish_batch([p for p in pieces if p.strip()])
+        answers = iter(polished)
         out = []
-        for piece in split_sentences(transcript):
+        for piece in pieces:
             if not piece.strip():
                 out.append(piece)
                 continue
-            polished = self._polish(piece)
-            out.append(polished if consumed(piece, polished) >= FLOOR else piece)
+            answer = next(answers)
+            out.append(answer if consumed(piece, answer) >= FLOOR else piece)
         return "".join(out)
+
+    def _polish_batch(self, pieces: list[str]) -> list[str]:
+        """Every piece decoded in one pass, each under its own copy constraint.
+
+        The pieces of a dictation do not depend on each other, and the model is
+        90M parameters against sequences of fifty tokens -- so a step costs the
+        same whether it carries one sentence or fifty. Measured on this card:
+        12.62 ms a step at batch 1 and 9.30 ms at batch 57, which is 315 ms a
+        sentence against 4.1 ms. The serial loop was paying that 77 times over,
+        and the polish stage is 76-90% of what a dictation costs.
+
+        Left-padded, because the constraint is per row and the rows have
+        different prompt lengths. RoPE is relative, so shifting a row's real
+        tokens along the position axis leaves the attention between them
+        unchanged, and the pad positions are masked out of every score.
+
+        The mask is rebuilt per row per step rather than shared: what each row
+        may emit next depends on how far its own output has consumed its own
+        transcript, and that is the whole point of the constraint.
+        """
+        import torch
+
+        if not pieces:
+            return []
+        self.load()
+        stop = int(self._tokeniser.eos_token_id)
+        prompts, sources = [], []
+        for piece in pieces:
+            messages = [{"role": "user", "content": build_prompt(piece)}]
+            text = str(
+                self._tokeniser.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+            )
+            prompts.append(list(self._tokeniser(text).input_ids))
+            sources.append(list(self._tokeniser(piece).input_ids))
+
+        width = max(len(ids) for ids in prompts)
+        padded = torch.tensor(
+            [[stop] * (width - len(ids)) + ids for ids in prompts], device=self.device
+        )
+        mask = torch.tensor(
+            [[0.0] * (width - len(ids)) + [1.0] * len(ids) for ids in prompts],
+            device=self.device,
+        )
+
+        produced: list[list[int]] = [[] for _ in pieces]
+        done = [False] * len(pieces)
+        cache, step_in = None, padded
+        with torch.no_grad():
+            for _ in range(self.max_new_tokens):
+                out = self._model(
+                    input_ids=step_in, attention_mask=mask, past_key_values=cache, use_cache=True
+                )
+                cache = out.past_key_values
+                logits = out.logits[:, -1].float()
+                nxt = []
+                for row, piece_source in enumerate(sources):
+                    if done[row]:
+                        nxt.append(stop)
+                        continue
+                    ahead = set(
+                        reachable(
+                            piece_source,
+                            subsequence_pointer(piece_source, produced[row]),
+                            self.lookahead,
+                            self._filler_spans(),
+                            self.protect_head,
+                        )
+                    )
+                    ahead.add(stop)
+                    keep = torch.tensor(sorted(ahead), device=logits.device, dtype=torch.long)
+                    masked = torch.full_like(logits[row], float("-inf"))
+                    masked[keep] = logits[row][keep]
+                    chosen = int(masked.argmax())
+                    if chosen == stop:
+                        done[row] = True
+                    else:
+                        produced[row].append(chosen)
+                    nxt.append(chosen)
+                if all(done):
+                    break
+                step_in = torch.tensor([[token] for token in nxt], device=self.device)
+                mask = torch.cat([mask, torch.ones((len(pieces), 1), device=self.device)], dim=1)
+
+        answers = []
+        for piece, tokens in zip(pieces, produced, strict=True):
+            text = self._tokeniser.decode(tokens, skip_special_tokens=True).strip()
+            answers.append(text or piece)
+        return answers
 
     def _filler_spans(self) -> tuple[tuple[int, ...], ...]:
         """The filler vocabulary as token ids, tokenised once per process."""
@@ -275,16 +404,23 @@ class Polisher:
         stop = int(self._tokeniser.eos_token_id)
 
         produced: list[int] = []
+        cache = None
         with torch.no_grad():
             for _ in range(self.max_new_tokens):
+                # Only what the model has not seen yet. Without the cache this
+                # loop re-ran the whole prefix every step: a 25-token answer
+                # behind a 40-token prompt cost 25 forwards averaging 52
+                # positions instead of 65 in total, twenty times the work, and
+                # the polish stage was 76-90% of the time a dictation took.
+                # Mathematically the same decode -- same logits, same argmax.
                 ids = (
                     prompt_ids
-                    if not produced
-                    else torch.cat(
-                        [prompt_ids, torch.tensor([produced], device=prompt_ids.device)], dim=1
-                    )
+                    if cache is None
+                    else torch.tensor([produced[-1:]], device=prompt_ids.device)
                 )
-                logits = self._model(input_ids=ids).logits[0, -1].float()
+                out = self._model(input_ids=ids, past_key_values=cache, use_cache=True)
+                cache = out.past_key_values
+                logits = out.logits[0, -1].float()
                 pointer = subsequence_pointer(source, produced)
                 ahead = set(
                     reachable(

@@ -1,0 +1,14 @@
+{
+ "calls_per_sentence": 1.0,
+ "cer_after": 0.05658597122226114,
+ "content_kept": 0.9683359615896494,
+ "empty": 0,
+ "filler_removed_rate": 0.8234295415959253,
+ "invented": 0.04322030238777832,
+ "latency_ms_median": 314.50799999947776,
+ "latency_ms_p95": 1330.4484999971464,
+ "model_calls": 2142,
+ "n": 986,
+ "sentences": 2142,
+ "skip_clean": false
+}
