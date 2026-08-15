@@ -117,9 +117,59 @@ def repetition_spans(source: str, drop: set[int], shortest: int = 2, longest: in
     return found
 
 
+PUNCTUATION = set("，。！？；：、")
+
+
+def tidy(text: str) -> str:
+    """Drop punctuation left with nothing in front of it.
+
+    Deleting 对吧 out of "彩塑，对吧？特别震撼" leaves "彩塑，？特别震撼" -- a
+    stranded question mark, which reads worse than the filler did. None of the
+    four acceptance numbers can see it (``normalise_for_cer`` strips
+    punctuation from both sides, so the orphan costs exactly zero), which is
+    how it survived a whole round of tuning that reported the arm as better on
+    three criteria at once.
+
+    Read it off the output rather than tracking which mark belonged to which
+    filler: leading and doubled are the two shapes an orphan takes, and both
+    are visible in the result. The ceiling arm does the same thing for the
+    same reason.
+    """
+    out: list[str] = []
+    for char in text:
+        if char in PUNCTUATION and (not out or out[-1] in PUNCTUATION):
+            continue
+        out.append(char)
+    return "".join(out)
+
+
+def reached(source: str, output: str) -> int:
+    """How far into ``source`` the output got, matching greedily in order.
+
+    Under the copy constraint the output is a subsequence of the source, so
+    this is exact. Used to tell a deletion from an absence: a generative arm
+    that emits its stop token early leaves the whole tail looking deleted, and
+    on a 184-character dictation that was 100 characters of "opinion" it never
+    formed. Measured by hand, the generator returned 82 of 184 characters and
+    stopped mid-phrase.
+    """
+    pointer = 0
+    for char in output:
+        while pointer < len(source) and source[pointer] != char:
+            pointer += 1
+        pointer = min(pointer + 1, len(source))
+    return pointer
+
+
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
     source = rows[0]["source"]
     drops = [dropped(source, row["polished"]) for row in rows]
+    # Past where an arm stopped, it has no opinion. Without this the veto reads
+    # a truncated arm as agreeing to delete the entire tail.
+    for index, row in enumerate(rows):
+        stopped = reached(source, row["polished"])
+        if stopped < len(source):
+            drops[index] = {position for position in drops[index] if position < stopped}
     if mode == "union":
         combined = set.union(*drops)
     elif mode == "intersection":
@@ -134,7 +184,7 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
         combined = set(drops[0])
         for drop in drops[1:]:
             combined |= vocabulary_spans(source, drop)
-    return "".join(char for index, char in enumerate(source) if index not in combined)
+    return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
 def main() -> None:

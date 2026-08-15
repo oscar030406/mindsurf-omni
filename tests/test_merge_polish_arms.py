@@ -56,9 +56,11 @@ def test_vocabulary_union_takes_the_head_only_where_it_is_strong() -> None:
     generator = {"source": source, "polished": "嗯，今天天气好"}  # removed the repeat
     tagger = {"source": source, "polished": "今天今天天气好"}  # removed 嗯，
 
-    # 嗯 comes in from the tagger; the comma it also dropped is not a filler word
-    # and stays.
-    assert merge([generator, tagger], "vocabulary-union") == "，今天天气好"
+    # 嗯 comes in from the tagger. The comma it also dropped is not a filler
+    # word, so the merge does not import it -- but it is then leading nothing,
+    # and tidy() takes it. Leaving it was the stranded-punctuation defect that
+    # a whole round of tuning reported as an improvement.
+    assert merge([generator, tagger], "vocabulary-union") == "今天天气好"
 
 
 def test_a_partly_deleted_filler_is_not_imported() -> None:
@@ -112,3 +114,20 @@ def test_one_repeated_character_is_not_a_repetition() -> None:
 
     assert repetition_spans("今天天气好", {1}) == set()
     assert repetition_spans("时间时间上", {0, 1}) == {0, 1}
+
+
+def test_an_arm_that_stopped_early_is_not_read_as_agreeing() -> None:
+    """A generative arm that emits its stop token early leaves the whole tail
+    looking deleted. Measured by hand: 82 characters returned out of 184, and
+    the veto then dropped the tail's commas because the truncation counted as
+    agreement."""
+    from scripts.merge_polish_arms import reached
+
+    source = "嗯，今天天气好，我出门散步"
+    truncated = {"source": source, "polished": "今天天气好"}  # stopped after 好
+    tagger = {"source": source, "polished": "今天天气好我出门散步"}  # dropped the comma
+
+    assert reached(source, truncated["polished"]) == 7
+    # The tail survives: the truncated arm had no opinion there, so the comma
+    # the tagger dropped is not an agreed deletion.
+    assert merge([truncated, tagger], "veto") == "今天天气好，我出门散步"

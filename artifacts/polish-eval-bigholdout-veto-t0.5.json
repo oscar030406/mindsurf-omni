@@ -3,12 +3,12 @@
   "artifacts\\polish_train\\val_bigholdout_polish6.jsonl",
   "artifacts\\polish_train\\val_bigholdout_taggerv3_t0.5.jsonl"
  ],
- "cer_after": 0.03908044468259055,
+ "cer_after": 0.03900660512043063,
  "cer_before": 0.11227604154379586,
- "content_kept": 0.9739988505079498,
+ "content_kept": 0.9741381222496557,
  "empty": 0,
- "filler_removed_rate": 0.9054895302773062,
- "invented": 0.031577744662296556,
+ "filler_removed_rate": 0.9049235993208828,
+ "invented": 0.03164317684184246,
  "mode": "veto",
  "n": 986
 }
