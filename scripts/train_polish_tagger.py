@@ -105,8 +105,49 @@ def label_tokens(source: str, target: str, spans: list[tuple[int, int]]) -> list
     return labels
 
 
-def features(model: Any, ids: list[int], torch: Any, device: str, lookahead: int) -> Any:
-    """One hidden state per token, plus the next tokens' input embeddings."""
+def repetition_features(ids: list[int], torch: Any, device: str, longest: int) -> Any:
+    """Whether this token opens or closes an exact adjacent repetition.
+
+    Handed over as a feature because the head cannot compute it. It reads one
+    position at a time, so 时间时间 looks like two ordinary words -- measured,
+    the tagger clears 0.437 of the injected repetition against the generative
+    arm's 0.603, and that gap is the whole reason the filler-clearance line is
+    still failing. Everything else it needs is in the hidden state; this is not.
+
+    Two columns per length: "the next k tokens repeat me" and "I repeat the
+    previous k". Both, because which copy the alignment marks as deleted is not
+    fixed for two identical spans, and the head should be free to learn either.
+
+    Length 1 is included here, unlike the merge rule's exemption: there the
+    cost of a false positive is keeping a deletion, here it is one input column
+    the head can learn to ignore.
+    """
+    count = len(ids)
+    out = torch.zeros((count, 2 * longest), device=device)
+    for size in range(1, longest + 1):
+        for start in range(count):
+            if start + 2 * size > count:
+                continue
+            if ids[start : start + size] == ids[start + size : start + 2 * size]:
+                out[start : start + size, 2 * (size - 1)] = 1.0
+                out[start + size : start + 2 * size, 2 * (size - 1) + 1] = 1.0
+    return out
+
+
+def features(
+    model: Any,
+    ids: list[int],
+    torch: Any,
+    device: str,
+    lookahead: int,
+    repetition: int = 0,
+) -> Any:
+    """One hidden state per token, plus the next tokens' input embeddings.
+
+    ``repetition`` appends the hand-crafted repetition columns. Zero keeps the
+    old width, so a head trained before this existed still loads and still
+    means the same thing.
+    """
     tensor = torch.tensor([ids], device=device)
     with torch.no_grad():
         out = model(input_ids=tensor, output_hidden_states=True)
@@ -124,6 +165,8 @@ def features(model: Any, ids: list[int], torch: Any, device: str, lookahead: int
         if embeddings.shape[0] > step:
             shifted[:-step] = embeddings[step:]
         pieces.append(shifted)
+    if repetition:
+        pieces.append(repetition_features(ids, torch, device, repetition))
     return torch.cat(pieces, dim=-1)
 
 
@@ -220,6 +263,7 @@ def main_unfrozen(
         {
             "state_dict": {key: value.cpu() for key, value in head.state_dict().items()},
             "lookahead": args.lookahead,
+            "repetition": args.repetition,
             "hidden": hidden_size,
             "checkpoint": args.checkpoint.name,
             "unfreeze": args.unfreeze,
@@ -264,6 +308,15 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--lookahead", type=int, default=LOOKAHEAD)
+    parser.add_argument(
+        "--repetition",
+        type=int,
+        default=0,
+        help="append 2N hand-crafted columns marking exact adjacent repetitions "
+        "of length 1..N. The head reads one position at a time and cannot "
+        "compute this; it clears 0.437 of the injected repetition against the "
+        "generative arm's 0.603, and that gap is what the filler line fails on",
+    )
     parser.add_argument("--limit", type=int)
     parser.add_argument("--max-tokens", type=int, default=400)
     parser.add_argument("--seed", type=int, default=20260815)
@@ -390,6 +443,7 @@ def main() -> None:
         {
             "state_dict": {key: value.cpu() for key, value in head.state_dict().items()},
             "lookahead": args.lookahead,
+            "repetition": args.repetition,
             "hidden": features_train.shape[1],
             "checkpoint": args.checkpoint.name,
         },
@@ -407,6 +461,7 @@ def main() -> None:
                     "tokens_val": int(features_val.shape[0]),
                     "delete_share": deleted / max(1, deleted + kept),
                     "lookahead": args.lookahead,
+                    "repetition": args.repetition,
                     "history": history,
                 },
                 ensure_ascii=False,

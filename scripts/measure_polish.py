@@ -281,6 +281,9 @@ def main() -> None:
         tagger.load_state_dict(saved["state_dict"])
         tagger.eval()
         tag_lookahead = saved["lookahead"]
+        # Absent in heads trained before the repetition columns existed, and
+        # zero there means the old width -- so an old head still loads.
+        tag_repetition = saved.get("repetition", 0)
 
     written = []
     latencies = []
@@ -289,7 +292,7 @@ def main() -> None:
             started = time.perf_counter()
             ids, spans = token_spans(tokeniser, row["source"])
             with torch.no_grad():
-                matrix = tag_features(model, ids, torch, args.device, tag_lookahead)
+                matrix = tag_features(model, ids, torch, args.device, tag_lookahead, tag_repetition)
                 probability = torch.softmax(tagger(matrix), dim=-1)[:, 1]
             drop = {
                 position
