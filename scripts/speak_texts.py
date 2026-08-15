@@ -42,11 +42,29 @@ from mindsurf_omni.service.tts import (  # noqa: E402
 )
 
 
-def build_synthesiser(name: str, device: str) -> Any:
+def build_synthesiser(
+    name: str,
+    device: str,
+    prompt_wav: Path | None = None,
+    prompt_text: str | None = None,
+) -> Any:
     if name == "edge":
+        if prompt_wav or prompt_text:
+            raise SystemExit("edge has one fixed voice; a clone prompt only reaches voxcpm")
         return EdgeSynthesiser()
     if name == "voxcpm":
-        return VoxCPMSynthesiser(device=device)
+        # Both or neither, same as the service: VoxCPM ignores half a reference
+        # and then draws a speaker per call, which is the arm this flag exists
+        # to separate from.
+        if bool(prompt_wav) != bool(prompt_text):
+            raise SystemExit(
+                "--prompt-wav and --prompt-text go together; a clip without its text clones nothing"
+            )
+        return VoxCPMSynthesiser(
+            device=device,
+            prompt_wav=str(prompt_wav) if prompt_wav else None,
+            prompt_text=prompt_text,
+        )
     raise SystemExit(f"{name!r} names no synthesiser; 'edge' and 'voxcpm' are wired")
 
 
@@ -149,10 +167,20 @@ def main() -> None:
         help="only 'edge' carries it, as prosody; the local one has no instruct "
         "mode and the manifest records that the request had nowhere to go",
     )
+    parser.add_argument(
+        "--prompt-wav",
+        type=Path,
+        help="a clip for voxcpm to clone. Without one it draws a speaker per "
+        "call, so the voice changes between utterances -- which is what this "
+        "flag exists to measure against",
+    )
+    parser.add_argument("--prompt-text", help="what the clip says, word for word")
     args = parser.parse_args()
 
     texts = load_texts(args.texts)[: args.limit]
-    synthesiser = build_synthesiser(args.synthesiser, args.device)
+    synthesiser = build_synthesiser(
+        args.synthesiser, args.device, args.prompt_wav, args.prompt_text
+    )
     print(f"合成 {len(texts)} 条，合成器 {args.synthesiser}")
     print("模型没有参与：参考文本就是固定文本，所以这一轮量的是合成器加判官的底噪")
 
@@ -171,6 +199,18 @@ def main() -> None:
             "texts_sha256": hashlib.sha256(args.texts.read_bytes()).hexdigest(),
             "emotion": args.emotion,
             "emotion_carried": args.synthesiser == "edge",
+            # Which voice spoke, by the file it was cloned from. Two voxcpm runs
+            # are otherwise indistinguishable in the manifest and one of them
+            # has a different speaker in every utterance.
+            "voice_prompt": (
+                {
+                    "path": str(args.prompt_wav),
+                    "sha256": hashlib.sha256(args.prompt_wav.read_bytes()).hexdigest(),
+                    "text": args.prompt_text,
+                }
+                if args.prompt_wav
+                else None
+            ),
         },
         "efficiency": {
             # Present only in streaming mode, and it is the number that decides

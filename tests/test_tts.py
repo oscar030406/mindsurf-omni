@@ -389,3 +389,19 @@ def test_a_reply_that_merely_discusses_tone_is_still_not_flagged() -> None:
     """
     assert not instruction_leaked("x", "这句话应该用开心热情的语气说才自然")
     assert not instruction_leaked("x", "导游会用温柔关切的语气说这段话")
+
+
+async def test_the_reference_clip_reaches_the_model(voxcpm: type[_FakeVoxCPM]) -> None:
+    """Without it VoxCPM draws a speaker per call: one reply, several voices.
+
+    The fields were always here; nothing set them, so every utterance the
+    service produced was a fresh stranger.
+    """
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+
+    await VoxCPMSynthesiser(prompt_wav="reference.wav", prompt_text="参考音频说的话").synthesise(
+        Utterance(text="今天天气真好")
+    )
+
+    assert voxcpm.calls[0]["prompt_wav_path"] == "reference.wav"
+    assert voxcpm.calls[0]["prompt_text"] == "参考音频说的话"

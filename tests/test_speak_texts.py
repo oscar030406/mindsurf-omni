@@ -92,3 +92,17 @@ def test_an_empty_text_file_is_refused(tmp_path: Path) -> None:
 
     with pytest.raises(SystemExit, match="no texts"):
         load_texts(path)
+
+
+def test_half_a_clone_prompt_is_refused_before_anything_is_generated(tmp_path: Path) -> None:
+    """Same rule as the service: a clip without its text clones nothing."""
+    with pytest.raises(SystemExit, match="go together"):
+        build_synthesiser("voxcpm", "cpu", prompt_wav=tmp_path / "reference.wav")
+    with pytest.raises(SystemExit, match="go together"):
+        build_synthesiser("voxcpm", "cpu", prompt_text="参考音频说的话")
+
+
+def test_the_hosted_synthesiser_refuses_a_clone_prompt(tmp_path: Path) -> None:
+    """It has one voice. Accepting the flag would silently produce the wrong arm."""
+    with pytest.raises(SystemExit, match="only reaches voxcpm"):
+        build_synthesiser("edge", "cpu", tmp_path / "reference.wav", "参考音频说的话")
