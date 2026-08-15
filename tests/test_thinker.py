@@ -13,6 +13,7 @@ torch and a real file, so neither is repeated here.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -250,6 +251,11 @@ def test_a_consumer_that_stops_stops_the_generation() -> None:
                     break
                 steps += 1
                 streamer.put(ids)
+                # A step costs something in reality, and here that matters: with
+                # a free loop all 200 steps can finish before the reader's
+                # cancellation reaches the criteria, and the test fails on a
+                # loaded machine for a reason that is not about the product.
+                time.sleep(0.001)
             streamer.end()
 
     class _Generator(ThinkerGenerator):
