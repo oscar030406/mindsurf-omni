@@ -54,6 +54,23 @@ def interval(rows: list[dict[str, Any]], draws: int, seed: int) -> dict[str, tup
     return out
 
 
+def reached(name: str, point: float, floor: float, ceiling: float) -> float | None:
+    """Share of the reachable distance this arm covered, floor to ceiling.
+
+    None unless the ceiling is meaningfully better than the floor. Content
+    retention is exactly the case this guard exists for: doing nothing scores
+    0.9809 and deleting perfectly 0.9807, so the span is *negative* -- there is
+    no improvement available over doing nothing, and dividing by that span
+    produces percentages in the thousands. A tenth of the smallest difference
+    the criteria distinguish (0.001) is the floor for calling it a distance.
+    """
+    span = (floor - ceiling) if name in LOWER_IS_BETTER else (ceiling - floor)
+    if span < 1e-3:
+        return None
+    covered = (floor - point) if name in LOWER_IS_BETTER else (point - floor)
+    return covered / span
+
+
 def verdict(name: str, point: float, low: float, high: float) -> str:
     line = LINES[name]
     if name in LOWER_IS_BETTER:
@@ -68,10 +85,30 @@ def verdict(name: str, point: float, low: float, high: float) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arm", required=True, action="append", help="名字=路径")
+    parser.add_argument(
+        "--ceiling",
+        type=Path,
+        help="polish_ceiling.py --mode perfect 的产物. With --floor it adds a "
+        "达成率 column: how much of the reachable distance an arm actually "
+        "covered. That is the number that answers whether to keep training, "
+        "and the raw gap to the line is not -- the line may sit past the ceiling",
+    )
+    parser.add_argument("--floor", type=Path, help="polish_ceiling.py --mode nothing 的产物")
     parser.add_argument("--draws", type=int, default=2000)
     parser.add_argument("--seed", type=int, default=20260815)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
+
+    def load(path: Path) -> list[dict[str, Any]]:
+        return [
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+
+    ends = None
+    if args.ceiling and args.floor:
+        ends = (numbers(load(args.floor)), numbers(load(args.ceiling)))
 
     table = []
     for entry in args.arm:
@@ -80,11 +117,7 @@ def main() -> None:
         # Split on the last '=', not the first: the arm names carry one
         # themselves ("标注 t=0.9") and a path here never does.
         name, _, path = entry.rpartition("=")
-        rows = [
-            json.loads(line)
-            for line in Path(path).read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        rows = load(Path(path))
         point = numbers(rows)
         bounds = interval(rows, args.draws, args.seed)
         table.append(
@@ -97,6 +130,11 @@ def main() -> None:
                         "值": round(point[key], 4),
                         "区间": [round(bounds[key][0], 4), round(bounds[key][1], 4)],
                         "判定": verdict(key, point[key], *bounds[key]),
+                        **(
+                            {"达成率": reached(key, point[key], ends[0][key], ends[1][key])}
+                            if ends
+                            else {}
+                        ),
                     }
                     for key in LINES
                 },
@@ -114,6 +152,17 @@ def main() -> None:
         print(f"{row['臂']:<22}{cells}{row['空输出']:>4}")
     print(f"{'线':<22}{'≤ 0.02':>20}{'≥ 0.90':>20}{'≥ 0.98':>20}{'≤ 0.02':>20}{'0':>4}")
     print("✅ = 95% 区间整体在线的正确一侧；~ = 点估计过了但区间跨线；空白 = 不过")
+
+    if ends:
+        print("\n达成率：从「什么都不做」到「完美删除」这段距离，这条臂走了多少")
+        print(f"{'臂':<22}{'CER':>12}{'口语词清除':>12}{'内容保留':>12}{'编造':>12}")
+        for row in table:
+            cells = "".join(
+                ("——" if row[key]["达成率"] is None else f"{row[key]['达成率']:.0%}").rjust(12)
+                for key in LINES
+            )
+            print(f"{row['臂']:<22}{cells}")
+        print("「——」= 地板和天花板一样高，这条判据上没有距离可走")
 
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
