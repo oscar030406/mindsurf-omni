@@ -1,0 +1,125 @@
+{
+ "edge": [
+  {
+   "note": 0,
+   "chars": 42,
+   "seconds": 8.376,
+   "peak": 0.575286865234375,
+   "windows": 4,
+   "median": 0.7346315979957581,
+   "minimum": 0.6913610100746155
+  },
+  {
+   "note": 1,
+   "chars": 49,
+   "seconds": 10.008,
+   "peak": 0.55194091796875,
+   "windows": 5,
+   "median": 0.6920523643493652,
+   "minimum": 0.6436294317245483
+  },
+  {
+   "note": 2,
+   "chars": 47,
+   "seconds": 9.72,
+   "peak": 0.581451416015625,
+   "windows": 4,
+   "median": 0.7689253687858582,
+   "minimum": 0.7568216323852539
+  },
+  {
+   "note": 3,
+   "chars": 46,
+   "seconds": 9.768,
+   "peak": 0.6136474609375,
+   "windows": 4,
+   "median": 0.6563584804534912,
+   "minimum": 0.4924548864364624
+  }
+ ],
+ "voxcpm_noref": [
+  {
+   "note": 0,
+   "chars": 42,
+   "seconds": 6.56,
+   "peak": 0.549407958984375,
+   "windows": 3,
+   "median": 0.7006558179855347,
+   "minimum": 0.6744875311851501
+  },
+  {
+   "note": 1,
+   "chars": 49,
+   "seconds": 9.36,
+   "peak": 0.99981689453125,
+   "windows": 4,
+   "median": 0.7805286049842834,
+   "minimum": 0.7737276554107666
+  },
+  {
+   "note": 2,
+   "chars": 47,
+   "seconds": 5.68,
+   "peak": 0.455230712890625,
+   "windows": 2,
+   "median": 0.7957669496536255,
+   "minimum": 0.7957669496536255
+  },
+  {
+   "note": 3,
+   "chars": 46,
+   "seconds": 7.52,
+   "peak": 0.9954833984375,
+   "windows": 3,
+   "median": 0.7471370100975037,
+   "minimum": 0.7452418804168701
+  }
+ ],
+ "voxcpm_loud": [
+  {
+   "note": 0,
+   "chars": 42,
+   "seconds": 7.92,
+   "peak": 0.9117431640625,
+   "windows": 3,
+   "median": 0.8214359283447266,
+   "minimum": 0.8157074451446533
+  },
+  {
+   "note": 1,
+   "chars": 49,
+   "seconds": 8.8,
+   "peak": 0.959381103515625,
+   "windows": 4,
+   "median": 0.8497183322906494,
+   "minimum": 0.7962290048599243
+  },
+  {
+   "note": 2,
+   "chars": 47,
+   "seconds": 7.68,
+   "peak": 0.850250244140625,
+   "windows": 3,
+   "median": 0.8720775842666626,
+   "minimum": 0.8398475646972656
+  },
+  {
+   "note": 3,
+   "chars": 46,
+   "seconds": 9.92,
+   "peak": 0.952239990234375,
+   "windows": 4,
+   "median": 0.70877605676651,
+   "minimum": 0.680945634841919
+  }
+ ],
+ "human_reference": [
+  {
+   "note": "reference clip",
+   "seconds": 5.44,
+   "windows": 2,
+   "median": 0.6286576986312866,
+   "minimum": 0.6286576986312866
+  }
+ ]
+}
