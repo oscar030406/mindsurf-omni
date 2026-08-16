@@ -105,3 +105,4 @@ artifacts/polish_train/pairs_v3_0.*.jsonl
 # （scripts/cs2w_to_pairs.py），而且它是 CS2W 的正文——那个仓库没有
 # LICENSE 文件，我们照用并署来源，但不转发它的语料。
 artifacts/polish_train/pairs_cs2w.jsonl
+artifacts/polish_train/pairs_union.jsonl

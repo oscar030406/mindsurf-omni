@@ -1,0 +1,28 @@
+{
+  "pairs": 6501,
+  "unfreeze": 3,
+  "lookahead": 2,
+  "repetition": 3,
+  "checkpoint": "sft_merge_768.pth",
+  "pairs_file": "pairs_cs2w.jsonl",
+  "history": [
+    {
+      "epoch": 1,
+      "loss": 0.5604911120735807,
+      "precision": 0.33052109181141437,
+      "recall": 0.5831873905429071
+    },
+    {
+      "epoch": 2,
+      "loss": 0.4736712481165574,
+      "precision": 0.2741663859885483,
+      "recall": 0.712784588441331
+    },
+    {
+      "epoch": 3,
+      "loss": 0.4258622064882132,
+      "precision": 0.3881880733944954,
+      "recall": 0.5928196147110333
+    }
+  ]
+}

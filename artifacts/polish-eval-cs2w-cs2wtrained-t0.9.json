@@ -1,0 +1,15 @@
+{
+ "arm": "tagger t=0.9",
+ "chars": 11205,
+ "checkpoint": "polish_tagger_cs2w_backbone.pth",
+ "deleted": 370,
+ "median_length": 15,
+ "n": 723,
+ "precision": 0.7918918918918919,
+ "recall": 0.19797297297297298,
+ "recall_filler": 0.6740088105726872,
+ "recall_repetition": 0.11173184357541899,
+ "should_delete": 1480,
+ "tagger": "D:\\environment\\models\\mindsurf-local\\polish_tagger_cs2w.pt",
+ "unchanged": 474
+}
