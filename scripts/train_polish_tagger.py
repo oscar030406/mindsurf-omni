@@ -62,7 +62,6 @@ from scripts.train_dpo import load_thinker  # noqa: E402
 # served cannot drift -- which is how a broken --repetition survived a round.
 
 
-
 def label_tokens(source: str, target: str, spans: list[tuple[int, int]]) -> list[int]:
     """1 where the token is filler the polisher should drop.
 
@@ -94,10 +93,6 @@ def label_tokens(source: str, target: str, spans: list[tuple[int, int]]) -> list
         covered = list(range(start, min(end, len(source))))
         labels.append(1 if covered and all(index in doomed for index in covered) else 0)
     return labels
-
-
-
-
 
 
 def main_unfrozen(

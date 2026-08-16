@@ -26,6 +26,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
@@ -84,10 +85,14 @@ def main() -> None:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--limit", type=int)
     parser.add_argument(
-        "--skip-clean",
-        action="store_true",
-        help="do not call the model on a sentence with no filler and no repetition",
+        "--tagger",
+        type=Path,
+        help="the second arm, merged by veto. Measured here rather than offline "
+        "because the service merges per grouped piece, not over the whole "
+        "transcript -- the piece boundary is part of the product",
     )
+    parser.add_argument("--tagger-backbone", type=Path)
+    parser.add_argument("--tagger-threshold", type=float, default=0.5)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
@@ -104,25 +109,40 @@ def main() -> None:
         tokenizer_dir=args.tokenizer,
         minimind_root=args.minimind_root,
         device=args.device,
+        tagger=args.tagger,
+        tagger_backbone=args.tagger_backbone,
+        tagger_threshold=args.tagger_threshold,
     )
     polisher.load()
 
     written, latencies, calls, pieces_seen = [], [], 0, 0
-    for index, row in enumerate(rows, start=1):
-        started = time.perf_counter()
-        out = []
-        for piece in group_sentences(row["source"]):
-            pieces_seen += 1
-            if not piece.strip() or (args.skip_clean and not worth_polishing(piece)):
-                out.append(piece)
-                continue
-            calls += 1
-            polished = polisher._polish(piece)  # noqa: SLF001
-            from mindsurf_omni.service.polish import FLOOR, consumed
 
-            out.append(polished if consumed(piece, polished) >= FLOOR else piece)
-        text = "".join(out)
-        latencies.append((time.perf_counter() - started) * 1000)
+    async def run() -> None:
+        """Through ``Polisher.polish``, not through a copy of it.
+
+        This loop used to rebuild the grouping, the skip filter and the floor
+        here and call the private ``_polish`` underneath -- a faithful copy of
+        the method on the day it was written, and silently not one after that.
+        It stopped being faithful the moment the merge went into ``polish``:
+        every number came back identical to the arm without a tagger, because
+        the tagger was in the product and not in what this script ran.
+
+        One event loop for all of them: the batching queue's futures belong to
+        the loop that made them, and a fresh ``asyncio.run`` per row hands the
+        second call a queue bound to a loop that has closed.
+        """
+        nonlocal calls, pieces_seen
+        for index, row in enumerate(rows, start=1):
+            started = time.perf_counter()
+            for piece in group_sentences(row["source"]):
+                pieces_seen += 1
+                if piece.strip() and worth_polishing(piece):
+                    calls += 1
+            text = await polisher.polish(row["source"])
+            latencies.append((time.perf_counter() - started) * 1000)
+            _record(row, text, index)
+
+    def _record(row: dict[str, Any], text: str, index: int) -> None:
         arrived, removed = filler_removed(row, text)
         written.append(
             {
@@ -140,10 +160,20 @@ def main() -> None:
         if index % 100 == 0:
             print(f"  {index}/{len(rows)}", flush=True)
 
+    import asyncio
+
+    asyncio.run(run())
+
     arrived = sum(row["filler_arrived"] for row in written)
     summary = {
         "n": len(written),
-        "skip_clean": args.skip_clean,
+        # Always true now: the skip lives inside Polisher.polish, so a run
+        # without it would be measuring something the service does not do. The
+        # ablation it existed for is recorded (46.7% fewer calls, the four
+        # numbers not worse) and does not need re-running.
+        "skip_clean": True,
+        "tagger": str(args.tagger) if args.tagger else None,
+        "tagger_threshold": args.tagger_threshold if args.tagger else None,
         "sentences": pieces_seen,
         "model_calls": calls,
         "calls_per_sentence": calls / max(pieces_seen, 1),
