@@ -30,6 +30,9 @@ from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
+# The repository root too, so `scripts.train_polish_tagger` imports when this
+# runs as a file rather than as a module -- the holdout scorer does the same.
+sys.path.insert(0, str(_ROOT))
 
 from mindsurf_omni.service.polish import Polisher, group_sentences, worth_polishing  # noqa: E402
 
@@ -53,6 +56,15 @@ def main() -> None:
     parser.add_argument("--tokenizer", type=Path, default=Path("assets/tokenizer"))
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--limit", type=int)
+    parser.add_argument(
+        "--tagger",
+        type=Path,
+        help="score a tagger head instead of the generative polisher. Without "
+        "this the second ruler could only read the arm we were replacing -- "
+        "which is how a tagger gets judged entirely on the data we injected "
+        "ourselves. --checkpoint is then the tuned backbone, not the polisher",
+    )
+    parser.add_argument("--tagger-threshold", type=float, default=0.9)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
@@ -69,13 +81,39 @@ def main() -> None:
     rows = rows[: args.limit]
     print(f"{len(rows)} 句（标签和正文对得上的）", flush=True)
 
-    polisher = Polisher(
-        checkpoint=args.checkpoint,
-        tokenizer_dir=args.tokenizer,
-        minimind_root=args.minimind_root,
-        device=args.device,
-    )
-    polisher.load()
+    tagger = None
+    if args.tagger:
+        # The same loading the holdout scorer does, so the two rulers read one
+        # head the same way. --checkpoint is the tuned backbone here.
+        import torch
+
+        from mindsurf_omni.service.thinker import ThinkerGenerator
+        from scripts.train_polish_tagger import features as tag_features
+        from scripts.train_polish_tagger import token_spans
+
+        generator = ThinkerGenerator(
+            checkpoint=args.checkpoint,
+            tokenizer_dir=args.tokenizer,
+            minimind_root=args.minimind_root,
+            device=args.device,
+        )
+        generator.load()
+        backbone, tokeniser = generator._model, generator._tokenizer  # noqa: SLF001
+        backbone.eval()
+        saved = torch.load(str(args.tagger), map_location=args.device, weights_only=False)
+        tagger = torch.nn.Linear(saved["hidden"], 2).to(args.device)
+        tagger.load_state_dict(saved["state_dict"])
+        tagger.eval()
+        tag_lookahead, tag_repetition = saved["lookahead"], saved.get("repetition", 0)
+        print(f"标注器 lookahead={tag_lookahead} repetition={tag_repetition}", flush=True)
+    else:
+        polisher = Polisher(
+            checkpoint=args.checkpoint,
+            tokenizer_dir=args.tokenizer,
+            minimind_root=args.minimind_root,
+            device=args.device,
+        )
+        polisher.load()
 
     written = []
     hit = predicted = actual = 0
@@ -83,12 +121,30 @@ def main() -> None:
     hit_repeat = actual_repeat = 0
     for index, row in enumerate(rows, start=1):
         source = row["content"]
-        pieces = group_sentences(source)
-        wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]
-        answers = dict(zip(wanted, polisher._polish_batch(wanted), strict=True)) if wanted else {}
-        output = "".join(answers.get(piece, piece) for piece in pieces)
-
-        dropped = deleted_positions(source, output)
+        if tagger is not None:
+            ids, spans = token_spans(tokeniser, source)
+            with torch.no_grad():
+                matrix = tag_features(
+                    backbone, ids, torch, args.device, tag_lookahead, tag_repetition
+                )
+                probability = torch.softmax(tagger(matrix), dim=-1)[:, 1]
+            # Read straight off the tags rather than through a diff: the tagger
+            # says which characters it drops, so there is nothing to infer.
+            dropped = {
+                position
+                for (start, end), keep in zip(spans, probability.tolist(), strict=True)
+                if keep >= args.tagger_threshold
+                for position in range(start, min(end, len(source)))
+            }
+            output = "".join(c for i, c in enumerate(source) if i not in dropped)
+        else:
+            pieces = group_sentences(source)
+            wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]
+            answers = (
+                dict(zip(wanted, polisher._polish_batch(wanted), strict=True)) if wanted else {}
+            )
+            output = "".join(answers.get(piece, piece) for piece in pieces)
+            dropped = deleted_positions(source, output)
         labels = row["disfluency_label"]
         truth = {i for i, mark in enumerate(labels) if mark in "12"}
         predicted += len(dropped)
@@ -105,6 +161,11 @@ def main() -> None:
             print(f"  {index}/{len(rows)}", flush=True)
 
     summary = {
+        # Which arm produced these, because a report that does not say cannot
+        # be compared to the next one.
+        "arm": f"tagger t={args.tagger_threshold}" if args.tagger else "generative",
+        "tagger": str(args.tagger) if args.tagger else None,
+        "checkpoint": args.checkpoint.name,
         "n": len(rows),
         "deleted": predicted,
         "should_delete": actual,

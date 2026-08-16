@@ -134,6 +134,46 @@ def repetition_features(ids: list[int], torch: Any, device: str, longest: int) -
     return out
 
 
+def feature_width(embedding_size: int, lookahead: int, repetition: int = 0) -> int:
+    """How wide one token's row is, so the head is built to match it.
+
+    Stated once. The unfrozen path used to compute this itself and left the
+    repetition columns out of the arithmetic, which is half of why
+    ``--repetition`` never worked.
+    """
+    return embedding_size * (1 + lookahead) + 2 * repetition
+
+
+def assemble(
+    hidden: Any,
+    embeddings: Any,
+    ids: list[int],
+    torch: Any,
+    device: str,
+    lookahead: int,
+    repetition: int,
+) -> Any:
+    """The hidden state, the lookahead embeddings, and the repetition columns.
+
+    Shared by the frozen and unfrozen paths rather than written twice. It was
+    written twice, and the two copies drifted: the frozen one grew the
+    repetition columns and the unfrozen one did not, so ``--repetition 3``
+    trained a head that had never seen the feature, wrote ``repetition: 3``
+    into the checkpoint anyway, and then failed at inference with a shape
+    mismatch -- 2310 columns arriving at a 2304-wide head. Nothing caught it
+    because nothing had ever run the flag end to end.
+    """
+    pieces = [hidden]
+    for step in range(1, lookahead + 1):
+        shifted = torch.zeros_like(embeddings)
+        if embeddings.shape[0] > step:
+            shifted[:-step] = embeddings[step:]
+        pieces.append(shifted)
+    if repetition:
+        pieces.append(repetition_features(ids, torch, device, repetition))
+    return torch.cat(pieces, dim=-1)
+
+
 def features(
     model: Any,
     ids: list[int],
@@ -159,15 +199,7 @@ def features(
         hidden = hidden[0] if hidden.dim() == 3 else hidden
         hidden = hidden.float()
         embeddings = model.get_input_embeddings()(tensor)[0].float()
-    pieces = [hidden]
-    for step in range(1, lookahead + 1):
-        shifted = torch.zeros_like(embeddings)
-        if embeddings.shape[0] > step:
-            shifted[:-step] = embeddings[step:]
-        pieces.append(shifted)
-    if repetition:
-        pieces.append(repetition_features(ids, torch, device, repetition))
-    return torch.cat(pieces, dim=-1)
+    return assemble(hidden, embeddings, ids, torch, device, lookahead, repetition)
 
 
 def main_unfrozen(
@@ -193,7 +225,9 @@ def main_unfrozen(
     weight = torch.tensor([1.0, (total - positives) / max(1, positives)], device=args.device)
     print(f"训练 {len(train)} 句（删 {positives}/{total} 个 token）", flush=True)
 
-    hidden_size = model.model.embed_tokens.weight.shape[1] * (1 + args.lookahead)
+    hidden_size = feature_width(
+        model.model.embed_tokens.weight.shape[1], args.lookahead, args.repetition
+    )
     head = torch.nn.Linear(hidden_size, 2).to(args.device)
     optimiser = torch.optim.AdamW(
         [{"params": head.parameters(), "lr": args.learning_rate}, {"params": tuned, "lr": 1e-5}]
@@ -206,13 +240,20 @@ def main_unfrozen(
         states = out.hidden_states
         states = states[0] if states.dim() == 3 else states
         embeddings = model.get_input_embeddings()(tensor)[0]
-        pieces = [states.float()]
-        for step in range(1, args.lookahead + 1):
-            shifted = torch.zeros_like(embeddings)
-            if embeddings.shape[0] > step:
-                shifted[:-step] = embeddings[step:]
-            pieces.append(shifted.float())
-        return head(torch.cat(pieces, dim=-1))
+        # Through the shared assembler rather than rebuilt here: this is the
+        # copy that drifted, and gradients still flow because `assemble` only
+        # concatenates -- the no_grad lives in `features`, not in it.
+        return head(
+            assemble(
+                states.float(),
+                embeddings.float(),
+                ids,
+                torch,
+                args.device,
+                args.lookahead,
+                args.repetition,
+            )
+        )
 
     history = []
     for epoch in range(1, args.epochs + 1):
@@ -377,7 +418,7 @@ def main() -> None:
         if not ids or len(ids) > args.max_tokens:
             continue
         labels = label_tokens(source, row["target"], spans)
-        matrix = features(model, ids, torch, args.device, args.lookahead).cpu()
+        matrix = features(model, ids, torch, args.device, args.lookahead, args.repetition).cpu()
         answers = torch.tensor(labels)
         deleted += int(answers.sum())
         kept += len(labels) - int(answers.sum())

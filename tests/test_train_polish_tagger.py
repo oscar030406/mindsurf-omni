@@ -72,3 +72,45 @@ def test_the_old_width_is_unchanged_when_the_flag_is_off() -> None:
     from scripts.train_polish_tagger import repetition_features
 
     assert repetition_features([1, 1, 2], torch, "cpu", 0).shape == (3, 0)
+
+
+def test_the_head_width_matches_the_columns_that_arrive() -> None:
+    """The invariant nothing was checking, and it was false.
+
+    `--repetition 3` built the head from `embedding * (1 + lookahead)` with the
+    six repetition columns left out of the arithmetic, while the unfrozen path
+    assembled its rows without those columns at all -- so training ran, wrote
+    `repetition: 3` into the checkpoint, and inference then handed a 2310-wide
+    row to a 2304-wide head. Every threshold in the sweep died on the shape.
+
+    The three tests above check the columns themselves. None of them compared
+    the width the head is built to against the width the features arrive at,
+    which is where the whole thing came apart.
+    """
+    import torch
+    from scripts.train_polish_tagger import assemble, feature_width
+
+    ids = [9, 1, 2, 1, 2, 8]
+    hidden = torch.zeros((len(ids), 768))
+    embeddings = torch.zeros((len(ids), 768))
+
+    for repetition in (0, 1, 3):
+        matrix = assemble(hidden, embeddings, ids, torch, "cpu", 2, repetition)
+
+        assert matrix.shape[1] == feature_width(768, 2, repetition)
+
+
+def test_the_repetition_columns_actually_reach_the_row() -> None:
+    """Not just that the width grew -- that the marks are in it."""
+    import torch
+    from scripts.train_polish_tagger import assemble
+
+    ids = [9, 1, 2, 1, 2, 8]
+    hidden = torch.zeros((len(ids), 4))
+    embeddings = torch.zeros((len(ids), 4))
+
+    matrix = assemble(hidden, embeddings, ids, torch, "cpu", 1, 2)
+
+    # Everything the model contributes is zero here, so anything non-zero is
+    # the hand-crafted half.
+    assert matrix.sum().item() == 4.0
