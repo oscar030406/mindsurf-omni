@@ -328,7 +328,19 @@ def main_unfrozen(
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(
             json.dumps(
-                {"pairs": len(rows), "unfreeze": args.unfreeze, "history": history},
+                {
+                    "pairs": len(rows),
+                    "unfreeze": args.unfreeze,
+                    # Which arm this is. The frozen path's report has carried
+                    # lookahead since it was written; this one did not, so the
+                    # first run with repetition columns produced a report that
+                    # could not be told apart from a run without them.
+                    "lookahead": args.lookahead,
+                    "repetition": args.repetition,
+                    "checkpoint": args.checkpoint.name,
+                    "pairs_file": args.pairs.name,
+                    "history": history,
+                },
                 ensure_ascii=False,
                 indent=2,
             )

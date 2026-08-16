@@ -1,0 +1,29 @@
+{
+  "pairs": 3171,
+  "unfreeze": 3,
+  "history": [
+    {
+      "epoch": 1,
+      "loss": 0.3071153214184342,
+      "precision": 0.4637462235649547,
+      "recall": 0.8100263852242744
+    },
+    {
+      "epoch": 2,
+      "loss": 0.1942146677675983,
+      "precision": 0.4651851851851852,
+      "recall": 0.8284960422163589
+    },
+    {
+      "epoch": 3,
+      "loss": 0.14624063343457974,
+      "precision": 0.5120772946859904,
+      "recall": 0.8390501319261213
+    }
+  ],
+  "lookahead": 2,
+  "repetition": 3,
+  "checkpoint": "sft_merge_768.pth",
+  "pairs_file": "pairs_v3.jsonl",
+  "note": "这几个字段是这一轮补记的——产出这份报告的那次运行还没有记它们，见同日提交"
+}

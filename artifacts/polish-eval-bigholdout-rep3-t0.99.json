@@ -1,0 +1,29 @@
+{
+  "cer_after": 0.0734960414604138,
+  "cer_before": 0.11227604154379586,
+  "cer_noise_floor": 0.004275512832917737,
+  "checkpoint": "polish_tagger_rep3_backbone.pth",
+  "content_kept": 0.9838621009588565,
+  "empty": 0,
+  "filler_arrived": 1761,
+  "filler_removed": 952,
+  "filler_removed_rate": 0.5406019307211811,
+  "invented": 0.06427342610268212,
+  "latency_ms_median": 10.55570000607986,
+  "latency_ms_p95": 13.840400002663955,
+  "n": 986,
+  "split": "val",
+  "thresholds": {
+    "content_kept": 0.98,
+    "filler_removed": 0.9,
+    "invented": 0.02,
+    "polished_cer": 0.02
+  },
+  "verdicts": {
+    "不塌": "空输出 0/986",
+    "不编造": "不过（0.0643 > 0.02）",
+    "主判据 CER": "不过（0.0735 > 0.02，输入端 0.1123）",
+    "内容保留": "过（0.9839 ≥ 0.98）",
+    "口语词清除": "不过（0.541 < 0.9）"
+  }
+}
