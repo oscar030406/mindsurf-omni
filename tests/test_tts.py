@@ -405,3 +405,19 @@ async def test_the_reference_clip_reaches_the_model(voxcpm: type[_FakeVoxCPM]) -
 
     assert voxcpm.calls[0]["prompt_wav_path"] == "reference.wav"
     assert voxcpm.calls[0]["prompt_text"] == "参考音频说的话"
+
+
+def test_text_with_nothing_speakable_left_comes_back_empty() -> None:
+    """ "。。。？！" survived the strip as "？！", which the hosted endpoint answers
+    with no audio at all -- and this module turns that into a RuntimeError the
+    speech endpoint had no choice but to serve as a 500."""
+    assert clean_for_speech("。。。？！") == ""
+    assert clean_for_speech("……") == ""
+    assert clean_for_speech("？") == ""
+    assert clean_for_speech("!!!") == ""
+
+
+def test_punctuation_around_real_words_is_kept() -> None:
+    """The check is "is there anything to say", not "strip punctuation"."""
+    assert clean_for_speech("真的吗？太好了！") == "真的吗？太好了！"
+    assert clean_for_speech("行，那就这样。") == "行，那就这样"

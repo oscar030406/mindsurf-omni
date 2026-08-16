@@ -20,6 +20,23 @@ import struct
 PCM16_MAX = 32768.0
 
 
+def whole_samples(pcm: bytes) -> bytes:
+    """The part of a PCM16 buffer that is complete samples.
+
+    A recorder flushed mid-sample sends an odd number of bytes. The
+    array-backed helpers here and in the VAD have always trimmed it; the numpy
+    ones did not, and numpy refuses the buffer outright -- "buffer size must be
+    a multiple of element size", which /v1/audio/transcriptions served as a 500.
+    So one odd byte in the body failed a request that the same buffer passed
+    through the silence check moments earlier.
+
+    Trimmed rather than refused, deliberately: half a sample is 31 microseconds
+    of audio, and a client that chunks its stream on a byte boundary is not
+    doing anything wrong.
+    """
+    return pcm[: len(pcm) // 2 * 2]
+
+
 def resample(pcm: bytes, source_rate: int, target_rate: int) -> bytes:
     """Linear interpolation between rates.
 

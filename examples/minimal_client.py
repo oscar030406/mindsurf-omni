@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import base64
 import json
-import struct
+import sys
+import wave
 from typing import Any
 
 import httpx
@@ -102,12 +103,44 @@ def converse(pcm: bytes) -> None:
                 break
             elif kind == "response.done":
                 # dropped_turns > 0 means history was shortened to fit.
-                print("context:", event.get("context"))
+                print("\ncontext:", event.get("context"))
                 break
+
+
+def read_recording(path: str) -> bytes:
+    """A wav file as the PCM the realtime path takes, or say what is wrong with it.
+
+    Checked rather than assumed. Sending 24 kHz audio to a 16 kHz endpoint does
+    not fail, it transcribes badly -- and "the model misheard me" is a much
+    harder thing to debug than a message naming the rate.
+    """
+    with wave.open(path, "rb") as recording:
+        channels, width, rate = (
+            recording.getnchannels(),
+            recording.getsampwidth(),
+            recording.getframerate(),
+        )
+        if (channels, width, rate) != (1, 2, 16_000):
+            raise SystemExit(
+                f"{path} is {channels} channel(s), {width * 8}-bit, {rate} Hz; "
+                "this endpoint takes mono 16-bit 16 kHz"
+            )
+        return recording.readframes(recording.getnframes())
 
 
 if __name__ == "__main__":
     check_what_is_serving()
     reply = ask_streaming("今天天气怎么样")
     speak(reply, emotion="happy")
-    converse(struct.pack("<16000h", *([0] * 16000)))
+    # A recording, not silence. This used to send a second of digital zeros,
+    # which demonstrated nothing: the recogniser hears no speech in silence, so
+    # the turn had no content to answer. It looked like it worked only because
+    # the model would answer the empty transcript anyway -- with, measured,
+    # "Sure, what's your question?" in English. The service now says "no speech
+    # was heard" instead, which is the correct answer to what this was sending.
+    if len(sys.argv) < 2:
+        raise SystemExit(
+            "pass a recording to see a realtime turn: "
+            "python minimal_client.py turn.wav  (mono 16-bit 16 kHz)"
+        )
+    converse(read_recording(sys.argv[1]))

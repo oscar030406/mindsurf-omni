@@ -25,6 +25,13 @@ AUDIO_ENCODING = "pcm_s16le"
 
 SCHEMA_VERSION = 1
 
+# The delivery the service can actually produce. Named once because two doors
+# lead to it: the speech endpoint validates against this list through pydantic,
+# and the realtime session.update event used to validate against nothing at all
+# -- "angry" was accepted in silence and delivered as neutral.
+Emotion = Literal["neutral", "happy", "care"]
+EMOTIONS: tuple[str, ...] = ("neutral", "happy", "care")
+
 
 # ---------------------------------------------------------------------------
 # POST /v1/chat/completions
@@ -38,7 +45,12 @@ class ChatMessage(BaseModel):
 
 class ChatCompletionRequest(BaseModel):
     model: str = "mindsurf-omni"
-    messages: list[ChatMessage]
+    # At least one. An empty list reached the tokenizer's chat template and
+    # came back as IndexError, which the service served as a 500 -- a caller
+    # whose message list was empty for its own reasons could not tell a bug in
+    # its request from a fault in ours. Rejected here so it arrives as a field
+    # error beside the ones for a bad role or an out-of-range speed.
+    messages: list[ChatMessage] = Field(min_length=1)
     stream: bool = False
     # Zero, so the same question gets the same answer. Upstream ships 0.7,
     # where three asks give three different replies (agreement 0.418 at
@@ -88,7 +100,7 @@ class SpeechRequest(BaseModel):
     speed: float = Field(default=1.0, ge=0.5, le=2.0)
     # Extension: emotion rides alongside rather than being smuggled into the
     # text, so the spoken text and the delivery stay separable.
-    emotion: Literal["neutral", "happy", "care"] = "neutral"
+    emotion: Emotion = "neutral"
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +177,11 @@ CLIENT_EVENTS = {
 # declared and skipped.
 SERVER_EVENTS = {
     "session.created",
+    # The answer to session.update, added 2026-08-16 when that event stopped
+    # being silent. A caller could set a voice or an emotion the build does not
+    # have and hear nothing back either way, so there was no way to tell an
+    # applied setting from a dropped one short of asking somebody to listen.
+    "session.updated",
     "conversation.item.input_audio_transcription.completed",  # cascade only
     "response.created",
     "response.text.delta",

@@ -26,6 +26,18 @@ from mindsurf_omni.contract import ComponentInfo, TokenSpec
 PathName = Literal["native", "cascade"]
 
 
+class TooLongForModel(ValueError):
+    """One message is longer than anything the model was trained to answer.
+
+    Not a configuration fault and not a model fault: the request is well formed
+    and the weights are the right ones, but this particular input is outside
+    what they can do. It is separate from ConfigurationError because the two
+    want different answers -- an operator fixes the first, a caller shortens
+    the second -- and because a 503 tells a caller to retry, which will not
+    help here.
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class SpeechChunk:
     """One piece of speech, ready to play.

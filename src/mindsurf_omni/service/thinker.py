@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from mindsurf_omni.service.config import ConfigurationError
-from mindsurf_omni.service.engine import GenerationSettings
+from mindsurf_omni.service.engine import GenerationSettings, TooLongForModel
 
 # Our base, which MiniMind's defaults do not describe. Stated here because the
 # alternative is a model that loads, runs, and is not the one that was trained.
@@ -68,6 +68,22 @@ VARIANTS: dict[str, tuple[dict[str, Any], int]] = {
     "upstream-default": ({"hidden_size": 768, "num_hidden_layers": 8}, 63_912_192),
 }
 IM_END = 2
+
+# The longest single message that still gets answered, in tokens.
+#
+# Measured on this checkpoint, 8 prompts per point, built from held-out text:
+# a user message of 395 tokens came back empty 0 times out of 8, 435 tokens
+# 2/8, 472 tokens 3/8, 774 tokens 6/8, and 977 tokens 8/8 -- an empty string on
+# a 200, finish_reason "stop", no error anywhere.
+#
+# It is the length of ONE MESSAGE, not of the prompt. The same token counts
+# spread over a conversation are fine: 1010 tokens of history answered 8/8,
+# where a single message of 977 answered 0/8. SFT ran with --max_seq_len 512,
+# so a reply has never followed a user turn this long and the model ends the
+# sequence instead of starting one. The dictation path hit the same wall from
+# the other side and fixed it by feeding the model the length it was trained
+# on; a question cannot be cut into pieces that way, so this one is refused.
+LONGEST_MESSAGE_TOKENS = 400
 
 
 def thinker_weights(state: dict[str, Any]) -> dict[str, Any]:
@@ -176,6 +192,23 @@ class ThinkerGenerator:
             )
         )
 
+    def refuse_if_too_long(self, messages: list[dict[str, str]]) -> None:
+        """Say a message is too long rather than answering it with nothing.
+
+        Checked per message rather than on the whole prompt: history of the
+        same size is answered normally, so charging a long conversation for a
+        limit that belongs to one turn would refuse requests that work.
+        """
+        for message in messages:
+            length = len(self._tokenizer(message.get("content", "")).input_ids)
+            if length > LONGEST_MESSAGE_TOKENS:
+                raise TooLongForModel(
+                    f"one {message.get('role', 'user')} message is {length} tokens; this "
+                    f"checkpoint answers up to {LONGEST_MESSAGE_TOKENS} in a single message "
+                    "and returns nothing above it. Split it into turns -- a conversation of "
+                    "the same total length is answered normally"
+                )
+
     async def generate(
         self, messages: list[dict[str, str]], settings: GenerationSettings
     ) -> AsyncIterator[str]:
@@ -193,6 +226,10 @@ class ThinkerGenerator:
         from transformers import StoppingCriteria, TextIteratorStreamer
 
         self.load()
+        # Before the thread starts, so the refusal reaches the caller as a
+        # status code rather than as an exception raised mid-stream, after the
+        # response headers have gone.
+        self.refuse_if_too_long(messages)
         streamer = TextIteratorStreamer(self._tokenizer, skip_prompt=True, skip_special_tokens=True)
         input_ids = self._tokenizer(self.prompt(messages), return_tensors="pt").input_ids.to(
             self.device

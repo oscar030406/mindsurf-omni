@@ -69,6 +69,12 @@ _SENTENCE_END = re.compile(r"[。！？；\n]+")
 # clause, and dropping a clause is the failure this floor exists to refuse.
 FLOOR = 0.90
 
+PUNCTUATION = set("，。！？；：、")
+
+# Particles that never open a Chinese sentence. 啊 and 呀 are deliberately not
+# here -- "啊，太好了" is ordinary, and deleting that 啊 would be deleting content.
+STRANDED_PARTICLES = set("吧呢嘛")
+
 # The longest text the model was trained on. The pool that built the pairs
 # dropped anything past 160 characters, so this is not a guess about capacity --
 # it is the edge of what the weights have seen. Below it the transcript goes in
@@ -163,6 +169,39 @@ def group_sentences(text: str, longest: int = TRAINED_LENGTH) -> list[str]:
     if current:
         pieces.append(current)
     return pieces
+
+
+def tidy(text: str) -> str:
+    """Drop what a deletion left with nothing in front of it.
+
+    Two shapes, both read off the output rather than tracked back to which
+    filler they belonged to, because both are visible in the result.
+
+    Punctuation: deleting 对吧 out of "彩塑，对吧？特别震撼" leaves "彩塑，？特别
+    震撼", a stranded question mark that reads worse than the filler did.
+
+    Particles: deleting 我觉得 out of "我觉得吧这个真的挺好的" leaves "吧这个真的
+    挺好的", which is not a sentence. Measured on the running service, both of
+    these ship today.
+
+    Neither costs anything on the four acceptance numbers -- ``normalise_for_cer``
+    strips punctuation from both sides, and the stranded particle is a character
+    the source contained, so content_kept counts it as kept. That is how the
+    first one survived a whole round of tuning that reported the arm as better
+    on three criteria at once, and the second one survived the round that fixed
+    the first.
+
+    Deleting only, so the copy constraint holds: the result is still a
+    subsequence of the transcript.
+    """
+    out: list[str] = []
+    for char in text:
+        if char in PUNCTUATION and (not out or out[-1] in PUNCTUATION):
+            continue
+        if char in STRANDED_PARTICLES and (not out or out[-1] in PUNCTUATION):
+            continue
+        out.append(char)
+    return "".join(out)
 
 
 def consumed(source: str, output: str) -> float:
@@ -335,7 +374,10 @@ class Polisher:
                 continue
             answer = answers[piece]
             out.append(answer if consumed(piece, answer) >= FLOOR else piece)
-        return "".join(out)
+        # Tidied over the joined text, not per piece: a piece boundary is a
+        # sentence boundary, so a particle stranded at the start of one is only
+        # visible once its neighbour is in front of it.
+        return tidy("".join(out))
 
     async def _decode(self, pieces: list[str]) -> list[str]:
         """Queue these pieces and wait for them, sharing a batch with whoever else is waiting.

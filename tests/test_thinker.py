@@ -20,7 +20,9 @@ from typing import Any
 import pytest
 
 from mindsurf_omni.service.config import ConfigurationError, Settings
+from mindsurf_omni.service.engine import TooLongForModel
 from mindsurf_omni.service.thinker import (
+    LONGEST_MESSAGE_TOKENS,
     THINKER_PARAMETERS,
     THINKER_SHAPE,
     ThinkerGenerator,
@@ -370,3 +372,45 @@ def test_the_sampling_settings_reach_the_model() -> None:
     # Zero means greedy, and transformers wants sampling switched off for it
     # rather than a temperature of zero it would divide by.
     assert seen["do_sample"] is False
+
+
+class CountingTokenizer:
+    """One token per character, which is all this check needs to be exercised."""
+
+    def __call__(self, text: str) -> Any:
+        return type("Encoded", (), {"input_ids": list(text)})()
+
+
+def test_a_message_longer_than_the_model_answers_is_refused_by_length() -> None:
+    """Measured on sft_merge_768.pth, 8 prompts per point, held-out text: a
+    single user message of 395 tokens came back empty 0/8, 435 tokens 2/8,
+    472 tokens 3/8, 774 tokens 6/8, 977 tokens 8/8 -- an empty string on a 200
+    with finish_reason "stop"."""
+    generator = ThinkerGenerator(
+        checkpoint=Path("unused"), tokenizer_dir=Path("unused"), minimind_root=Path("unused")
+    )
+    generator._tokenizer = CountingTokenizer()
+
+    with pytest.raises(TooLongForModel) as error:
+        generator.refuse_if_too_long(
+            [{"role": "user", "content": "字" * (LONGEST_MESSAGE_TOKENS + 1)}]
+        )
+
+    assert str(LONGEST_MESSAGE_TOKENS) in str(error.value)
+    assert "user" in str(error.value)
+
+
+def test_the_limit_is_per_message_not_per_prompt() -> None:
+    """The same token counts spread over turns are answered: 1010 tokens of
+    history 8/8, against 0/8 for one message of 977. Charging a conversation
+    for a limit that belongs to one turn would refuse requests that work."""
+    generator = ThinkerGenerator(
+        checkpoint=Path("unused"), tokenizer_dir=Path("unused"), minimind_root=Path("unused")
+    )
+    generator._tokenizer = CountingTokenizer()
+    turns = [
+        {"role": "user" if index % 2 == 0 else "assistant", "content": "字" * 200}
+        for index in range(10)
+    ]
+
+    generator.refuse_if_too_long(turns)  # must not raise

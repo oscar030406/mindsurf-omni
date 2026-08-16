@@ -270,3 +270,42 @@ def test_the_reference_clip_is_named_in_the_component_list(tmp_path: Path) -> No
 
     assert len(spoke) == 1
     assert spoke[0].sha256 is not None and len(spoke[0].sha256) == 64
+
+
+def test_a_polisher_on_the_native_path_is_refused_rather_than_ignored(tmp_path: Path) -> None:
+    """It did nothing, and it did nothing loudly: /health answered
+    "polisher: ready" and /v1/models carried its sha256, while every
+    /v1/audio/transcriptions came back polished=null. Only the cascade builds
+    one."""
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir()
+    checkpoint = tmp_path / "sft_polish.pth"
+    checkpoint.write_bytes(b"weights")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "native",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_POLISH": str(checkpoint),
+        }
+    )
+    assert settings is not None
+
+    with pytest.raises(ConfigurationError, match="native path has no polish stage"):
+        settings.verify()
+
+
+def test_the_same_polisher_is_fine_on_the_cascade(tmp_path: Path) -> None:
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir()
+    checkpoint = tmp_path / "sft_polish.pth"
+    checkpoint.write_bytes(b"weights")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_POLISH": str(checkpoint),
+        }
+    )
+    assert settings is not None
+
+    settings.verify()  # must not raise

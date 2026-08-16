@@ -26,8 +26,25 @@ from mindsurf_omni.service.engine import (
     GenerationSettings,
     SpeechChunk,
     SpeechEngine,
+    TooLongForModel,
     split_first_utterance,
 )
+from mindsurf_omni.service.polish import group_sentences
+
+# How much of one spoken turn goes into one message, and how much of it the
+# model will answer at all. Both measured on sft_merge_768.pth, 8 prompts per
+# point, held-out text:
+#
+#   one message of 968 tokens        8/8 empty
+#   the same words as user turns     0/8 empty  (6 turns, 998 tokens)
+#   the same words at 1502 tokens    8/8 empty, in every shape tried
+#
+# So a long turn is answerable, but only in the shape the weights have seen --
+# short messages -- and only up to a point past which nothing helps. 240 and
+# 1300 characters are those two token figures at the ~1.39 characters per token
+# this tokenizer gives Chinese, rounded in.
+SPOKEN_TURN_CHARACTERS = 240
+ANSWERABLE_CHARACTERS = 1300
 
 # Callables rather than concrete models, so the pieces can be swapped -- local
 # CosyVoice2, a hosted endpoint, or a stub in a test -- without this logic
@@ -38,6 +55,68 @@ Synthesiser = Callable[[str, GenerationSettings], Awaitable[bytes]]
 # The same job, handed over as it is produced. Optional because only a local
 # synthesiser can do it: a hosted one pays a round trip that cannot be divided.
 StreamingSynthesiser = Callable[[str, GenerationSettings], AsyncIterator[bytes]]
+
+
+def spoken_turn(transcript: str) -> list[dict[str, str]]:
+    """One dictated turn as messages the model will answer.
+
+    The caller of /v1/chat/completions who sends one very long message is told
+    to split it, because they can. Nobody can split this one: the recogniser
+    produced it, from however long the person spoke before they stopped, and by
+    the time it exists the words have been said. Measured live, 124 seconds of
+    continuous speech recognised to 553 characters and came back as a refusal
+    with the turn not even recorded -- two minutes of talking, nothing.
+
+    So the split happens here, on sentence boundaries, into the short messages
+    the weights have seen. Same reasoning as the polish path's grouping and the
+    same helper: a transcript inside the length goes through untouched, so the
+    ordinary turn behaves exactly as it did.
+    """
+    if len(transcript) <= SPOKEN_TURN_CHARACTERS:
+        return [{"role": "user", "content": transcript}]
+    if len(transcript) > ANSWERABLE_CHARACTERS:
+        # Past this the split stops helping -- measured at 1502 tokens, every
+        # shape came back empty 8 times out of 8. Refused rather than answered
+        # from a piece of it: dropping the oldest half of what somebody just
+        # said, silently, to answer the rest is the failure this whole round
+        # has been about.
+        raise TooLongForModel(
+            f"the committed audio recognised to {len(transcript)} characters, and this "
+            f"checkpoint answers up to about {ANSWERABLE_CHARACTERS} in one turn even when "
+            "the turn is split into messages. Commit at the end of each thing the speaker "
+            "says rather than buffering the whole monologue"
+        )
+    return [
+        {"role": "user", "content": piece}
+        for piece in group_sentences(transcript, SPOKEN_TURN_CHARACTERS)
+    ]
+
+
+def answerable(history: list[dict[str, str]], transcript: str) -> list[dict[str, str]]:
+    """The whole prompt, in messages this checkpoint answers.
+
+    History gets the same treatment as the current turn, because it is made of
+    turns that were once current: a monologue answered on one turn was recorded
+    whole, and on the next turn that single 487-token history entry was refused
+    -- the turn before had just worked. Splitting only what is about to be said
+    fixes one turn and breaks the one after it.
+
+    History is split rather than refused when it is very long. Dropping old
+    turns is already what this conversation does when the budget runs out, and
+    it is the right trade here too; refusing is reserved for what the speaker
+    just said, which is not recoverable any other way.
+    """
+    fitted: list[dict[str, str]] = []
+    for message in history:
+        content = message.get("content", "")
+        if message.get("role") == "user" and len(content) > SPOKEN_TURN_CHARACTERS:
+            fitted += [
+                {"role": "user", "content": piece}
+                for piece in group_sentences(content, SPOKEN_TURN_CHARACTERS)
+            ]
+        else:
+            fitted.append(message)
+    return [*fitted, *spoken_turn(transcript)]
 
 
 @dataclass(slots=True)
@@ -157,7 +236,18 @@ class CascadeEngine(SpeechEngine):
         # what was said -- the session needs it to record this turn.
         yield SpeechChunk(pcm=b"", transcript=transcript)
 
-        messages = [*(history or []), {"role": "user", "content": transcript}]
+        # Nothing was said, so there is nothing to answer. Sending the empty
+        # transcript on as a user message produced a real reply to a question
+        # nobody asked: two seconds of silence came back as "Sure, what's your
+        # question?", in English, synthesised and played. The session drops
+        # empty turns from history for the same reason -- a bare
+        # <|im_start|>user<|im_end|> is a shape the model has never seen -- but
+        # the current turn was reaching it unfiltered.
+        if not transcript.strip():
+            self.last_timings = timings
+            return
+
+        messages = answerable(history or [], transcript)
         pending = ""
         spoken_anything = False
 

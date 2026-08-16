@@ -167,6 +167,18 @@ class Settings:
         # model doing nothing rather than as a path that is not there.
         if self.polish is not None and not self.polish.is_file():
             missing = [*missing, f"polish={self.polish}"]
+        # Only the cascade builds one. Set on the native path it did nothing at
+        # all, and worse, it did nothing loudly: /health answered
+        # "polisher: ready" and /v1/models carried its sha256, while
+        # /v1/audio/transcriptions returned polished=null on every request. An
+        # operator reading the health check had no way to see that the stage
+        # they configured was not there.
+        if self.path == "native" and self.polish is not None:
+            raise ConfigurationError(
+                "MINDSURF_POLISH is set but MINDSURF_ENGINE=native, and the native path has "
+                "no polish stage; run the dictation product on MINDSURF_ENGINE=cascade, or "
+                "unset MINDSURF_POLISH to serve conversation from this checkpoint"
+            )
         if missing:
             raise ConfigurationError(
                 f"the {self.path} path needs these, and they are not on disk: "

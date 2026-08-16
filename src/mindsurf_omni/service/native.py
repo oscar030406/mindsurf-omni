@@ -33,7 +33,7 @@ from mindsurf_omni.contract import (
     ComponentInfo,
     TokenSpec,
 )
-from mindsurf_omni.service.audio import peak_normalise, resample, trim_silence
+from mindsurf_omni.service.audio import peak_normalise, resample, trim_silence, whole_samples
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import (
     EngineDescription,
@@ -344,7 +344,8 @@ class NativeEngine(SpeechEngine):
 
         if sample_rate != INPUT_SAMPLE_RATE:
             pcm = resample(pcm, sample_rate, INPUT_SAMPLE_RATE)
-        waveform = numpy.frombuffer(pcm, dtype=numpy.int16).astype(numpy.float32) / 32768.0
+        samples = numpy.frombuffer(whole_samples(pcm), dtype=numpy.int16)
+        waveform = samples.astype(numpy.float32) / 32768.0
 
         # The same two values the training pipeline derives: the fbank frames
         # and the number of them the encoder will actually produce. Passing the

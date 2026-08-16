@@ -280,3 +280,45 @@ async def test_the_skipped_pieces_come_back_untouched() -> None:
     clean = "会议纪要发群里了。麻烦大家确认一下。"
 
     assert await polisher.polish(clean) == clean
+
+
+def test_a_stranded_particle_is_dropped_with_the_words_it_belonged_to() -> None:
+    """Deleting 我觉得 out of "我觉得吧这个真的挺好的" left "吧这个真的挺好的",
+    which is not a sentence. Measured on the running service; it costs nothing
+    on any of the four numbers, because 吧 is a character the source had."""
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy("吧这个真的挺好的") == "这个真的挺好的"
+    assert tidy("说完了。吧我们走") == "说完了。我们走"
+
+
+def test_a_particle_doing_its_job_is_left_alone() -> None:
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy("我们走吧") == "我们走吧"
+    assert tidy("这个真的挺好的吧？") == "这个真的挺好的吧？"
+    assert tidy("你说呢") == "你说呢"
+
+
+def test_the_particles_that_can_open_a_sentence_are_not_touched() -> None:
+    """ "啊，太好了" is ordinary, and deleting that 啊 would be deleting content."""
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy("啊，太好了！") == "啊，太好了！"
+    assert tidy("呀，你来了。") == "呀，你来了。"
+
+
+def test_stranded_punctuation_is_still_dropped() -> None:
+    """The shape this started as, kept working now that the service runs it."""
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy("彩塑，？特别震撼") == "彩塑，特别震撼"
+    assert tidy("？特别震撼") == "特别震撼"
+
+
+def test_tidy_only_deletes_so_the_copy_constraint_holds() -> None:
+    from mindsurf_omni.service.polish import consumed, tidy
+
+    for text in ["吧这个真的挺好的", "彩塑，？特别震撼", "我们走吧", "啊，太好了！"]:
+        assert consumed(text, tidy(text)) <= 1.0
+        assert all(char in text for char in tidy(text))

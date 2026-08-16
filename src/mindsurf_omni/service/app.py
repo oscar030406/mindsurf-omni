@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import binascii
 import contextlib
 import json
 import time
@@ -24,6 +25,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from mindsurf_omni.contract import (
     AUDIO_ENCODING,
+    EMOTIONS,
     INPUT_SAMPLE_RATE,
     OUTPUT_SAMPLE_RATE,
     ChatChoice,
@@ -38,7 +40,49 @@ from mindsurf_omni.contract import (
 )
 from mindsurf_omni.service.audio import frames, to_wav
 from mindsurf_omni.service.config import ConfigurationError
-from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine
+from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine, TooLongForModel
+from mindsurf_omni.service.tts import SynthesiserUnavailable
+
+
+class Unreadable(Exception):
+    """A frame from the client that could not be parsed.
+
+    Its own type because the realtime loop has to answer it and carry on. The
+    three ways it happens -- a binary frame, a text frame that is not JSON, and
+    audio that is not valid base64 -- used to escape as KeyError,
+    JSONDecodeError and binascii.Error, none of which anything caught: the
+    connection died at 1006 with no close frame and no reason, and the caller
+    lost the whole conversation over one malformed chunk.
+    """
+
+
+async def receive_event(websocket: WebSocket) -> dict[str, Any]:
+    """One client event, or Unreadable saying why it is not one.
+
+    WebSocketDisconnect still travels, because a closed connection is not a bad
+    frame and the loop above ends on it.
+    """
+    try:
+        event = await websocket.receive_json()
+    except KeyError as error:  # a binary frame; starlette reads text
+        raise Unreadable("this endpoint takes JSON text frames; that one carried binary") from error
+    except json.JSONDecodeError as error:
+        raise Unreadable(f"the frame is not JSON: {error}") from error
+    if not isinstance(event, dict):
+        raise Unreadable(f"an event has to be a JSON object, not {type(event).__name__}")
+    return event
+
+
+def event_audio(event: dict[str, Any]) -> bytes:
+    """The audio an append event carries, or Unreadable saying it is not base64.
+
+    TypeError as well as binascii.Error: the field is whatever JSON carried, so
+    a client that puts a number there reaches this with an int.
+    """
+    try:
+        return base64.b64decode(event.get("audio", ""), validate=True)
+    except (binascii.Error, TypeError) as error:
+        raise Unreadable(f"the audio field is not base64: {error}") from error
 
 
 async def first_and_rest(source: Any) -> tuple[Any, Any]:
@@ -127,6 +171,28 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         as a 500 someone has to read a log to explain.
         """
         return JSONResponse({"detail": str(error)}, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    @app.exception_handler(TooLongForModel)
+    async def too_long(request: Request, error: Exception) -> JSONResponse:
+        """413, not 503: retrying the same request cannot help.
+
+        A caller that reads 503 backs off and sends it again. This one has to
+        change the request, and the reason says how.
+        """
+        return JSONResponse(
+            {"detail": str(error)}, status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        )
+
+    @app.exception_handler(SynthesiserUnavailable)
+    async def no_audio(request: Request, error: Exception) -> JSONResponse:
+        """502: the thing this service depends on did not answer.
+
+        A 500 says the fault is here and points an operator at our logs. The
+        hosted synthesiser returns no audio for about 2 turns in 160 on a
+        healthy network, and every one of those was an Internal Server Error
+        with an empty body -- indistinguishable from a bug in this code.
+        """
+        return JSONResponse({"detail": str(error)}, status_code=status.HTTP_502_BAD_GATEWAY)
 
     def require_engine(request: Request) -> SpeechEngine:
         configured: SpeechEngine | None = getattr(request.app.state, "engine", None)
@@ -293,6 +359,28 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     @app.post("/v1/audio/speech")
     async def speech(request: Request, body: SpeechRequest) -> StreamingResponse:
         engine = require_engine(request)
+        # Both of these are in the request shape an OpenAI client already
+        # sends, and neither reaches a synthesiser: `speed` stops at this
+        # function, and the cascade's synthesisers take their voice from
+        # configuration rather than from the request. Measured by asking for
+        # the same sentence at 0.5, 1.0 and 2.0 and at three voice ids -- all
+        # five responses were byte-identical, while the emotions that are
+        # wired differ. Saying so beats returning audio that looks like it
+        # honoured the request: a caller cannot hear the difference between
+        # "spoken at 1.5x" and "your parameter was dropped".
+        if body.speed != 1.0:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"speed={body.speed} is not wired; this build speaks at one rate and would "
+                "return the same audio as speed=1.0. Use `emotion`, which does change "
+                "delivery, or resample the pcm response",
+            )
+        if body.voice != "default":
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"voice={body.voice!r} is not a voice this build has; /v1/voices lists the "
+                "ones it does, and today that is 'default' alone",
+            )
         settings = GenerationSettings(voice=body.voice, emotion=body.emotion)
         as_wav = body.response_format == "wav"
         # Started here rather than inside the generator: an engine that cannot
@@ -374,16 +462,70 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                 if pending is not None:
                     event, pending = pending, None
                 else:
-                    event = await websocket.receive_json()
+                    try:
+                        event = await receive_event(websocket)
+                    except Unreadable as unreadable:
+                        # Answered and survived, like an unknown event type. A
+                        # client whose encoder produced one bad frame should
+                        # lose that frame, not the conversation.
+                        await websocket.send_json(
+                            {"type": "error", "error": {"message": str(unreadable)}}
+                        )
+                        continue
                 kind = event.get("type")
 
                 if kind == "input_audio_buffer.append":
-                    buffer.extend(base64.b64decode(event.get("audio", "")))
+                    try:
+                        buffer.extend(event_audio(event))
+                    except Unreadable as unreadable:
+                        await websocket.send_json(
+                            {"type": "error", "error": {"message": str(unreadable)}}
+                        )
                 elif kind == "input_audio_buffer.clear":
                     buffer.clear()
                 elif kind == "session.update":
-                    settings.voice = event.get("voice", settings.voice)
-                    settings.emotion = event.get("emotion", settings.emotion)
+                    # Validated, and answered either way. This branch used to
+                    # assign whatever arrived: emotion "angry" was accepted in
+                    # silence and delivered as neutral, voice "nobody" was
+                    # accepted in silence and delivered as the only voice there
+                    # is. The speech endpoint refuses both -- this is the same
+                    # request through the other door, and a caller that cannot
+                    # hear the difference between "applied" and "dropped" has
+                    # no way to find out except by asking someone to listen.
+                    wanted_emotion = event.get("emotion", settings.emotion)
+                    wanted_voice = event.get("voice", settings.voice)
+                    if wanted_emotion not in EMOTIONS:
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "error": {
+                                    "message": f"emotion {wanted_emotion!r} is not one this "
+                                    f"build delivers; it has {', '.join(EMOTIONS)}"
+                                },
+                            }
+                        )
+                    elif wanted_voice != "default":
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "error": {
+                                    "message": f"voice {wanted_voice!r} is not a voice this "
+                                    "build has; /v1/voices lists the ones it does, and "
+                                    "today that is 'default' alone"
+                                },
+                            }
+                        )
+                    else:
+                        settings.voice, settings.emotion = wanted_voice, wanted_emotion
+                        # Acknowledged, because a silent success and a silent
+                        # failure look identical from the other end.
+                        await websocket.send_json(
+                            {
+                                "type": "session.updated",
+                                "voice": settings.voice,
+                                "emotion": settings.emotion,
+                            }
+                        )
                 elif kind == "session.clear":
                     conversation.clear()
                     # The same shape as the connection's own session.created,
@@ -474,7 +616,7 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                     speaking = asyncio.create_task(stream(turn_pcm, parts, said))
                     cancelled = False
                     while not speaking.done():
-                        listener = asyncio.create_task(websocket.receive_json())
+                        listener = asyncio.create_task(receive_event(websocket))
                         await asyncio.wait(
                             {speaking, listener}, return_when=asyncio.FIRST_COMPLETED
                         )
@@ -484,6 +626,13 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                                 pending = await listener
                             except asyncio.CancelledError:
                                 pass
+                            except Unreadable as unreadable:
+                                # A bad frame that landed in the race gap. Same
+                                # answer as below; it must not be left in
+                                # `pending` for the outer loop to re-raise.
+                                await websocket.send_json(
+                                    {"type": "error", "error": {"message": str(unreadable)}}
+                                )
                             except WebSocketDisconnect:
                                 # Completed with a disconnect in the race gap.
                                 speaking.cancel()
@@ -493,6 +642,15 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                             continue
                         try:
                             heard = listener.result()
+                        except Unreadable as unreadable:
+                            # Handled here rather than by the outer loop: the
+                            # reply is still streaming, and leaving this frame
+                            # to unwind out of the loop would abandon the task
+                            # mid-turn, with no response.done and no history.
+                            await websocket.send_json(
+                                {"type": "error", "error": {"message": str(unreadable)}}
+                            )
+                            continue
                         except WebSocketDisconnect:
                             speaking.cancel()
                             with contextlib.suppress(asyncio.CancelledError):
@@ -509,7 +667,12 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                                 await speaking
                             cancelled = True
                         elif told == "input_audio_buffer.append":
-                            buffer.extend(base64.b64decode(heard.get("audio", "")))
+                            try:
+                                buffer.extend(event_audio(heard))
+                            except Unreadable as unreadable:
+                                await websocket.send_json(
+                                    {"type": "error", "error": {"message": str(unreadable)}}
+                                )
                         elif told == "input_audio_buffer.clear":
                             buffer.clear()
                         else:
@@ -524,7 +687,32 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                                 }
                             )
                     if not cancelled and (failure := speaking.exception()) is not None:
+                        if isinstance(failure, TooLongForModel):
+                            # A dictated turn longer than the model answers.
+                            # Reported like any other event the session can
+                            # survive: the caller says something shorter and
+                            # keeps the connection, rather than being
+                            # disconnected by an exception it never sees.
+                            await websocket.send_json(
+                                {"type": "error", "error": {"message": str(failure)}}
+                            )
+                            await websocket.send_json(
+                                {"type": "response.done", "context": conversation.summary()}
+                            )
+                            continue
                         raise failure
+
+                    if not cancelled and not said and not parts:
+                        # The sibling of "no audio was buffered" above: audio
+                        # arrived, the recogniser found no speech in it, and a
+                        # bare response.done with no text cannot tell a caller
+                        # whether nothing was heard or the model said nothing.
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "error": {"message": "no speech was heard in the committed audio"},
+                            }
+                        )
 
                     reply = "".join(parts)
                     # The transcript when the path produced one, so the next

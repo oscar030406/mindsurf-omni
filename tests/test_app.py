@@ -18,7 +18,9 @@ from mindsurf_omni.service.engine import (
     GenerationSettings,
     SpeechChunk,
     SpeechEngine,
+    TooLongForModel,
 )
+from mindsurf_omni.service.tts import SynthesiserUnavailable
 
 SPEC = TokenSpec(
     text_vocab_size=6400,
@@ -756,3 +758,229 @@ async def test_the_item_taken_for_the_check_is_put_back() -> None:
 
     assert head == "a"
     assert [item async for item in rest] == ["b", "c"]
+
+
+# ---------------------------------------------------------------------------
+# Found by driving the running service the way a client would, 2026-08-16.
+# Each of these was a 500, a dropped connection or a silent wrong answer that
+# the four polish criteria could not see.
+# ---------------------------------------------------------------------------
+
+
+def test_no_messages_is_a_field_error_not_a_500(client: TestClient) -> None:
+    """It reached the chat template as an empty list and raised IndexError."""
+    response = client.post("/v1/chat/completions", json={"messages": []})
+
+    assert response.status_code == 422
+
+
+class TooLongEngine(FakeEngine):
+    """A model that refuses input longer than it was trained to answer."""
+
+    async def complete(  # type: ignore[override]
+        self, messages: list[dict[str, str]], settings: GenerationSettings
+    ) -> AsyncIterator[str]:
+        raise TooLongForModel("one user message is 2005 tokens; this checkpoint answers up to 400")
+        yield ""  # pragma: no cover - makes this an async generator
+
+
+def test_a_message_the_model_cannot_answer_is_413_not_an_empty_200() -> None:
+    """Measured: 977 tokens in one message came back as "" on a 200, eight times of eight."""
+    client = TestClient(create_app(TooLongEngine()))
+
+    response = client.post(
+        "/v1/chat/completions", json={"messages": [{"role": "user", "content": "长"}]}
+    )
+
+    assert response.status_code == 413
+    assert "400" in response.json()["detail"]
+
+
+def test_the_same_refusal_reaches_a_streaming_caller() -> None:
+    """Raised inside the generator it would land after the headers, as a truncated 200."""
+    streaming = TestClient(create_app(TooLongEngine()))
+
+    response = streaming.post(
+        "/v1/chat/completions",
+        json={"messages": [{"role": "user", "content": "长"}], "stream": True},
+    )
+
+    assert response.status_code == 413
+
+
+def test_a_speed_that_is_not_wired_is_refused_rather_than_ignored(client: TestClient) -> None:
+    """0.5, 1.0 and 2.0 returned byte-identical audio; the caller could not hear the difference."""
+    response = client.post("/v1/audio/speech", json={"input": "你好", "speed": 1.5})
+
+    assert response.status_code == 400
+    assert "not wired" in response.json()["detail"]
+
+    assert client.post("/v1/audio/speech", json={"input": "你好", "speed": 1.0}).status_code == 200
+
+
+def test_a_voice_that_is_not_in_v1_voices_is_refused(client: TestClient) -> None:
+    response = client.post("/v1/audio/speech", json={"input": "你好", "voice": "nobody"})
+
+    assert response.status_code == 400
+    assert "/v1/voices" in response.json()["detail"]
+
+
+def test_a_frame_that_is_not_json_costs_the_frame_not_the_conversation(
+    client: TestClient,
+) -> None:
+    """It escaped as JSONDecodeError and the socket died at 1006 with no reason."""
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_text("hello")
+
+        event = socket.receive_json()
+        assert event["type"] == "error"
+        assert "not JSON" in event["error"]["message"]
+
+        # Still usable: this is the whole point of answering rather than dying.
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        assert socket.receive_json()["type"] == "error"
+
+
+def test_a_binary_frame_is_answered_rather_than_raising_keyerror(client: TestClient) -> None:
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_bytes(b"\x00\x01\x02\x03")
+
+        event = socket.receive_json()
+
+    assert event["type"] == "error"
+    assert "binary" in event["error"]["message"]
+
+
+def test_audio_that_is_not_base64_is_answered_rather_than_raising(client: TestClient) -> None:
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json({"type": "input_audio_buffer.append", "audio": "!!!not base64!!!"})
+
+        event = socket.receive_json()
+        assert event["type"] == "error"
+        assert "base64" in event["error"]["message"]
+
+        # And the buffer did not silently take the garbage.
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        assert "no audio" in socket.receive_json()["error"]["message"]
+
+
+def test_an_audio_field_that_is_not_a_string_is_answered(client: TestClient) -> None:
+    """Whatever JSON carried reaches b64decode, so a number arrives as an int."""
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json({"type": "input_audio_buffer.append", "audio": 12345})
+
+        event = socket.receive_json()
+
+    assert event["type"] == "error"
+    assert "base64" in event["error"]["message"]
+
+
+class SilentEngine(FakeEngine):
+    """What the cascade produces when the recogniser heard no speech."""
+
+    async def respond(  # type: ignore[override]
+        self,
+        pcm: bytes,
+        sample_rate: int,
+        settings: GenerationSettings,
+        history: list[dict[str, str]] | None = None,
+    ) -> AsyncIterator[SpeechChunk]:
+        yield SpeechChunk(pcm=b"", transcript="")
+
+
+def test_committed_audio_with_no_speech_in_it_says_so() -> None:
+    """A bare response.done cannot separate "nothing was heard" from "the model said nothing"."""
+    client = TestClient(create_app(SilentEngine()))
+
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 64).decode()}
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+
+        kinds = []
+        while True:
+            event = socket.receive_json()
+            kinds.append(event["type"])
+            if event["type"] == "response.done":
+                break
+            if event["type"] == "error":
+                message = event["error"]["message"]
+
+    assert "error" in kinds
+    assert "no speech" in message
+
+
+class MuteEngine(FakeEngine):
+    """A synthesiser that answers with no audio, which the hosted one does."""
+
+    async def speak(  # type: ignore[override]
+        self, text: str, settings: GenerationSettings
+    ) -> AsyncIterator[SpeechChunk]:
+        raise SynthesiserUnavailable("the synthesiser returned no audio for '你好' twice")
+        yield SpeechChunk(pcm=b"")  # pragma: no cover - makes this a generator
+
+
+def test_a_synthesiser_that_returns_nothing_is_502_not_500() -> None:
+    """Measured at 2 turns in 160 on a healthy network, and every one of them
+    was an Internal Server Error with an empty body -- indistinguishable from a
+    bug in this service."""
+    client = TestClient(create_app(MuteEngine()), raise_server_exceptions=False)
+
+    response = client.post("/v1/audio/speech", json={"input": "你好"})
+
+    assert response.status_code == 502
+    assert "no audio" in response.json()["detail"]
+
+
+def test_an_emotion_the_build_cannot_deliver_is_refused_over_the_socket(
+    client: TestClient,
+) -> None:
+    """The speech endpoint refuses it; this branch used to assign whatever
+    arrived, so "angry" was accepted in silence and delivered as neutral."""
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json({"type": "session.update", "emotion": "angry"})
+
+        event = socket.receive_json()
+
+    assert event["type"] == "error"
+    assert "angry" in event["error"]["message"]
+
+
+def test_a_voice_the_build_does_not_have_is_refused_over_the_socket(
+    client: TestClient,
+) -> None:
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json({"type": "session.update", "voice": "nobody"})
+
+        event = socket.receive_json()
+
+    assert event["type"] == "error"
+    assert "/v1/voices" in event["error"]["message"]
+
+
+def test_an_accepted_update_is_acknowledged(client: TestClient) -> None:
+    """A silent success and a silent failure look identical from the other end."""
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json({"type": "session.update", "emotion": "care"})
+
+        event = socket.receive_json()
+
+    assert event["type"] == "session.updated"
+    assert event["emotion"] == "care"
+    assert event["voice"] == "default"
+
+
+def test_every_event_the_service_sends_is_declared_in_the_contract() -> None:
+    """An event a client is not told about is one it will not handle."""
+    from mindsurf_omni.contract import SERVER_EVENTS
+
+    assert "session.updated" in SERVER_EVENTS

@@ -200,3 +200,14 @@ def test_no_audio_produces_no_frames() -> None:
     from mindsurf_omni.service.audio import frames
 
     assert frames(b"") == []
+
+
+def test_an_odd_number_of_bytes_is_trimmed_not_refused() -> None:
+    """A recorder flushed mid-sample sends one byte too many, and numpy refuses
+    the buffer outright -- served as a 500 from /v1/audio/transcriptions."""
+    from mindsurf_omni.service.audio import whole_samples
+
+    assert whole_samples(b"\x01\x02\x03") == b"\x01\x02"
+    assert whole_samples(b"\x01") == b""
+    assert whole_samples(b"") == b""
+    assert whole_samples(b"\x01\x02") == b"\x01\x02"

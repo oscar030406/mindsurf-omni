@@ -50,7 +50,11 @@ sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
 from mindsurf_omni.evaluation.metrics import character_error_rate  # noqa: E402
-from mindsurf_omni.service.polish import BRIDGING_FILLERS, LEADING_FILLERS  # noqa: E402
+from mindsurf_omni.service.polish import (  # noqa: E402
+    BRIDGING_FILLERS,
+    LEADING_FILLERS,
+    tidy,
+)
 from scripts.measure_polish import content_kept, filler_removed, invented  # noqa: E402
 
 # Longest first, so 你知道吧 is matched before 你知道 would be.
@@ -117,30 +121,11 @@ def repetition_spans(source: str, drop: set[int], shortest: int = 2, longest: in
     return found
 
 
-PUNCTUATION = set("，。！？；：、")
-
-
-def tidy(text: str) -> str:
-    """Drop punctuation left with nothing in front of it.
-
-    Deleting 对吧 out of "彩塑，对吧？特别震撼" leaves "彩塑，？特别震撼" -- a
-    stranded question mark, which reads worse than the filler did. None of the
-    four acceptance numbers can see it (``normalise_for_cer`` strips
-    punctuation from both sides, so the orphan costs exactly zero), which is
-    how it survived a whole round of tuning that reported the arm as better on
-    three criteria at once.
-
-    Read it off the output rather than tracking which mark belonged to which
-    filler: leading and doubled are the two shapes an orphan takes, and both
-    are visible in the result. The ceiling arm does the same thing for the
-    same reason.
-    """
-    out: list[str] = []
-    for char in text:
-        if char in PUNCTUATION and (not out or out[-1] in PUNCTUATION):
-            continue
-        out.append(char)
-    return "".join(out)
+# tidy lives in the service now rather than here. It was written for this
+# script and then the service shipped without it for a round, so the offline
+# arms were tidied and the product was not -- the one place that has to do it
+# is the one a user reads. Imported rather than copied so the next thing added
+# to it reaches both.
 
 
 def reached(source: str, output: str) -> int:

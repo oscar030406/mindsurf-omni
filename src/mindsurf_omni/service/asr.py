@@ -124,6 +124,7 @@ class SenseVoiceRecogniser:
     def _transcribe(self, pcm: bytes) -> tuple[str, str | None]:
         import numpy as np
 
+        from mindsurf_omni.service.audio import whole_samples
         from mindsurf_omni.service.vad import frame_energy
 
         # Silence in, nothing out. Asked to read a room with nobody in it,
@@ -136,7 +137,7 @@ class SenseVoiceRecogniser:
             return "", None
 
         self.load()
-        audio = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+        audio = np.frombuffer(whole_samples(pcm), dtype=np.int16).astype(np.float32) / 32768.0
         result = self._model.generate(input=audio, cache={}, language="auto", use_itn=True)
         if not result:
             return "", None
@@ -164,8 +165,10 @@ class WhisperRecogniser:
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         import numpy as np
 
+        from mindsurf_omni.service.audio import whole_samples
+
         self.load()
-        audio = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+        audio = np.frombuffer(whole_samples(pcm), dtype=np.int16).astype(np.float32) / 32768.0
         result = self._model.transcribe(audio, fp16=False)
         return str(result.get("text", "")).strip(), result.get("language")
 

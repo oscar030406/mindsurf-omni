@@ -43,11 +43,28 @@ EDGE_PROSODY = {
     "care": {"rate": "-8%", "pitch": "-10Hz"},
 }
 
+
+class SynthesiserUnavailable(RuntimeError):
+    """The synthesiser was asked for audio and produced none.
+
+    A RuntimeError still, so every existing caller and test keeps working, but
+    named so the service can answer 502 instead of 500. The distinction is the
+    one an operator acts on: 500 says this service has a bug, 502 says the
+    thing it depends on did not answer -- and for the hosted synthesiser that
+    is measured at 2 turns in 160 even when the network is healthy, before any
+    outage. Every one of those turns used to be an Internal Server Error with
+    no detail in the body.
+    """
+
+
 _MARKDOWN = re.compile(r"[*#`_>~]+")
 _SHORT_ASIDE = re.compile(r"[（(]([^）)]{1,20})[）)]")
 _LONG_ASIDE = re.compile(r"[（(][^）)]{21,}[）)]")
 _REPEATED_PUNCTUATION = re.compile(r"[。，]{2,}")
 _WHITESPACE_RUN = re.compile(r"\s*\n+\s*")
+# A character a speaker would voice. Punctuation is not one: it shapes how the
+# rest is said, and on its own there is nothing to say.
+_SPEAKABLE = re.compile(r"[\w一-鿿]")
 
 
 def clean_for_speech(text: str) -> str:
@@ -56,6 +73,13 @@ def clean_for_speech(text: str) -> str:
     A short parenthetical becomes an aside between commas, because a speaker
     would say it. A long one is dropped, because a speaker would not read a
     paragraph inside brackets and doing so buries the sentence it interrupts.
+
+    Text with nothing speakable left comes back empty rather than as bare
+    punctuation. The strip below only removes the two marks a sentence tends to
+    end on, so "。。。？！" survived it as "？！" -- which the hosted synthesiser
+    answers with no audio at all, and this module turns that into a RuntimeError
+    the endpoint has no choice but to serve as a 500. A reply of "……" is
+    ordinary text for a chat model to produce, and it is not a server fault.
     """
     cleaned = _MARKDOWN.sub("", text)
     cleaned = cleaned.replace("——", "，").replace("—", "，")
@@ -63,7 +87,8 @@ def clean_for_speech(text: str) -> str:
     cleaned = _SHORT_ASIDE.sub(r"，\1，", cleaned)
     cleaned = _WHITESPACE_RUN.sub("。", cleaned)
     cleaned = _REPEATED_PUNCTUATION.sub("。", cleaned)
-    return cleaned.strip("，。 \t\n")
+    cleaned = cleaned.strip("，。 \t\n")
+    return cleaned if _SPEAKABLE.search(cleaned) else ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,7 +193,7 @@ class EdgeSynthesiser:
                         encoded += chunk["data"]
             except Exception as error:  # noqa: BLE001 - the endpoint's own failures
                 if attempt == 2:
-                    raise RuntimeError(
+                    raise SynthesiserUnavailable(
                         f"the synthesiser returned no audio for {spoken[:20]!r} twice "
                         f"({type(error).__name__}); a silent sample would be scored as "
                         "the model having said nothing"
@@ -177,7 +202,7 @@ class EdgeSynthesiser:
             if encoded:
                 break
             if attempt == 2:
-                raise RuntimeError(
+                raise SynthesiserUnavailable(
                     f"the synthesiser returned no audio for {spoken[:20]!r} twice; "
                     "a silent sample would be scored as the model having said nothing"
                 )
@@ -283,7 +308,7 @@ class VoxCPMSynthesiser:
         waveform = await asyncio.to_thread(speak)
 
         if waveform is None or len(waveform) == 0:
-            raise RuntimeError(
+            raise SynthesiserUnavailable(
                 f"the synthesiser returned no audio for {spoken[:20]!r}; a silent "
                 "sample would be scored as the model having said nothing"
             )
@@ -351,7 +376,7 @@ class VoxCPMSynthesiser:
             await worker
 
         if not spoke:
-            raise RuntimeError(
+            raise SynthesiserUnavailable(
                 f"the synthesiser streamed no audio for {spoken[:20]!r}; a silent "
                 "sample would be scored as the model having said nothing"
             )

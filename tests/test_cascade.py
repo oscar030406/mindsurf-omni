@@ -15,7 +15,7 @@ import pytest
 
 from mindsurf_omni.contract import TokenSpec
 from mindsurf_omni.service.cascade import CascadeEngine
-from mindsurf_omni.service.engine import GenerationSettings
+from mindsurf_omni.service.engine import GenerationSettings, TooLongForModel
 
 SPEC = TokenSpec(
     text_vocab_size=6400,
@@ -292,3 +292,145 @@ async def test_text_reaches_the_caller_before_any_audio_does() -> None:
     assert order, "nothing came back"
     assert order[0] == "text"
     assert order.index("audio") > 0, "audio arrived before any text"
+
+
+@pytest.mark.asyncio
+async def test_silence_is_not_handed_to_the_model_as_an_empty_question() -> None:
+    """Measured on the running service: two seconds of silence came back as
+    "Sure, what's your question?", in English, synthesised and played. The
+    recogniser already returns "" for silence; what was missing is that the
+    empty transcript still went on to the generator as a user message."""
+    asked: list[list[dict[str, str]]] = []
+
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "", None
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        asked.append(list(messages))
+        yield "我在。"
+
+    async def synthesise(text: str, settings: object) -> bytes:
+        return text.encode("utf-8")
+
+    engine = CascadeEngine(transcribe, generate, synthesise, [], SPEC)  # type: ignore[arg-type]
+
+    chunks = [chunk async for chunk in engine.respond(b"\x00" * 64, 16_000, GenerationSettings())]
+
+    assert asked == []
+    assert not any(chunk.text for chunk in chunks)
+    assert not any(chunk.pcm for chunk in chunks)
+
+
+@pytest.mark.asyncio
+async def test_a_transcript_of_only_whitespace_counts_as_silence() -> None:
+    asked: list[list[dict[str, str]]] = []
+
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "   ", None
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        asked.append(list(messages))
+        yield "我在。"
+
+    async def synthesise(text: str, settings: object) -> bytes:
+        return text.encode("utf-8")
+
+    engine = CascadeEngine(transcribe, generate, synthesise, [], SPEC)  # type: ignore[arg-type]
+
+    [chunk async for chunk in engine.respond(b"\x00" * 64, 16_000, GenerationSettings())]
+
+    assert asked == []
+
+
+def test_a_short_spoken_turn_is_one_message_exactly_as_before() -> None:
+    from mindsurf_omni.service.cascade import spoken_turn
+
+    assert spoken_turn("杭州有什么好玩的") == [{"role": "user", "content": "杭州有什么好玩的"}]
+
+
+def test_a_monologue_is_split_into_the_shape_the_weights_have_seen() -> None:
+    """Measured: one message of 968 tokens came back empty 8/8, the same words
+    as consecutive user turns 0/8. Live, 124 seconds of speech recognised to
+    553 characters and was refused outright -- the speaker cannot split what
+    they have already said."""
+    from mindsurf_omni.service.cascade import SPOKEN_TURN_CHARACTERS, spoken_turn
+
+    transcript = "杭州有什么好玩的地方呢？西湖我已经去过了。那边吃饭大概多少钱一个人？" * 12
+
+    messages = spoken_turn(transcript)
+
+    assert len(messages) > 1
+    assert all(message["role"] == "user" for message in messages)
+    # Every piece inside the length, and nothing of what was said is lost.
+    assert all(len(message["content"]) <= SPOKEN_TURN_CHARACTERS for message in messages[:-1])
+    assert "".join(message["content"] for message in messages) == transcript
+
+
+def test_a_monologue_past_what_any_shape_answers_is_refused_not_truncated() -> None:
+    """At 1502 tokens every shape tried came back empty 8/8. Answering from a
+    piece of it would mean dropping the oldest half of what somebody just said,
+    silently."""
+    from mindsurf_omni.service.cascade import ANSWERABLE_CHARACTERS, spoken_turn
+
+    with pytest.raises(TooLongForModel, match="Commit at the end"):
+        spoken_turn("这是一句很长的话。" * (ANSWERABLE_CHARACTERS // 8))
+
+
+@pytest.mark.asyncio
+async def test_the_split_turn_reaches_the_model_with_the_history_before_it() -> None:
+    seen: list[list[dict[str, str]]] = []
+    long_transcript = "杭州有什么好玩的地方呢？西湖我已经去过了。那边吃饭多少钱一个人？" * 10
+
+    async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return long_transcript, "zh"
+
+    async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
+        seen.append(list(messages))
+        yield "好的。"
+
+    async def synthesise(text: str, settings: object) -> bytes:
+        return text.encode("utf-8")
+
+    engine = CascadeEngine(transcribe, generate, synthesise, [], SPEC)  # type: ignore[arg-type]
+    history = [{"role": "user", "content": "你好"}, {"role": "assistant", "content": "你好。"}]
+
+    [chunk async for chunk in engine.respond(b"", 16_000, GenerationSettings(), history=history)]
+
+    assert seen[0][:2] == history
+    assert len(seen[0]) > 3
+    assert "".join(message["content"] for message in seen[0][2:]) == long_transcript
+
+
+def test_history_is_split_the_same_way_the_current_turn_is() -> None:
+    """A monologue answered on one turn is recorded whole, and on the next turn
+    that single over-long history entry was refused -- the turn before had just
+    worked. Splitting only what is about to be said fixes one turn and breaks
+    the one after it."""
+    from mindsurf_omni.service.cascade import SPOKEN_TURN_CHARACTERS, answerable
+
+    monologue = "杭州有什么好玩的地方呢？西湖我已经去过了。那边吃饭多少钱一个人？" * 10
+    history = [
+        {"role": "user", "content": monologue},
+        {"role": "assistant", "content": "好的。"},
+    ]
+
+    messages = answerable(history, "那高铁要多久")
+
+    assert all(len(message["content"]) <= SPOKEN_TURN_CHARACTERS for message in messages)
+    assert messages[-1] == {"role": "user", "content": "那高铁要多久"}
+    # The assistant's turn stays where it was, after all the user's pieces.
+    assert messages[-2] == {"role": "assistant", "content": "好的。"}
+    said = "".join(m["content"] for m in messages if m["role"] == "user" and m is not messages[-1])
+    assert said == monologue
+
+
+def test_history_that_is_very_long_is_split_not_refused() -> None:
+    """Refusing is reserved for what the speaker just said, which cannot be
+    recovered any other way; old turns can be dropped, and already are."""
+    from mindsurf_omni.service.cascade import ANSWERABLE_CHARACTERS, answerable
+
+    history = [{"role": "user", "content": "这是一句很长的话。" * (ANSWERABLE_CHARACTERS // 8)}]
+
+    messages = answerable(history, "嗯")  # must not raise
+
+    assert len(messages) > 2
