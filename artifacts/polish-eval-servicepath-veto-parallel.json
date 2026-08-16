@@ -1,0 +1,16 @@
+{
+ "calls_per_sentence": 0.7712287712287712,
+ "cer_after": 0.03718628951209543,
+ "content_kept": 0.9792014792994521,
+ "empty": 0,
+ "filler_removed_rate": 0.9415105053946621,
+ "invented": 0.023348167501251696,
+ "latency_ms_median": 367.77169999550097,
+ "latency_ms_p95": 1488.331400003517,
+ "model_calls": 772,
+ "n": 986,
+ "sentences": 1001,
+ "skip_clean": true,
+ "tagger": "D:\\environment\\models\\mindsurf-local\\polish_tagger_unionchar.pt",
+ "tagger_threshold": 0.5
+}

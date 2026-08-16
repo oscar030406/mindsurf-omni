@@ -533,6 +533,16 @@ class Polisher:
         self._tagger_head = head.eval()
         self._tagger_spec = (saved["lookahead"], saved.get("repetition", 0))
 
+    def _tag_all(self, pieces: list[str]) -> dict[str, str] | None:
+        """Every piece through the head, or None when no head is configured.
+
+        None rather than an empty dict, so the caller cannot mistake "no second
+        arm" for "the second arm deleted nothing".
+        """
+        if self._tagger_head is None:
+            return None
+        return {piece: self._tagged(piece) for piece in pieces}
+
     def _tagged(self, piece: str) -> str:
         """What the head alone would keep of this piece."""
         import torch
@@ -581,7 +591,24 @@ class Polisher:
         wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]
         if not wanted:
             return transcript
-        answers = dict(zip(wanted, await self._decode(wanted), strict=True))
+        # The head runs on a thread, for the reason `_transcribe` does: it is a
+        # blocking GPU call and this is the service's only event loop, so inline
+        # it stalls every other connection for the length of the forward pass.
+        # Measured with eight concurrent dictations, /health answered in 90 ms
+        # at worst inline against 45 ms on a thread. Neither failed -- the
+        # effect is small at this size and grows with the piece.
+        #
+        # Gathered rather than awaited in turn because the arms do not depend on
+        # each other; that buys 12 ms of the median and no more. The tagger's
+        # 109 ms is compute, not scheduling: one card, both arms on it, so
+        # "concurrent" is a queue. Measuring said so, the guess did not.
+        import asyncio
+
+        decoded, tagged = await asyncio.gather(
+            self._decode(wanted),
+            asyncio.to_thread(self._tag_all, wanted),
+        )
+        answers = dict(zip(wanted, decoded, strict=True))
 
         out = []
         for piece in pieces:
@@ -590,7 +617,7 @@ class Polisher:
                 continue
             answer = answers[piece]
             written = answer if consumed(piece, answer) >= FLOOR else piece
-            if self._tagger_head is not None:
+            if tagged is not None:
                 # Veto, not union: the head's confidence protects the
                 # generator's content rather than removing more of it, and
                 # neither arm may veto a vocabulary filler or an exact
@@ -600,7 +627,7 @@ class Polisher:
                 written = merge(
                     [
                         {"source": piece, "polished": written},
-                        {"source": piece, "polished": self._tagged(piece)},
+                        {"source": piece, "polished": tagged[piece]},
                     ],
                     "veto",
                 )
