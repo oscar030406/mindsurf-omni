@@ -9,8 +9,8 @@
   "filler_removed": 907,
   "filler_removed_rate": 0.5150482680295286,
   "invented": 0.07003428405982318,
-  "latency_ms_median": 8.778500006883405,
-  "latency_ms_p95": 24.738799998885952,
+  "latency_ms_median": 5.9168000079807825,
+  "latency_ms_p95": 9.127099998295307,
   "n": 986,
   "split": "val",
   "thresholds": {

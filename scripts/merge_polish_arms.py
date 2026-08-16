@@ -160,9 +160,21 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     elif mode == "intersection":
         combined = set.intersection(*drops)
     elif mode == "veto":
-        exempt = repetition_spans(source, drops[0])
+        # Both kinds are taken from every arm, not just the first.
+        #
+        # Repetition used to be imported from arm 0 alone, as an exemption --
+        # the head could not see repetition at all (0.437 against the
+        # generator's 0.603), so letting it veto that work cost the whole
+        # difference, and there was nothing of its own worth taking. That
+        # premise died on 2026-08-16: with the repetition columns wired and
+        # CS2W's human annotation in the training set, the tagger clears
+        # 0.5044 of real repetition against the generator's 0.3049. The
+        # asymmetry the vocabulary/repetition split was built on has inverted
+        # for one of its two halves, so the import is symmetric now.
+        exempt: set[int] = set()
         for drop in drops:
             exempt |= vocabulary_spans(source, drop)
+            exempt |= repetition_spans(source, drop)
         combined = set.intersection(*drops) | exempt
     else:
         # The first arm whole, the rest only where they spell a filler.
