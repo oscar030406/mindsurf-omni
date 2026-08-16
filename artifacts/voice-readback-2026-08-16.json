@@ -1,0 +1,38 @@
+{
+ "edge": {
+  "n": 40,
+  "cer_median": 0.0,
+  "cer_mean": 0.007219790048059359,
+  "cer_worst": 0.038461538461538464,
+  "unintelligible": 0,
+  "peak_median": 0.660552978515625,
+  "peak_min": 0.492340087890625
+ },
+ "voxcpm_loud": {
+  "n": 40,
+  "cer_median": 0.0,
+  "cer_mean": 0.006388341516052359,
+  "cer_worst": 0.038461538461538464,
+  "unintelligible": 0,
+  "peak_median": 0.894927978515625,
+  "peak_min": 0.567596435546875
+ },
+ "voxcpm_noref": {
+  "n": 40,
+  "cer_median": 0.0,
+  "cer_mean": 0.017762457257374645,
+  "cer_worst": 0.38095238095238093,
+  "unintelligible": 1,
+  "peak_median": 0.830657958984375,
+  "peak_min": 0.077301025390625
+ },
+ "voxcpm_quiet": {
+  "n": 40,
+  "cer_median": 0.0,
+  "cer_mean": 0.00622638844225444,
+  "cer_worst": 0.038461538461538464,
+  "unintelligible": 0,
+  "peak_median": 0.190673828125,
+  "peak_min": 0.109954833984375
+ }
+}
