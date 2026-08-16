@@ -280,11 +280,36 @@ def test_the_configured_reference_reaches_the_local_synthesiser(tmp_path: Path) 
             return b""
 
     real_import, real_class = factory._importable, tts.VoxCPMSynthesiser
+    real_loader = factory._require_audio_loader
     factory._importable = lambda module: module == "voxcpm" or real_import(module)
     tts.VoxCPMSynthesiser = _Recorder  # type: ignore[misc]
+    # Stubbed like the two above, and for the same reason: this test is about
+    # whether the variables reach the synthesiser, and the clip is four bytes of
+    # "RIFF". Whether a real clip can be read is a machine question -- it needs
+    # FFmpeg's shared libraries -- and it has its own test below.
+    factory._require_audio_loader = lambda prompt_wav: None  # type: ignore[assignment]
     try:
         build(settings)
     finally:
         factory._importable, tts.VoxCPMSynthesiser = real_import, real_class  # type: ignore[misc]
+        factory._require_audio_loader = real_loader  # type: ignore[assignment]
 
     assert built == [{"device": "cpu", "prompt_wav": str(clip), "prompt_text": "参考音频说的话"}]
+
+
+def test_a_clone_clip_that_cannot_be_read_names_ffmpeg(tmp_path: Path) -> None:
+    """VoxCPM opens the prompt through torchaudio, which in 2.x delegates to
+    torchcodec, which needs FFmpeg's shared libraries. On a machine with a
+    static ffmpeg build that failed 40 utterances out of 40, inside the request,
+    with a hundred lines of library paths and nothing naming FFmpeg."""
+    from mindsurf_omni.service.factory import _require_audio_loader
+
+    not_audio = tmp_path / "clip.wav"
+    not_audio.write_bytes(b"this is not a wav file")
+
+    with pytest.raises(ConfigurationError) as error:
+        _require_audio_loader(not_audio)
+
+    message = str(error.value)
+    assert "FFmpeg" in message
+    assert "MINDSURF_TTS_PROMPT_WAV" in message

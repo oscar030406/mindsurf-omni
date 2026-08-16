@@ -13,6 +13,7 @@ tries to read the log.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Any
 
 from mindsurf_omni.service.config import (
@@ -160,6 +161,44 @@ def _build_generator(settings: Settings) -> Any:
     return thinker.generate
 
 
+def _require_audio_loader(prompt_wav: Path) -> None:
+    """Can VoxCPM actually read the clone clip, and if not, say why.
+
+    VoxCPM opens the prompt through ``torchaudio.load``, which in torchaudio 2.x
+    delegates to torchcodec, which needs FFmpeg's *shared* libraries. A machine
+    with a static FFmpeg build has the ``ffmpeg`` command and none of the DLLs,
+    and the failure is a hundred lines of library paths raised inside the first
+    request -- measured here as 40 utterances out of 40, with nothing in the
+    message naming FFmpeg as the thing to install.
+
+    Checked by loading the configured clip rather than by probing torchcodec:
+    the question is whether this file can be read on this machine, and the file
+    is five seconds long.
+
+    Only when a prompt is configured. Without one VoxCPM opens nothing and this
+    dependency does not exist -- which is exactly why the no-prompt arm kept
+    working while every prompted one died.
+    """
+    try:
+        import torchaudio
+    except ImportError as error:  # pragma: no cover - torch is checked above
+        raise ConfigurationError(
+            "MINDSURF_TTS_PROMPT_WAV is set but torchaudio is not installed; "
+            "VoxCPM reads the clone clip through it"
+        ) from error
+    try:
+        torchaudio.load(str(prompt_wav))
+    except Exception as error:
+        raise ConfigurationError(
+            f"the clone clip at {prompt_wav} cannot be read on this machine: "
+            f"{type(error).__name__}. VoxCPM opens it through torchaudio, which needs "
+            "FFmpeg's shared libraries (a static ffmpeg build has the command and none "
+            "of them). Install an FFmpeg shared build, or leave "
+            "MINDSURF_TTS_PROMPT_WAV unset -- without a clip VoxCPM draws a speaker per "
+            "call, so the voice changes between sentences"
+        ) from error
+
+
 def _importable(module: str) -> bool:
     """Is the package present, without paying to import it.
 
@@ -219,6 +258,9 @@ def _build_synthesiser(settings: Settings) -> Any:
             f"MINDSURF_TTS={settings.tts} needs the {package} package, which the container "
             f"does not carry: install the '{extra}' extra, or leave MINDSURF_TTS unset"
         )
+
+    if settings.tts == "voxcpm" and settings.tts_prompt_wav is not None:
+        _require_audio_loader(settings.tts_prompt_wav)
 
     synthesiser: Synthesiser = (
         EdgeSynthesiser()
