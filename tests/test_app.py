@@ -808,12 +808,15 @@ def test_the_same_refusal_reaches_a_streaming_caller() -> None:
     assert response.status_code == 413
 
 
-def test_a_speed_that_is_not_wired_is_refused_rather_than_ignored(client: TestClient) -> None:
-    """0.5, 1.0 and 2.0 returned byte-identical audio; the caller could not hear the difference."""
+def test_a_speed_that_is_not_applied_here_says_where_it_belongs(client: TestClient) -> None:
+    """0.5, 1.0 and 2.0 returned byte-identical audio; the caller could not hear
+    the difference. And the refusal names the player, because "not wired" reads
+    as something the backend still owes -- the client then waits for it and
+    nobody builds it."""
     response = client.post("/v1/audio/speech", json={"input": "你好", "speed": 1.5})
 
     assert response.status_code == 400
-    assert "not wired" in response.json()["detail"]
+    assert "playbackRate" in response.json()["detail"]
 
     assert client.post("/v1/audio/speech", json={"input": "你好", "speed": 1.0}).status_code == 200
 

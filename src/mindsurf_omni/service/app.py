@@ -368,12 +368,20 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         # wired differ. Saying so beats returning audio that looks like it
         # honoured the request: a caller cannot hear the difference between
         # "spoken at 1.5x" and "your parameter was dropped".
+        #
+        # `speed` names where it belongs rather than only saying no. Refusing
+        # without that reads as a gap the backend still owes, so the client
+        # waits for it and nobody builds it -- and playback speed is not a gap:
+        # a player does it better than a re-synthesis can. See DECISIONS 30.
         if body.speed != 1.0:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"speed={body.speed} is not wired; this build speaks at one rate and would "
-                "return the same audio as speed=1.0. Use `emotion`, which does change "
-                "delivery, or resample the pcm response",
+                f"speed={body.speed} is not applied here, and is not meant to be: set the "
+                "rate on the player instead. A web or webview client has "
+                "`audio.playbackRate`, which keeps the pitch, works on audio already "
+                "fetched, and needs no second request. Ask for this endpoint to carry it "
+                "only if the audio is played somewhere without that -- a native player, or "
+                "a file handed to someone else",
             )
         if body.voice != "default":
             raise HTTPException(
