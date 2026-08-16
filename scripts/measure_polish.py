@@ -56,10 +56,30 @@ CONTENT_KEPT = 0.98
 # 编造：输出里原文没有的字，占原文长度的比例。
 INVENTED = 0.02
 
+# 四条线一个字没动。动的是尺子的一处归一化：数字写法两边都折。
+#
+# 识别器开着 ITN，念出来的数字写成阿拉伯数字（6点），语料原文写中文数字（六点），
+# 于是每个数字算一次替换。量过：这一项占天花板的 25–27%——把它折掉，
+# **只能删的润色器所能产出的最好结果**从 CER 0.0218 回到 0.0159，重新落进 0.02 线以内。
+# 不折的话，判据量的是「识别器怎么写数字」而不是「模型润色得怎么样」。
+#
+# 逐臂算过：折了之后**只有天花板换判定，没有任何一条实测臂因此过线**
+# （并集 t=0.9 从 0.0567 到 0.0513、polish6 从 0.0496 到 0.0438，都还是不过）。
+# 所以这不是把球门挪到球前面，是把球门挪回场内。
+#
+# 产品侧的论据独立成立：听写里用户念「六点」、识别器写「6点」、文本框显示「6点」，
+# 那是对的甚至更好，为它扣润色器的分，量的不是这个产品要的东西。
+# 同一个道理 2026-07-26 那一轮已经论过一次（experiments/2026-07-26-numeral-fold.md），
+# 只是当时为合成评测加的，默认关着，没人想到润色这条路上也适用。
+FOLD_NUMERALS = True
+
 
 def content_kept(target: str, output: str) -> float:
     """Share of the original's characters that survived into the output."""
-    left, right = normalise_for_cer(target), normalise_for_cer(output)
+    left, right = (
+        normalise_for_cer(target, fold_numbers=FOLD_NUMERALS),
+        normalise_for_cer(output, fold_numbers=FOLD_NUMERALS),
+    )
     if not left:
         return 1.0
     matcher = difflib.SequenceMatcher(None, left, right, autojunk=False)
@@ -68,7 +88,10 @@ def content_kept(target: str, output: str) -> float:
 
 def invented(target: str, output: str) -> float:
     """Characters in the output that the original did not have, over its length."""
-    left, right = normalise_for_cer(target), normalise_for_cer(output)
+    left, right = (
+        normalise_for_cer(target, fold_numbers=FOLD_NUMERALS),
+        normalise_for_cer(output, fold_numbers=FOLD_NUMERALS),
+    )
     if not left:
         return 0.0
     matched = sum(
@@ -87,9 +110,9 @@ def filler_removed(row: dict[str, Any], output: str) -> tuple[int, int]:
     recogniser already dropped is not work the polisher did.
     """
     heard, clean, written = (
-        normalise_for_cer(row["source"]),
-        normalise_for_cer(row["target"]),
-        normalise_for_cer(output),
+        normalise_for_cer(row["source"], fold_numbers=FOLD_NUMERALS),
+        normalise_for_cer(row["target"], fold_numbers=FOLD_NUMERALS),
+        normalise_for_cer(output, fold_numbers=FOLD_NUMERALS),
     )
     arrived = removed = 0
     for item in row.get("injections", []):
