@@ -1,0 +1,12 @@
+{
+ "chars": 11205,
+ "deleted": 1314,
+ "median_length": 15,
+ "n": 723,
+ "precision": 0.4018264840182648,
+ "recall": 0.3567567567567568,
+ "recall_filler": 0.6431718061674009,
+ "recall_repetition": 0.3048683160415004,
+ "should_delete": 1480,
+ "unchanged": 274
+}
