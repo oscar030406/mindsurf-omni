@@ -1939,6 +1939,7 @@ dependencies = [
 asr = [
     { name = "funasr" },
     { name = "librosa" },
+    { name = "pyyaml" },
 ]
 dev = [
     { name = "cn2an" },
@@ -2007,6 +2008,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
+    { name = "pyyaml", marker = "extra == 'asr'", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15" },
     { name = "safetensors", marker = "extra == 'train'", specifier = ">=0.4" },
     { name = "soundfile", specifier = ">=0.12" },
