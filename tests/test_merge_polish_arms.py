@@ -165,3 +165,36 @@ def test_a_repetition_the_arms_left_alone_is_untouched() -> None:
     from mindsurf_omni.service.polish import keep_one_copy
 
     assert keep_one_copy("确定确定的事", set()) == set()
+
+
+def test_a_word_is_dropped_whole_or_not_at_all() -> None:
+    """Deletion is per character and nothing held it to a word boundary, so it
+    ate 那 out of 那边 and left 客户边. Measured on 986 held-out transcripts,
+    63 of them carried at least one such cut."""
+    from mindsurf_omni.service.polish import whole_words
+
+    source = "客户那边催了"
+    # 那 alone, out of the word 那边.
+    kept = whole_words(source, {2})
+
+    assert kept == set()
+
+
+def test_a_cut_that_spells_a_filler_is_left_alone() -> None:
+    """jieba glues 就是 to its neighbour in 就是说, and undoing that deletion
+    would undo the vocabulary's own work."""
+    from mindsurf_omni.service.polish import whole_words
+
+    source = "就是说需要发票"
+    drop = {0, 1}  # 就是, out of the word 就是说
+
+    assert whole_words(source, drop) == drop
+
+
+def test_a_word_dropped_whole_stays_dropped() -> None:
+    from mindsurf_omni.service.polish import whole_words
+
+    source = "那个报销的事情"
+    drop = {0, 1}  # 那个, a whole word
+
+    assert whole_words(source, drop) == drop

@@ -327,11 +327,61 @@ def keep_one_copy(source: str, drop: set[int], shortest: int = 2, longest: int =
             unit = source[start : start + size]
             twice = unit == source[start + size : start + 2 * size]
             if twice and all(index in kept for index in range(start, start + 2 * size)):
-                if not any(word in unit or unit in word for word in VOCABULARY):
+                if not any(word in unit for word in VOCABULARY):
                     kept -= set(range(start + size, start + 2 * size))
                 start += 2 * size
             else:
                 start += 1
+    return kept
+
+
+def whole_words(source: str, drop: set[int]) -> set[int]:
+    """A word is dropped whole or not at all.
+
+    Deletion here is per character and nothing held it to a word boundary, so
+    it ate 那 out of 那边 and left 客户边, 恶 out of 恶魔 and left 魔, 生酱 out
+    of 花生酱 and left 花. The criteria charge one character for each; a reader
+    sees a word that does not exist. Measured on 986 held-out transcripts, 63
+    of them (6.39%) carried at least one, and the arm this replaced carried the
+    same 63 -- it is inherited, not introduced.
+
+    The literature's answer is to work in words: disfluency is annotated on
+    words and subword tokens inherit their parent word's label (Kumar et al.,
+    ACL 2026). Re-annotating is a training round; this is the same idea as a
+    constraint, and it repairs all 63.
+
+    A cut that *contains* a filler is exempt: jieba glues 就是 to its neighbour
+    in 就是说, and undoing that deletion is undoing the vocabulary's own work.
+
+    Containment one way only. The first version also exempted a cut that was
+    *inside* a filler, and that let 那 through because 那 sits inside 那个 --
+    so the constraint skipped 客户那边, the single case it was written for, and
+    the instrument that counts these skipped it too. Both read a number that
+    excluded the defect they were about.
+
+    **What it costs, stated plainly.** Filler clearance reads 0.9415 against
+    0.9307 with this on, and CER 0.0366 against 0.0376. But no sentence gains a
+    filler in the raw output -- the metric normalises punctuation away before
+    counting, so a restored character can re-form a token there that a reader
+    never sees. Weighed against 63 repaired words that a reader does see, and
+    against this project's standing rule that damaged content beats leftover
+    filler, the constraint is on. Read them yourself: 别一挪 -> 别一件件挪,
+    血糖上升平 -> 血糖上升平缓, 常穿的当不穿 -> 常穿的当即不穿.
+    """
+    import jieba
+
+    kept = set(drop)
+    cursor = 0
+    for word in jieba.cut(source):
+        start, end = cursor, cursor + len(word)
+        cursor = end
+        inside = [index for index in range(start, end) if index in kept]
+        if not inside or len(inside) == end - start:
+            continue
+        cut = "".join(source[index] for index in inside)
+        if any(filler in cut for filler in VOCABULARY):
+            continue
+        kept -= set(inside)
     return kept
 
 
@@ -370,7 +420,7 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
         combined = set(drops[0])
         for drop in drops[1:]:
             combined |= vocabulary_spans(source, drop)
-    combined = keep_one_copy(source, combined)
+    combined = whole_words(source, keep_one_copy(source, combined))
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 

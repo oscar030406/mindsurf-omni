@@ -62,7 +62,7 @@ def cuts(source: str, output: str) -> list[str]:
         if not inside or len(inside) == end - start:
             continue
         cut = "".join(source[index] for index in inside)
-        if any(word in cut or cut in word for word in VOCABULARY):
+        if any(word in cut for word in VOCABULARY):
             continue
         broken.append("".join(source[index] for index in range(start, end) if index not in drop))
     return broken
@@ -96,7 +96,7 @@ def both_copies_gone(source: str, output: str, shortest: int = 2, longest: int =
             if unit == source[start + size : start + 2 * size] and all(
                 index in drop for index in (*first, *second)
             ):
-                if not any(word in unit or unit in word for word in VOCABULARY):
+                if not any(word in unit for word in VOCABULARY):
                     lost.append(unit)
                 start += 2 * size
             else:

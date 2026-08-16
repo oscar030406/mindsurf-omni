@@ -11,6 +11,11 @@ dependencies = [
     "pydantic>=2.9",
     "numpy>=1.26",
     "soundfile>=0.12",
+    # The polish stage holds deletions to word boundaries, which needs a
+    # segmenter. Runtime rather than an extra: it is the stage the dictation
+    # product is, and funasr already brings jieba along, so a host that can
+    # transcribe already has it.
+    "jieba>=0.42",
 ]
 
 [project.optional-dependencies]
