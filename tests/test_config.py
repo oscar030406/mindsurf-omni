@@ -309,3 +309,65 @@ def test_the_same_polisher_is_fine_on_the_cascade(tmp_path: Path) -> None:
     assert settings is not None
 
     settings.verify()  # must not raise
+
+
+def test_a_polish_tagger_needs_its_backbone(tmp_path: Path) -> None:
+    """The head is a probe of the blocks tuned with it; reading it off other
+    weights measures nothing."""
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    for name in ("sft_polish.pth", "tagger.pt"):
+        (tmp_path / name).write_bytes(b"weights")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_POLISH": str(tmp_path / "sft_polish.pth"),
+            "MINDSURF_POLISH_TAGGER": str(tmp_path / "tagger.pt"),
+        }
+    )
+    assert settings is not None
+
+    with pytest.raises(ConfigurationError, match="go together"):
+        settings.verify()
+
+
+def test_a_polish_tagger_without_a_polisher_has_nothing_to_merge_with(tmp_path: Path) -> None:
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    for name in ("tagger.pt", "backbone.pth"):
+        (tmp_path / name).write_bytes(b"weights")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_POLISH_TAGGER": str(tmp_path / "tagger.pt"),
+            "MINDSURF_POLISH_TAGGER_BACKBONE": str(tmp_path / "backbone.pth"),
+        }
+    )
+    assert settings is not None
+
+    with pytest.raises(ConfigurationError, match="no first arm"):
+        settings.verify()
+
+
+def test_the_whole_pair_verifies_when_it_is_all_there(tmp_path: Path) -> None:
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+    for name in ("sft_polish.pth", "tagger.pt", "backbone.pth"):
+        (tmp_path / name).write_bytes(b"weights")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_POLISH": str(tmp_path / "sft_polish.pth"),
+            "MINDSURF_POLISH_TAGGER": str(tmp_path / "tagger.pt"),
+            "MINDSURF_POLISH_TAGGER_BACKBONE": str(tmp_path / "backbone.pth"),
+            "MINDSURF_POLISH_TAGGER_THRESHOLD": "0.5",
+        }
+    )
+    assert settings is not None
+
+    settings.verify()  # must not raise
+
+    assert settings.polish_tagger_threshold == 0.5

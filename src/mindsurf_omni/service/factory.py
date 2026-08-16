@@ -115,6 +115,9 @@ def _build_polisher(settings: Settings) -> Any:
         tokenizer_dir=settings.paths.tokenizer,
         minimind_root=settings.minimind_root,
         device=settings.device,
+        tagger=settings.polish_tagger,
+        tagger_backbone=settings.polish_tagger_backbone,
+        tagger_threshold=settings.polish_tagger_threshold,
     )
     polisher.load()
     return polisher

@@ -38,150 +38,32 @@ strings.
 from __future__ import annotations
 
 import argparse
-import difflib
 import json
 import statistics
 import sys
 from pathlib import Path
-from typing import Any
 
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
 from mindsurf_omni.evaluation.metrics import character_error_rate  # noqa: E402
+
+# dropped / vocabulary_spans / repetition_spans / reached / merge all live in
+# the service now, with tidy. The product runs the merge, so a function the
+# product depends on cannot live in a scoring script -- and one copy is what
+# stops the offline arms and the served text drifting, which is exactly what
+# happened to tidy for a whole round.
 from mindsurf_omni.service.polish import (  # noqa: E402
-    BRIDGING_FILLERS,
-    LEADING_FILLERS,
-    tidy,
+    merge,
 )
 from scripts.measure_polish import content_kept, filler_removed, invented  # noqa: E402
-
-# Longest first, so 你知道吧 is matched before 你知道 would be.
-VOCABULARY = tuple(sorted((*LEADING_FILLERS, *BRIDGING_FILLERS), key=len, reverse=True))
-
-
-def dropped(source: str, output: str) -> set[int]:
-    """Indices of ``source`` the arm did not carry into ``output``.
-
-    A replaced span counts as dropped: under the copy constraint an arm cannot
-    substitute, so anything the alignment calls a replacement is a deletion the
-    matcher paired with unrelated context.
-    """
-    kept = set()
-    for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(
-        None, source, output, autojunk=False
-    ).get_opcodes():
-        if tag == "equal":
-            kept.update(range(i1, i2))
-    return set(range(len(source))) - kept
-
-
-def vocabulary_spans(source: str, drop: set[int]) -> set[int]:
-    """The part of ``drop`` that spells a whole filler word.
-
-    Whole rather than partial: half a filler is the defect this is meant to
-    avoid, not one to import. 你知道吧 deleted down to 你知道 reads worse than
-    leaving it alone.
-    """
-    kept: set[int] = set()
-    for word in VOCABULARY:
-        start = source.find(word)
-        while start != -1:
-            span = range(start, start + len(word))
-            if all(index in drop for index in span):
-                kept.update(span)
-            start = source.find(word, start + 1)
-    return kept
-
-
-def repetition_spans(source: str, drop: set[int], shortest: int = 2, longest: int = 5) -> set[int]:
-    """Deletions that remove one copy of an exact adjacent repetition.
-
-    Exempt from the veto because a per-token head cannot represent the
-    judgement at all -- it reads one position at a time and 时间时间 looks like
-    two ordinary words. Measured: the tagger clears 0.437 of the injected
-    repetition against the generator's 0.603, and letting it veto that work
-    costs the whole difference.
-
-    Two characters and up, because one is not a repetition in Chinese: 今天天气
-    holds 天天 and 看看 is an ordinary word. Measured both ways over 986 sentences
-    -- a floor of one reads 0.9083 filler clearance against two's 0.9055, same
-    retention to four places -- so the shorter floor buys 0.003 that is inside
-    the noise and pays for it with a class of false positive that is not.
-    """
-    found: set[int] = set()
-    for size in range(shortest, longest + 1):
-        for start in range(len(source) - 2 * size + 1):
-            span = range(start, start + size)
-            if not all(index in drop for index in span):
-                continue
-            if source[start : start + size] == source[start + size : start + 2 * size]:
-                found.update(span)
-    return found
-
 
 # tidy lives in the service now rather than here. It was written for this
 # script and then the service shipped without it for a round, so the offline
 # arms were tidied and the product was not -- the one place that has to do it
 # is the one a user reads. Imported rather than copied so the next thing added
 # to it reaches both.
-
-
-def reached(source: str, output: str) -> int:
-    """How far into ``source`` the output got, matching greedily in order.
-
-    Under the copy constraint the output is a subsequence of the source, so
-    this is exact. Used to tell a deletion from an absence: a generative arm
-    that emits its stop token early leaves the whole tail looking deleted, and
-    on a 184-character dictation that was 100 characters of "opinion" it never
-    formed. Measured by hand, the generator returned 82 of 184 characters and
-    stopped mid-phrase.
-    """
-    pointer = 0
-    for char in output:
-        while pointer < len(source) and source[pointer] != char:
-            pointer += 1
-        pointer = min(pointer + 1, len(source))
-    return pointer
-
-
-def merge(rows: list[dict[str, Any]], mode: str) -> str:
-    source = rows[0]["source"]
-    drops = [dropped(source, row["polished"]) for row in rows]
-    # Past where an arm stopped, it has no opinion. Without this the veto reads
-    # a truncated arm as agreeing to delete the entire tail.
-    for index, row in enumerate(rows):
-        stopped = reached(source, row["polished"])
-        if stopped < len(source):
-            drops[index] = {position for position in drops[index] if position < stopped}
-    if mode == "union":
-        combined = set.union(*drops)
-    elif mode == "intersection":
-        combined = set.intersection(*drops)
-    elif mode == "veto":
-        # Both kinds are taken from every arm, not just the first.
-        #
-        # Repetition used to be imported from arm 0 alone, as an exemption --
-        # the head could not see repetition at all (0.437 against the
-        # generator's 0.603), so letting it veto that work cost the whole
-        # difference, and there was nothing of its own worth taking. That
-        # premise died on 2026-08-16: with the repetition columns wired and
-        # CS2W's human annotation in the training set, the tagger clears
-        # 0.5044 of real repetition against the generator's 0.3049. The
-        # asymmetry the vocabulary/repetition split was built on has inverted
-        # for one of its two halves, so the import is symmetric now.
-        exempt: set[int] = set()
-        for drop in drops:
-            exempt |= vocabulary_spans(source, drop)
-            exempt |= repetition_spans(source, drop)
-        combined = set.intersection(*drops) | exempt
-    else:
-        # The first arm whole, the rest only where they spell a filler.
-        combined = set(drops[0])
-        for drop in drops[1:]:
-            combined |= vocabulary_spans(source, drop)
-    return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
 def main() -> None:

@@ -87,6 +87,13 @@ class Settings:
     # filler. Unset means the service transcribes and stops there, which is what
     # the conversation product wants.
     polish: Path | None = None
+    # The dictation path's second arm and the backbone it probes. Unset is the
+    # shape this had before 2026-08-16: generate and tidy. Set, the two arms are
+    # merged by veto, which on 986 held-out transcripts reads better than the
+    # generator alone on four of five numbers and level on the fifth.
+    polish_tagger: Path | None = None
+    polish_tagger_backbone: Path | None = None
+    polish_tagger_threshold: float = 0.5
 
     @classmethod
     def from_environment(cls, environment: dict[str, str] | None = None) -> Settings | None:
@@ -127,6 +134,17 @@ class Settings:
             ),
             tts_prompt_text=(source.get("MINDSURF_TTS_PROMPT_TEXT") or "").strip() or None,
             polish=Path(source["MINDSURF_POLISH"]) if source.get("MINDSURF_POLISH") else None,
+            polish_tagger=(
+                Path(source["MINDSURF_POLISH_TAGGER"])
+                if source.get("MINDSURF_POLISH_TAGGER")
+                else None
+            ),
+            polish_tagger_backbone=(
+                Path(source["MINDSURF_POLISH_TAGGER_BACKBONE"])
+                if source.get("MINDSURF_POLISH_TAGGER_BACKBONE")
+                else None
+            ),
+            polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.5")),
         )
 
     def verify(self) -> None:
@@ -167,6 +185,26 @@ class Settings:
         # model doing nothing rather than as a path that is not there.
         if self.polish is not None and not self.polish.is_file():
             missing = [*missing, f"polish={self.polish}"]
+        # Both or neither, and only alongside a polisher. The head is a probe of
+        # the blocks tuned with it, so half the pair measures nothing -- and a
+        # tagger without a generator has no arm to be merged with.
+        if (self.polish_tagger is None) != (self.polish_tagger_backbone is None):
+            raise ConfigurationError(
+                "MINDSURF_POLISH_TAGGER and MINDSURF_POLISH_TAGGER_BACKBONE go together; "
+                f"only {'the head' if self.polish_tagger else 'the backbone'} was set, and "
+                "the head is a probe of the blocks that were tuned with it"
+            )
+        if self.polish_tagger is not None and self.polish is None:
+            raise ConfigurationError(
+                "MINDSURF_POLISH_TAGGER is set but MINDSURF_POLISH is not; the tagger is "
+                "the second arm of a merge and has no first arm to be merged with"
+            )
+        for name, value in (
+            ("polish_tagger", self.polish_tagger),
+            ("polish_tagger_backbone", self.polish_tagger_backbone),
+        ):
+            if value is not None and not value.is_file():
+                missing = [*missing, f"{name}={value}"]
         # Only the cascade builds one. Set on the native path it did nothing at
         # all, and worse, it did nothing loudly: /health answered
         # "polisher: ready" and /v1/models carried its sha256, while

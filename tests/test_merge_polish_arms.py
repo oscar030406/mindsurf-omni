@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from scripts.merge_polish_arms import dropped, merge
+# Moved into the service on 2026-08-16, with tidy, because the product runs the
+# merge now. Imported from where it lives rather than re-exported.
+from mindsurf_omni.service.polish import dropped, merge
 
 
 def test_the_deletions_are_read_back_off_the_alignment() -> None:
@@ -110,7 +112,7 @@ def test_veto_never_blocks_a_whole_filler_word() -> None:
 def test_one_repeated_character_is_not_a_repetition() -> None:
     """今天天气 holds 天天 and 看看 is an ordinary word. A floor of one buys
     0.003 of filler clearance, inside the noise, and pays with this."""
-    from scripts.merge_polish_arms import repetition_spans
+    from mindsurf_omni.service.polish import repetition_spans
 
     assert repetition_spans("今天天气好", {1}) == set()
     assert repetition_spans("时间时间上", {0, 1}) == {0, 1}
@@ -121,7 +123,7 @@ def test_an_arm_that_stopped_early_is_not_read_as_agreeing() -> None:
     looking deleted. Measured by hand: 82 characters returned out of 184, and
     the veto then dropped the tail's commas because the truncation counted as
     agreement."""
-    from scripts.merge_polish_arms import reached
+    from mindsurf_omni.service.polish import reached
 
     source = "嗯，今天天气好，我出门散步"
     truncated = {"source": source, "polished": "今天天气好"}  # stopped after 好

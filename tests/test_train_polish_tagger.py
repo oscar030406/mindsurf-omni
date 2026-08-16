@@ -54,7 +54,8 @@ def test_repetition_columns_mark_both_copies() -> None:
     ordinary words. It clears 0.437 of the injected repetition against the
     generative arm's 0.603, and this is the column that difference lives in."""
     import torch
-    from scripts.train_polish_tagger import repetition_features
+
+    from mindsurf_omni.service.tagger import repetition_features
 
     text = "他时间时间了"
     out = repetition_features(text, _spans(text), torch, "cpu", 2)
@@ -74,7 +75,8 @@ def test_a_repetition_the_tokenizer_cuts_through_is_still_seen() -> None:
     did not and survived every arm.
     """
     import torch
-    from scripts.train_polish_tagger import repetition_features
+
+    from mindsurf_omni.service.tagger import repetition_features
 
     text = "地点还是还是在"
     spans = [(0, 2), (2, 4), (4, 5), (5, 7)]  # 地点 | 还是 | 还 | 是在
@@ -91,7 +93,8 @@ def test_a_repetition_the_tokenizer_cuts_through_is_still_seen() -> None:
 
 def test_a_sequence_with_no_repetition_is_all_zero() -> None:
     import torch
-    from scripts.train_polish_tagger import repetition_features
+
+    from mindsurf_omni.service.tagger import repetition_features
 
     text = "客户那边催了"
     assert repetition_features(text, _spans(text), torch, "cpu", 2).sum().item() == 0
@@ -100,7 +103,8 @@ def test_a_sequence_with_no_repetition_is_all_zero() -> None:
 def test_the_old_width_is_unchanged_when_the_flag_is_off() -> None:
     """A head trained before these columns existed still has to load."""
     import torch
-    from scripts.train_polish_tagger import repetition_features
+
+    from mindsurf_omni.service.tagger import repetition_features
 
     assert repetition_features("啊啊他", _spans("啊啊他"), torch, "cpu", 0).shape == (3, 0)
 
@@ -115,7 +119,8 @@ def test_the_head_width_matches_the_columns_that_arrive() -> None:
     row to a 2304-wide head. Every threshold in the sweep died on the shape.
     """
     import torch
-    from scripts.train_polish_tagger import assemble, feature_width
+
+    from mindsurf_omni.service.tagger import assemble, feature_width
 
     text = "他时间时间了"
     spans = _spans(text)
@@ -148,6 +153,6 @@ def test_the_repetition_columns_actually_reach_the_row() -> None:
 def test_the_unit_is_recorded_so_an_old_head_cannot_be_loaded_silently() -> None:
     """Token-id columns and character columns have the same width and different
     meanings; without this field nothing downstream could tell them apart."""
-    from scripts.train_polish_tagger import REPETITION_UNIT
+    from mindsurf_omni.service.tagger import REPETITION_UNIT
 
     assert REPETITION_UNIT == "character"

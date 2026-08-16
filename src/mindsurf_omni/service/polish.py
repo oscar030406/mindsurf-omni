@@ -25,10 +25,13 @@ these words, and a caller who changes them is running a different model.
 
 from __future__ import annotations
 
+import difflib
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from mindsurf_omni.service.config import ConfigurationError
 
 INSTRUCTION = (
     "把下面这段语音转写整理成通顺的文字。只删掉口语词和重复，不要改写内容，不要添加任何东西。"
@@ -204,6 +207,136 @@ def tidy(text: str) -> str:
     return "".join(out)
 
 
+# ---------------------------------------------------------------------------
+# Merging two arms.
+#
+# These moved out of scripts/merge_polish_arms.py on 2026-08-16, for the reason
+# `tidy` moved before them: the product runs the merge now, and a function the
+# product depends on cannot live in a scoring script. The script imports them
+# from here, so there is one copy and the offline arms and the served text
+# cannot drift the way tidy did for a whole round.
+# ---------------------------------------------------------------------------
+
+# Longest first, so 你知道吧 is matched before 你知道 would be.
+VOCABULARY = tuple(sorted((*LEADING_FILLERS, *BRIDGING_FILLERS), key=len, reverse=True))
+
+
+def dropped(source: str, output: str) -> set[int]:
+    """Indices of ``source`` the arm did not carry into ``output``.
+
+    A replaced span counts as dropped: under the copy constraint an arm cannot
+    substitute, so anything the alignment calls a replacement is a deletion the
+    matcher paired with unrelated context.
+    """
+    kept = set()
+    for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(
+        None, source, output, autojunk=False
+    ).get_opcodes():
+        if tag == "equal":
+            kept.update(range(i1, i2))
+    return set(range(len(source))) - kept
+
+
+def vocabulary_spans(source: str, drop: set[int]) -> set[int]:
+    """The part of ``drop`` that spells a whole filler word.
+
+    Whole rather than partial: half a filler is the defect this is meant to
+    avoid, not one to import. 你知道吧 deleted down to 你知道 reads worse than
+    leaving it alone.
+    """
+    kept: set[int] = set()
+    for word in VOCABULARY:
+        start = source.find(word)
+        while start != -1:
+            span = range(start, start + len(word))
+            if all(index in drop for index in span):
+                kept.update(span)
+            start = source.find(word, start + 1)
+    return kept
+
+
+def repetition_spans(source: str, drop: set[int], shortest: int = 2, longest: int = 5) -> set[int]:
+    """Deletions that remove one copy of an exact adjacent repetition.
+
+    Exempt from the veto because a per-token head cannot represent the
+    judgement at all -- it reads one position at a time and 时间时间 looks like
+    two ordinary words. Measured: the tagger clears 0.437 of the injected
+    repetition against the generator's 0.603, and letting it veto that work
+    costs the whole difference.
+
+    Two characters and up, because one is not a repetition in Chinese: 今天天气
+    holds 天天 and 看看 is an ordinary word. Measured both ways over 986 sentences
+    -- a floor of one reads 0.9083 filler clearance against two's 0.9055, same
+    retention to four places -- so the shorter floor buys 0.003 that is inside
+    the noise and pays for it with a class of false positive that is not.
+    """
+    found: set[int] = set()
+    for size in range(shortest, longest + 1):
+        for start in range(len(source) - 2 * size + 1):
+            span = range(start, start + size)
+            if not all(index in drop for index in span):
+                continue
+            if source[start : start + size] == source[start + size : start + 2 * size]:
+                found.update(span)
+    return found
+
+
+def reached(source: str, output: str) -> int:
+    """How far into ``source`` the output got, matching greedily in order.
+
+    Under the copy constraint the output is a subsequence of the source, so
+    this is exact. Used to tell a deletion from an absence: a generative arm
+    that emits its stop token early leaves the whole tail looking deleted, and
+    on a 184-character dictation that was 100 characters of "opinion" it never
+    formed. Measured by hand, the generator returned 82 of 184 characters and
+    stopped mid-phrase.
+    """
+    pointer = 0
+    for char in output:
+        while pointer < len(source) and source[pointer] != char:
+            pointer += 1
+        pointer = min(pointer + 1, len(source))
+    return pointer
+
+
+def merge(rows: list[dict[str, Any]], mode: str) -> str:
+    source = rows[0]["source"]
+    drops = [dropped(source, row["polished"]) for row in rows]
+    # Past where an arm stopped, it has no opinion. Without this the veto reads
+    # a truncated arm as agreeing to delete the entire tail.
+    for index, row in enumerate(rows):
+        stopped = reached(source, row["polished"])
+        if stopped < len(source):
+            drops[index] = {position for position in drops[index] if position < stopped}
+    if mode == "union":
+        combined = set.union(*drops)
+    elif mode == "intersection":
+        combined = set.intersection(*drops)
+    elif mode == "veto":
+        # Both kinds are taken from every arm, not just the first.
+        #
+        # Repetition used to be imported from arm 0 alone, as an exemption --
+        # the head could not see repetition at all (0.437 against the
+        # generator's 0.603), so letting it veto that work cost the whole
+        # difference, and there was nothing of its own worth taking. That
+        # premise died on 2026-08-16: with the repetition columns wired and
+        # CS2W's human annotation in the training set, the tagger clears
+        # 0.5044 of real repetition against the generator's 0.3049. The
+        # asymmetry the vocabulary/repetition split was built on has inverted
+        # for one of its two halves, so the import is symmetric now.
+        exempt: set[int] = set()
+        for drop in drops:
+            exempt |= vocabulary_spans(source, drop)
+            exempt |= repetition_spans(source, drop)
+        combined = set.intersection(*drops) | exempt
+    else:
+        # The first arm whole, the rest only where they spell a filler.
+        combined = set(drops[0])
+        for drop in drops[1:]:
+            combined |= vocabulary_spans(source, drop)
+    return tidy("".join(char for index, char in enumerate(source) if index not in combined))
+
+
 def consumed(source: str, output: str) -> float:
     """Share of ``source`` the output reached, matching greedily in order.
 
@@ -316,6 +449,18 @@ class Polisher:
     # wide batch is paid by its shortest piece. Measured at 64 on real-length
     # pieces the wait became minutes; eight keeps the throughput and not that.
     max_batch: int = 8
+    # The second arm, and the threshold it answers at. Unset is the shape this
+    # stage had before 2026-08-16 and still the fallback: generate, tidy, done.
+    #
+    # Set, the two arms are merged by veto -- the head's confidence protects the
+    # generator's content, and neither may veto a vocabulary filler or an exact
+    # repetition. Measured on 986 held-out transcripts against the generator
+    # alone: CER 0.0463 to 0.0370, filler clearance 0.8592 to 0.9443, retention
+    # 0.9760 to 0.9791, invention 0.0292 to 0.0231, and words cut through 6.39%
+    # of sentences to 6.59%. Better on four readings, level on the fifth.
+    tagger: Path | None = None
+    tagger_backbone: Path | None = None
+    tagger_threshold: float = 0.5
     _model: Any = None
     _queue: Any = field(default_factory=list)
     _queue_lock: Any = None
@@ -323,6 +468,9 @@ class Polisher:
     _worker: Any = None
     _tokeniser: Any = None
     _fillers: Any = None
+    _tagger_head: Any = None
+    _tagger_model: Any = None
+    _tagger_spec: Any = None
 
     def load(self) -> None:
         if self._model is not None:
@@ -340,6 +488,74 @@ class Polisher:
         self._model = generator._model  # noqa: SLF001
         self._tokeniser = generator._tokenizer  # noqa: SLF001
         self._model.eval()
+        self._load_tagger()
+
+    def _load_tagger(self) -> None:
+        """The second arm, when one was configured.
+
+        Its own backbone, not the polisher's: the head was trained against a
+        backbone with three blocks tuned along with it, and reading it off the
+        polish weights would be reading a probe of a model it never saw.
+        """
+        if self.tagger is None:
+            return
+        import torch
+
+        from mindsurf_omni.service.thinker import ThinkerGenerator
+
+        if self.tagger_backbone is None:
+            raise ConfigurationError(
+                "a polish tagger was named without its backbone; the head is a probe of "
+                "the blocks that were tuned with it, and reading it off other weights "
+                "measures nothing"
+            )
+        saved = torch.load(str(self.tagger), map_location=self.device, weights_only=False)
+        # Same refusal the scoring scripts make. Heads written before
+        # 2026-08-16 read their repetition columns off token ids; these read
+        # them off characters. Same width, different meaning, no exception.
+        if saved.get("repetition", 0) and saved.get("repetition_unit") != "character":
+            raise ConfigurationError(
+                f"the polish tagger at {self.tagger} reads its repetition columns off "
+                "token ids, which this build no longer computes -- the columns would "
+                "line up by width and mean something else. Retrain it"
+            )
+        backbone = ThinkerGenerator(
+            checkpoint=self.tagger_backbone,
+            tokenizer_dir=self.tokenizer_dir,
+            minimind_root=self.minimind_root,
+            device=self.device,
+            variant=self.variant,
+        )
+        backbone.load()
+        self._tagger_model = backbone._model.eval()  # noqa: SLF001
+        head = torch.nn.Linear(saved["hidden"], 2).to(self.device)
+        head.load_state_dict(saved["state_dict"])
+        self._tagger_head = head.eval()
+        self._tagger_spec = (saved["lookahead"], saved.get("repetition", 0))
+
+    def _tagged(self, piece: str) -> str:
+        """What the head alone would keep of this piece."""
+        import torch
+
+        from mindsurf_omni.service.tagger import features as tag_features
+        from mindsurf_omni.service.tagger import token_spans
+
+        lookahead, repetition = self._tagger_spec
+        ids, spans = token_spans(self._tokeniser, piece)
+        if not ids:
+            return piece
+        with torch.no_grad():
+            matrix = tag_features(
+                self._tagger_model, ids, torch, self.device, lookahead, repetition, piece, spans
+            )
+            keep = torch.softmax(self._tagger_head(matrix), dim=-1)[:, 1]
+        drop = {
+            position
+            for (start, end), probability in zip(spans, keep.tolist(), strict=True)
+            if probability >= self.tagger_threshold
+            for position in range(start, min(end, len(piece)))
+        }
+        return "".join(char for index, char in enumerate(piece) if index not in drop)
 
     async def polish(self, transcript: str) -> str:
         """The transcript with its filler removed, or the transcript unchanged.
@@ -373,7 +589,22 @@ class Polisher:
                 out.append(piece)
                 continue
             answer = answers[piece]
-            out.append(answer if consumed(piece, answer) >= FLOOR else piece)
+            written = answer if consumed(piece, answer) >= FLOOR else piece
+            if self._tagger_head is not None:
+                # Veto, not union: the head's confidence protects the
+                # generator's content rather than removing more of it, and
+                # neither arm may veto a vocabulary filler or an exact
+                # repetition. Merged per piece because the pieces are what each
+                # arm was given, and a merge across a boundary would align two
+                # different sentences.
+                written = merge(
+                    [
+                        {"source": piece, "polished": written},
+                        {"source": piece, "polished": self._tagged(piece)},
+                    ],
+                    "veto",
+                )
+            out.append(written)
         # Tidied over the joined text, not per piece: a piece boundary is a
         # sentence boundary, so a particle stranded at the start of one is only
         # visible once its neighbour is in front of it.
