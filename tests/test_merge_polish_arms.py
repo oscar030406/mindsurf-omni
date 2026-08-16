@@ -133,3 +133,35 @@ def test_an_arm_that_stopped_early_is_not_read_as_agreeing() -> None:
     # The tail survives: the truncated arm had no opinion there, so the comma
     # the tagger dropped is not an agreed deletion.
     assert merge([truncated, tagger], "veto") == "今天天气好，我出门散步"
+
+
+def test_a_repetition_loses_one_copy_not_both() -> None:
+    """Measured on a dictated note: 因为，因为上午张老师有课 came back with no
+    因为 at all and the causal link with it. Over 986 held-out transcripts the
+    generator alone never did this; the merged arm did it in 11 sentences."""
+    from mindsurf_omni.service.polish import keep_one_copy
+
+    source = "因为因为上午张老师有课"
+    both = set(range(0, 4))  # both copies of 因为
+
+    kept = keep_one_copy(source, both)
+
+    assert "".join(c for i, c in enumerate(source) if i not in kept) == "因为上午张老师有课"
+
+
+def test_a_repeated_filler_still_loses_both_copies() -> None:
+    """Both copies of 就是就是 are filler; taking both is the vocabulary doing
+    its job, and counting it as damage read 1.52% where the real rate is a
+    fifth of that."""
+    from mindsurf_omni.service.polish import keep_one_copy
+
+    source = "就是就是这样"
+    both = set(range(0, 4))
+
+    assert keep_one_copy(source, both) == both
+
+
+def test_a_repetition_the_arms_left_alone_is_untouched() -> None:
+    from mindsurf_omni.service.polish import keep_one_copy
+
+    assert keep_one_copy("确定确定的事", set()) == set()

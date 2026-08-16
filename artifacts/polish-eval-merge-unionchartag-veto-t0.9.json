@@ -3,9 +3,9 @@
   "artifacts\\polish_train\\val_bigholdout_polish6.jsonl",
   "artifacts\\polish_train\\val_bigholdout_unionchartag_t0.9.jsonl"
  ],
- "cer_after": 0.04079804693300304,
+ "cer_after": 0.04078009651206567,
  "cer_before": 0.11227604154379586,
- "content_kept": 0.9828739594006958,
+ "content_kept": 0.9828919098216331,
  "empty": 0,
  "filler_removed_rate": 0.8631459398069279,
  "invented": 0.03058764987624968,

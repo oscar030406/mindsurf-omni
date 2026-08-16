@@ -1,6 +1,6 @@
 {
- "veto字符级t0.5": {
-  "cuts": 71,
+ "veto t0.5": {
+  "cuts": 70,
   "examples": [
    "土",
    "一",
@@ -9,11 +9,14 @@
    "类",
    "一栋"
   ],
-  "rate": 0.06592292089249494,
+  "rate": 0.06490872210953347,
+  "repetition_wiped_examples": [],
+  "repetition_wiped_rate": 0.0,
   "sentences": 986,
-  "sentences_with_a_cut": 65
+  "sentences_with_a_cut": 64,
+  "sentences_with_a_repetition_wiped": 0
  },
- "veto字符级t0.9": {
+ "veto t0.9": {
   "cuts": 20,
   "examples": [
    "步",
@@ -24,22 +27,11 @@
    "米"
   ],
   "rate": 0.02028397565922921,
+  "repetition_wiped_examples": [],
+  "repetition_wiped_rate": 0.0,
   "sentences": 986,
-  "sentences_with_a_cut": 20
- },
- "并集字符级t0.5": {
-  "cuts": 966,
-  "examples": [
-   "过",
-   "奏",
-   "宫骏",
-   "千与寻",
-   "面",
-   "要"
-  ],
-  "rate": 0.4949290060851927,
-  "sentences": 986,
-  "sentences_with_a_cut": 488
+  "sentences_with_a_cut": 20,
+  "sentences_with_a_repetition_wiped": 0
  },
  "生成式": {
   "cuts": 69,
@@ -52,7 +44,10 @@
    "让"
   ],
   "rate": 0.06389452332657201,
+  "repetition_wiped_examples": [],
+  "repetition_wiped_rate": 0.0,
   "sentences": 986,
-  "sentences_with_a_cut": 63
+  "sentences_with_a_cut": 63,
+  "sentences_with_a_repetition_wiped": 0
  }
 }

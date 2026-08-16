@@ -299,6 +299,42 @@ def reached(source: str, output: str) -> int:
     return pointer
 
 
+def keep_one_copy(source: str, drop: set[int], shortest: int = 2, longest: int = 5) -> set[int]:
+    """A repetition loses one copy, never both.
+
+    A repetition is one copy too many, so removing it should leave one behind.
+    Taking both is content loss wearing a deletion's clothes, and the criteria
+    charge it exactly what they charge a correct removal -- measured on a
+    dictated note, 因为，因为上午张老师有课 came back with no 因为 at all and
+    the causal link with it.
+
+    Measured over 986 held-out transcripts: the generator alone never did this
+    (0 sentences), the merged arm did it in 11 (1.12%) -- 确定 确定, 换个 换个,
+    背着 背着. So it is the merge that introduced it, and the merge is where it
+    is repaired.
+
+    A repeated filler is left alone: both copies of 就是就是 are filler, and
+    taking both is the vocabulary doing its job. Without that exemption this
+    reads 1.52% and the examples are 其实 / 这个 / 就是 straight down the list.
+
+    The second copy is the one restored, so what survives sits against the text
+    that follows it.
+    """
+    kept = set(drop)
+    for size in range(shortest, longest + 1):
+        start = 0
+        while start + 2 * size <= len(source):
+            unit = source[start : start + size]
+            twice = unit == source[start + size : start + 2 * size]
+            if twice and all(index in kept for index in range(start, start + 2 * size)):
+                if not any(word in unit or unit in word for word in VOCABULARY):
+                    kept -= set(range(start + size, start + 2 * size))
+                start += 2 * size
+            else:
+                start += 1
+    return kept
+
+
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
     source = rows[0]["source"]
     drops = [dropped(source, row["polished"]) for row in rows]
@@ -334,6 +370,7 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
         combined = set(drops[0])
         for drop in drops[1:]:
             combined |= vocabulary_spans(source, drop)
+    combined = keep_one_copy(source, combined)
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 

@@ -28,8 +28,11 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
-from mindsurf_omni.service.polish import BRIDGING_FILLERS, LEADING_FILLERS  # noqa: E402
-from scripts.merge_polish_arms import dropped  # noqa: E402
+from mindsurf_omni.service.polish import (  # noqa: E402
+    BRIDGING_FILLERS,
+    LEADING_FILLERS,
+    dropped,  # noqa: E402
+)
 
 VOCABULARY = (*LEADING_FILLERS, *BRIDGING_FILLERS)
 
@@ -65,6 +68,42 @@ def cuts(source: str, output: str) -> list[str]:
     return broken
 
 
+def both_copies_gone(source: str, output: str, shortest: int = 2, longest: int = 5) -> list[str]:
+    """Repetitions where the deletion took every copy instead of one.
+
+    A repetition is one copy too many, so removing it should leave one behind.
+    Taking both is content loss wearing a deletion's clothes, and the criteria
+    charge it the same two characters they charge a correct removal -- measured
+    on a dictated note, 因为，因为上午张老师有课 came back with no 因为 at all
+    and the causal link with it.
+
+    A repeated filler is exempt: both copies of 就是就是 are filler, so taking
+    both is the vocabulary doing its job. Without the exemption this counts
+    them and the number says 1.52% where the real rate is a fifth of that --
+    measured, and the examples were 其实 / 这个 / 就是 straight down the list.
+
+    Read against the source rather than tracked through the merge: any arm that
+    writes the two strings can be asked.
+    """
+    drop = dropped(source, output)
+    lost = []
+    for size in range(shortest, longest + 1):
+        start = 0
+        while start + 2 * size <= len(source):
+            first = range(start, start + size)
+            second = range(start + size, start + 2 * size)
+            unit = source[start : start + size]
+            if unit == source[start + size : start + 2 * size] and all(
+                index in drop for index in (*first, *second)
+            ):
+                if not any(word in unit or unit in word for word in VOCABULARY):
+                    lost.append(unit)
+                start += 2 * size
+            else:
+                start += 1
+    return lost
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arm", action="append", required=True, help="name=path.jsonl")
@@ -83,6 +122,8 @@ def main() -> None:
         broken = [(row["source"], cuts(row["source"], row["polished"])) for row in rows]
         hit = [(source, pieces) for source, pieces in broken if pieces]
         total = sum(len(pieces) for _, pieces in broken)
+        wiped = [both_copies_gone(row["source"], row["polished"]) for row in rows]
+        wiped_hit = [pieces for pieces in wiped if pieces]
         report[name] = {
             "sentences": len(rows),
             "sentences_with_a_cut": len(hit),
@@ -91,6 +132,11 @@ def main() -> None:
             "examples": [piece for _, pieces in hit[: arguments.examples] for piece in pieces][
                 : arguments.examples
             ],
+            "sentences_with_a_repetition_wiped": len(wiped_hit),
+            "repetition_wiped_rate": len(wiped_hit) / max(1, len(rows)),
+            "repetition_wiped_examples": [
+                piece for pieces in wiped_hit[: arguments.examples] for piece in pieces
+            ][: arguments.examples],
         }
         print(
             f"{name:<24} {len(hit):>4}/{len(rows)} 句被切穿词 "
@@ -98,6 +144,12 @@ def main() -> None:
             flush=True,
         )
         print(f"{'':24} 例：{report[name]['examples']}", flush=True)
+        print(
+            f"{'':24} 重复被整对删掉 {len(wiped_hit)}/{len(rows)} 句 "
+            f"({len(wiped_hit) / max(1, len(rows)):.2%})，例："
+            f"{report[name]['repetition_wiped_examples']}",
+            flush=True,
+        )
 
     if arguments.report:
         arguments.report.parent.mkdir(parents=True, exist_ok=True)
