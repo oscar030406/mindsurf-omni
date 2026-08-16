@@ -26,7 +26,7 @@ these words, and a caller who changes them is running a different model.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -271,7 +271,17 @@ class Polisher:
     # word of a sentence disappearing) but the fix has not been scored yet.
     protect_head: bool = False
     max_new_tokens: int = 256
+    # How many pieces one decode may carry. Wide enough that a step is full,
+    # narrow enough that one caller's long dictation does not hold everyone
+    # else's: a batch runs until its longest member stops, so the cost of a
+    # wide batch is paid by its shortest piece. Measured at 64 on real-length
+    # pieces the wait became minutes; eight keeps the throughput and not that.
+    max_batch: int = 8
     _model: Any = None
+    _queue: Any = field(default_factory=list)
+    _queue_lock: Any = None
+    _ready: Any = None
+    _worker: Any = None
     _tokeniser: Any = None
     _fillers: Any = None
 
@@ -293,46 +303,114 @@ class Polisher:
         self._model.eval()
 
     async def polish(self, transcript: str) -> str:
-        """The transcript with its filler removed, or the transcript unchanged."""
-        import asyncio
+        """The transcript with its filler removed, or the transcript unchanged.
 
+        Grouped to what the model was trained on, and never returning less text
+        than came in. Both from driving the running service: 164 seconds of
+        dictation came back as 18 characters, HTTP 200, no error, because the
+        whole buffer was ten times longer than anything the weights had seen. A
+        piece whose output stopped early is thrown away and its input kept -- a
+        dictation tool that silently drops what the user said is worse than one
+        that leaves the filler in. The copy constraint makes that test exact:
+        the output is always a subsequence of the input.
+
+        A piece with no filler word and no repetition never reaches the model.
+        Measured over 986 held-out transcripts that removes 46.7% of the calls
+        and the four numbers do not get worse -- the model was editing
+        sentences with nothing to remove, and by construction those edits were
+        over-deletion.
+        """
         if not transcript.strip():
             return transcript
-        return await asyncio.to_thread(self._polish_whole, transcript)
-
-    def _polish_whole(self, transcript: str) -> str:
-        """One sentence at a time, and never less text than came in.
-
-        Both guards come from driving the running service with real dictation
-        rather than from any of the four acceptance numbers, which are read on
-        single corpus sentences of at most 160 characters.
-
-        **Sentence at a time.** 164 seconds of speech is 718 characters, and
-        the model was trained on single sentences. Fed the whole buffer it
-        returned 18 characters -- 97% of the dictation gone, HTTP 200, no
-        error. Measured end to end through the service: 74 s came back at 0.39
-        of the transcript, 164 s at 0.03, while 243 s and 335 s came back
-        untouched. Not a length cap, and not monotonic: it is a model a long
-        way outside the distribution it was trained on. Splitting on sentence
-        marks puts every call back inside it.
-
-        **Never shorter than it should be.** A dictation tool that silently
-        drops what the user said is worse than one that leaves the filler in,
-        so a piece whose output consumed less than ``FLOOR`` of its input is
-        discarded and the input kept. The copy constraint makes that test exact
-        -- the output is always a subsequence of the input.
-        """
         pieces = group_sentences(transcript)
         wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]
-        answers = dict(zip(wanted, self._polish_batch(wanted), strict=True))
+        if not wanted:
+            return transcript
+        answers = dict(zip(wanted, await self._decode(wanted), strict=True))
+
         out = []
         for piece in pieces:
-            if not piece.strip() or piece not in answers:
+            if piece not in answers:
                 out.append(piece)
                 continue
             answer = answers[piece]
             out.append(answer if consumed(piece, answer) >= FLOOR else piece)
         return "".join(out)
+
+    async def _decode(self, pieces: list[str]) -> list[str]:
+        """Queue these pieces and wait for them, sharing a batch with whoever else is waiting.
+
+        One card, so requests queue whatever happens. Measured on the running
+        service, eight concurrent dictations each waited 7182 ms for work that
+        takes 1380 ms alone -- the eighth caller paying for the other seven
+        while the GPU ran a batch of one. Sharing the batch took that to
+        3098 ms.
+
+        Batching does not change what comes out. Checked twice, because the
+        first check said otherwise and the first check was wrong: 260 pieces
+        decoded alone, in batches of 8 and in batches of 32 came back
+        character-identical, 0 of 260 different. The one difference seen
+        earlier was the recogniser's dither, not this -- it was measured before
+        that was fixed, and re-running the same concurrent test afterwards
+        gives 0 of 8 different in the transcript and 0 of 8 in the polish.
+        """
+        import asyncio
+
+        loop = asyncio.get_running_loop()
+        waiting = [loop.create_future() for _ in pieces]
+        async with self._lock():
+            self._queue.extend(zip(pieces, waiting, strict=True))
+            self._wake().set()
+        return list(await asyncio.gather(*waiting))
+
+    def _lock(self) -> Any:
+        import asyncio
+
+        if self._queue_lock is None:
+            self._queue_lock = asyncio.Lock()
+        return self._queue_lock
+
+    def _wake(self) -> Any:
+        """The event the worker sleeps on, and the worker, made on demand.
+
+        Built here rather than at assembly because both belong to a running
+        loop and assembly happens before there is one.
+        """
+        import asyncio
+
+        if self._ready is None:
+            self._ready = asyncio.Event()
+            self._worker = asyncio.get_running_loop().create_task(self._drain())
+        return self._ready
+
+    async def _drain(self) -> None:
+        """Take whatever is waiting, decode it together, hand each answer back.
+
+        Whatever is waiting rather than a fixed batch: the point is to fill a
+        step that was going to run anyway, so a lone request must not wait for
+        company.
+        """
+        import asyncio
+
+        while True:
+            await self._ready.wait()
+            async with self._lock():
+                batch = self._queue[: self.max_batch]
+                self._queue = self._queue[self.max_batch :]
+                if not self._queue:
+                    self._ready.clear()
+            if not batch:
+                continue
+            try:
+                answers = await asyncio.to_thread(self._polish_batch, [piece for piece, _ in batch])
+            except Exception as error:  # noqa: BLE001 - every waiter needs the reason
+                for _, future in batch:
+                    if not future.done():
+                        future.set_exception(error)
+                continue
+            for (_, future), answer in zip(batch, answers, strict=True):
+                if not future.done():
+                    future.set_result(answer)
 
     def _polish_batch(self, pieces: list[str]) -> list[str]:
         """Every piece decoded in one pass, each under its own copy constraint.
