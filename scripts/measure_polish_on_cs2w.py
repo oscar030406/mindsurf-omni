@@ -105,6 +105,11 @@ def main() -> None:
         tagger.load_state_dict(saved["state_dict"])
         tagger.eval()
         tag_lookahead, tag_repetition = saved["lookahead"], saved.get("repetition", 0)
+        if tag_repetition and saved.get("repetition_unit") != "character":
+            raise SystemExit(
+                f"{args.tagger} reads its repetition columns off token ids; this build "
+                "reads them off characters. Same width, different meaning -- retrain it"
+            )
         print(f"标注器 lookahead={tag_lookahead} repetition={tag_repetition}", flush=True)
     else:
         polisher = Polisher(
@@ -125,7 +130,14 @@ def main() -> None:
             ids, spans = token_spans(tokeniser, source)
             with torch.no_grad():
                 matrix = tag_features(
-                    backbone, ids, torch, args.device, tag_lookahead, tag_repetition
+                    backbone,
+                    ids,
+                    torch,
+                    args.device,
+                    tag_lookahead,
+                    tag_repetition,
+                    source,
+                    spans,
                 )
                 probability = torch.softmax(tagger(matrix), dim=-1)[:, 1]
             # Read straight off the tags rather than through a diff: the tagger

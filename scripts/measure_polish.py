@@ -307,6 +307,16 @@ def main() -> None:
         # Absent in heads trained before the repetition columns existed, and
         # zero there means the old width -- so an old head still loads.
         tag_repetition = saved.get("repetition", 0)
+        # Heads written before 2026-08-16 read the repetition columns off token
+        # ids; these read them off characters. Same width, different meaning,
+        # and nothing downstream would notice.
+        if tag_repetition and saved.get("repetition_unit") != "character":
+            raise SystemExit(
+                f"{args.tagger} was trained with repetition columns read on token ids, "
+                "which this build no longer computes -- the columns would line up by "
+                "width and mean something else. Retrain it, or score it with a build "
+                "from before 2026-08-16"
+            )
 
     written = []
     latencies = []
@@ -315,7 +325,16 @@ def main() -> None:
             started = time.perf_counter()
             ids, spans = token_spans(tokeniser, row["source"])
             with torch.no_grad():
-                matrix = tag_features(model, ids, torch, args.device, tag_lookahead, tag_repetition)
+                matrix = tag_features(
+                    model,
+                    ids,
+                    torch,
+                    args.device,
+                    tag_lookahead,
+                    tag_repetition,
+                    row["source"],
+                    spans,
+                )
                 probability = torch.softmax(tagger(matrix), dim=-1)[:, 1]
             drop = {
                 position

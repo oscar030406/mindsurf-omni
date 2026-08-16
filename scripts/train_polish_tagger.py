@@ -53,6 +53,10 @@ from scripts.train_dpo import load_thinker  # noqa: E402
 # head small; it is a knob the ablation can move.
 LOOKAHEAD = 2
 
+# Repetition columns are read on characters. Named so a checkpoint can say so
+# and inference can refuse a head that was trained on the other unit.
+REPETITION_UNIT = "character"
+
 
 def token_spans(tokeniser: Any, text: str) -> tuple[list[int], list[tuple[int, int]]]:
     """Token ids and the character span each one covers.
@@ -105,8 +109,10 @@ def label_tokens(source: str, target: str, spans: list[tuple[int, int]]) -> list
     return labels
 
 
-def repetition_features(ids: list[int], torch: Any, device: str, longest: int) -> Any:
-    """Whether this token opens or closes an exact adjacent repetition.
+def repetition_features(
+    text: str, spans: list[tuple[int, int]], torch: Any, device: str, longest: int
+) -> Any:
+    """Whether this token overlaps an exact adjacent repetition, read on characters.
 
     Handed over as a feature because the head cannot compute it. It reads one
     position at a time, so 时间时间 looks like two ordinary words -- measured,
@@ -114,23 +120,44 @@ def repetition_features(ids: list[int], torch: Any, device: str, longest: int) -
     arm's 0.603, and that gap is the whole reason the filler-clearance line is
     still failing. Everything else it needs is in the hidden state; this is not.
 
-    Two columns per length: "the next k tokens repeat me" and "I repeat the
+    **Characters, not token ids.** The first version compared token ids, and a
+    BPE vocabulary does not cut where a repetition starts: 地点还是还是在B203
+    tokenises to 地点 / 还是 / 还 / 是在, so the second 还是 is split across a
+    boundary with 在 and the columns stayed dark on a repetition that is plain
+    in the text. Measured on the four dictated notes -- 应该应该 and 这边这边
+    tokenise cleanly and were removed, 还是还是 did not and survived every arm.
+    Reading the characters and projecting onto the spans lights all of them.
+
+    The literature does not compute this on subwords either: disfluency is
+    annotated on words, and subword tokens inherit their parent word's label
+    (Kumar et al., ACL 2026, doi 10.18653/v1/2026.acl-long.2137).
+
+    Two columns per length: "the next k characters repeat me" and "I repeat the
     previous k". Both, because which copy the alignment marks as deleted is not
     fixed for two identical spans, and the head should be free to learn either.
 
-    Length 1 is included here, unlike the merge rule's exemption: there the
-    cost of a false positive is keeping a deletion, here it is one input column
-    the head can learn to ignore.
+    A token overlapping a marked span is marked. It is an input, not a label --
+    the conservative "only if wholly covered" rule belongs to `label_tokens`,
+    where being wrong costs content; being wrong here costs the head one column
+    it can learn to discount.
+
+    Length 1 is included, unlike the merge rule's exemption: there the cost of a
+    false positive is keeping a deletion, here it is one input column.
     """
-    count = len(ids)
-    out = torch.zeros((count, 2 * longest), device=device)
+    out = torch.zeros((len(spans), 2 * longest), device=device)
     for size in range(1, longest + 1):
-        for start in range(count):
-            if start + 2 * size > count:
-                continue
-            if ids[start : start + size] == ids[start + size : start + 2 * size]:
-                out[start : start + size, 2 * (size - 1)] = 1.0
-                out[start + size : start + 2 * size, 2 * (size - 1) + 1] = 1.0
+        opens: set[int] = set()
+        closes: set[int] = set()
+        for start in range(len(text) - 2 * size + 1):
+            if text[start : start + size] == text[start + size : start + 2 * size]:
+                opens.update(range(start, start + size))
+                closes.update(range(start + size, start + 2 * size))
+        for index, (begin, end) in enumerate(spans):
+            covered = range(begin, min(end, len(text)))
+            if any(position in opens for position in covered):
+                out[index, 2 * (size - 1)] = 1.0
+            if any(position in closes for position in covered):
+                out[index, 2 * (size - 1) + 1] = 1.0
     return out
 
 
@@ -147,7 +174,8 @@ def feature_width(embedding_size: int, lookahead: int, repetition: int = 0) -> i
 def assemble(
     hidden: Any,
     embeddings: Any,
-    ids: list[int],
+    text: str,
+    spans: list[tuple[int, int]],
     torch: Any,
     device: str,
     lookahead: int,
@@ -170,7 +198,7 @@ def assemble(
             shifted[:-step] = embeddings[step:]
         pieces.append(shifted)
     if repetition:
-        pieces.append(repetition_features(ids, torch, device, repetition))
+        pieces.append(repetition_features(text, spans, torch, device, repetition))
     return torch.cat(pieces, dim=-1)
 
 
@@ -181,13 +209,21 @@ def features(
     device: str,
     lookahead: int,
     repetition: int = 0,
+    text: str = "",
+    spans: list[tuple[int, int]] | None = None,
 ) -> Any:
     """One hidden state per token, plus the next tokens' input embeddings.
 
-    ``repetition`` appends the hand-crafted repetition columns. Zero keeps the
-    old width, so a head trained before this existed still loads and still
-    means the same thing.
+    ``repetition`` appends the hand-crafted repetition columns, which are read
+    off ``text`` rather than off the ids -- see ``repetition_features``. Zero
+    keeps the old width, so a head trained before this existed still loads and
+    still means the same thing.
     """
+    if repetition and spans is None:
+        raise ValueError(
+            "repetition columns are read on characters, so `text` and `spans` are "
+            "needed; pass the pair `token_spans` returned"
+        )
     tensor = torch.tensor([ids], device=device)
     with torch.no_grad():
         out = model(input_ids=tensor, output_hidden_states=True)
@@ -199,7 +235,7 @@ def features(
         hidden = hidden[0] if hidden.dim() == 3 else hidden
         hidden = hidden.float()
         embeddings = model.get_input_embeddings()(tensor)[0].float()
-    return assemble(hidden, embeddings, ids, torch, device, lookahead, repetition)
+    return assemble(hidden, embeddings, text, spans or [], torch, device, lookahead, repetition)
 
 
 def main_unfrozen(
@@ -217,11 +253,13 @@ def main_unfrozen(
         ids, spans = token_spans(tokeniser, source)
         if not ids or len(ids) > args.max_tokens:
             continue
-        prepared.append((row.get("split"), ids, label_tokens(source, row["target"], spans)))
+        prepared.append(
+            (row.get("split"), ids, source, spans, label_tokens(source, row["target"], spans))
+        )
     train = [item for item in prepared if item[0] != "val"]
     heldout = [item for item in prepared if item[0] == "val"]
-    positives = sum(sum(labels) for _, _, labels in train)
-    total = sum(len(labels) for _, _, labels in train)
+    positives = sum(sum(item[-1]) for item in train)
+    total = sum(len(item[-1]) for item in train)
     weight = torch.tensor([1.0, (total - positives) / max(1, positives)], device=args.device)
     print(f"训练 {len(train)} 句（删 {positives}/{total} 个 token）", flush=True)
 
@@ -234,7 +272,7 @@ def main_unfrozen(
     )
     generator = random.Random(args.seed)
 
-    def logits_for(ids: list[int]) -> Any:
+    def logits_for(ids: list[int], text: str, spans: list[tuple[int, int]]) -> Any:
         tensor = torch.tensor([ids], device=args.device)
         out = model(input_ids=tensor, output_hidden_states=True)
         states = out.hidden_states
@@ -247,7 +285,8 @@ def main_unfrozen(
             assemble(
                 states.float(),
                 embeddings.float(),
-                ids,
+                text,
+                spans,
                 torch,
                 args.device,
                 args.lookahead,
@@ -263,9 +302,11 @@ def main_unfrozen(
         generator.shuffle(order)
         running = 0.0
         for step, index in enumerate(order, start=1):
-            _, ids, labels = train[index]
+            _, ids, source, spans, labels = train[index]
             loss = torch.nn.functional.cross_entropy(
-                logits_for(ids), torch.tensor(labels, device=args.device), weight=weight
+                logits_for(ids, source, spans),
+                torch.tensor(labels, device=args.device),
+                weight=weight,
             )
             (loss / 8).backward()
             running += float(loss.detach())
@@ -281,8 +322,8 @@ def main_unfrozen(
         head.eval()
         true_positive = predicted_positive = actual_positive = 0
         with torch.no_grad():
-            for _, ids, labels in heldout:
-                probability = torch.softmax(logits_for(ids), dim=-1)[:, 1]
+            for _, ids, source, spans, labels in heldout:
+                probability = torch.softmax(logits_for(ids, source, spans), dim=-1)[:, 1]
                 predicted = (probability > 0.5).long().tolist()
                 for guess, truth in zip(predicted, labels, strict=True):
                     true_positive += guess == 1 and truth == 1
@@ -305,6 +346,11 @@ def main_unfrozen(
             "state_dict": {key: value.cpu() for key, value in head.state_dict().items()},
             "lookahead": args.lookahead,
             "repetition": args.repetition,
+            # Which unit the repetition columns were read on. Heads written
+            # before 2026-08-16 compared token ids and carry no such field;
+            # loading one now would feed it columns that mean something else at
+            # the same width, and nothing would raise. Inference refuses that.
+            "repetition_unit": REPETITION_UNIT,
             "hidden": hidden_size,
             "checkpoint": args.checkpoint.name,
             "unfreeze": args.unfreeze,
@@ -430,7 +476,9 @@ def main() -> None:
         if not ids or len(ids) > args.max_tokens:
             continue
         labels = label_tokens(source, row["target"], spans)
-        matrix = features(model, ids, torch, args.device, args.lookahead, args.repetition).cpu()
+        matrix = features(
+            model, ids, torch, args.device, args.lookahead, args.repetition, source, spans
+        ).cpu()
         answers = torch.tensor(labels)
         deleted += int(answers.sum())
         kept += len(labels) - int(answers.sum())
@@ -497,6 +545,11 @@ def main() -> None:
             "state_dict": {key: value.cpu() for key, value in head.state_dict().items()},
             "lookahead": args.lookahead,
             "repetition": args.repetition,
+            # Which unit the repetition columns were read on. Heads written
+            # before 2026-08-16 compared token ids and carry no such field;
+            # loading one now would feed it columns that mean something else at
+            # the same width, and nothing would raise. Inference refuses that.
+            "repetition_unit": REPETITION_UNIT,
             "hidden": features_train.shape[1],
             "checkpoint": args.checkpoint.name,
         },
