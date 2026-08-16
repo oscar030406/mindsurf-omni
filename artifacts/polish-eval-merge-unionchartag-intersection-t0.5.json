@@ -1,0 +1,14 @@
+{
+ "arms": [
+  "artifacts\\polish_train\\val_bigholdout_polish6.jsonl",
+  "artifacts\\polish_train\\val_bigholdout_unionchartag_t0.5.jsonl"
+ ],
+ "cer_after": 0.04779661027190541,
+ "cer_before": 0.11227604154379586,
+ "content_kept": 0.9818332999795186,
+ "empty": 0,
+ "filler_removed_rate": 0.8080636002271436,
+ "invented": 0.03666127593041463,
+ "mode": "intersection",
+ "n": 986
+}

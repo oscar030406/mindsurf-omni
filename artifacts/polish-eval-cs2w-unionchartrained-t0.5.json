@@ -1,0 +1,15 @@
+{
+ "arm": "tagger t=0.5",
+ "chars": 11205,
+ "checkpoint": "polish_tagger_unionchar_backbone.pth",
+ "deleted": 2634,
+ "median_length": 15,
+ "n": 723,
+ "precision": 0.34054669703872437,
+ "recall": 0.606081081081081,
+ "recall_filler": 0.9162995594713657,
+ "recall_repetition": 0.5498802873104549,
+ "should_delete": 1480,
+ "tagger": "D:\\environment\\models\\mindsurf-local\\polish_tagger_unionchar.pt",
+ "unchanged": 72
+}
