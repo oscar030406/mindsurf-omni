@@ -211,6 +211,79 @@ class EdgeSynthesiser:
         return resample(audio.tobytes(), rate, OUTPUT_SAMPLE_RATE)
 
 
+def delay_stop(model: Any, patches: int) -> Any:
+    """Make the model keep going for ``patches`` more steps after it says stop.
+
+    VoxCPM ends a sentence a syllable short. Reported by ear -- 慢慢看 losing its
+    看, 一碗面就成了 losing its 了 -- and none of the instruments on this project
+    could see it: the recogniser reconstructs the character from a partial
+    syllable so read-back CER does not move, the file ends in silence so there is
+    no cut to find, and timbre and level are about other things.
+
+    The cause is in the decoder's own loop. It computes the stop flag from
+    ``lm_hidden``, the state that produced the patch it has just appended and
+    that has not yet been fed that patch back -- so the decision runs one patch
+    behind the audio. Holding the first ``patches`` stop signals gives the tail
+    back, measured over eight held-out notes with the trim sweep in
+    ``measure_tail_syllable``:
+
+        delay   final syllable survives     read-back CER   last segment
+        0       100 ms (median)             0.0081          1.87 s
+        1       100                         0.0075          2.00
+        2       200                         0.0075          1.90
+        4       400                         0.0081          0.85
+        edge    150                         --              --
+
+    Two is what ships: it clears edge's 150 ms with read-back CER, the length of
+    the closing segment and the total duration all unchanged, and it was the one
+    a listener picked. Four doubles the reading again and the closing segment
+    halves -- the extra patches start becoming a detached blip rather than the
+    rest of the word, which is the shape none of these numbers can hear and a
+    person can.
+
+    Wrapping the head rather than editing the loop: the loop is a third party's
+    and the patch has to survive their upgrades. Per-thread counter because
+    synthesis runs on the event loop's worker threads and two requests must not
+    share one budget.
+    """
+    import torch
+
+    inner = getattr(model, "tts_model", None)
+    original = getattr(inner, "stop_head", None)
+    if original is None:
+        # Loudly, because the alternative is the defect coming back invisible:
+        # every number this project has stays where it is and only a listener
+        # notices, which is how it went unrecorded in the first place.
+        raise SynthesiserUnavailable(
+            "this build of VoxCPM has no tts_model.stop_head, so the last syllable "
+            "cannot be held; either pin a build that has it or set stop_delay=0 and "
+            "accept a final syllable a third shorter than edge's"
+        )
+    state = threading.local()
+
+    class Held(torch.nn.Module):
+        """An ``nn.Module``, not a closure.
+
+        ``stop_head`` is a registered child of an ``nn.Module``, and assigning a
+        plain function to that name raises TypeError. A fake without that rule
+        does not catch it, so the unit tests passed and the first real synthesis
+        died -- which is why this landed with a run of the actual class at both
+        settings rather than a reading of the code.
+        """
+
+        def forward(self, hidden: torch.Tensor) -> torch.Tensor:
+            logits = original(hidden)
+            left = getattr(state, "left", 0)
+            if left > 0 and int(logits.argmax(dim=-1)[0]) == 1:
+                state.left = left - 1
+                # Two classes, so reversing the last axis is exactly "the other".
+                return logits.flip(-1)
+            return logits
+
+    inner.stop_head = Held()
+    return state
+
+
 @dataclass(slots=True)
 class VoxCPMSynthesiser:
     """Local synthesis, so speaking stops being a network round trip.
@@ -254,9 +327,14 @@ class VoxCPMSynthesiser:
     # wrong rate here is not an exception, it is a chipmunk, and the bug report
     # says "sounds strange".
     sample_rate: int = 16_000
+    # How many stop signals to hold before letting the decoder finish. See
+    # ``delay_stop``: without it the last syllable of every sentence is a third
+    # shorter than edge's, and nothing but a listener could tell.
+    stop_delay: int = 2
     lineage: str = "voxcpm"
     eligible_as_judge: bool = False
     _model: Any = None
+    _stop_state: Any = None
     # Two first requests arriving together would otherwise each load half a
     # billion parameters onto the same card.
     _guard: threading.Lock = field(default_factory=threading.Lock)
@@ -279,7 +357,20 @@ class VoxCPMSynthesiser:
                     optimize=False,
                     device=self.device,
                 )
+                if self.stop_delay:
+                    self._stop_state = delay_stop(self._model, self.stop_delay)
             return self._model
+
+    def _arm_stop_budget(self) -> None:
+        """Give this utterance its own held-stop budget.
+
+        On the calling thread, and immediately before generating: the counter is
+        per-thread so two concurrent requests cannot spend each other's, and
+        re-arming per utterance is what keeps a long batch from exhausting it on
+        the first sentence.
+        """
+        if self._stop_state is not None:
+            self._stop_state.left = self.stop_delay
 
     async def synthesise(self, utterance: Utterance) -> bytes:
         import asyncio
@@ -295,7 +386,9 @@ class VoxCPMSynthesiser:
             # Loading happens in the worker thread too: the first request would
             # otherwise hold the event loop for the length of a weight load,
             # and every health check behind it.
-            return self.load().generate(
+            model = self.load()
+            self._arm_stop_budget()
+            return model.generate(
                 text=spoken,
                 prompt_wav_path=self.prompt_wav,
                 prompt_text=self.prompt_text,
@@ -344,7 +437,9 @@ class VoxCPMSynthesiser:
 
         def produce() -> None:
             try:
-                for piece in self.load().generate_streaming(
+                model = self.load()
+                self._arm_stop_budget()
+                for piece in model.generate_streaming(
                     text=spoken,
                     prompt_wav_path=self.prompt_wav,
                     prompt_text=self.prompt_text,

@@ -259,6 +259,31 @@ async def test_a_persistent_failure_is_raised_not_papered_over(
 # --------------------------------------------------------------------------
 
 
+def _fake_inner() -> object:
+    """A real ``nn.Module`` with a real child called ``stop_head``.
+
+    Not a plain object: assigning to a registered child is exactly what broke the
+    first version of ``delay_stop``, and a fake without that rule let the unit
+    tests pass while the first real synthesis died on "cannot assign ... as child
+    module". A fake has to carry the constraint the real class carries, or it is
+    testing a different object.
+    """
+    import torch
+
+    class _FakeStopHead(torch.nn.Module):
+        """Says stop every time, so a held budget shows up in the answers."""
+
+        def forward(self, hidden: object) -> object:
+            return torch.tensor([[0.0, 1.0]])
+
+    class _FakeInner(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.stop_head = _FakeStopHead()
+
+    return _FakeInner()
+
+
 class _FakeVoxCPM:
     """Hands back a real float32 waveform at VoxCPM's own 16 kHz."""
 
@@ -268,6 +293,9 @@ class _FakeVoxCPM:
 
     def __init__(self) -> None:
         type(self).loads += 1
+        # The real class exposes its decoder here and delay_stop wraps the stop
+        # head on it.
+        self.tts_model = _fake_inner()
 
     @classmethod
     def from_pretrained(cls, model_id: str, **options: object) -> _FakeVoxCPM:
@@ -421,3 +449,60 @@ def test_punctuation_around_real_words_is_kept() -> None:
     """The check is "is there anything to say", not "strip punctuation"."""
     assert clean_for_speech("真的吗？太好了！") == "真的吗？太好了！"
     assert clean_for_speech("行，那就这样。") == "行，那就这样"
+
+
+def test_the_stop_is_held_for_the_configured_number_of_patches() -> None:
+    """VoxCPM ends a sentence a syllable short: it reads the stop flag off the
+    state that produced the patch it has just appended, so the decision runs one
+    patch behind the audio. Held twice, the final syllable goes from 100 ms to
+    200 ms against edge's 150 -- measured with the trim sweep, and picked by a
+    listener over both the current behaviour and holding four."""
+    import torch
+
+    from mindsurf_omni.service.tts import delay_stop
+
+    model = _FakeVoxCPM()
+    state = delay_stop(model, 2)
+    head = model.tts_model.stop_head
+
+    state.left = 2
+    said = [int(head(torch.zeros(1)).argmax(dim=-1)[0]) for _ in range(4)]
+
+    # The first two "stop"s become "keep going"; the third gets through.
+    assert said == [0, 0, 1, 1]
+
+
+def test_each_utterance_gets_its_own_budget() -> None:
+    """Re-armed per utterance, or a long batch spends the whole allowance on its
+    first sentence and every later one ends short again."""
+    import torch
+
+    from mindsurf_omni.service.tts import VoxCPMSynthesiser, delay_stop
+
+    model = _FakeVoxCPM()
+    synthesiser = VoxCPMSynthesiser(stop_delay=2)
+    synthesiser._model = model
+    synthesiser._stop_state = delay_stop(model, 2)
+    head = model.tts_model.stop_head
+
+    synthesiser._arm_stop_budget()
+    first = [int(head(torch.zeros(1)).argmax(dim=-1)[0]) for _ in range(3)]
+    synthesiser._arm_stop_budget()
+    second = [int(head(torch.zeros(1)).argmax(dim=-1)[0]) for _ in range(3)]
+
+    assert first == [0, 0, 1]
+    assert second == [0, 0, 1]
+
+
+def test_a_build_without_the_stop_head_refuses_rather_than_going_quiet() -> None:
+    """A silently skipped patch here brings back a defect no number on this
+    project can see. Upstream renaming it has to be an error, not a shrug."""
+    from mindsurf_omni.service.tts import SynthesiserUnavailable, delay_stop
+
+    class _Bare:
+        pass
+
+    with pytest.raises(SynthesiserUnavailable) as refused:
+        delay_stop(_Bare(), 2)
+
+    assert "stop_head" in str(refused.value)
