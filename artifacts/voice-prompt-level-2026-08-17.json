@@ -1,0 +1,87 @@
+{
+  "question": "参考音频的峰值该定在哪——0.212 太轻（输出 0.152），0.900 太满（输出 0.969、12 条里 2 条碰轨）",
+  "method": "同一条参考只改增益，其余不动；每档 12 条真实润色文本（val_service_words.jsonl 前 12 条），voxcpm inference_timesteps=6 / cfg 2.0，本机 5070，卡独占。电平走 measure_clipping.py，音色走 measure_voice_consistency.py",
+  "source_clip": {
+    "sha256": "504756ea11b91fa73647eb74e2a85f5b679dcd3c5a208657129471f59555f7a6",
+    "peak_of_full_scale": 0.212,
+    "seconds": 5.44,
+    "sample_rate": 16000,
+    "text": "您好，请问您有什么需要帮忙的问题吗？",
+    "provenance": "voice-prompt-2026-08-15.json 里那条安静的参考"
+  },
+  "how_variants_were_made": "numpy: clip(samples * gain, -32768, 32767).astype(int16)，16 kHz 单声道 wav 写回。注意按 gain 4.25 重造出来的字节和仓库记的那条响参考不一致（3848bce5… 对 e4b493b4…），所以 0.900 那一档用的是记着哈希的原件，不是重造的",
+  "sweep": [
+    {
+      "prompt_peak": 0.212,
+      "gain": 1.0,
+      "output_peak_median": 0.152,
+      "output_peak_max": 0.328,
+      "output_over_prompt": 0.72,
+      "clipped_clips": "0/12",
+      "timbre_median": 0.9223,
+      "timbre_mean": 0.8421,
+      "timbre_spread": 0.0694,
+      "timbre_worst_pair": 0.4014,
+      "rtf_median": 0.826
+    },
+    {
+      "prompt_peak": 0.424,
+      "gain": 2.0,
+      "output_peak_median": 0.354,
+      "output_peak_max": 0.432,
+      "output_over_prompt": 0.84,
+      "clipped_clips": "0/12",
+      "timbre_median": 0.9309,
+      "timbre_mean": 0.9268,
+      "timbre_spread": 0.0068,
+      "timbre_worst_pair": 0.8667,
+      "rtf_median": 0.745
+    },
+    {
+      "prompt_peak": 0.636,
+      "gain": 3.0,
+      "output_peak_median": 0.578,
+      "output_peak_max": 0.672,
+      "output_over_prompt": 0.91,
+      "clipped_clips": "0/12",
+      "timbre_median": 0.9445,
+      "timbre_mean": 0.9433,
+      "timbre_spread": 0.0037,
+      "timbre_worst_pair": 0.8939,
+      "rtf_median": 0.748,
+      "chosen": true
+    },
+    {
+      "prompt_peak": 0.9,
+      "gain": 4.25,
+      "output_peak_median": 0.969,
+      "output_peak_max": 1.0,
+      "output_over_prompt": 1.08,
+      "clipped_clips": "2/12",
+      "timbre_median": 0.9479,
+      "timbre_mean": 0.9469,
+      "timbre_spread": 0.0036,
+      "timbre_worst_pair": 0.9073,
+      "rtf_median": 0.849
+    }
+  ],
+  "chosen": {
+    "gain": 3.0,
+    "prompt_peak": 0.636,
+    "sha256": "e30e9b47c3b1aef8131f30445dcdf217388d555936f083d9eb052c85cf9d7fff",
+    "why": [
+      "输出峰值中位 0.578，最接近 edge 的 0.661，12 条一条没碰轨",
+      "音色 0.9445 对最高那档的 0.9479，差 0.0034，远在 ±0.02 噪声底以内",
+      "0.900 那档买到的 0.0034 音色要拿 2/12 碰轨换，不划算"
+    ]
+  },
+  "finding": {
+    "level_is_not_a_volume_knob": "参考电平同时决定音色稳定性。0.212 那档句间余弦中位 0.9223 看着还行，但均值只有 0.8421、离散 0.0694、最差一对 0.4014（近乎正交）——正是 2026-08-15 记的「40 句里 2 条整条走偏」那个症状。抬到 0.424 之后离散降到 0.0068，最差一对 0.8667。所以 2026-08-15 记的 0.8937 是在安静参考上量的，那个数同时含着电平的病",
+    "transfer_is_slightly_superlinear": "输出峰值/参考峰值：0.72 / 0.84 / 0.91 / 1.08。不是常数，高电平那端更容易顶到轨"
+  },
+  "limits": [
+    "12 条文本、66 对，n 不大；40 条那一轮已经证过 n=4 会把电平的结论指反",
+    "本机 5070，不是部署卡",
+    "没有人耳。这四档谁更好听没有量，只量了字对不对、是不是一个人、贴不贴顶"
+  ]
+}

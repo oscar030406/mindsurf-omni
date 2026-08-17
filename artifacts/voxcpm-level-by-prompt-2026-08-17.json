@@ -1,0 +1,118 @@
+{
+  "arms": {
+    "t6_cfg2": {
+      "clipped_ratio": {
+        "p100": 2.0321531791907514e-05,
+        "p50": 0.0,
+        "p90": 4.389044943820225e-06,
+        "p95": 2.0321531791907514e-05,
+        "p99": 2.0321531791907514e-05
+      },
+      "clips": 12,
+      "clips_with_any_pinned_sample": 2,
+      "longest_run_ms": {
+        "p100": 0.0625,
+        "p50": 0.0,
+        "p90": 0.0625,
+        "p95": 0.0625,
+        "p99": 0.0625
+      },
+      "peak": {
+        "p100": 32766.0,
+        "p50": 31743.0,
+        "p90": 32766.0,
+        "p95": 32766.0,
+        "p99": 32766.0
+      },
+      "peak_mean": 30889.5,
+      "samples": [
+        {
+          "clipped_ratio": 0.0,
+          "id": "note1",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 28743.0
+        },
+        {
+          "clipped_ratio": 4.389044943820225e-06,
+          "id": "note10",
+          "longest_run": 1,
+          "longest_run_ms": 0.0625,
+          "peak": 32766.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note11",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 30132.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note12",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 29683.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note2",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 32630.0
+        },
+        {
+          "clipped_ratio": 2.0321531791907514e-05,
+          "id": "note3",
+          "longest_run": 1,
+          "longest_run_ms": 0.0625,
+          "peak": 32766.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note4",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 31743.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note5",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 28837.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note6",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 30552.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note7",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 31863.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note8",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 28305.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note9",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 32654.0
+        }
+      ]
+    }
+  },
+  "note": "distribution only; no pass/fail line is set by this run",
+  "threshold": 32760
+}
