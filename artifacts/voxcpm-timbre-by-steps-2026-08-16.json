@@ -1,0 +1,81 @@
+{
+ "arms": {
+  "t10": {
+   "directory": "t10_cfg2",
+   "rate": {
+    "maximum": 5.610795454545454,
+    "median": 4.931751329964584,
+    "minimum": 4.332010582010582,
+    "n": 40,
+    "outlier_rate": 0.0,
+    "outliers": [],
+    "silent": []
+   },
+   "read_punctuation": null,
+   "timbre": {
+    "mean": 0.9336843490600586,
+    "median": 0.9411554336547852,
+    "minimum": 0.7441883087158203,
+    "n": 40,
+    "noise_floor": 0.007196651641660637,
+    "p05": 0.8703473806381226,
+    "pairs": 780
+   }
+  },
+  "t4": {
+   "directory": "t4_cfg2",
+   "rate": {
+    "maximum": 6.4035087719298245,
+    "median": 5.068144283323212,
+    "minimum": 3.7101593625498013,
+    "n": 40,
+    "outlier_rate": 0.0,
+    "outliers": [],
+    "silent": []
+   },
+   "read_punctuation": null,
+   "timbre": {
+    "mean": 0.8953599333763123,
+    "median": 0.9037737846374512,
+    "minimum": 0.6869788765907288,
+    "n": 40,
+    "noise_floor": 0.007908259603199717,
+    "p05": 0.8192061185836792,
+    "pairs": 780
+   }
+  },
+  "t6": {
+   "directory": "t6_cfg2",
+   "rate": {
+    "maximum": 5.610795454545454,
+    "median": 4.8581877063417345,
+    "minimum": 4.321345707656613,
+    "n": 40,
+    "outlier_rate": 0.0,
+    "outliers": [],
+    "silent": []
+   },
+   "read_punctuation": null,
+   "timbre": {
+    "mean": 0.9433243274688721,
+    "median": 0.9461548328399658,
+    "minimum": 0.8739886283874512,
+    "n": 40,
+    "noise_floor": 0.002865579601350405,
+    "p05": 0.9132777452468872,
+    "pairs": 780
+   }
+  }
+ },
+ "caveat": "CAM++ 量的是说话人身份，不是好不好听；语速离群只抓粗大缺陷。「达不达得到 edge 那一档」要人耳，这里只给数",
+ "thresholds": {
+  "fixed_voice": 0.9,
+  "rate_ceiling": 12.0,
+  "rate_floor": 2.0,
+  "scattered_voice": 0.6
+ },
+ "verdicts": {
+  "音色": "缺臂，判不了（需要 voxcpm_ref 与 voxcpm_noref 两臂）"
+ },
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
+}

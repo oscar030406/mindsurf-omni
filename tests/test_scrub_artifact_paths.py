@@ -87,3 +87,20 @@ def test_naming_one_file_scans_it_rather_than_reporting_nothing(tmp_path: Path) 
     )
     assert result.returncode == 1, result.stdout
     assert "1 处路径" in result.stdout
+
+
+def test_the_timbre_report_records_an_arm_by_name_not_by_where_it_ran() -> None:
+    """``measure_voice_consistency`` writes one ``directory`` per arm. Written
+    whole, that field carried a username and a temp directory into the
+    repository; the release gate caught it and clearing it took a history
+    rewrite. It now goes through these two functions at write time rather than
+    through a scrub afterwards, because the scrub is a step someone forgets.
+
+    The literal lives here because this is the file licensed to hold one."""
+    personal = r"C:\Users\someone\AppData\Local\Temp\run\voice_arms\t6_cfg2"
+
+    assert is_personal(personal)
+    assert filename(personal) == "t6_cfg2"
+    # Nothing personal in it: left alone, because rewriting would throw away
+    # where the arm actually lives in the repository.
+    assert not is_personal("artifacts/voice_arms/t6_cfg2")

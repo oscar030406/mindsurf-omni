@@ -47,6 +47,7 @@ sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
 from scripts.measure_voice_clone import Embedder  # noqa: E402
+from scripts.scrub_artifact_paths import filename, is_personal  # noqa: E402
 
 # 判据，跑之前写死。
 #
@@ -260,7 +261,14 @@ def main() -> None:
         rows = load_arm(Path(directory))
         print(f"{name}: {len(rows)} 条")
         arms[name] = {
-            "directory": directory,
+            # The last component, not the path it was run from. Written whole
+            # once, this field carried a username and a temp directory into the
+            # repository; the release gate caught it and clearing it took a
+            # history rewrite. The directory's own name is what a reader needs
+            # -- which arm this is -- and the rest is where one machine happened
+            # to keep it. Scrubbing after the fact is a step someone forgets,
+            # so it does not get written in the first place.
+            "directory": filename(directory) if is_personal(directory) else directory,
             "timbre": spread(embed_all(rows, embedder)),
             "rate": speaking_rate(rows),
             # None rather than an empty result: "no transcript" and "checked,
