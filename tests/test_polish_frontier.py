@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from scripts.polish_frontier import numbers, verdict
+import json
+
+from scripts.polish_frontier import load_arm, numbers, verdict
 
 
 def _row(**fields: float) -> dict:
@@ -14,6 +16,33 @@ def _row(**fields: float) -> dict:
         "filler_removed": 1,
     }
     return {**base, **fields}
+
+
+def test_the_stored_cer_is_re_derived_not_believed(tmp_path) -> None:
+    """A file written before the numeral fold reached CER carries the unfolded
+    number. Believing it puts two rulers in one column and ranks the arms by
+    which day they were run on."""
+    written = tmp_path / "arm.jsonl"
+    written.write_text(
+        json.dumps(
+            {
+                "id": "x",
+                "source": "会议改到下午六点",
+                "target": "会议改到下午六点",
+                "polished": "会议改到下午6点",
+                "cer_after": 0.25,  # what the old build wrote
+                "content_kept": 1.0,
+                "invented": 0.0,
+                "filler_arrived": 0,
+                "filler_removed": 0,
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert load_arm(written)[0]["cer_after"] == 0.0
 
 
 def test_a_number_whose_interval_straddles_the_line_has_not_passed() -> None:

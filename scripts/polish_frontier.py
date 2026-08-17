@@ -20,11 +20,21 @@ import difflib
 import json
 import random
 import statistics
+import sys
 from pathlib import Path
 from typing import Any
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT / "src"))
+sys.path.insert(0, str(_ROOT))
+
+from scripts.measure_polish import polished_cer  # noqa: E402
+
 # The five acceptance lines, restated rather than imported so this file can be
 # read on its own. They are pinned in measure_polish.py and do not move.
+# The CER *function* is imported rather than restated for the opposite reason:
+# a second copy of the folding rule is how the arms and the ceiling ended up on
+# two different rulers in the first place.
 LINES = {"CER": 0.02, "口语词清除": 0.90, "内容保留": 0.98, "编造": 0.02}
 LOWER_IS_BETTER = {"CER", "编造"}
 
@@ -67,6 +77,27 @@ def punctuation_kept(
         should += len(wanted)
         kept += len(wanted & mine)
     return kept / should if should else None
+
+
+def load_arm(path: Path) -> list[dict[str, Any]]:
+    """Read an arm, and re-derive its CER rather than trusting the stored one.
+
+    The stored ``cer_after`` says which build wrote the file. Every script that
+    writes these called ``character_error_rate`` without ``fold_numbers`` until
+    it was fixed, so the files on disk now carry a mix: what was rescored after
+    the fix is folded and the rest is not. A table that puts both in one column
+    ranks arms by when they happened to be run.
+
+    Once per row here rather than inside ``numbers``, which the bootstrap calls
+    two thousand times. ``content_kept``, ``invented`` and ``filler_removed``
+    always folded, so this is the only column that needs re-deriving.
+    """
+    rows = [
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    for row in rows:
+        row["cer_after"] = polished_cer(row["target"], row["polished"])
+    return rows
 
 
 def numbers(rows: list[dict[str, Any]]) -> dict[str, float]:
@@ -140,13 +171,7 @@ def main() -> None:
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
 
-    def load(path: Path) -> list[dict[str, Any]]:
-        return [
-            json.loads(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
-
+    load = load_arm
     ends = None
     if args.ceiling and args.floor:
         ends = (numbers(load(args.floor)), numbers(load(args.ceiling)))
