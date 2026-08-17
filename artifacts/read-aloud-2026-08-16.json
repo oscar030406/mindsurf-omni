@@ -1,0 +1,432 @@
+{
+  "notes": [
+    {
+      "note": 1,
+      "written": "嗯，这个，我想说一下明天的安排啊。就是我们那个，那个会议改到下午三点了，因为，因为上午张老师有课。然后地点还是，还是在B203。",
+      "transcribed": "嗯，这个我想说一下明天的安排啊，就是我们那个那个会议改到下午3点了，因为因为上午张老师有课，然后地点还是还是在B203。",
+      "language": "zh",
+      "polished": "我想说一下明天的安排啊，会议改到下午3点了，因为上午张老师有课，地点还是在B203。",
+      "readback": "我想说一下明天的安排啊，会议改到下午3点了，因为上午张老师有课，地点还是在B203。",
+      "cer_written_vs_transcribed": 0.0,
+      "cer_polished_vs_readback": 0.0,
+      "spoken_seconds": 13.75,
+      "read_seconds": 8.38,
+      "read_peak": 0.575,
+      "read_pauses": [
+        0.35,
+        0.42,
+        0.25
+      ]
+    },
+    {
+      "note": 2,
+      "written": "那个报销的事情，我今天问了一下，就是说，需要发票原件，然后还要填一个表，表在，那个OA系统上能下载。反正，就是月底之前交上去就行。",
+      "transcribed": "那个报销的事情，我今天问了一下，就是说需要发票原件，然后还要填一个表表在那个OA系统上能下载，反正就是月底之前交上去就行。",
+      "language": "zh",
+      "polished": "报销的事情，我今天问了一下，说需要发票原件，还要填一个表表在OA系统上能下载，月底之前交上去就行。",
+      "readback": "报销的事情，我今天问了一下，说需要发票原件，还要填一个表表在OA系统上能下载，月底之前交上去就行。",
+      "cer_written_vs_transcribed": 0.0,
+      "cer_polished_vs_readback": 0.0,
+      "spoken_seconds": 13.54,
+      "read_seconds": 10.13,
+      "read_peak": 0.533,
+      "read_pauses": [
+        0.32,
+        0.22,
+        0.13,
+        0.33,
+        0.15,
+        0.15,
+        0.28
+      ]
+    },
+    {
+      "note": 3,
+      "written": "我觉得吧，这个方案还行，但是，但是有一个问题就是，成本有点高。我们要不要，嗯，再考虑一下别的方案？比如说，其实我觉得第二个方案也不错。",
+      "transcribed": "我觉得吧这个方案还行，但是但是有一个问题就是成本有点高，我们要不要？嗯，再考虑一下别的方案。比如说其实我觉得第二个方案也不错。",
+      "language": "zh",
+      "polished": "方案还行，但是有一个问题就是成本有点高，我们要不要？再考虑一下别的方案。比如说第二个方案也不错。",
+      "readback": "方案还行，但是有一个问题就是成本有点高，我们要不要再考虑一下别的方案。比如说第二个方案也不错。",
+      "cer_written_vs_transcribed": 0.0,
+      "cer_polished_vs_readback": 0.0,
+      "spoken_seconds": 13.9,
+      "read_seconds": 10.51,
+      "read_peak": 0.592,
+      "read_pauses": [
+        0.21,
+        0.17,
+        0.14,
+        0.12,
+        0.33,
+        0.65,
+        0.65,
+        0.15
+      ]
+    },
+    {
+      "note": 4,
+      "written": "然后就是那个，客户那边催了两次了，说是，说是希望下周能看到demo。我们这边，这边进度大概完成了百分之六十吧。应该，应该来得及。",
+      "transcribed": "然后就是那个客户那边催了两次了，说是说是希望下周能看到demo。我们这边这边进度大概完成了60%吧，应该应该来得及。",
+      "language": "zh",
+      "polished": "客户那边催了两次了，说是希望下周能看到demo。我们这边进度大概完成了60%吧，应该来得及。",
+      "readback": "客户那边催了两次了，说是希望下周能看到demo，我们这边进度大概完成了60%吧，应该来得及。",
+      "cer_written_vs_transcribed": 0.0,
+      "cer_polished_vs_readback": 0.0,
+      "spoken_seconds": 13.54,
+      "read_seconds": 9.77,
+      "read_peak": 0.614,
+      "read_pauses": [
+        0.38,
+        0.66,
+        0.36
+      ]
+    }
+  ],
+  "pronunciation": {
+    "B203": {
+      "candidates": [
+        {
+          "spelling": "B203",
+          "bare_seconds": 0.818,
+          "carried_seconds": 1.52,
+          "readback": "B203。",
+          "carried_delta": 0.0
+        },
+        {
+          "spelling": "B二零三",
+          "bare_seconds": 0.81,
+          "carried_seconds": 1.522,
+          "readback": "B203。",
+          "carried_delta": 0.002
+        },
+        {
+          "spelling": "B两百零三",
+          "bare_seconds": 1.038,
+          "carried_seconds": 1.772,
+          "readback": "第203。",
+          "carried_delta": 0.252
+        }
+      ],
+      "read_as": "B二零三",
+      "nearest": "B二零三",
+      "nearest_delta": 0.002
+    },
+    "60%": {
+      "candidates": [
+        {
+          "spelling": "60%",
+          "bare_seconds": 1.047,
+          "carried_seconds": 1.571,
+          "readback": "60%。",
+          "carried_delta": 0.0
+        },
+        {
+          "spelling": "百分之六十",
+          "bare_seconds": 1.046,
+          "carried_seconds": 1.566,
+          "readback": "60%。",
+          "carried_delta": -0.005
+        },
+        {
+          "spelling": "六十百分号",
+          "bare_seconds": 0.951,
+          "carried_seconds": 1.494,
+          "readback": "60百分号。",
+          "carried_delta": -0.077
+        }
+      ],
+      "read_as": "百分之六十",
+      "nearest": "百分之六十",
+      "nearest_delta": -0.005
+    },
+    "3点": {
+      "candidates": [
+        {
+          "spelling": "3点",
+          "bare_seconds": 0.55,
+          "carried_seconds": 1.02,
+          "readback": "3点。",
+          "carried_delta": 0.0
+        },
+        {
+          "spelling": "三点",
+          "bare_seconds": 0.55,
+          "carried_seconds": 1.025,
+          "readback": "3点。",
+          "carried_delta": 0.005
+        },
+        {
+          "spelling": "三点钟",
+          "bare_seconds": 0.717,
+          "carried_seconds": 1.185,
+          "readback": "3点钟。",
+          "carried_delta": 0.165
+        }
+      ],
+      "read_as": "三点",
+      "nearest": "三点",
+      "nearest_delta": 0.005
+    },
+    "demo": {
+      "candidates": [
+        {
+          "spelling": "demo",
+          "bare_seconds": 0.403,
+          "carried_seconds": 1.176,
+          "readback": "でも。",
+          "carried_delta": 0.0
+        },
+        {
+          "spelling": "地谋",
+          "bare_seconds": 0.443,
+          "carried_seconds": 0.981,
+          "readback": "地毛。",
+          "carried_delta": -0.195
+        },
+        {
+          "spelling": "demo演示",
+          "bare_seconds": 0.86,
+          "carried_seconds": 1.611,
+          "readback": "demo演示。",
+          "carried_delta": 0.435
+        }
+      ],
+      "read_as": null,
+      "nearest": "地谋",
+      "nearest_delta": -0.195
+    }
+  },
+  "length": [
+    {
+      "paragraphs": 1,
+      "spoken_seconds": 14.8,
+      "spoken": {
+        "characters": 73,
+        "marks": 10,
+        "marks_per_100": 15.87,
+        "longest_run": 15,
+        "runs_over_20": 0
+      },
+      "transcribed": {
+        "characters": 68,
+        "marks": 6,
+        "marks_per_100": 9.68,
+        "longest_run": 15,
+        "runs_over_20": 0
+      },
+      "longest_sentence": 68,
+      "trained_length": 160,
+      "groups": [
+        68
+      ],
+      "groups_over_trained_length": [],
+      "consumed": 1.0,
+      "fillers_before": 6,
+      "fillers_after": 0,
+      "filler_clearance": 1.0,
+      "text": "嗯，那个我把今天周会的纪要说一下，就是第一个是进度，客户端那边这个礼拜合了3个P2，然后然后剩下两个还在评审里，预计预计周五之前能核完。",
+      "polished": "我把今天周会的纪要说一下，第一个是进度，客户端那边礼拜合了3个P2，剩下两个还在评审里，预计周五之前能核完。"
+    },
+    {
+      "paragraphs": 2,
+      "spoken_seconds": 31.3,
+      "spoken": {
+        "characters": 150,
+        "marks": 18,
+        "marks_per_100": 13.64,
+        "longest_run": 15,
+        "runs_over_20": 0
+      },
+      "transcribed": {
+        "characters": 140,
+        "marks": 10,
+        "marks_per_100": 7.69,
+        "longest_run": 36,
+        "runs_over_20": 1
+      },
+      "longest_sentence": 79,
+      "trained_length": 160,
+      "groups": [
+        140
+      ],
+      "groups_over_trained_length": [],
+      "consumed": 1.0,
+      "fillers_before": 7,
+      "fillers_after": 0,
+      "filler_clearance": 1.0,
+      "text": "嗯，那个我把今天周会的纪要说一下，就是第一个是进度，客户端那边这个礼拜合了3个P2，然后然后剩下两个还在评审里预计预计周五之前能合完服务端这边那个压测跑完了。单机QPS大概是1200左右，比上个季度高了大概30%。但是但是P99还是有点高，在800毫秒上下，这块下周要专门看一下。",
+      "polished": "我把今天周会的纪要说一下，第一个是进度，客户端那边礼拜合了3个P2，剩下两个还在评审里预计周五之前能合完服务端这边压测跑完了。单机QPS大概是1200左右，比上个季度高了大概30%。但是P99还是有点高，在800毫秒上下，这块下周要专门看一下。"
+    },
+    {
+      "paragraphs": 4,
+      "spoken_seconds": 58.1,
+      "spoken": {
+        "characters": 280,
+        "marks": 35,
+        "marks_per_100": 14.29,
+        "longest_run": 17,
+        "runs_over_20": 0
+      },
+      "transcribed": {
+        "characters": 265,
+        "marks": 22,
+        "marks_per_100": 9.05,
+        "longest_run": 24,
+        "runs_over_20": 2
+      },
+      "longest_sentence": 67,
+      "trained_length": 160,
+      "groups": [
+        141,
+        124
+      ],
+      "groups_over_trained_length": [],
+      "consumed": 1.0,
+      "fillers_before": 16,
+      "fillers_after": 1,
+      "filler_clearance": 0.9375,
+      "text": "嗯，那个我把今天周会的纪要说一下，就是第一个是进度，客户端那边这个礼拜合了3个P2，然后然后剩下两个还在评审里预计预计周五之前能核完。服务端这边那个压测跑完了，单击QPS大概是1200左右，比上个季度高了大概30%。但是但是P99还是有点高，在800毫秒上下，这块下周要专门看一下。第二个是那个招聘，就是说我们那个后端还差两个人HR那边推了5份简历，我看了一下，有两份还行，就是下周约时间面一下。然后第三个就是那个预算的事情。财务说说是Q3的预算要在这个月底之前提交。所以所以大家把自己那部分的数字。嗯，周三之前发给我，我来汇总。",
+      "polished": "我把今天周会的纪要说一下，第一个是进度，客户端那边礼拜合了3个P2，剩下两个还在评审里预计周五之前能核完。服务端这边压测跑完了，单击QPS大概是1200左右，比上个季度高了大概30%。但是但是P99还是有点高，在800毫秒上下，这块下周要专门看一下。第二个是那个招聘，说我们后端还差两个人HR那边推了5份简历，我看了一下，有两份还行，下周约时间面一下。第三个预算的事情。财务说说是Q3的预算要在月底之前提交。所以大家把自己那部分的数字。周三之前发给我，我来汇总。"
+    },
+    {
+      "paragraphs": 8,
+      "spoken_seconds": 105.5,
+      "spoken": {
+        "characters": 510,
+        "marks": 63,
+        "marks_per_100": 14.09,
+        "longest_run": 17,
+        "runs_over_20": 0
+      },
+      "transcribed": {
+        "characters": 480,
+        "marks": 35,
+        "marks_per_100": 7.87,
+        "longest_run": 36,
+        "runs_over_20": 3
+      },
+      "longest_sentence": 101,
+      "trained_length": 160,
+      "groups": [
+        140,
+        123,
+        160,
+        57
+      ],
+      "groups_over_trained_length": [],
+      "consumed": 1.0,
+      "fillers_before": 33,
+      "fillers_after": 2,
+      "filler_clearance": 0.9394,
+      "text": "嗯，那个我把今天周会的纪要说一下，就是第一个是进度，客户端那边这个礼拜合了3个P2，然后然后剩下两个还在评审里预计预计周五之前能合完服务端这边那个压测跑完了。单机QPS大概是1200左右，比上个季度高了大概30%。但是但是P99还是有点高，在800毫秒上下，这块下周要专门看一下。第二个是那个招聘，就是说我们那个后端还差两个人HR那边推了5份简历，我看了一下有两份还行，就是下周约时间面一下。然后第三个就是那个预算的事情。财务说说是Q3的预算要在这个月底之前提交。所以所以大家把自己那部分的数字，嗯，周三之前发给我，我来汇总。最后就是那个下周三下午两点半，我们在B203开一个复盘会，主要是聊一下上个版本那个线上事故，就是那个数据库连接池打满那次对了，还有一个是那个测试环境的机器，就是运维说下周要签一次签的时候大概停两个小时。所以所以大家把要跑的东西提前跑完。还有就是那个文档我看了一下，就是接口那部分好久没更新了。然后新来的同学看着挺费劲的。这个谁又空补一下。嗯，最后就是下个月那个季度总结，就是大家提前想一下自己那块要讲什么，反正到时候一个人5分钟左右。",
+      "polished": "我把今天周会的纪要说一下，第一个是进度，客户端那边礼拜合了3个P2，剩下两个还在评审里预计周五之前能合完服务端这边压测跑完了。单机QPS大概是1200左右，比上个季度高了大概30%。但是P99还是有点高，在800毫秒上下，这块下周要专门看一下。第二个是招聘，后端还差两个人HR那边推了5份简历，我看了一下有两份还行，下周约时间面一下。预算的事情财务说说是Q3的预算要在月底之前提交。所以大家把自己部分的数字，周三之前发给我，我来汇总。最后下周三下午两点半，我们在B203开一个复盘会，主要是聊一下上个版本线上事故，数据库连接池打满那次对了，还有一个是那个测试环境的机器，下周要签一次签的时候大概停两个小时。所以大家把要跑的东西提前跑完。还有文档我看了一下，就是接口那部分好久没更新了。新来的同学看着挺费劲的。谁又空补一下。最后下个月季度总结，大家提前想一下自己那块要讲什么，到时候一个人5分钟左右。"
+    }
+  ],
+  "prosody": {
+    "misplaced": {
+      "pause_at": 0.95,
+      "slope_hz_per_s": -7.5,
+      "first_f0": 338.0,
+      "last_f0": 333.3,
+      "voiced_frames": 38,
+      "text": "我们要不要？再考虑一下别的方案。",
+      "pauses": [
+        0.66
+      ],
+      "readback": "我们要不要再考虑一下别的方案。"
+    },
+    "comma_instead": {
+      "pause_at": 0.91,
+      "slope_hz_per_s": -90.8,
+      "first_f0": 315.8,
+      "last_f0": 216.2,
+      "voiced_frames": 37,
+      "text": "我们要不要，再考虑一下别的方案。",
+      "pauses": [
+        0.36
+      ],
+      "readback": "我们要不要再考虑一下别的方案。"
+    },
+    "question_at_end": {
+      "pause_at": null,
+      "slope_hz_per_s": null,
+      "voiced_frames": 0,
+      "text": "我们要不要再考虑一下别的方案？",
+      "pauses": [],
+      "readback": "我们要不要再考虑一下别的方案？"
+    },
+    "statement_at_end": {
+      "pause_at": null,
+      "slope_hz_per_s": null,
+      "voiced_frames": 0,
+      "text": "我们要不要再考虑一下别的方案。",
+      "pauses": [],
+      "readback": "我们要不要再考虑一下别的方案？"
+    }
+  },
+  "language": [
+    {
+      "said": "demo",
+      "seconds": 1.2,
+      "language": "ja",
+      "text": "でも。",
+      "flipped": true
+    },
+    {
+      "said": "OA",
+      "seconds": 1.25,
+      "language": "ja",
+      "text": "おい。",
+      "flipped": true
+    },
+    {
+      "said": "PR",
+      "seconds": 1.27,
+      "language": "en",
+      "text": "PR.",
+      "flipped": true
+    },
+    {
+      "said": "QPS",
+      "seconds": 1.56,
+      "language": "en",
+      "text": "QPS.",
+      "flipped": true
+    },
+    {
+      "said": "OK",
+      "seconds": 1.22,
+      "language": "en",
+      "text": "Okay.",
+      "flipped": true
+    },
+    {
+      "said": "看demo",
+      "seconds": 1.42,
+      "language": "zh",
+      "text": "看demo。",
+      "flipped": false
+    },
+    {
+      "said": "我们看一下demo",
+      "seconds": 2.06,
+      "language": "zh",
+      "text": "我们看一下demo。",
+      "flipped": false
+    },
+    {
+      "said": "好的",
+      "seconds": 1.18,
+      "language": "zh",
+      "text": "好的。",
+      "flipped": false
+    },
+    {
+      "said": "知道了",
+      "seconds": 1.37,
+      "language": "zh",
+      "text": "知道了。",
+      "flipped": false
+    }
+  ]
+}
