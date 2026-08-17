@@ -313,3 +313,21 @@ def test_a_clone_clip_that_cannot_be_read_names_ffmpeg(tmp_path: Path) -> None:
     message = str(error.value)
     assert "FFmpeg" in message
     assert "MINDSURF_TTS_PROMPT_WAV" in message
+
+
+def test_the_message_also_names_the_installed_but_unloadable_case(tmp_path: Path) -> None:
+    """The second machine had the right shared build, with its DLLs in the
+    package directory and that directory on nobody's PATH, while `ffmpeg` on
+    PATH was an npm shim. "Install a shared build" sends that person to
+    reinstall what they already have, so PATH has to be in the sentence."""
+    from mindsurf_omni.service.factory import _require_audio_loader
+
+    not_audio = tmp_path / "clip.wav"
+    not_audio.write_bytes(b"this is not a wav file")
+
+    with pytest.raises(ConfigurationError) as error:
+        _require_audio_loader(not_audio)
+
+    message = str(error.value)
+    assert "PATH" in message
+    assert "avcodec" in message

@@ -174,6 +174,14 @@ def _require_audio_loader(prompt_wav: Path) -> None:
     request -- measured here as 40 utterances out of 40, with nothing in the
     message naming FFmpeg as the thing to install.
 
+    Installed is not the same as loadable, and the second shape cost an hour on
+    top of the first. This machine had the shared build -- the right one, from
+    winget -- with its DLLs sitting in the package directory and that directory
+    on nobody's PATH, while ``ffmpeg`` on PATH resolved to an npm shim. So
+    ``ffmpeg -version`` answered, every DLL was present, and torchcodec still
+    loaded none of them. The message says both, because "install a shared
+    build" sends someone to reinstall what they already have.
+
     Checked by loading the configured clip rather than by probing torchcodec:
     the question is whether this file can be read on this machine, and the file
     is five seconds long.
@@ -195,10 +203,14 @@ def _require_audio_loader(prompt_wav: Path) -> None:
         raise ConfigurationError(
             f"the clone clip at {prompt_wav} cannot be read on this machine: "
             f"{type(error).__name__}. VoxCPM opens it through torchaudio, which needs "
-            "FFmpeg's shared libraries (a static ffmpeg build has the command and none "
-            "of them). Install an FFmpeg shared build, or leave "
-            "MINDSURF_TTS_PROMPT_WAV unset -- without a clip VoxCPM draws a speaker per "
-            "call, so the voice changes between sentences"
+            "FFmpeg's shared libraries. Two ways this goes wrong and they look the "
+            "same: a static ffmpeg build has the command and none of the DLLs, or a "
+            "shared build is installed and its DLL directory is not on PATH -- check "
+            "for avcodec-*.dll and check that the directory holding them is on PATH, "
+            "because `ffmpeg -version` answers in both cases and can even be answering "
+            "from a different build entirely. Otherwise leave MINDSURF_TTS_PROMPT_WAV "
+            "unset -- without a clip VoxCPM draws a speaker per call, so the voice "
+            "changes between sentences"
         ) from error
 
 
