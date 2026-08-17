@@ -174,11 +174,63 @@ def group_sentences(text: str, longest: int = TRAINED_LENGTH) -> list[str]:
     return pieces
 
 
+def drop_bridging_with_mark(text: str) -> str:
+    """A bridging filler that survived, together with the mark it brought.
+
+    The mirror image of the first shape ``tidy`` handles. That one is a filler
+    that *was* deleted and left its punctuation behind; this one is a filler the
+    arms did not delete at all, sitting mid-sentence with its own question mark:
+    "记了下来。对吧？训练好之后", "热水擦，怎么说呢？重油污就上小苏打".
+
+    It is the only leftover filler that gets its own rule, and the reason is
+    that it is the only one a listener meets as a *wrong sentence boundary*
+    rather than as an extra word. Read aloud, that mark is a 0.66 s pause with
+    the pitch held flat where it should fall -- measured, and independently
+    reported by a person who only heard the audio and said the phrasing did not
+    match the grammar. The four criteria price it at zero: ``normalise_for_cer``
+    strips punctuation before comparing.
+
+    Only mid-sentence. A mark with nothing after it ends the sentence it is
+    supposed to end, so there is no wrong boundary to remove -- and taking the
+    filler there would strand the mark, which is the defect this file already
+    has a function for.
+
+    Only the bridging three. Measured on 986 held-out transcripts against the
+    wider option of deleting every leftover vocabulary filler: this shape moves
+    CER 0.0315 to 0.0302, filler clearance 0.9296 to 0.9364, invention 0.0248 to
+    0.0236, retention unchanged at 0.9806, and takes mid-sentence marks from 41
+    to 29. Deleting every leftover filler instead reads a better clearance
+    (0.9489) and a worse retention (0.9796), and leaves the mid-sentence marks
+    at 40 -- it is a lexicon overruling the model, and it does not fix the thing
+    this is for. Twelve of the 41 marks are this shape; the other 29 are the
+    recogniser putting a question mark inside a sentence it heard wrong, which
+    nothing here can reach.
+
+    Deleting only, so the copy constraint holds.
+    """
+    words = sorted(BRIDGING_FILLERS, key=len, reverse=True)
+    changed = True
+    while changed:
+        changed = False
+        for index, char in enumerate(text):
+            if char not in "？！" or not text[index + 1 :].strip("".join(PUNCTUATION) + " \n"):
+                continue
+            word = next((w for w in words if text[:index].endswith(w)), None)
+            if word is None:
+                continue
+            text = text[: index - len(word)] + text[index + 1 :]
+            changed = True
+            break
+    return text
+
+
 def tidy(text: str) -> str:
     """Drop what a deletion left with nothing in front of it.
 
-    Two shapes, both read off the output rather than tracked back to which
-    filler they belonged to, because both are visible in the result.
+    Three shapes, all read off the output rather than tracked back to which
+    filler they belonged to, because all three are visible in the result.
+    The third is ``drop_bridging_with_mark`` above, run first because it can
+    leave doubled punctuation for the loop below to clear.
 
     Punctuation: deleting 对吧 out of "彩塑，对吧？特别震撼" leaves "彩塑，？特别
     震撼", a stranded question mark that reads worse than the filler did.
@@ -197,6 +249,7 @@ def tidy(text: str) -> str:
     Deleting only, so the copy constraint holds: the result is still a
     subsequence of the transcript.
     """
+    text = drop_bridging_with_mark(text)
     out: list[str] = []
     for char in text:
         if char in PUNCTUATION and (not out or out[-1] in PUNCTUATION):

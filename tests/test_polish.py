@@ -322,3 +322,44 @@ def test_tidy_only_deletes_so_the_copy_constraint_holds() -> None:
     for text in ["吧这个真的挺好的", "彩塑，？特别震撼", "我们走吧", "啊，太好了！"]:
         assert consumed(text, tidy(text)) <= 1.0
         assert all(char in text for char in tidy(text))
+
+
+def test_a_bridging_filler_takes_its_question_mark_with_it() -> None:
+    """The mirror of the stranded-punctuation case: the filler was not deleted
+    at all, and sits mid-sentence carrying its own mark. A listener meets that
+    as a wrong sentence boundary -- 0.66 s of pause with the pitch held flat --
+    and the four criteria price it at zero, because CER strips punctuation."""
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy("记了下来。对吧？训练好之后") == "记了下来。训练好之后"
+    assert tidy("热水擦，怎么说呢？重油污就上小苏打") == "热水擦，重油污就上小苏打"
+    assert tidy("开窗通风对吧？或者用除湿机") == "开窗通风或者用除湿机"
+
+
+def test_a_mark_that_really_does_end_the_sentence_is_left_alone() -> None:
+    """Nothing after it means there is no wrong boundary to remove -- and taking
+    the filler there would strand the mark, which is the defect the other half
+    of this function exists for."""
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy("这个方案怎么说呢？") == "这个方案怎么说呢？"
+    assert tidy("开窗通风，对吧？") == "开窗通风，对吧？"
+
+
+def test_only_the_bridging_three_get_this_rule() -> None:
+    """Deleting every leftover vocabulary filler reads a better clearance and a
+    worse retention, and does not remove a single wrong boundary. A question
+    mark after ordinary words is the recogniser's, and nothing here can tell
+    which sentence it belonged to."""
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy("我们要不要？再考虑一下别的方案") == "我们要不要？再考虑一下别的方案"
+    assert tidy("那个方案还行？成本有点高") == "那个方案还行？成本有点高"
+
+
+def test_dropping_a_bridging_filler_still_only_deletes() -> None:
+    from mindsurf_omni.service.polish import consumed, tidy
+
+    for text in ["记了下来。对吧？训练好之后", "热水擦，怎么说呢？重油污"]:
+        assert consumed(text, tidy(text)) <= 1.0
+        assert all(char in text for char in tidy(text))
