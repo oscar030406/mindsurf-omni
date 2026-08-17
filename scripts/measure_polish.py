@@ -74,6 +74,26 @@ INVENTED = 0.02
 FOLD_NUMERALS = True
 
 
+def polished_cer(target: str, output: str) -> float:
+    """The main criterion, folded the way the block above says it is folded.
+
+    Its own function because ``character_error_rate`` defaults ``fold_numbers``
+    to False, and every call site here forgot to pass it. ``content_kept``,
+    ``invented`` and ``filler_removed`` all fold; CER, the one metric the whole
+    argument above is about, did not -- so every reported CER on this line was
+    the unfolded number while the ceiling it was compared against was quoted
+    folded. Measured on the 986-sentence hold-out: the arm in service reads
+    0.0373 unfolded and 0.0315 folded, and the ceiling 0.0218 against 0.0159.
+    The gap between them barely moves (0.0155 to 0.0156); which of the two
+    numbers is written down does move.
+
+    One function rather than a keyword at each site, and imported by
+    ``polish_ceiling`` and ``measure_polish_service`` rather than copied, so
+    that the arms and the ceiling cannot drift onto different rulers again.
+    """
+    return character_error_rate(target, output, fold_numbers=FOLD_NUMERALS)
+
+
 def content_kept(target: str, output: str) -> float:
     """Share of the original's characters that survived into the output."""
     left, right = (
@@ -349,8 +369,8 @@ def main() -> None:
             if not args.latency_only:
                 arrived, removed = filler_removed(row, text)
                 scored = {
-                    "cer_before": character_error_rate(row["target"], row["source"]),
-                    "cer_after": character_error_rate(row["target"], text),
+                    "cer_before": polished_cer(row["target"], row["source"]),
+                    "cer_after": polished_cer(row["target"], text),
                     "content_kept": content_kept(row["target"], text),
                     "invented": invented(row["target"], text),
                     "filler_arrived": arrived,
@@ -404,8 +424,8 @@ def main() -> None:
         if not args.latency_only:
             arrived, removed = filler_removed(row, text)
             scored = {
-                "cer_before": character_error_rate(row["target"], row["source"]),
-                "cer_after": character_error_rate(row["target"], text),
+                "cer_before": polished_cer(row["target"], row["source"]),
+                "cer_after": polished_cer(row["target"], text),
                 "content_kept": content_kept(row["target"], text),
                 "invented": invented(row["target"], text),
                 "filler_arrived": arrived,

@@ -2,7 +2,36 @@
 
 from __future__ import annotations
 
-from scripts.measure_polish import CONTENT_KEPT, content_kept, filler_removed, invented
+from scripts.measure_polish import (
+    CONTENT_KEPT,
+    content_kept,
+    filler_removed,
+    invented,
+    polished_cer,
+)
+
+
+def test_the_main_criterion_folds_numerals_like_the_other_three_do() -> None:
+    """FOLD_NUMERALS was declared, argued for at length, and wired into
+    content_kept, invented and filler_removed -- but every CER call site passed
+    the default, so the one metric the argument was about kept scoring the
+    recogniser's choice of digits. On the 986-sentence hold-out that was 0.0373
+    against 0.0315 for the arm in service, and the ceiling it gets compared
+    against was being quoted at the folded 0.0159."""
+    target = "会议改到下午六点，进度完成了百分之六十"
+    same_words_other_digits = "会议改到下午6点，进度完成了60%"
+
+    assert polished_cer(target, same_words_other_digits) == 0.0
+    assert polished_cer(target, "会议改到下午六点") > 0.0
+
+
+def test_the_arms_and_the_ceiling_read_off_one_function() -> None:
+    """Two scripts scoring the same criterion with different folding is how the
+    arm and the ceiling ended up on different rulers in the first place."""
+    from scripts import measure_polish, measure_polish_service, polish_ceiling
+
+    assert polish_ceiling.polished_cer is measure_polish.polished_cer
+    assert measure_polish_service.polished_cer is measure_polish.polished_cer
 
 
 def test_a_model_that_deletes_content_scores_low_even_when_it_cleaned_well() -> None:

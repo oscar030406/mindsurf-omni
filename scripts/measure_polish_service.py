@@ -32,7 +32,6 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
-from mindsurf_omni.evaluation.metrics import character_error_rate  # noqa: E402
 from mindsurf_omni.service.polish import (  # noqa: E402
     BRIDGING_FILLERS,
     LEADING_FILLERS,
@@ -40,7 +39,12 @@ from mindsurf_omni.service.polish import (  # noqa: E402
     Polisher,
     group_sentences,
 )
-from scripts.measure_polish import content_kept, filler_removed, invented  # noqa: E402
+from scripts.measure_polish import (  # noqa: E402
+    content_kept,
+    filler_removed,
+    invented,
+    polished_cer,
+)
 
 # Wider than the decoder's door on purpose. The door decides whether a span may
 # be deleted, so a wrong entry costs content; this decides whether the model is
@@ -148,8 +152,8 @@ def main() -> None:
             {
                 **row,
                 "polished": text,
-                "cer_before": character_error_rate(row["target"], row["source"]),
-                "cer_after": character_error_rate(row["target"], text),
+                "cer_before": polished_cer(row["target"], row["source"]),
+                "cer_after": polished_cer(row["target"], text),
                 "content_kept": content_kept(row["target"], text),
                 "invented": invented(row["target"], text),
                 "filler_arrived": arrived,
