@@ -322,15 +322,27 @@ def repetition_spans(source: str, drop: set[int], shortest: int = 2, longest: in
     -- a floor of one reads 0.9083 filler clearance against two's 0.9055, same
     retention to four places -- so the shorter floor buys 0.003 that is inside
     the noise and pays for it with a class of false positive that is not.
+
+    Either copy counts. The first version asked only whether the *first* copy
+    had been dropped, so an arm that removed the second one imported nothing at
+    all and the veto blocked the whole judgement -- which reads as the tagger
+    not seeing the repetition rather than as this function not recognising it.
+    Ten of the 24 repetitions the tagger wanted gone and the product kept were
+    that shape: 发挥发挥, 故事故事, 鼻涕鼻涕, 表面表面. Fixing it moves filler
+    clearance 0.9364 to 0.9443 and CER 0.0302 to 0.0296 with retention and the
+    word-cut rate unchanged.
     """
     found: set[int] = set()
     for size in range(shortest, longest + 1):
         for start in range(len(source) - 2 * size + 1):
-            span = range(start, start + size)
-            if not all(index in drop for index in span):
+            if source[start : start + size] != source[start + size : start + 2 * size]:
                 continue
-            if source[start : start + size] == source[start + size : start + 2 * size]:
-                found.update(span)
+            first = range(start, start + size)
+            second = range(start + size, start + 2 * size)
+            if all(index in drop for index in first):
+                found.update(first)
+            elif all(index in drop for index in second):
+                found.update(second)
     return found
 
 

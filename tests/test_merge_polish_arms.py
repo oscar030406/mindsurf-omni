@@ -198,3 +198,28 @@ def test_a_word_dropped_whole_stays_dropped() -> None:
     drop = {0, 1}  # 那个, a whole word
 
     assert whole_words(source, drop) == drop
+
+
+def test_either_copy_of_a_repetition_counts_as_removing_one() -> None:
+    """The first version asked only about the first copy, so an arm that removed
+    the second imported nothing and the veto blocked the whole judgement -- which
+    reads as the tagger not seeing the repetition rather than as this function
+    not recognising it. Ten of the 24 repetitions the tagger wanted gone and the
+    product kept were that shape: 发挥发挥, 故事故事, 鼻涕鼻涕."""
+    from mindsurf_omni.service.polish import repetition_spans
+
+    assert repetition_spans("时间时间上", {0, 1}) == {0, 1}
+    assert repetition_spans("时间时间上", {2, 3}) == {2, 3}
+    assert repetition_spans("时间时间上", {1, 2}) == set()
+
+
+def test_a_tagger_that_deletes_the_second_copy_is_no_longer_vetoed() -> None:
+    """End to end through the merge, because the import is only worth anything
+    if the veto then lets it through."""
+    from mindsurf_omni.service.polish import merge
+
+    source = "他的故事故事线简单"
+    generator = {"source": source, "polished": source}
+    tagger = {"source": source, "polished": "他的故事线简单"}
+
+    assert merge([generator, tagger], "veto") == "他的故事线简单"
