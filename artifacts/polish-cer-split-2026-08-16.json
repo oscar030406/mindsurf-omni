@@ -1,11 +1,11 @@
 {
   "在用的服务路径": {
     "n": 986,
-    "cer": 0.0302,
+    "cer": 0.0296,
     "share": {
       "filler_left": 0.0013,
       "misspelled_filler": 0.0018,
-      "kept_other": 0.0066,
+      "kept_other": 0.006,
       "native_filler_deleted": 0.0041,
       "content_deleted": 0.0019,
       "substituted": 0.0127,
@@ -14,11 +14,11 @@
     "edits": {
       "filler_left": 53,
       "misspelled_filler": 60,
-      "kept_other": 277,
+      "kept_other": 244,
       "native_filler_deleted": 200,
-      "content_deleted": 102,
+      "content_deleted": 106,
       "substituted": 733,
-      "numeral": 80
+      "numeral": 79
     },
     "examples": {
       "filler_left": [
@@ -49,7 +49,7 @@
         "留下 水太多土长土长（土）",
         "留下 有关想快想快点（快）",
         "留下 足有关想快想快（想）",
-        "留下 过多久坐久坐久（坐）"
+        "留下 久坐久坐站或者（坐）"
       ],
       "native_filler_deleted": [
         "删掉 硬说就是猜了建（是）",
@@ -358,7 +358,7 @@
     "在用的服务路径": {
       "filler_left": 0.0012,
       "misspelled_filler": 0.0014,
-      "kept_other": 0.0053,
+      "kept_other": 0.0047,
       "native_filler_deleted": 0.0041,
       "content_deleted": 0.0015,
       "substituted": 0.0,
