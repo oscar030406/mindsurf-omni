@@ -1,0 +1,493 @@
+{
+  "cuts_ms": [
+    0,
+    50,
+    100,
+    150,
+    200,
+    300,
+    400
+  ],
+  "arms": {
+    "t10": {
+      "n": 8,
+      "median_ms": 100.0,
+      "mean_ms": 112.5,
+      "gone_at_50ms": 0,
+      "clips": [
+        {
+          "id": "note1",
+          "last_character": "看",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note2",
+          "last_character": "票",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note3",
+          "last_character": "了",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note4",
+          "last_character": "断",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note5",
+          "last_character": "错",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 150
+        },
+        {
+          "id": "note6",
+          "last_character": "些",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 150
+        },
+        {
+          "id": "note7",
+          "last_character": "扛",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note8",
+          "last_character": "实",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 150
+        }
+      ]
+    },
+    "t6": {
+      "n": 8,
+      "median_ms": 50.0,
+      "mean_ms": 75.0,
+      "gone_at_50ms": 0,
+      "clips": [
+        {
+          "id": "note1",
+          "last_character": "看",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note2",
+          "last_character": "票",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note3",
+          "last_character": "了",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note4",
+          "last_character": "断",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note5",
+          "last_character": "错",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note6",
+          "last_character": "些",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note7",
+          "last_character": "扛",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note8",
+          "last_character": "实",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 150
+        }
+      ]
+    },
+    "t4": {
+      "n": 8,
+      "median_ms": 50.0,
+      "mean_ms": 50.0,
+      "gone_at_50ms": 1,
+      "clips": [
+        {
+          "id": "note1",
+          "last_character": "看",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note2",
+          "last_character": "票",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note3",
+          "last_character": "了",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note4",
+          "last_character": "断",
+          "present": [
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 0
+        },
+        {
+          "id": "note5",
+          "last_character": "错",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note6",
+          "last_character": "些",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note7",
+          "last_character": "扛",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        },
+        {
+          "id": "note8",
+          "last_character": "实",
+          "present": [
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 50
+        }
+      ]
+    },
+    "edge": {
+      "n": 8,
+      "median_ms": 150.0,
+      "mean_ms": 143.8,
+      "gone_at_50ms": 0,
+      "clips": [
+        {
+          "id": "note1",
+          "last_character": "看",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 150
+        },
+        {
+          "id": "note2",
+          "last_character": "票",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 200
+        },
+        {
+          "id": "note3",
+          "last_character": "了",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note4",
+          "last_character": "断",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note5",
+          "last_character": "错",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 150
+        },
+        {
+          "id": "note6",
+          "last_character": "些",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 150
+        },
+        {
+          "id": "note7",
+          "last_character": "扛",
+          "present": [
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 100
+        },
+        {
+          "id": "note8",
+          "last_character": "实",
+          "present": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          "survives_up_to_ms": 200
+        }
+      ]
+    }
+  }
+}
