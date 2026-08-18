@@ -1,0 +1,90 @@
+{
+  "arms": {
+    "clean_once": {
+      "clipped_ratio": {
+        "p100": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0
+      },
+      "clips": 8,
+      "clips_with_any_pinned_sample": 0,
+      "longest_run_ms": {
+        "p100": 0.0,
+        "p50": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "p99": 0.0
+      },
+      "peak": {
+        "p100": 28221.0,
+        "p50": 27504.0,
+        "p90": 28221.0,
+        "p95": 28221.0,
+        "p99": 28221.0
+      },
+      "peak_mean": 25814.25,
+      "samples": [
+        {
+          "clipped_ratio": 0.0,
+          "id": "note1",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 25051.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note2",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 28221.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note3",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 27504.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note4",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 20220.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note5",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 28116.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note6",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 25914.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note7",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 27607.0
+        },
+        {
+          "clipped_ratio": 0.0,
+          "id": "note8",
+          "longest_run": 0,
+          "longest_run_ms": 0.0,
+          "peak": 23881.0
+        }
+      ]
+    }
+  },
+  "note": "distribution only; no pass/fail line is set by this run",
+  "threshold": 32760
+}

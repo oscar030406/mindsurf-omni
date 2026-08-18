@@ -1,0 +1,102 @@
+{
+  "arms": {
+    "原样0.42（在用）": {
+      "directory": "peak0.42",
+      "rate": {
+        "maximum": 5.3977272727272725,
+        "median": 4.920061513463324,
+        "minimum": 4.187979539641944,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9312843084335327,
+        "median": 0.9351456165313721,
+        "minimum": 0.8885717391967773,
+        "n": 8,
+        "noise_floor": 0.0073078879604818,
+        "p05": 0.9005401730537415,
+        "pairs": 28
+      }
+    },
+    "干净参考对照": {
+      "directory": "peak0.42",
+      "rate": {
+        "maximum": 5.414012738853503,
+        "median": 5.078251328251328,
+        "minimum": 4.4264339152119705,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9692084193229675,
+        "median": 0.9702935814857483,
+        "minimum": 0.9331992268562317,
+        "n": 8,
+        "noise_floor": 0.0048881177244679275,
+        "p05": 0.9515075087547302,
+        "pairs": 28
+      }
+    },
+    "每句降噪0.42": {
+      "directory": "peak0.42",
+      "rate": {
+        "maximum": 5.5508474576271185,
+        "median": 5.127970972141048,
+        "minimum": 4.936974789915967,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9441450834274292,
+        "median": 0.9431740045547485,
+        "minimum": 0.9167118072509766,
+        "n": 8,
+        "noise_floor": 0.005000572331874031,
+        "p05": 0.9198337197303772,
+        "pairs": 28
+      }
+    },
+    "洗一次落盘": {
+      "directory": "clean_once",
+      "rate": {
+        "maximum": 5.72463768115942,
+        "median": 5.4177984325043145,
+        "minimum": 4.857142857142857,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9465986490249634,
+        "median": 0.9477657675743103,
+        "minimum": 0.9189157485961914,
+        "n": 8,
+        "noise_floor": 0.004413016879700115,
+        "p05": 0.9253069162368774,
+        "pairs": 28
+      }
+    }
+  },
+  "caveat": "CAM++ 量的是说话人身份，不是好不好听；语速离群只抓粗大缺陷。「达不达得到 edge 那一档」要人耳，这里只给数",
+  "thresholds": {
+    "fixed_voice": 0.9,
+    "rate_ceiling": 12.0,
+    "rate_floor": 2.0,
+    "scattered_voice": 0.6
+  },
+  "verdicts": {
+    "音色": "缺臂，判不了（需要 voxcpm_ref 与 voxcpm_noref 两臂）"
+  }
+}
