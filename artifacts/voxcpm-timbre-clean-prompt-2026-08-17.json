@@ -1,0 +1,146 @@
+{
+  "arms": {
+    "Mimi0.42": {
+      "directory": "peak0.42",
+      "rate": {
+        "maximum": 5.3977272727272725,
+        "median": 4.920061513463324,
+        "minimum": 4.187979539641944,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9312843084335327,
+        "median": 0.9351456165313721,
+        "minimum": 0.8885717391967773,
+        "n": 8,
+        "noise_floor": 0.0073078879604818,
+        "p05": 0.9005401730537415,
+        "pairs": 28
+      }
+    },
+    "Mimi0.64": {
+      "directory": "peak0.64",
+      "rate": {
+        "maximum": 5.707395498392283,
+        "median": 4.975421348314606,
+        "minimum": 4.397590361445783,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.7891420722007751,
+        "median": 0.8970581293106079,
+        "minimum": 0.5413971543312073,
+        "n": 8,
+        "noise_floor": 0.07276915548165955,
+        "p05": 0.5758313536643982,
+        "pairs": 28
+      }
+    },
+    "edge0.21": {
+      "directory": "peak0.21",
+      "rate": {
+        "maximum": 5.3627760252365935,
+        "median": 4.98177122261531,
+        "minimum": 4.747596153846153,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9720248579978943,
+        "median": 0.9733792543411255,
+        "minimum": 0.9526945352554321,
+        "n": 8,
+        "noise_floor": 0.003736104727877854,
+        "p05": 0.9561294317245483,
+        "pairs": 28
+      }
+    },
+    "edge0.42": {
+      "directory": "peak0.42",
+      "rate": {
+        "maximum": 5.414012738853503,
+        "median": 5.078251328251328,
+        "minimum": 4.4264339152119705,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9692084193229675,
+        "median": 0.9702935814857483,
+        "minimum": 0.9331992268562317,
+        "n": 8,
+        "noise_floor": 0.0048881177244679275,
+        "p05": 0.9515075087547302,
+        "pairs": 28
+      }
+    },
+    "edge0.64": {
+      "directory": "peak0.64",
+      "rate": {
+        "maximum": 5.425824175824175,
+        "median": 5.1242513076707645,
+        "minimum": 4.613874345549738,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9624205827713013,
+        "median": 0.9642713069915771,
+        "minimum": 0.930079460144043,
+        "n": 8,
+        "noise_floor": 0.004523424108801745,
+        "p05": 0.9422174096107483,
+        "pairs": 28
+      }
+    },
+    "edge0.90": {
+      "directory": "peak0.90",
+      "rate": {
+        "maximum": 5.461538461538462,
+        "median": 5.282322726133801,
+        "minimum": 5.0501432664756445,
+        "n": 8,
+        "outlier_rate": 0.0,
+        "outliers": [],
+        "silent": []
+      },
+      "read_punctuation": null,
+      "timbre": {
+        "mean": 0.9689856767654419,
+        "median": 0.9707518815994263,
+        "minimum": 0.9414522051811218,
+        "n": 8,
+        "noise_floor": 0.005071624583132118,
+        "p05": 0.9456084966659546,
+        "pairs": 28
+      }
+    }
+  },
+  "caveat": "CAM++ 量的是说话人身份，不是好不好听；语速离群只抓粗大缺陷。「达不达得到 edge 那一档」要人耳，这里只给数",
+  "thresholds": {
+    "fixed_voice": 0.9,
+    "rate_ceiling": 12.0,
+    "rate_floor": 2.0,
+    "scattered_voice": 0.6
+  },
+  "verdicts": {
+    "音色": "缺臂，判不了（需要 voxcpm_ref 与 voxcpm_noref 两臂）"
+  }
+}
