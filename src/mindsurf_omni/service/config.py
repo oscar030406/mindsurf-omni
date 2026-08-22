@@ -111,7 +111,29 @@ class Settings:
     # generator alone on four of five numbers and level on the fifth.
     polish_tagger: Path | None = None
     polish_tagger_backbone: Path | None = None
-    polish_tagger_threshold: float = 0.5
+    # How sure the second arm has to be before it asks for a character.
+    #
+    # 0.5 was the value it was first measured at, never the value it was chosen
+    # at. Swept on the deployment card over 986 held-out transcripts, every
+    # step below it reads better and the curve is flat where it matters:
+    #
+    #   0.30  CER 0.0275  clearance 0.9733  retention 0.9796  invention 0.0197
+    #   0.35  CER 0.0272  clearance 0.9693  retention 0.9800  invention 0.0200
+    #   0.40  CER 0.0273  clearance 0.9625  retention 0.9805  invention 0.0204
+    #   0.45  CER 0.0274  clearance 0.9574  retention 0.9808  invention 0.0209
+    #   0.50  CER 0.0282  clearance 0.9517  retention 0.9809  invention 0.0218
+    #   0.60  CER 0.0289  clearance 0.9353  retention 0.9814  invention 0.0230
+    #
+    # 0.35 to 0.45 are one number apart on CER, which is noise; the real signal
+    # is that anything under 0.5 beats 0.5. Within the flat stretch the choice
+    # is clearance against retention, and this project's standing rule is that
+    # damaged content costs more than leftover filler -- 0.35 puts retention on
+    # its 0.98 line and invention on its 0.02 line, 0.40 leaves both a margin
+    # for the same CER. Paired bootstrap against 0.5, 4000 draws: CER -0.0009
+    # [-0.0016, -0.0002], clearance +0.0108 [+0.0062, +0.0161], invention
+    # -0.0013 [-0.0020, -0.0007], retention -0.0004 [-0.0008, -0.0001] -- the
+    # loss is real and is a fiftieth of that criterion's margin.
+    polish_tagger_threshold: float = 0.4
     # What this deployment is spoken in. Reaches the recogniser only for audio
     # too short for its own detector -- see asr.SHORT_AUDIO_SECONDS. "auto"
     # restores the behaviour this had before 2026-08-22 at every length.
@@ -166,7 +188,7 @@ class Settings:
                 if source.get("MINDSURF_POLISH_TAGGER_BACKBONE")
                 else None
             ),
-            polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.5")),
+            polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.4")),
             asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
         )
 
