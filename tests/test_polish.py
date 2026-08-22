@@ -363,3 +363,30 @@ def test_dropping_a_bridging_filler_still_only_deletes() -> None:
     for text in ["记了下来。对吧？训练好之后", "热水擦，怎么说呢？重油污"]:
         assert consumed(text, tidy(text)) <= 1.0
         assert all(char in text for char in tidy(text))
+
+
+async def test_an_all_filler_dictation_comes_back_rather_than_empty() -> None:
+    """Found by using the deployed service: 1.5 s of speech transcribed to
+    "嗯，这个。" and polished to "". FLOOR did not catch it because `consumed`
+    measures how far the decode reached, not how much survived -- a piece cut
+    down to a lone 。 still reaches the end. Every held-out transcript has
+    content, so the offline numbers never saw it."""
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    polisher.answers = {"嗯，这个。": "。"}  # type: ignore[attr-defined]
+
+    assert await polisher.polish("嗯，这个。") == "嗯，这个。"
+
+
+async def test_an_all_filler_sentence_inside_a_dictation_still_goes() -> None:
+    """The guard is on the whole result, not the piece: dropping one all-filler
+    sentence out of a longer dictation is this stage working."""
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    # One piece, not two: group_sentences packs consecutive sentences up to the
+    # 160 characters the weights were trained on.
+    polisher.answers = {  # type: ignore[attr-defined]
+        "嗯，那个。嗯，会议改到三点了。": "。会议改到三点了。",
+    }
+
+    out = await polisher.polish("嗯，那个。嗯，会议改到三点了。")
+
+    assert out == "会议改到三点了。"

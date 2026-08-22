@@ -489,6 +489,15 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
+def has_content(text: str) -> bool:
+    """Whether anything is left that a person would call words.
+
+    Punctuation-only counts as empty: a text box holding a lone 。 is the same
+    failure as one holding nothing.
+    """
+    return any("一" <= char <= "鿿" or char.isalnum() for char in text)
+
+
 def consumed(source: str, output: str) -> float:
     """Share of ``source`` the output reached, matching greedily in order.
 
@@ -787,7 +796,18 @@ class Polisher:
         # Tidied over the joined text, not per piece: a piece boundary is a
         # sentence boundary, so a particle stranded at the start of one is only
         # visible once its neighbour is in front of it.
-        return tidy("".join(out))
+        polished = tidy("".join(out))
+        # Never hand back an empty text box. Driving the deployed service, 1.5
+        # seconds of speech came back as text "嗯，这个。" and polished "" -- the
+        # whole utterance was filler, both arms deleted all of it, and FLOOR did
+        # not catch it because `consumed` measures how far the decode reached,
+        # not how much survived: a piece cut down to a lone 。 still reaches the
+        # end. The held-out set never showed this; every transcript in it has
+        # content. Kept at the whole-result level on purpose -- deleting an
+        # all-filler sentence out of a longer dictation is this stage working.
+        if transcript.strip() and not has_content(polished):
+            return transcript
+        return polished
 
     async def _decode(self, pieces: list[str]) -> list[str]:
         """Queue these pieces and wait for them, sharing a batch with whoever else is waiting.
