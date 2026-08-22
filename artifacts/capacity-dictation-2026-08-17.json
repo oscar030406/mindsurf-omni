@@ -1,0 +1,175 @@
+{
+  "question": "听写链（ASR + 润色）一张卡同时扛几路。2026-08-15 那条曲线量的是 ASR 单独和已经砍掉的助手 LLM，不是现在的产品",
+  "machine": "RTX 5070 笔记本（不是部署的 4090），单进程，合成器不在链路里",
+  "audio": "13.75 秒真实语音（老曲线用的是 5 秒合成音，绝对值不可比，趋势可比）",
+  "requests_per_level": 24,
+  "arms": {
+    "无润色（只有转写）": [
+      {
+        "concurrency": 1,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 76.90700000000561,
+        "mean_ms": 60.48374166667022,
+        "median_characters": 60.0,
+        "p50_ms": 58.23809999998275,
+        "p95_ms": 68.39300000001458,
+        "requests": 24,
+        "seconds": 1.452060700000004,
+        "throughput_per_second": 16.52823466677387
+      },
+      {
+        "concurrency": 2,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 115.03220000003012,
+        "mean_ms": 99.18142083333237,
+        "median_characters": 60.0,
+        "p50_ms": 99.04430000000275,
+        "p95_ms": 114.48620000004439,
+        "requests": 24,
+        "seconds": 1.2123258000000305,
+        "throughput_per_second": 19.79665862097416
+      },
+      {
+        "concurrency": 4,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 198.68569999999863,
+        "mean_ms": 187.88454999999496,
+        "median_characters": 60.0,
+        "p50_ms": 188.13199999999597,
+        "p95_ms": 198.64260000002787,
+        "requests": 24,
+        "seconds": 1.1317545999999652,
+        "throughput_per_second": 21.206010560947345
+      },
+      {
+        "concurrency": 8,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 484.71310000002177,
+        "mean_ms": 381.59253333333726,
+        "median_characters": 60.0,
+        "p50_ms": 383.6377000000084,
+        "p95_ms": 445.63879999998335,
+        "requests": 24,
+        "seconds": 1.1692362000000003,
+        "throughput_per_second": 20.526220450581324
+      }
+    ],
+    "有润色（听写链本身）": [
+      {
+        "concurrency": 1,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 355.0706000000332,
+        "mean_ms": 333.3314875000042,
+        "median_characters": 60.0,
+        "p50_ms": 328.6511999999675,
+        "p95_ms": 354.6233000000143,
+        "requests": 24,
+        "seconds": 8.000409300000001,
+        "throughput_per_second": 2.999846520352402
+      },
+      {
+        "concurrency": 2,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 751.9512000000077,
+        "mean_ms": 637.3988041666673,
+        "median_characters": 60.0,
+        "p50_ms": 640.9984999999665,
+        "p95_ms": 677.1802000000093,
+        "requests": 24,
+        "seconds": 7.788153299999976,
+        "throughput_per_second": 3.081603439932297
+      },
+      {
+        "concurrency": 4,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 830.0052000000164,
+        "mean_ms": 752.2630916666699,
+        "median_characters": 60.0,
+        "p50_ms": 758.8706000000229,
+        "p95_ms": 829.9604999999701,
+        "requests": 24,
+        "seconds": 4.586630599999978,
+        "throughput_per_second": 5.232599285410103
+      },
+      {
+        "concurrency": 8,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 1076.1631999999963,
+        "mean_ms": 993.3385833333356,
+        "median_characters": 60.0,
+        "p50_ms": 1004.2027999999732,
+        "p95_ms": 1075.7603999999787,
+        "requests": 24,
+        "seconds": 3.0226347999999916,
+        "throughput_per_second": 7.940092531191683
+      },
+      {
+        "concurrency": 12,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 2082.548900000006,
+        "mean_ms": 1302.0763791666639,
+        "median_characters": 60.0,
+        "p50_ms": 1219.0766999999596,
+        "p95_ms": 2082.419200000004,
+        "requests": 24,
+        "seconds": 2.8617156999999906,
+        "throughput_per_second": 8.386577324924373
+      },
+      {
+        "concurrency": 16,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 2306.6299999999273,
+        "mean_ms": 1602.3886250000032,
+        "median_characters": 60.0,
+        "p50_ms": 1595.0258000000304,
+        "p95_ms": 2306.355499999995,
+        "requests": 24,
+        "seconds": 2.6309402000000546,
+        "throughput_per_second": 9.122214180314513
+      },
+      {
+        "concurrency": 24,
+        "failed": 0,
+        "failures": [],
+        "max_ms": 2689.38890000004,
+        "mean_ms": 2312.8530833333466,
+        "median_characters": 60.0,
+        "p50_ms": 2353.6468999999443,
+        "p95_ms": 2688.918299999955,
+        "requests": 24,
+        "seconds": 2.6907845999999154,
+        "throughput_per_second": 8.919331558535289
+      }
+    ]
+  },
+  "finding": {
+    "polish_is_not_a_constant_tax": "并发 1 时润色贵 5.5 倍（16.53 -> 3.00 次/秒），但它的吞吐随并发一路涨到 16（9.12），而 ASR 单独在 4 就到顶（21.21）。跨请求攒批（max_batch=8）在起作用",
+    "old_limit_was_too_tight": "老那条给后端的「ASR ≤ 4」对听写链压得太狠——并发 8 的时候润色那条才刚开始划算",
+    "latency_knee": "P95 在 8 到 12 之间翻倍（1076 -> 2082 ms），而吞吐在 8 已经是峰值的 87%",
+    "zero_failures": "1 到 24 全程 0/24 失败，没有一条超时或拒绝"
+  },
+  "recommended_in_flight": {
+    "value": 8,
+    "why": [
+      "吞吐 7.94 次/秒 = 峰值 9.12 的 87%",
+      "P95 1076 ms，再往上一档就翻倍到 2082",
+      "和 max_batch=8 对上不是巧合——超过批大小之后多出来的并发只是排队"
+    ]
+  },
+  "limits": [
+    "5070 不是部署卡，绝对值要在 4090 上重量",
+    "单条音频 13.75 秒；口述更长的话每条的绝对耗时会涨，攒批的收益也会变",
+    "卡上没有别的东西（老那条曲线的 4090 上还住着后端容器 4 GB）",
+    "没有对着预算读——听写没有 TTF-Audio 那样写死的线，8 这个建议是从曲线自己的拐点读的"
+  ]
+}
