@@ -299,3 +299,49 @@ def test_rounding_never_takes_a_run_down_to_nothing() -> None:
     # rounded up to one whole copy, and what lies outside the run is not this
     # function's business.
     assert snap_periods(source, {5, 6}) == {2, 3, 6}
+
+
+def test_a_stutter_across_a_word_boundary_is_not_handed_back() -> None:
+    """土长土长期 kept its stutter all the way to the deployed output. An arm
+    asked for 土长, jieba reads 土/长期, and the word constraint handed the copy
+    back -- 19 of the 66 repetitions that survived, every one by this route."""
+    from mindsurf_omni.service.polish import merge
+
+    source = "浇水太多，土长土长期潮湿，盆底积水"
+    arm = {"source": source, "polished": "浇水太多，土长期潮湿，盆底积水"}
+
+    assert merge([arm, arm], "veto") == "浇水太多，土长期潮湿，盆底积水"
+
+
+def test_a_question_is_not_a_stutter() -> None:
+    """是不是不舒服 is how Chinese asks; taking one 是不 leaves 是不舒服, which
+    answers instead. Same for the written 是否, and for 2020法则, which names a
+    rule that 20法则 does not."""
+    from mindsurf_omni.service.polish import merge
+
+    for source, arm in (
+        ("先看看是不是不舒服，别强迫", "先看看是不舒服，别强迫"),
+        ("每20分钟看远处，2020法则", "每20分钟看远处，20法则"),
+    ):
+        assert merge([{"source": source, "polished": arm}] * 2, "veto") == source
+
+
+def test_the_stutter_test_reads_the_unit_not_the_sentence() -> None:
+    from mindsurf_omni.service.polish import stutter
+
+    assert stutter("土长") and stutter("花椒") and stutter("慢慢")
+    assert not stutter("是不") and not stutter("是否")
+    assert not stutter("2020") and not stutter("20") and not stutter("5G")
+
+
+def test_the_copies_are_reported_one_at_a_time_as_well_as_flattened() -> None:
+    """A stage that takes some copies and leaves others needs to know which
+    characters belong together; the flattened set cannot say."""
+    from mindsurf_omni.service.polish import repetition_copies, repetition_spans
+
+    source = "他的故事故事线简单"
+
+    assert repetition_copies(source, {2, 3}) == [{2, 3}]
+    assert repetition_copies(source, {4, 5}) == [{4, 5}]
+    assert repetition_copies(source, {3, 4}) == []
+    assert repetition_spans(source, {4, 5}) == {4, 5}
