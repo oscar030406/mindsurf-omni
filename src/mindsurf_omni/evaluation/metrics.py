@@ -36,18 +36,40 @@ def fold_numerals(text: str) -> str:
     both sides pass through it. What it cannot do is context: a handful of
     sentences fold asymmetrically and score worse, 3 of 160 on each arm.
 
+    Mixed forms take a second pass. cn2an's text transform reads 四万 and
+    writes 40000, but leaves 4万 exactly as it found it -- and 4万 is what the
+    recogniser writes, its inverse text normalisation having already turned the
+    spoken 四 into a digit. So a fold whose whole job is "same number, different
+    notation" was charging four substitutions for 壁画四万多平 against
+    壁画4万多平. Measured on the 986 held-out transcripts it is 79 of the
+    edits the polish CER is built from. cn2an reads the mixed form under its
+    "smart" mode; it is simply not reached from the text-level entry point.
+
     Off by default. The acceptance thresholds were calibrated on the unfolded
     metric, and moving the ruler after the run is not allowed here.
     """
+    import re
+
     import cn2an
 
     try:
-        return str(cn2an.transform(text, "cn2an"))
+        folded = str(cn2an.transform(text, "cn2an"))
     except Exception:
         # Its parser raises on inputs it cannot segment. An unfolded sample is
         # a sample scored the old way, which is a worse number, not a wrong
         # one -- the alternative is one bad row killing a 160-sample run.
         return text
+
+    def expand(match: re.Match[str]) -> str:
+        try:
+            return str(cn2an.cn2an(match.group(), "smart"))
+        except Exception:
+            return match.group()
+
+    # Both sides pass through this, so a unit read as a number where it was not
+    # one (3千米 becoming 3000米) lands identically on each and costs nothing --
+    # the same bargain the transform above already makes with 一般.
+    return re.sub(r"\d+(?:\.\d+)?[万亿兆千百十]+", expand, folded)
 
 
 def normalise_for_cer(text: str, fold_numbers: bool = False) -> str:

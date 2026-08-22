@@ -76,11 +76,20 @@ def test_a_spelling_the_service_never_listed_stays_in_the_leftover_class() -> No
     assert counts["misspelled_filler"] == 0
 
 
-def test_a_digit_disagreement_belongs_to_the_fold_not_the_model() -> None:
-    """cn2an turns 四万 into 40000 and leaves 4万 alone, so both sides can be
-    right about the number and still differ. Counting that as over-deletion is
-    reading the ruler as evidence about the polisher."""
+def test_a_notation_disagreement_costs_nothing_now_that_the_fold_is_symmetric() -> None:
+    """This used to read as edits. cn2an's text transform turned 四万 into 40000
+    and left 4万 alone, so both sides could be right about the number and still
+    differ -- 79 of the 986-transcript edit budget. The fold takes the mixed
+    form now, so there is nothing left for this class to attribute."""
     counts, _, _ = classify("壁画四万多平", "壁画4万多平")
+
+    assert sum(counts.values()) == 0, counts
+
+
+def test_a_digit_the_polisher_really_dropped_is_still_the_polishers() -> None:
+    """The fold must not become a way to hide a real deletion: 10分钟 read back
+    as 1分钟 is a lost character, not a notation."""
+    counts, _, _ = classify("前花10分钟想", "前花1分钟想")
 
     assert counts["numeral"] > 0
     assert counts["content_deleted"] == 0
