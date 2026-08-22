@@ -153,3 +153,67 @@ def test_the_framing_the_model_was_trained_with_is_read_not_restated() -> None:
 
     assert fallback["fs"] == 16000
     assert "dither" not in fallback
+
+
+@pytest.mark.asyncio
+async def test_short_audio_is_given_the_declared_language_and_long_audio_is_not() -> None:
+    """Half a second of a real 嗯 comes back as the Japanese うん。 -- loud, not
+    silent, so the silence floor has nothing to say about it. The declared
+    language reaches the model only there: over 320 corpus clips that the
+    detector already called Chinese, passing it anyway still moved 20
+    transcripts and made three worse, so above the threshold the call is
+    unchanged.
+
+    Driven through `transcribe` with audio on both sides of the threshold,
+    because a test that reads the field back proves the field exists and
+    nothing else."""
+    from typing import Any
+
+    seen: list[str] = []
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            seen.append(kwargs["language"])
+            return [{"text": "<|zh|>嗯"}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused", language="zh")
+    recogniser._model = Recorder()
+
+    await recogniser.transcribe(_tone(0.5), 16_000)
+    await recogniser.transcribe(_tone(3.0), 16_000)
+
+    assert seen == ["zh", "auto"]
+
+
+@pytest.mark.asyncio
+async def test_declaring_auto_restores_the_behaviour_at_every_length() -> None:
+    """The escape hatch for a deployment that is not spoken in one language."""
+    from typing import Any
+
+    seen: list[str] = []
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            seen.append(kwargs["language"])
+            return [{"text": "<|zh|>嗯"}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused", language="auto")
+    recogniser._model = Recorder()
+
+    await recogniser.transcribe(_tone(0.5), 16_000)
+    await recogniser.transcribe(_tone(3.0), 16_000)
+
+    assert seen == ["auto", "auto"]
+
+
+def test_a_language_the_model_cannot_read_is_refused_at_startup() -> None:
+    """funasr takes an unknown language silently as "auto", so a typo would
+    look configured and behave unconfigured."""
+    from mindsurf_omni.service.config import ConfigurationError, Settings
+
+    base = {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": "/w"}
+
+    assert Settings.from_environment(base).asr_language == "zh"
+    assert Settings.from_environment({**base, "MINDSURF_ASR_LANGUAGE": "auto"}).asr_language == "auto"
+    with pytest.raises(ConfigurationError, match="Chinese"):
+        Settings.from_environment({**base, "MINDSURF_ASR_LANGUAGE": "Chinese"})

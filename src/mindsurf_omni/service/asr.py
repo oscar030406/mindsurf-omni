@@ -41,6 +41,25 @@ class Recogniser(Protocol):
 # it, so this drops the button pressed by mistake without dropping a whisper.
 SILENCE_RMS = 0.002
 
+# The seven values SenseVoice knows, from funasr's own table (funasr/models/
+# sense_voice/model.py, `lid_dict`). Anything else is taken silently as "auto"
+# -- no warning, no error -- so an operator who writes "Chinese" or "ZH" gets
+# the default and no way to find out. Checked at startup instead.
+SPOKEN_LANGUAGES = ("auto", "zh", "en", "yue", "ja", "ko", "nospeech")
+
+# Below this, the recogniser's own language detection stops being worth
+# trusting. Measured twice on different audio: on four dictated notes sliced
+# every half second it calls 43% of 0.3 s clips, 22% of 0.5 s and 10.5% of
+# 0.8 s something other than Chinese, and nothing from 1.5 s up; on 60 clips of
+# the edge corpus, 63% at 0.3 s, 7% at 0.5 s, nothing from 0.8 s up. The
+# failures are ordinary particles cut short -- 嗯 comes back as うん, 了 as ら --
+# and they arrive with the detector at 0.99 confidence, so no threshold on its
+# posterior separates them.
+SHORT_AUDIO_SECONDS = 1.5
+
+# What SenseVoice's frontend runs at; the service resamples to it before here.
+RECOGNISER_RATE = 16_000
+
 
 @dataclass(slots=True)
 class SenseVoiceRecogniser:
@@ -48,6 +67,17 @@ class SenseVoiceRecogniser:
 
     model_dir: Path
     device: str = "cpu"
+    # What this deployment is spoken in, not what to pass the model. It is
+    # passed only for audio too short for the model's own detector to be worth
+    # trusting; above SHORT_AUDIO_SECONDS the call is what it always was.
+    #
+    # Deliberately not applied everywhere. The language slot is one embedding
+    # prepended to the encoder input, so it perturbs decoding even when the
+    # detector already agreed: over 320 corpus clips, all of them detected as
+    # Chinese under either setting, 20 transcribe differently and three come
+    # back worse -- 37 seconds of ordinary dictation turns 冥想 into 明想. That
+    # is the whole reason for the threshold rather than a flat lock.
+    language: str = "zh"
     _model: Any = None
 
     # Read by the evaluation harness, which refuses a recogniser that shares
@@ -138,7 +168,15 @@ class SenseVoiceRecogniser:
 
         self.load()
         audio = np.frombuffer(whole_samples(pcm), dtype=np.int16).astype(np.float32) / 32768.0
-        result = self._model.generate(input=audio, cache={}, language="auto", use_itn=True)
+        # Same shape as the silence check above it: when the audio does not
+        # carry enough evidence, the model does not answer "I do not know", it
+        # invents. Three seconds of silence invented Korean; half a second of a
+        # real 嗯 invents Japanese and writes うん。 into the user's text box.
+        # Silence has an answer -- nothing. This one does not, so it is given
+        # the deployment's language instead of a guess.
+        short = len(audio) < SHORT_AUDIO_SECONDS * RECOGNISER_RATE
+        language = self.language if short else "auto"
+        result = self._model.generate(input=audio, cache={}, language=language, use_itn=True)
         if not result:
             return "", None
         return strip_tags(str(result[0].get("text", "")))

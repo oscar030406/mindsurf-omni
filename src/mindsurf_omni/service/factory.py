@@ -41,7 +41,9 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     from mindsurf_omni.service.cascade import CascadeEngine
 
     recogniser = SenseVoiceRecogniser(
-        model_dir=settings.paths.audio_encoder, device=settings.device
+        model_dir=settings.paths.audio_encoder,
+        device=settings.device,
+        language=settings.asr_language,
     )
     # The package, not the weights. Loading stays deferred to the first request
     # so a container that cannot reach its weights still starts and explains
@@ -341,7 +343,9 @@ def _build_native(settings: Settings) -> SpeechEngine:
         from mindsurf_omni.service.asr import SenseVoiceRecogniser
 
         recogniser = SenseVoiceRecogniser(
-            model_dir=settings.paths.audio_encoder, device=settings.device
+            model_dir=settings.paths.audio_encoder,
+            device=settings.device,
+            language=settings.asr_language,
         )
     return NativeEngine(
         model=model,

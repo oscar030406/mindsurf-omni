@@ -62,6 +62,24 @@ class Paths:
         ]
 
 
+def _spoken_language(value: str) -> str:
+    """The declared language, refused at startup if the model cannot read it.
+
+    funasr takes an unknown language silently as "auto" -- no warning, no
+    error -- so MINDSURF_ASR_LANGUAGE=Chinese would look configured and behave
+    unconfigured. Same rule as a weights path that does not exist: say so now
+    rather than at the first request.
+    """
+    from mindsurf_omni.service.asr import SPOKEN_LANGUAGES
+
+    declared = value.strip()
+    if declared not in SPOKEN_LANGUAGES:
+        raise ConfigurationError(
+            f"MINDSURF_ASR_LANGUAGE={value!r} is not one of {', '.join(SPOKEN_LANGUAGES)}"
+        )
+    return declared
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     path: PathName
@@ -94,6 +112,10 @@ class Settings:
     polish_tagger: Path | None = None
     polish_tagger_backbone: Path | None = None
     polish_tagger_threshold: float = 0.5
+    # What this deployment is spoken in. Reaches the recogniser only for audio
+    # too short for its own detector -- see asr.SHORT_AUDIO_SECONDS. "auto"
+    # restores the behaviour this had before 2026-08-22 at every length.
+    asr_language: str = "zh"
 
     @classmethod
     def from_environment(cls, environment: dict[str, str] | None = None) -> Settings | None:
@@ -145,6 +167,7 @@ class Settings:
                 else None
             ),
             polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.5")),
+            asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
         )
 
     def verify(self) -> None:
