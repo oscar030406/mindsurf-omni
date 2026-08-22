@@ -1,6 +1,8 @@
-# Inference only. Training runs on the host with its own environment; putting
-# both in one image would ship the training dependencies to every server that
-# only needs to answer requests.
+# Two images out of one file. `base` is the API surface: it starts, answers
+# /health, and refuses every engine with the reason. `dictation` is the
+# product -- transcribe and polish -- and is the default target, because an
+# image that cannot run the product is not a release artifact of it. Training
+# still runs on the host: nothing here installs a training set.
 FROM python:3.12-slim AS base
 
 # libsndfile is needed by soundfile at runtime and is not a Python package, so
@@ -45,3 +47,31 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
 
 CMD ["uvicorn", "--factory", "mindsurf_omni.service.app:create_app", \
      "--host", "0.0.0.0", "--port", "8000"]
+
+
+# The product. Separate stage rather than a fatter base, because this is torch
+# and its CUDA wheels -- gigabytes a deployment that only wants the API surface
+# has no use for. `docker build --target base .` is that deployment.
+#
+# It exists because for the whole of phase two the published image could not
+# run the phase-two product: `pip install .` takes the runtime set, and the
+# runtime set has neither funasr nor torch. The failure was invisible from the
+# outside -- the container started and /health answered.
+FROM base AS dictation
+
+# Which torch. pip default index carries the CUDA build -- gigabytes of runtime
+# a CPU host cannot use -- and PyTorch publishes one index per accelerator and
+# expects the builder to choose. Passed through rather than pinned, because the
+# right answer is a property of the machine that will run this, not of this file:
+#   --build-arg PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
+ARG PIP_EXTRA_INDEX_URL=""
+
+USER root
+# src and pyproject are already in place from `base`; only the extra is new, so
+# this layer rebuilds when the dependency set changes and not when code does.
+RUN pip install --no-cache-dir ".[dictation]" \
+    && chown -R omni /app
+USER omni
+
+# Same entrypoint. What changed is that MINDSURF_POLISH and MINDSURF_ASR now
+# have something to load.

@@ -45,17 +45,25 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         device=settings.device,
         language=settings.asr_language,
     )
-    # The package, not the weights. Loading stays deferred to the first request
+    # The packages, not the weights. Loading stays deferred to the first request
     # so a container that cannot reach its weights still starts and explains
     # itself, but a package the image never installed is knowable now -- and
     # discovering it inside a request produces a 500 with an ImportError, which
     # is neither the documented 503 nor visible to /health.
-    recogniser_available = _importable("funasr")
+    #
+    # All three, not just funasr. `import funasr` succeeds on a machine where
+    # `from funasr import AutoModel` does not: its __init__ resolves submodules
+    # lazily, and the submodule reaches torchaudio, which funasr imports and
+    # does not declare (nor torch). Checking the top-level name alone is
+    # checking that a directory exists. Found by running the built image: the
+    # container started, /health said the recogniser was ready, and the first
+    # dictation came back 500 with ModuleNotFoundError: torchaudio.
+    missing = [name for name in ("funasr", "torch", "torchaudio") if not _importable(name)]
 
     async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
-        if not recogniser_available:
+        if missing:
             raise ConfigurationError(
-                "the recogniser needs the funasr package, which this image does not "
+                f"the recogniser needs {', '.join(missing)}, which this image does not "
                 "carry: install the 'asr' extra"
             )
         return await recogniser.transcribe(pcm, sample_rate)
@@ -70,7 +78,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         unwired.append("generator")
     if not settings.tts:
         unwired.append("synthesiser")
-    if not recogniser_available:
+    if missing:
         unwired.append("transcriber")
 
     engine = CascadeEngine(
@@ -85,7 +93,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     )
     # Handed to the engine rather than called here: assembly must not block on
     # a network-mounted checkpoint, and the app warms it at startup instead.
-    engine._warm_recogniser = recogniser.load if recogniser_available else None
+    engine._warm_recogniser = recogniser.load if not missing else None
     return engine
 
 
@@ -104,11 +112,7 @@ def _build_polisher(settings: Settings) -> Any:
             "MINDSURF_POLISH is set but MINIMIND_O_ROOT is not; the polisher is built from "
             "MiniMind's own model class rather than a copy of it, so the checkout is needed"
         )
-    if not _importable("torch"):
-        raise ConfigurationError(
-            "MINDSURF_POLISH is set but torch is not installed; the image carries the "
-            "runtime set only, so the polish stage runs on a host with the 'train' extra"
-        )
+    _require_minimind_packages("MINDSURF_POLISH", "the polish stage")
 
     from mindsurf_omni.service.polish import Polisher
 
@@ -143,11 +147,7 @@ def _build_generator(settings: Settings) -> Any:
             "MINDSURF_THINKER is set but MINIMIND_O_ROOT is not; the Thinker is built from "
             "MiniMind's own model class rather than a copy of it, so the checkout is needed"
         )
-    if not _importable("torch"):
-        raise ConfigurationError(
-            "MINDSURF_THINKER is set but torch is not installed; the image carries the "
-            "runtime set only, so the text stage runs on a host with the 'train' extra"
-        )
+    _require_minimind_packages("MINDSURF_THINKER", "the text stage")
 
     from mindsurf_omni.service.thinker import ThinkerGenerator
 
@@ -214,6 +214,25 @@ def _require_audio_loader(prompt_wav: Path) -> None:
             "unset -- without a clip VoxCPM draws a speaker per call, so the voice "
             "changes between sentences"
         ) from error
+
+
+def _require_minimind_packages(setting: str, stage: str) -> None:
+    """Refuse at assembly for anything the MiniMind-backed stages import.
+
+    torch was guarded and transformers was not, so a host carrying one and not
+    the other got a bare ModuleNotFoundError out of `from transformers import
+    AutoTokenizer` (thinker.py) -- raised through the polisher, through the
+    engine, and out of a request as a 500 that /health could not see. The
+    guarded case and the unguarded one are the same case; the difference was
+    only which package somebody remembered.
+    """
+    for package, extra in (("torch", "dictation"), ("transformers", "dictation")):
+        if not _importable(package):
+            raise ConfigurationError(
+                f"{setting} is set but {package} is not installed; the base image carries "
+                f"the runtime set only, so {stage} needs the '{extra}' extra "
+                f"(pip install 'mindsurf-omni[{extra}]')"
+            )
 
 
 def _importable(module: str) -> bool:
@@ -322,11 +341,7 @@ def _build_native(settings: Settings) -> SpeechEngine:
             "MINIMIND_O_ROOT at a MiniMind-O checkout; the Talker lives in the same file "
             "as the Thinker, so one checkpoint supplies both"
         )
-    if not _importable("torch"):
-        raise ConfigurationError(
-            "the native path needs torch, which the image does not carry: run it on a "
-            "host with the 'train' extra"
-        )
+    _require_minimind_packages("MINDSURF_ENGINE=native", "the native path")
 
     from mindsurf_omni.service.native import NativeConfig, NativeEngine, load_omni
 

@@ -131,7 +131,10 @@ def test_the_container_installs_declared_dependencies_not_a_copied_list() -> Non
     assert install_lines, "the Dockerfile installs nothing"
     for line in install_lines:
         # Installing the project itself picks up whatever pyproject declares.
-        assert "pip install --no-cache-dir ." in line or "-r " in line, (
+        # An extra counts: `.[dictation]` still names a set pyproject owns, and
+        # the drift this guards against is a package spelled out here.
+        unquoted = line.replace('"', "").replace("'", "")
+        assert "pip install --no-cache-dir ." in unquoted or "-r " in line, (
             f"packages named by hand in the Dockerfile: {line.strip()}"
         )
 

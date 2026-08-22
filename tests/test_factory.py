@@ -331,3 +331,93 @@ def test_the_message_also_names_the_installed_but_unloadable_case(tmp_path: Path
     message = str(error.value)
     assert "PATH" in message
     assert "avcodec" in message
+
+
+def test_a_polisher_without_transformers_is_refused_by_name(tmp_path: Path) -> None:
+    """torch was guarded and transformers was not, so a host carrying one and
+    not the other reached `from transformers import AutoTokenizer` inside the
+    Thinker and raised a bare ModuleNotFoundError -- out of the polisher, out
+    of the engine, and out of a request as a 500 that /health cannot see. Both
+    packages are the same case; the difference was which one was remembered."""
+    from mindsurf_omni.service import factory
+
+    checkpoint = tmp_path / "polish.pth"
+    checkpoint.write_bytes(b"not a real checkpoint")
+    root = tmp_path / "minimind"
+    root.mkdir()
+    (root / "model").mkdir()
+    (root / "model" / "model_minimind.py").write_text("", encoding="utf-8")
+    settings = Settings.from_environment(
+        {
+            "MINDSURF_ENGINE": "cascade",
+            "MINDSURF_WEIGHTS": str(tmp_path),
+            "MINDSURF_POLISH": str(checkpoint),
+            "MINIMIND_O_ROOT": str(tmp_path / "minimind"),
+        }
+    )
+    assert settings is not None
+    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+        (tmp_path / name).mkdir(exist_ok=True)
+
+    real = factory._importable
+    for absent in ("torch", "transformers"):
+        factory._importable = (  # type: ignore[assignment]
+            lambda module, missing=absent: module != missing and real(module)
+        )
+        try:
+            with pytest.raises(ConfigurationError, match=absent):
+                build(settings)
+        finally:
+            factory._importable = real  # type: ignore[assignment]
+
+
+def test_the_refusal_names_the_extra_that_fixes_it(tmp_path: Path) -> None:
+    """"install the train extra" was the old answer and it was wrong: that set's
+    own comment says it never runs in a container."""
+    from mindsurf_omni.service import factory
+
+    real = factory._importable
+    factory._importable = lambda module: module != "torch" and real(module)  # type: ignore[assignment]
+    try:
+        with pytest.raises(ConfigurationError, match=r"mindsurf-omni\[dictation\]"):
+            factory._require_minimind_packages("MINDSURF_POLISH", "the polish stage")
+    finally:
+        factory._importable = real  # type: ignore[assignment]
+
+
+def test_a_recogniser_missing_torchaudio_refuses_before_the_request(tmp_path: Path) -> None:
+    """`import funasr` succeeds where `from funasr import AutoModel` does not.
+
+    funasr resolves its submodules lazily, and the submodule reaches torchaudio
+    -- which funasr imports and does not declare. Checking the top-level name
+    alone checked that a directory exists. Found by running the built image:
+    the container came up, /health said the recogniser was ready, and the first
+    dictation returned 500 with ModuleNotFoundError out of
+    funasr.utils.load_utils.
+    """
+    import asyncio
+
+    from mindsurf_omni.service import factory
+
+    real = factory._importable
+    factory._importable = lambda module: module != "torchaudio" and real(module)  # type: ignore[assignment]
+    try:
+        engine = build(_ready(tmp_path))
+    finally:
+        factory._importable = real  # type: ignore[assignment]
+
+    assert engine is not None
+    assert "transcriber" in engine.unwired  # type: ignore[attr-defined]
+    with pytest.raises(ConfigurationError, match="torchaudio"):
+        asyncio.run(engine.transcribe(b"\x00\x01" * 8, 16_000))
+
+
+def test_the_asr_extra_declares_what_funasr_imports_and_does_not() -> None:
+    """The upstream package lists 27 dependencies and no torch of any kind."""
+    import tomllib
+
+    text = (Path(__file__).resolve().parent.parent / "pyproject.toml").read_bytes()
+    asr = tomllib.loads(text.decode("utf-8"))["project"]["optional-dependencies"]["asr"]
+
+    for package in ("torch", "torchaudio"):
+        assert any(entry.startswith(package) for entry in asr), asr

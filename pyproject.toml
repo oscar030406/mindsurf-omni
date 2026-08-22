@@ -60,7 +60,19 @@ metrics = ["zhconv>=1.4", "cn2an>=0.5"]
 # pyyaml reads the checkpoint's own frontend settings, so that turning dither
 # off does not also overwrite the framing the model was trained with. funasr
 # already depends on it; declared here because this package imports it.
-asr = ["funasr>=1.3", "librosa>=0.10", "pyyaml>=6.0"]
+# torch and torchaudio are here because funasr imports both and declares
+# neither (`importlib.metadata.requires("funasr")` lists 27 packages and no
+# torch of any kind). Found by running the built image: the container came up,
+# /health said the recogniser was ready, and the first dictation returned 500
+# with ModuleNotFoundError: torchaudio out of funasr.utils.load_utils.
+asr = ["funasr>=1.3", "librosa>=0.10", "pyyaml>=6.0", "torch>=2.6", "torchaudio>=2.6"]
+# Everything the dictation product imports at inference: the recogniser, and
+# the torch/transformers the polisher's MiniMind class needs. Its own set
+# because it is the answer to one question -- "what do I install to run the
+# product" -- which until now had no name and was spelled 'train', a set whose
+# comment says it never runs in a container. The image built from the
+# `dictation` stage carries exactly this.
+dictation = ["mindsurf-omni[asr]", "torch>=2.6", "transformers>=4.57"]
 # Word segmentation, used in one place: deciding where inside a clause a
 # speaker could pause when building the polish training pairs. A filler dropped
 # at a random character index splits a word (微波然后炉), which is a different
