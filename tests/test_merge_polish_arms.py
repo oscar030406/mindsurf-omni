@@ -345,3 +345,41 @@ def test_the_copies_are_reported_one_at_a_time_as_well_as_flattened() -> None:
     assert repetition_copies(source, {4, 5}) == [{4, 5}]
     assert repetition_copies(source, {3, 4}) == []
     assert repetition_spans(source, {4, 5}) == {4, 5}
+
+
+def test_a_repeated_word_neither_arm_saw_is_still_taken() -> None:
+    """Of the 66 repetitions that survived into the deployed output, 45 were
+    proposed by neither arm. No amount of merging recovers a deletion nobody
+    asked for, so this one rule proposes -- under a word constraint."""
+    from mindsurf_omni.service.polish import merge
+
+    source = "四川菜里花椒花椒带来的麻"
+    arm = {"source": source, "polished": source}
+
+    assert merge([arm, arm], "veto") == "四川菜里花椒带来的麻"
+
+
+def test_the_proposing_rule_needs_a_boundary_on_all_three_sides() -> None:
+    """The word constraint is the whole safety argument, so the shapes that are
+    not stutters are checked rather than assumed: 是不是不舒服 segments as
+    是不是/不/舒服, 2020法则 as 2020/法则, and 慢慢 试试 走走 are single tokens.
+    None offers a boundary-aligned pair."""
+    from mindsurf_omni.service.polish import merge
+
+    for source in (
+        "先看看是不是不舒服，别强迫",
+        "412时2020法则，每20分钟看远处",
+        "我慢慢看，你试试，出去走走",
+    ):
+        arm = {"source": source, "polished": source}
+        assert merge([arm, arm], "veto") == source
+
+
+def test_the_proposing_rule_leaves_repeated_filler_to_keep_one_copy() -> None:
+    """就是就是 loses both copies on purpose; taking one here would put the
+    other back."""
+    from mindsurf_omni.service.polish import duplicate_words
+
+    source = "这个方案就是就是可以的"
+
+    assert duplicate_words(source, set()) == set()

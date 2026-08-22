@@ -577,6 +577,62 @@ def snap_periods(source: str, drop: set[int]) -> set[int]:
     return settled
 
 
+def duplicate_words(source: str, drop: set[int]) -> set[int]:
+    """Take one copy of a repeated whole word, whether or not an arm asked.
+
+    Every other stage here only ever narrows what the arms proposed. This one
+    proposes, which is why it is the narrowest rule in the file: the repeated
+    unit has to start, split and end on a jieba word boundary, and it may not
+    contain a vocabulary filler -- that is `keep_one_copy`'s judgement, and it
+    is a different one.
+
+    It exists because the arms simply do not see most of these. Of the 66
+    repetitions that survived into the deployed output, 45 were proposed by
+    neither arm; 花椒花椒, 粽子粽子, 利率利率, 分类分类 are the shape, and no
+    amount of merging can recover a deletion nobody asked for.
+
+    Measured over 986 held-out transcripts: 33 sentences change, 26 improve and
+    7 get worse, and **all 7 are sentences whose own reference stutters** --
+    做饭、做饭、玩游戏, 怪石、温泉、温泉等, 大气层中的颗粒颗粒, one of them with
+    a U+FFFD in it. The corpus was written by a model and kept the duplication;
+    the output the rule produces reads better than the text it is scored
+    against. CER 0.028126 to 0.027487, filler clearance 0.952300 to 0.967064,
+    invention 0.021614 to 0.020672, retention 0.980795 to 0.980492.
+
+    The word constraint is what makes it safe, and it was checked against the
+    shapes that are not stutters rather than assumed: 是不是不舒服 segments as
+    是不是/不/舒服, 2020法则 as 2020/法则, and 慢慢 试试 走走 are single tokens.
+    None of them offers a boundary-aligned pair, so none is touched.
+    """
+    import logging
+
+    import jieba
+
+    jieba.setLogLevel(logging.ERROR)
+    boundaries, cursor = {0}, 0
+    for word in jieba.cut(source):
+        cursor += len(word)
+        boundaries.add(cursor)
+
+    taken = set(drop)
+    for size in range(2, 6):
+        start = 0
+        while start + 2 * size <= len(source):
+            unit = source[start : start + size]
+            aligned = {start, start + size, start + 2 * size} <= boundaries
+            if (
+                aligned
+                and unit == source[start + size : start + 2 * size]
+                and not any(word in unit for word in VOCABULARY)
+                and not set(range(start, start + 2 * size)) & taken
+            ):
+                taken |= set(range(start, start + size))
+                start += 2 * size
+            else:
+                start += 1
+    return taken
+
+
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
     source = rows[0]["source"]
     drops = [dropped(source, row["polished"]) for row in rows]
@@ -627,6 +683,7 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     settled = keep_one_copy(source, combined)
     combined = whole_words(source, settled - protected) | (settled & protected)
     combined = snap_periods(source, combined)
+    combined = duplicate_words(source, combined)
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
