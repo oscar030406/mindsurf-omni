@@ -223,3 +223,79 @@ def test_a_tagger_that_deletes_the_second_copy_is_no_longer_vetoed() -> None:
     tagger = {"source": source, "polished": "他的故事线简单"}
 
     assert merge([generator, tagger], "veto") == "他的故事线简单"
+
+
+def test_a_cut_inside_a_repeated_run_is_rounded_to_whole_copies() -> None:
+    """The deployed service wrote 久坐久坐站 for 久坐久坐久站.
+
+    Inside a run of period two the copies are interchangeable -- deleting 久坐
+    at 12, 久坐 at 14 or 坐久 at 15 all spell 久坐久站 -- so difflib recorded the
+    deletion at the rightmost one and jieba, which only knows the leftmost,
+    handed back half of it. Half a copy is not a smaller edit than a whole one,
+    it is a different and wrong one."""
+    from mindsurf_omni.service.polish import merge
+
+    source = "盐分摄入过多，久坐久坐久站，或者睡眠不足"
+    generator = {"source": source, "polished": "盐分摄入过多，久坐久站，或者睡眠不足"}
+    tagger = {"source": source, "polished": "盐分摄入过多，坐坐久站，或者睡眠不足"}
+
+    assert merge([generator, tagger], "veto") == "盐分摄入过多，久坐久站，或者睡眠不足"
+
+
+def test_rounding_a_cut_never_reaches_into_the_word_after_the_run() -> None:
+    """The rejected fix for this defect moved the deletion's phase instead of
+    its size, which silently switched off the whole-word repair for the rest of
+    the sentence: 绿茶树 lost its 树 and 想吃面还是想吃炒菜 lost its 面, both on
+    inputs where the two arms agree. Rounding to whole copies leaves the run's
+    neighbours alone by construction, and these two are the guard on that."""
+    from mindsurf_omni.service.polish import merge
+
+    for source, arm, expected in (
+        (
+            "准备绿茶叶，如绿茶花、绿茶树、绿茶、绿茶豆等。",
+            "准备绿茶叶，如绿茶花、绿茶、绿茶豆等。",
+            "准备绿茶叶，如绿茶花、绿茶树、绿茶豆等。",
+        ),
+        (
+            "先定的大方向，比如今天想吃面还是想吃炒菜",
+            "先定的大方向，比如今天想吃炒菜",
+            "先定的大方向，比如今天想吃面炒菜",
+        ),
+    ):
+        assert merge([{"source": source, "polished": arm}] * 2, "veto") == expected
+
+
+def test_rounding_leaves_ordinary_reduplication_alone() -> None:
+    """A run of period one is 慢慢 and 试试, where "one copy" is a single
+    character and the interchangeable-copies reasoning does not hold."""
+    from mindsurf_omni.service.polish import merge
+
+    source = "我慢慢看，你试试，出去走走。"
+    assert merge([{"source": source, "polished": source}] * 2, "veto") == source
+
+
+def test_rounding_leaves_a_repeated_filler_to_keep_one_copy() -> None:
+    """就是就是 loses both copies on purpose -- that judgement belongs to
+    keep_one_copy, and rounding must not put one of them back."""
+    from mindsurf_omni.service.polish import merge
+
+    source = "这个方案就是就是可以的"
+    arm = {"source": source, "polished": "这个方案可以的"}
+
+    assert merge([arm, arm], "veto") == "这个方案可以的"
+
+
+def test_rounding_never_takes_a_run_down_to_nothing() -> None:
+    """Deleting every copy is a judgement the stages above make deliberately;
+    this one only decides where an existing cut sits."""
+    from mindsurf_omni.service.polish import snap_periods
+
+    source = "他的故事故事线简单"
+    # Both copies asked for: left exactly as it came in, for keep_one_copy to own.
+    assert snap_periods(source, {2, 3, 4, 5}) == {2, 3, 4, 5}
+    # One whole copy asked for: already whole, so nothing moves.
+    assert snap_periods(source, {4, 5}) == {4, 5}
+    # Half a copy asked for, plus a character outside the run: the half is
+    # rounded up to one whole copy, and what lies outside the run is not this
+    # function's business.
+    assert snap_periods(source, {5, 6}) == {2, 3, 6}

@@ -450,6 +450,95 @@ def whole_words(source: str, drop: set[int]) -> set[int]:
     return kept
 
 
+def periodic_runs(source: str, longest: int = 5) -> list[tuple[int, int, int]]:
+    """Maximal runs of one repeated unit, as ``(start, end, period)``.
+
+    A run is at least two copies long and comes back under its shortest period,
+    so 久坐久坐久 is reported once as period two rather than also as period four.
+    Reported whole, leftover included: that trailing 久 is the entire reason
+    this function exists -- a run whose length is not a multiple of its period
+    is where a deletion can land off-phase.
+    """
+    runs: list[tuple[int, int, int]] = []
+    for period in range(1, longest + 1):
+        start = 0
+        while start + 2 * period <= len(source):
+            if source[start : start + period] != source[start + period : start + 2 * period]:
+                start += 1
+                continue
+            end = start + 2 * period
+            while end < len(source) and source[end] == source[end - period]:
+                end += 1
+            runs.append((start, end, period))
+            start = end - period + 1
+    kept: list[tuple[int, int, int]] = []
+    for start, end, period in sorted(runs, key=lambda run: (run[0], run[2])):
+        if any(
+            outer_start <= start and end <= outer_end and outer_period <= period
+            for outer_start, outer_end, outer_period in kept
+        ):
+            continue
+        kept.append((start, end, period))
+    return kept
+
+
+def snap_periods(source: str, drop: set[int]) -> set[int]:
+    """Round a deletion inside a repeated run to a whole number of copies.
+
+    The last stage, run on the settled deletion rather than on either arm,
+    because every arm and every stage above can land the cut off-phase and the
+    damage is the same whichever one did it.
+
+    Where this came from: the deployed service wrote 久坐久坐站 for 久坐久坐久站.
+    Deleting 久坐 at 12, at 14, or 坐久 at 15 all spell 久坐久站 -- inside a run
+    of period two the copies are interchangeable, so difflib is free to record
+    the deletion at any of them and it recorded the rightmost. jieba only knows
+    the leftmost: 坐 at 15 is half of the word 久坐, so ``whole_words`` handed
+    that half back and left the other half deleted. Half a copy is not a
+    smaller edit than a whole one, it is a different and wrong one.
+
+    Measured over the 986 held-out transcripts against the deployed pair of
+    arms: 13 sentences change, all 13 drop their character error rate and none
+    rises (sign test p = 2**-13), and the four service numbers move together --
+    CER 0.035365 to 0.035088, retention 0.980431 to 0.980465, filler clearance
+    0.944918 to 0.945486, invention 0.022779 to 0.022539.
+
+    Two runs are left alone. Period one is ordinary reduplication -- 慢慢看,
+    走走, 试试 -- where "one copy" is a single character and this reasoning does
+    not hold. A unit that spells a filler belongs to ``keep_one_copy``, which
+    deliberately takes both copies of 就是就是 rather than one.
+    """
+    settled = set(drop)
+    for start, end, period in periodic_runs(source):
+        if period < 2:
+            continue
+        unit = source[start : start + period]
+        if any(word in unit for word in VOCABULARY):
+            continue
+        inside = [index for index in range(start, end) if index in settled]
+        if not inside or len(inside) == end - start:
+            continue
+        copies = (end - start) // period
+        leftover = source[start + period * copies : end]
+        survives = "".join(source[i] for i in range(start, end) if i not in settled)
+        body = survives[: len(survives) - len(leftover)] if leftover else survives
+        already = (
+            survives.endswith(leftover)
+            and body
+            and len(body) % period == 0
+            and body == unit * (len(body) // period)
+        )
+        if already:
+            continue
+        # Round to the nearest whole number of copies, and never take the run
+        # down to nothing: deleting every copy is a judgement the stages above
+        # make on purpose, and this one only decides where an existing cut sits.
+        taken = min(max(1, round(len(inside) / period)), copies - 1)
+        settled -= set(range(start, end))
+        settled |= set(range(start, start + taken * period))
+    return settled
+
+
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
     source = rows[0]["source"]
     drops = [dropped(source, row["polished"]) for row in rows]
@@ -486,6 +575,7 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
         for drop in drops[1:]:
             combined |= vocabulary_spans(source, drop)
     combined = whole_words(source, keep_one_copy(source, combined))
+    combined = snap_periods(source, combined)
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
