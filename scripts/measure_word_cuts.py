@@ -48,13 +48,63 @@ def word_spans(text: str) -> list[tuple[int, int]]:
     return spans
 
 
+def a_whole_word_placement_exists(source: str, output: str) -> bool:
+    """Whether the deletion *can* be read as removing whole words.
+
+    ``dropped`` locates the deletion with difflib, which has to pick one
+    placement out of however many spell the same string, and inside a repeated
+    run they all do: 太平太平洋 becomes 太平洋 whether the deleted 太平 is the
+    first or the second. difflib picks the rightmost, jieba only knows the
+    leftmost, and the reading came back "太 was cut out of 太平" for an output
+    that reads perfectly.
+
+    So this asks the question the reader actually cares about -- is there any
+    way to line the output up against the source that breaks no word -- instead
+    of judging one arbitrary alignment. Measured over the 986 held-out
+    transcripts: the product read 7 cut words under the old question and 0
+    under this one, and all 7 outputs (先熟悉, 太平洋, 老少皆宜, 你可以 ...) are
+    correct Chinese. The B arm the reading rejected on 2026-08-16 still reads
+    22, so the decision it drove stands.
+
+    Walked as a two-state scan over (position, output position, inside a
+    deletion): a deletion run breaks no word exactly when it starts and ends on
+    a word boundary.
+    """
+    bounds = {0, len(source)}
+    for _, end in word_spans(source):
+        bounds.add(end)
+    reachable = {(0, 0, False)}
+    for index in range(len(source)):
+        following: set[tuple[int, int, bool]] = set()
+        for _, taken, running in reachable:
+            if running:
+                following.add((index + 1, taken, True))
+                if index in bounds and taken < len(output) and source[index] == output[taken]:
+                    following.add((index + 1, taken + 1, False))
+            else:
+                if taken < len(output) and source[index] == output[taken]:
+                    following.add((index + 1, taken + 1, False))
+                if index in bounds:
+                    following.add((index + 1, taken, True))
+        reachable = {(index + 1, taken, running) for _, taken, running in following}
+        if not reachable:
+            return False
+    return any(taken == len(output) for _, taken, _ in reachable)
+
+
 def cuts(source: str, output: str) -> list[str]:
     """Words the deletion entered and did not finish, as the surviving fragment.
 
     A cut that spells a filler is not counted: jieba glues 就是 to its
     neighbour in 就是说, and deleting the filler out of that is the vocabulary
     doing its job rather than a word being broken.
+
+    Nothing is counted at all if some placement of the same deletion breaks no
+    word -- see ``a_whole_word_placement_exists``. The fragments below are then
+    only a sample of one placement's damage, which is enough to look at.
     """
+    if a_whole_word_placement_exists(source, output):
+        return []
     drop = dropped(source, output)
     broken = []
     for start, end in word_spans(source):
