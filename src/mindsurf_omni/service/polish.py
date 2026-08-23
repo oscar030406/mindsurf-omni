@@ -43,6 +43,23 @@ BRIDGING_FILLERS = ("你知道吧", "怎么说呢", "对吧")
 # onto content.
 RECOGNISED_FILLERS = ("摁", "鄂", "唉", "哎", "呐")
 
+# The English half. Only the filled pauses -- the sounds nobody means, which
+# every disfluency scheme marks the same way. The discourse markers (like, well,
+# actually, right, so, I mean, you know) are the same problem as the Chinese
+# double-duty words and are deliberately not here: 我 like 这个 layout and
+# it's, like, twice as fast are the same four letters, and the corpus that would
+# settle where the line falls is one we do not have yet.
+#
+# Cased pairs rather than a case fold, because the match is a substring test
+# against the transcript: "Um" starts a sentence and "um" sits inside one, while
+# a fold would also match the "um" inside "number".
+ENGLISH_FILLERS = ("um", "Um", "uh", "Uh", "erm", "Erm", "uhh", "Uhh")
+
+# Where an English filler needs a boundary to be one. Substring matching finds
+# "um" inside "number" and "uh" inside "though"; these are the characters that
+# may sit beside a real one.
+_LATIN_EDGE = frozenset(' ,.!?;:\n\t\"()[]\'') | {''}
+
 
 # Where a sentence ends, for splitting a long dictation into pieces the model
 # was actually trained on. Commas are not here on purpose: a clause is not a
@@ -107,13 +124,58 @@ def worth_polishing(piece: str, longest_repeat: int = 5) -> bool:
     """
     if any(word in piece for word in _WORTH_A_LOOK):
         return True
+    if english_filler_at(piece) or repeated_word(piece):
+        return True
     # From one character, unlike the merge rule's exemption. There the cost of
     # calling 天天 a repetition is keeping a deletion; here it is one decode,
     # while missing 我我想问一下 means never removing it at all.
+    #
+    # Only where both halves hold a CJK character. A doubled Latin letter is
+    # spelling, not a stutter, and every English sentence has one: basically,
+    # still, all, been. Before this test the trigger fired on ll and missed
+    # So um I think, so which English sentences reached the model was decided
+    # by their spelling.
     return any(
         piece[start : start + size] == piece[start + size : start + 2 * size]
+        and any(_is_cjk(char) for char in piece[start : start + size])
         for size in range(1, longest_repeat + 1)
         for start in range(len(piece) - 2 * size + 1)
+    )
+
+
+def _is_cjk(char: str) -> bool:
+    return "㐀" <= char <= "鿿" or "豈" <= char <= "﫿"
+
+
+def english_filler_at(piece: str) -> bool:
+    """Whether a filled pause stands here as a word rather than inside one.
+
+    Substring alone finds the um in number and the uh in though, and every one
+    of those would be a decode the stage does not need.
+    """
+    for word in ENGLISH_FILLERS:
+        start = piece.find(word)
+        while start != -1:
+            before = piece[start - 1] if start else ""
+            after = piece[start + len(word) : start + len(word) + 1]
+            if before in _LATIN_EDGE and after in _LATIN_EDGE:
+                return True
+            start = piece.find(word, start + 1)
+    return False
+
+
+def repeated_word(piece: str, longest: int = 3) -> bool:
+    """Whether a run of Latin words is said twice over, however it is capitalised.
+
+    The character-level test above cannot see these: The the differs in case,
+    Can you can you is two words rather than one, and both are ordinary spoken
+    stumbles that reached the model only when some other trigger fired.
+    """
+    words = [word.lower() for word in re.split(r"[^A-Za-z']+", piece) if word]
+    return any(
+        words[start : start + size] == words[start + size : start + 2 * size]
+        for size in range(1, longest + 1)
+        for start in range(len(words) - 2 * size + 1)
     )
 
 
@@ -204,8 +266,19 @@ def tidy(text: str) -> str:
             continue
         if char in STRANDED_PARTICLES and (not out or out[-1] in PUNCTUATION):
             continue
+        # A fourth shape, and the only one Chinese never showed: removing a word
+        # from between two spaces leaves both of them. 这个 deadline 我们 um …
+        # came back as 这个 deadline  um …, a gap a reader sees immediately.
+        if char == " " and out and out[-1] == " ":
+            continue
         out.append(char)
-    return "".join(out)
+    text = "".join(out).lstrip(" ,;:.!?")
+    # Whatever the loop above left standing in front of the first word: a filled
+    # pause at the start takes its own comma with it, and Uh, can you… must not
+    # come back as , can you….
+    while text and text[0] == " ":
+        text = text[1:]
+    return text.strip()
 
 
 # --- Merging two arms. The product runs the merge, so these live here and the
@@ -378,6 +451,128 @@ def whole_words(source: str, drop: set[int]) -> set[int]:
         if any(filler in cut for filler in VOCABULARY):
             continue
         kept -= set(inside)
+    return kept
+
+
+_Word = tuple[int, int, str]
+
+
+def _gap_is_only_space(source: str, left: _Word, right: _Word) -> bool:
+    return source[left[1] : right[0]].strip(" ") == ""
+
+
+def english_disfluency(source: str, already: set[int] | None = None) -> set[int]:
+    """Indices of the Latin disfluency a rule can be sure about.
+
+    A rule and not the model, because the model cannot do this one. It was
+    trained on Chinese, and on the 25-sentence English probe it left every
+    filled pause in place while deleting the content word So -- the one early
+    success (like, you know) does not survive a second sample.
+
+    Two shapes only, and both are the shapes no annotation scheme disagrees
+    about: a filled pause standing as its own word, and a run of words said
+    twice over. What is deliberately absent is the discourse markers -- like,
+    well, actually, right, so, I mean, you know. They are the English half of
+    the double-duty problem (I like the layout against it's, like, twice as
+    fast) and the corpus that would settle where the line falls is one we do
+    not have. Content is the expensive side there too.
+
+    Deletion only, so the copy constraint the stage rests on still holds: no
+    character comes out that did not go in.
+    """
+    drop: set[int] = set()
+    for word in ENGLISH_FILLERS:
+        start = source.find(word)
+        while start != -1:
+            stop = start + len(word)
+            before = source[start - 1] if start else ""
+            after = source[stop : stop + 1]
+            if before in _LATIN_EDGE and after in _LATIN_EDGE:
+                drop |= set(range(start, stop))
+            start = source.find(word, start + 1)
+
+    words = [
+        (match.start(), match.end(), match.group().lower())
+        for match in re.finditer(r"[A-Za-z']+", source)
+    ]
+    taken: set[int] = set()
+    for size in range(3, 0, -1):
+        for index in range(len(words) - 2 * size + 1):
+            first, second = words[index : index + size], words[index + size : index + 2 * size]
+            if [w for _, _, w in first] != [w for _, _, w in second]:
+                continue
+            # Adjacent in the source, not merely adjacent in the list of Latin
+            # words. Skipping over the Chinese between them made 16G…500G read
+            # as a repeated G and 4G 的几倍 lose its G; the dialogue tags in
+            # A 哦…B 当然 went the same way. Only spaces may sit in a stumble.
+            if not all(
+                _gap_is_only_space(source, run[index_], run[index_ + 1])
+                for run in (first + second,)
+                for index_ in range(len(run) - 1)
+            ) or not _gap_is_only_space(source, first[-1], second[0]):
+                continue
+            # The second copy, not the first: The the migration keeps its
+            # capital that way, and recasing is not available to a stage whose
+            # output has to be a subsequence of its input.
+            span = set(range(second[0][0], second[-1][1]))
+            whole = set(range(first[0][0], second[-1][1]))
+            # One copy, and only if nobody has taken one already. The arms had
+            # deleted the first to of We need to to fix; adding the second on
+            # top of that left We need fix.
+            if span & taken or (already and already & whole):
+                continue
+            taken |= span
+            drop |= span
+    return drop
+
+
+def spaces_follow_their_words(source: str, drop: set[int]) -> set[int]:
+    """A space may only go if the word beside it went.
+
+    In Chinese there is nothing between words, so this never came up. In Latin
+    script the space *is* the boundary: deleting one fuses two words into a
+    thing nobody wrote. Measured, ``We need to um double check`` came back as
+    ``We need toumdouble check`` -- the two spaces around a filler were dropped
+    while the filler itself stayed.
+
+    The rule is not "never delete a space": removing a word has to remove one of
+    its spaces too, or every deletion leaves a double gap behind. So a space
+    goes exactly when a token touching it went whole.
+    """
+    import jieba
+
+    spans: list[tuple[int, int, str]] = []
+    cursor = 0
+    for word in jieba.cut(source):
+        spans.append((cursor, cursor + len(word), word))
+        cursor += len(word)
+
+    gone = [
+        index
+        for index, (start, end, word) in enumerate(spans)
+        if word.strip() and all(place in drop for place in range(start, end))
+    ]
+    kept = set(drop)
+    for index, (start, end, word) in enumerate(spans):
+        if word.strip() or not (set(range(start, end)) & drop):
+            continue
+        if not {index - 1, index + 1} & set(gone):
+            kept -= set(range(start, end))
+
+    # And the reverse for the seam a deleted Latin word leaves between two
+    # Chinese ones: 我们 um 可能 has a space on each side of um because um is
+    # Latin, and taking um out leaves 我们 可能, a gap Chinese never has. Both
+    # spaces go, not one.
+    for index in gone:
+        left, right = spans[index - 1] if index else None, (
+            spans[index + 1] if index + 1 < len(spans) else None
+        )
+        if not (left and right) or left[2] != " " or right[2] != " ":
+            continue
+        outer_left = spans[index - 2][2] if index >= 2 else ""
+        outer_right = spans[index + 2][2] if index + 2 < len(spans) else ""
+        if outer_left and outer_right and _is_cjk(outer_left[-1]) and _is_cjk(outer_right[0]):
+            kept |= set(range(left[0], left[1])) | set(range(right[0], right[1]))
     return kept
 
 
@@ -632,13 +827,16 @@ def keep_content(source: str, output: str) -> str:
     wrote, which is a worse failure than leaving 这个 deleted.
     """
     drop = dropped(source, output)
+    latin = english_disfluency(source, set() if not any(_is_cjk(c) for c in source) else drop)
     give_back = content_words(source, drop)
-    if not give_back:
+    if not give_back and not latin:
         return output
     kept = "".join(char for index, char in enumerate(source) if index not in drop)
     if kept != output:
         return output
-    return "".join(char for index, char in enumerate(source) if index not in drop - give_back)
+    settled = (set() if not any(_is_cjk(char) for char in source) else drop - give_back) | latin
+    settled = spaces_follow_their_words(source, settled)
+    return tidy("".join(char for index, char in enumerate(source) if index not in settled))
 
 
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
@@ -679,6 +877,7 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
                 protected |= copy
     settled = keep_one_copy(source, combined)
     combined = whole_words(source, settled - protected) | (settled & protected)
+    combined = spaces_follow_their_words(source, combined)
     combined = snap_periods(source, combined)
     combined = duplicate_words(source, combined)
     # Last, on the settled deletion rather than on either arm. Both arms were
@@ -686,6 +885,14 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     # and the veto reads that agreement as evidence -- there is no stage above
     # this one that can tell the difference.
     combined -= content_words(source, combined)
+    # A piece with no Chinese in it is the rule's alone. The arms were trained
+    # on Chinese and it shows: over 25 English probes they left every filled
+    # pause standing and deleted the content word So. Keeping their opinion
+    # there means keeping a deletion nobody can defend.
+    if not any(_is_cjk(char) for char in source):
+        combined = set()
+    combined |= english_disfluency(source, combined)
+    combined = spaces_follow_their_words(source, combined)
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
