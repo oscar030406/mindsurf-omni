@@ -293,11 +293,45 @@ def test_a_buffer_under_a_second_is_not_judged_by_rate() -> None:
 
 
 @pytest.mark.asyncio
-async def test_a_recording_too_long_for_one_pass_is_refused_with_a_way_out() -> None:
-    """Twenty minutes asked the allocator for 44 GiB and came back a bare 500,
-    and the reserved block was still held when the next caller arrived."""
+async def test_a_long_recording_is_read_in_pieces_no_pass_could_hold() -> None:
+    """Twenty minutes asked the allocator for 44 GiB and came back a bare 500.
+
+    A tone has no pauses to cut in, so this is the worst case for the split:
+    every seam is forced. What it has to show is that no single pass is handed
+    more than the hard limit, which is where the allocation stopped being
+    survivable."""
     from typing import Any
 
+    from mindsurf_omni.service.vad import SEGMENT_HARD_SECONDS
+
+    seen: list[float] = []
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            seconds = len(kwargs["input"]) / 16_000
+            seen.append(seconds)
+            # At a plausible speaking rate, so the piece clears said_enough the
+            # same way a real one would.
+            return [{"text": "<|zh|>" + "一段听得见的话。" * int(seconds)}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    text, _ = await recogniser.transcribe(_tone(1200.0, amplitude=0.2), 16_000)
+
+    assert len(seen) > 1
+    assert max(seen) <= SEGMENT_HARD_SECONDS + 0.01
+    assert sum(seen) == pytest.approx(1200.0, abs=1.0)
+    assert text.startswith("一段听得见的话。")
+
+
+@pytest.mark.asyncio
+async def test_a_recording_past_the_endpoint_limit_is_still_refused() -> None:
+    """Splitting bounds the memory, not the transport: an hour of PCM16 is
+    115 MB in one request body, and past that the caller is told a number."""
+    from typing import Any
+
+    from mindsurf_omni.service.asr import LONGEST_SECONDS
     from mindsurf_omni.service.engine import TooLongForModel
 
     class Recorder:
@@ -308,7 +342,7 @@ async def test_a_recording_too_long_for_one_pass_is_refused_with_a_way_out() -> 
     recogniser._model = Recorder()
 
     with pytest.raises(TooLongForModel, match="pieces"):
-        await recogniser.transcribe(_tone(1200.0, amplitude=0.2), 16_000)
+        await recogniser.transcribe(_tone(LONGEST_SECONDS + 10, amplitude=0.2), 16_000)
 
 
 @pytest.mark.asyncio

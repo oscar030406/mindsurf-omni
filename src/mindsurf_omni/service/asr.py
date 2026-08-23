@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from mindsurf_omni.service.engine import TooLongForModel
+from mindsurf_omni.service.vad import SEGMENT_ABOVE_SECONDS, segments
 
 # SenseVoice emits inline tags for language, emotion and audio events. They are
 # not speech, and leaving them in would count them as characters against the
@@ -62,12 +63,13 @@ RECOGNISER_RATE = 16_000
 # tenth of a second the model only ever writes punctuation.
 SHORTEST_SAMPLES = 400
 
-# The longest recording the encoder takes in one pass. Measured on the
-# deployment card: 600 seconds answers in 2.4 s holding half a gigabyte over
-# baseline, 1100 in 6.75 s, and 1200 asks the allocator for 44 GiB and fails.
-# The line sits below the cliff with room, and well above the 937 seconds the
-# repository already records as a request it made work.
-LONGEST_SECONDS = 1000.0
+# The longest recording accepted at all. Nothing to do with the allocator any
+# more: past SEGMENT_ABOVE_SECONDS the audio is cut at the pauses and no single
+# forward pass sees more than one piece, so the 44 GiB cliff at 1200 seconds is
+# not reachable from here. What is left is the transport -- an hour of 16 kHz
+# PCM16 is 115 MB in one request body -- and the caller's patience, and both of
+# those are the caller's to judge, so the line is drawn generously.
+LONGEST_SECONDS = 3600.0
 
 
 def writes_something(text: str) -> bool:
@@ -205,8 +207,6 @@ class SenseVoiceRecogniser:
         return await asyncio.to_thread(self._transcribe, pcm, sample_rate)
 
     def _transcribe(self, pcm: bytes, sample_rate: int = RECOGNISER_RATE) -> tuple[str, str | None]:
-        import numpy as np
-
         from mindsurf_omni.service.audio import resample, unwrap_wav, whole_samples
         from mindsurf_omni.service.vad import frame_energy
 
@@ -242,11 +242,44 @@ class SenseVoiceRecogniser:
         seconds = len(samples) / 2 / RECOGNISER_RATE
         if seconds > LONGEST_SECONDS:
             raise TooLongForModel(
-                f"this recording is {seconds:.0f} seconds; the recogniser reads up to "
-                f"{LONGEST_SECONDS:.0f} in one pass, so send it in pieces"
+                f"this recording is {seconds:.0f} seconds, past the {LONGEST_SECONDS:.0f} "
+                "this endpoint takes in one request; send it in pieces"
             )
 
         self.load()
+        if seconds <= SEGMENT_ABOVE_SECONDS:
+            return self._read(samples)
+
+        # Cut at the pauses rather than fed whole. Two reasons, and the second
+        # is the one that shows: the encoder's allocation grows with the square
+        # of the input, so twenty minutes in one pass asked for 44 GiB; and the
+        # wait after the key comes up grew with the length of the recording --
+        # 200 ms at fourteen seconds, 3.3 s at ten minutes -- because none of
+        # the work could start until all of the audio had arrived. Per piece
+        # that wait is flat, and the pieces before the last one are work that a
+        # caller streaming its audio can have finished before the key is up.
+        parts: list[str] = []
+        languages: list[str] = []
+        for start, end in segments(samples, RECOGNISER_RATE):
+            text, heard = self._read(samples[start:end])
+            if not text:
+                continue
+            parts.append(text)
+            if heard:
+                languages.append(heard)
+        if not parts:
+            return "", None
+        # Joined with nothing: use_itn ends each piece with its own punctuation,
+        # and a separator here would show up as a space in the text box.
+        return "".join(parts), max(set(languages), key=languages.count) if languages else None
+
+    def _read(self, samples: bytes) -> tuple[str, str | None]:
+        """One forward pass over one piece, with the guards that piece has to pass."""
+        import numpy as np
+
+        if len(samples) // 2 < SHORTEST_SAMPLES:
+            return "", None
+
         audio = np.frombuffer(samples, dtype=np.int16).astype(np.float32) / 32768.0
         # Same shape as the silence check above: with too little evidence the
         # model does not answer "I do not know", it invents. Silence has a

@@ -116,3 +116,61 @@ def test_the_endpoint_offset_points_past_the_frame_that_ended_the_turn() -> None
     assert offset is not None
     assert offset % detector.frame_bytes == 0
     assert offset <= len(quiet(20))
+
+
+# --- 分段：长录音按停顿切开 -------------------------------------------------
+
+
+def _speech(seconds: float, level: int = 3000) -> bytes:
+    import numpy as np
+
+    rng = np.random.default_rng(int(seconds * 1000))
+    return (rng.standard_normal(int(seconds * 16_000)) * level).astype(np.int16).tobytes()
+
+
+def _quiet(seconds: float) -> bytes:
+    import numpy as np
+
+    return np.zeros(int(seconds * 16_000), dtype=np.int16).tobytes()
+
+
+def test_a_recording_with_pauses_is_cut_in_the_pauses() -> None:
+    from mindsurf_omni.service.vad import SEGMENT_HARD_SECONDS, segments
+
+    pcm = _quiet(0.3) + _speech(20) + _quiet(0.5) + _speech(20) + _quiet(0.5) + _speech(20)
+    cuts = segments(pcm)
+
+    assert len(cuts) > 1
+    assert all((end - start) / 32_000 <= SEGMENT_HARD_SECONDS + 0.01 for start, end in cuts)
+    # Every seam falls in a gap, so no piece starts or ends inside speech.
+    for (_, end), (start, _) in zip(cuts, cuts[1:], strict=False):
+        assert start > end
+
+
+def test_speech_with_no_pause_at_all_is_still_cut() -> None:
+    """An open microphone next to a fan has no gaps, and it is the case that
+    reached the allocator for 44 GiB."""
+    from mindsurf_omni.service.vad import SEGMENT_HARD_SECONDS, segments
+
+    cuts = segments(_speech(100))
+
+    assert len(cuts) == 3
+    assert all((end - start) / 32_000 <= SEGMENT_HARD_SECONDS + 0.01 for start, end in cuts)
+
+
+def test_nothing_to_hear_is_no_pieces() -> None:
+    from mindsurf_omni.service.vad import segments
+
+    assert segments(_quiet(3)) == []
+
+
+def test_the_last_piece_stops_at_the_last_word() -> None:
+    """Holding the key down after finishing must not hand the last piece a
+    stretch of nothing: the guard that reads a speaking rate divides by the
+    length of the piece, and it would throw the words away for being too slow."""
+    from mindsurf_omni.service.vad import segments
+
+    pcm = _speech(3) + _quiet(10)
+    (start, end), = segments(pcm)
+
+    assert (end - start) / 32_000 < 3.5
