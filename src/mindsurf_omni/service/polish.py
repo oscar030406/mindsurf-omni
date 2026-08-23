@@ -522,22 +522,34 @@ def content_words(source: str, drop: set[int]) -> set[int]:
     plain over-deletion -- 淘米反正轻轻搓两遍 -> 淘米反正搓两遍, with 轻轻
     still gone.
 
-    Neither neighbour is another copy of it. A stutter is one word said twice
-    and one copy is meant to go; which copy the alignment recorded depends only
-    on whether there was text in front of it, so both sides are checked. This is
-    what stops a triple 这个这个这个 coming back a copy at a time until half a
-    word is left.
+    Neither neighbour is another copy of it, whole or half. A stutter is one
+    word said twice and one copy is meant to go; which copy the alignment
+    recorded depends only on whether there was text in front of it, so both
+    sides are checked. Half counts because people stutter by syllable -- 这这个,
+    就就是, 然然后 -- and the whole-word test alone let those through, so the
+    stage that exists to take repetitions out wrote one in.
 
     Its clause has something else left in it. A clause that is nothing but
     filler is deleted whole on purpose, and a word cannot be the content of a
     clause with no content: 嗯，那个。会议改到三点了。 must not come back as
     那个。会议改到三点了。
 
-    Position is deliberately not consulted beyond that. The obvious extra rule
-    -- refuse to restore a word standing before a pause, because that is where
-    the builder injects filler -- is a rule about the builder, not about
-    Chinese. It costs the commonest content use there is, the bare
-    demonstrative 我要这个。, and buys nothing a human-marked corpus can see.
+    Position is deliberately not consulted beyond that, and the reason is a
+    trade rather than an absence. The signal is real: on human marks these words
+    are filler 0.26 of the time at the start of a clause against 0.13 inside
+    one. Wired in, it deletes 32 more characters a person marked and 98 a person
+    kept -- three wrong for one right -- and it costs the commonest content use
+    there is, the bare demonstrative 我要这个。. So the rule is refused for
+    losing the exchange, not for having nothing behind it.
+
+    The seven are not alike, and one of them is a coin. On the same marks 然后
+    is filler 16 of 36 times, the highest of the seven, and it is the only one
+    whose saved wrong deletions do not outnumber the right deletions it gives up
+    (0.83, against 4.2 and higher for the rest). Dropping it from DOUBLE_DUTY
+    moves precision 0.4879 to 0.4904 and recall 0.2934 to 0.3079 while the
+    headline count of over-deleted characters goes 509 to 529. It is kept
+    because content is the expensive side, and that is a judgement, not a
+    measurement.
     """
     give_back: set[int] = set()
     for word in DOUBLE_DUTY:
@@ -551,11 +563,36 @@ def content_words(source: str, drop: set[int]) -> set[int]:
                 and end not in drop
                 and source[end : end + width] != word
                 and source[max(0, start - width) : start] != word
+                and not _a_fragment_of_it_survives_to_the_left(source, drop, word, start)
                 and _clause_has_other_survivors(source, drop, start, end)
             ):
                 give_back |= set(range(start, end))
             start = source.find(word, start + 1)
     return give_back
+
+
+def _a_fragment_of_it_survives_to_the_left(
+    source: str, drop: set[int], word: str, start: int
+) -> bool:
+    """Whether the characters before this span are a half-said run at it.
+
+    The whole-word guard beside this one catches 这个这个; people stutter by
+    syllable, so what actually turns up is 这这个, 就就是, 然然后, 我我觉得 --
+    the left neighbour is a prefix of the word, not the word. Handing the span
+    back there writes the stutter into the output: an arm that had turned
+    现这这个地步 into 现这地步 got 现这这个地步 instead, and this stage exists to
+    take repetitions out, not to put them in. Neither reading is right; the one
+    the user sees is the doubled one.
+
+    Only when the fragment is still there. If the arm ate it too, nothing is
+    left stranded and the span comes back as it should.
+    """
+    return any(
+        source[start - size : start] == word[:size]
+        and not set(range(start - size, start)) & drop
+        for size in range(1, len(word))
+        if start - size >= 0
+    )
 
 
 def _clause_has_other_survivors(source: str, drop: set[int], start: int, end: int) -> bool:

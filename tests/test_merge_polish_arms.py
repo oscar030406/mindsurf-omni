@@ -564,3 +564,38 @@ def test_an_alignment_that_loses_a_character_leaves_the_arm_alone() -> None:
 
     assert "".join(c for i, c in enumerate(source) if i not in drop) != arm
     assert keep_content(source, arm) == arm
+
+
+def test_a_half_said_stutter_is_not_written_into_the_output() -> None:
+    """中国人磕巴是一个音节一个音节磕的：这这个、就就是、然然后。
+
+    整词相邻那道守卫只认 这个这个，放行了 这这个，于是臂删掉 这个 之后
+    这一级又把它还回来——`现这地步`（半个词，改前）变成 `现这这个地步`
+    （磕巴被写进输出，改后）。两个都不对，但后者是用户一眼看得见的，
+    而这条链存在的意义就是把重复拿掉。CS2W 上代价是 273 个字里的 2 个。
+    """
+    from mindsurf_omni.service.polish import merge
+
+    for source, word, wanted in (
+        ("这这个方案可以。", "这个", "这方案可以。"),
+        ("就就是这样。", "就是", "就这样。"),
+        ("然然后我们就走了。", "然后", "然我们就走了。"),
+        ("互联网发展到现这这个地步。", "这个", "互联网发展到现这地步。"),
+    ):
+        arm = {"source": source, "polished": source.replace(word, "", 1)}
+        assert merge([arm, dict(arm)], "veto") == wanted, source
+
+    # 而不磕巴的指示代词照旧还回来。
+    for source, word in (("这个方案可以。", "这个"), ("答案就是这个。", "这个")):
+        arm = {"source": source, "polished": source.replace(word, "", 1)}
+        assert merge([arm, dict(arm)], "veto") == source
+
+
+def test_the_fragment_only_protects_it_while_the_fragment_is_still_there() -> None:
+    """臂如果连那截碎片一起吃掉了，没有东西会被孤零零留下，照还不误。"""
+    from mindsurf_omni.service.polish import merge
+
+    source = "这这个方案可以。"
+    arm = {"source": source, "polished": "方案可以。"}
+
+    assert merge([arm, dict(arm)], "veto") == "这个方案可以。"
