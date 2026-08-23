@@ -525,7 +525,48 @@
     },
     "_note_repaired": "b3497d2 期间是 4，那一版把放行面开到 23%，已退回；见 the_door_was_briefly_opened_four_times_too_wide",
     "source_note": "服务器 /home/oscar/omni/segcheck/hotlive.json",
-    "source": "src/mindsurf_omni/service/hotwords.py"
+    "source": "src/mindsurf_omni/service/hotwords.py",
+    "on_real_read_speech": {
+      "_": [
+        "之前热词只在 19 句 edge 合成语音上量过。AISHELL-1 test 是真人朗读新闻，",
+        "专名密集且有人工转写，正好量误伤那一格——它才是这一级的主判据。",
+        "表是从语料里最常见的 400 个专名中取入口闸放行的前 40 个建的，",
+        "里面混进了 中国 / 美国 / 香港 / 台湾 这种识别器本来就认识的词——",
+        "**当压力测试更好：表越常见，误伤面越大。**"
+      ],
+      "clips": 800,
+      "table_size": 40,
+      "admission_refused": "400 个候选里前 64 个试下来收 40 拒 24",
+      "sentences_touched": 0,
+      "verdict": "800 条真人朗读，这一级一句都没动过——误伤 0",
+      "recall_not_measurable_here": "同一批里识别器一个常见专名都没听错，所以召回这一格量不出来。召回要用识别器真的听错的词，见 recall_on_words_it_gets_wrong"
+    },
+    "recall_on_words_it_gets_wrong": {
+      "_": [
+        "真实用法：表里放的是识别器**真的听错**的词。前 500 条 AISHELL-1 test 上",
+        "找出参照里有、转写里没有的专名（20 个，入口闸收 16 拒 4），",
+        "在**另外 500 条**上量——建表和量数不是同一批音频。"
+      ],
+      "table_built_on": 500,
+      "measured_on": 500,
+      "table_size": 16,
+      "table_sample": [
+        "宋芳",
+        "紫霞",
+        "王晔君",
+        "阮经天",
+        "秦虹",
+        "邓郁松",
+        "周云露"
+      ],
+      "sentences_touched": 3,
+      "heard_wrong": 4,
+      "repaired": 3,
+      "wrongly_inserted": 0,
+      "example": "失联近两天的中传研究生周云录 -> 周云露",
+      "verdict": "召回 3/4，误伤 0。比 19 句合成语音那份（3/6）好——真人朗读的专名错是标准的同音错（周云录 ↔ 周云露），正是这套做法的靶心",
+      "together_with_the_stress_table": "两轮合计 1300 条真人语音，误伤 0"
+    }
   },
   "dictation_entry_gate": {
     "_": [
