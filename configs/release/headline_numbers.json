@@ -357,7 +357,87 @@
       "why_nonzero_only": "恰好为零的帧是文件的静音，不是房间的"
     },
     "source_note": "服务器 /home/oscar/omni/segcheck/{segcheck.json,sweep2.json}",
-    "source": "src/mindsurf_omni/service/vad.py"
+    "source": "src/mindsurf_omni/service/vad.py",
+    "real_human_audio": {
+      "_": [
+        "90 秒这个拐点是在 edge 合成语料上定的，两次被真实分布推翻过，所以拿真人录音重测。",
+        "MagicData-RAMC（MDT2021S003，CC BY-NC-ND 4.0，不商用）：15 分钟的真人自发对话，",
+        "16 kHz，人工转写带时间戳。参照文本是转写按时间顺序拼起来、去掉标注符号。",
+        "**这是双人对话不是单人口述**，所以绝对字错率（0.11–0.22）比听写场景高；",
+        "要读的是「整段 vs 分段」这个比较，不是绝对值。"
+      ],
+      "corpus": "MagicData-RAMC MDT2021S003，6 个会话 × 8 个长度",
+      "knee": {
+        "_": "拐点在 80–100 秒之间，合成语料定的 90 活下来了",
+        "rows": [
+          {
+            "seconds": 25,
+            "cer_whole": 0.1858,
+            "cer_split": 0.2707,
+            "split_better": "2/6"
+          },
+          {
+            "seconds": 60,
+            "cer_whole": 0.1228,
+            "cer_split": 0.1302,
+            "split_better": "2/6"
+          },
+          {
+            "seconds": 80,
+            "cer_whole": 0.1121,
+            "cer_split": 0.127,
+            "split_better": "2/6"
+          },
+          {
+            "seconds": 100,
+            "cer_whole": 0.183,
+            "cer_split": 0.1081,
+            "split_better": "4/6"
+          },
+          {
+            "seconds": 130,
+            "cer_whole": 0.3039,
+            "cer_split": 0.1587,
+            "split_better": "5/6"
+          }
+        ],
+        "note": "80 秒以下分段略差（切碎了伤），100 秒往上整段急剧崩"
+      },
+      "long_sessions": {
+        "_": "3 个会话，整段一次前向在真人录音上崩得比合成语料狠得多",
+        "rows": [
+          {
+            "seconds": 900,
+            "session": "387",
+            "cer_whole": 0.929,
+            "cer_split": 0.2057,
+            "chars_whole": 278,
+            "chars_split": 3918,
+            "chars_reference": 3770
+          },
+          {
+            "seconds": 900,
+            "session": "193",
+            "cer_whole": 0.9148,
+            "cer_split": 0.1889,
+            "chars_whole": 335,
+            "chars_split": 3863,
+            "chars_reference": 4117
+          },
+          {
+            "seconds": 843,
+            "session": "198",
+            "cer_whole": 0.6251,
+            "cer_split": 0.0789,
+            "chars_whole": 1082,
+            "chars_split": 2876,
+            "chars_reference": 3024
+          }
+        ],
+        "worst": "十五分钟的真人录音，整段只写出 278 个字，人说了 3770 个——丢 93%（合成语料上是 20%）"
+      },
+      "a_first_read_that_was_wrong": "先用 3 个会话读出「拐点在 60 秒」，据此差点把阈值调低。扩到 6 个会话 × 8 个长度之后是 80–100 秒。3 个会话不够，方向都会反"
+    }
   },
   "dictation_hotwords": {
     "_": [
