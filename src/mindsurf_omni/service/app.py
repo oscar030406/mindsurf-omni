@@ -161,11 +161,18 @@ LONGEST_BUFFER_BYTES = int(LONGEST_SECONDS) * INPUT_SAMPLE_RATE * 2
 
 # The most audio a single request may carry, counted in bytes as they arrive.
 #
-# This is the transport backstop, not the duration rule -- LONGEST_SECONDS still
-# decides that, after the container has been unwrapped and resampled. So it is
-# drawn wide enough to keep every body the recogniser accepts today: an hour of
-# 16 kHz PCM16 is 115 MB, and the same hour sent as a 48 kHz wav is 346 MB.
-# Four times the raw hour covers that with room for the container.
+# The transport backstop, not the duration rule -- LONGEST_SECONDS still decides
+# that, after the container has been unwrapped and resampled. Four times the raw
+# hour, because an hour of 16 kHz PCM16 is 115 MB and the same hour sent as a
+# 48 kHz wav is 346 MB, and the documented upload format is the first but the
+# second reaches the endpoint today.
+#
+# What four times cost was measured after it was chosen: a 436 MiB body that
+# needs resampling peaked at 7554 MB, eighteen times its own size, so this
+# number was in effect an 8.3 GB memory limit. That came from ``np.interp``
+# and is fixed in ``audio.resample``; the same bodies now peak below their own
+# size. Anyone moving this line should measure the peak again rather than the
+# bytes.
 LONGEST_BODY_BYTES = 4 * int(LONGEST_SECONDS) * INPUT_SAMPLE_RATE * 2
 
 

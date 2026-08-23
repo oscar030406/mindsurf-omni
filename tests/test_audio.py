@@ -274,3 +274,59 @@ def test_a_container_whose_samples_cannot_be_read_is_refused_not_guessed_at() ->
     # A body that is not a container at all is still taken as raw samples --
     # that is the endpoint's documented input, not an accident.
     assert unwrap_wav(b"\x00\x01" * 100, 16_000) == (b"\x00\x01" * 100, 16_000)
+
+
+def test_resampling_a_long_recording_does_not_cost_eighteen_times_its_bytes() -> None:
+    """np.interp 三个数组全要 float64，还要给每个输入采样造一个索引。
+
+    一小时的 48 kHz wav——这个端点收得下的形状——峰值 6 GB，是到达字节的十八倍。
+    运输上限 460.8 MB 因此等价于一道 8.3 GB 的内存上限。分块之后是有界的。
+    """
+    import tracemalloc
+
+    import numpy as np
+
+    from mindsurf_omni.service.audio import resample
+
+    rng = np.random.default_rng(0)
+    body = (rng.standard_normal(48_000 * 120) * 8000).astype(np.int16).tobytes()
+
+    tracemalloc.start()
+    resample(body, 48_000, 16_000)
+    _, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    assert peak < len(body) * 2, f"峰值 {peak / len(body):.1f} 倍 body"
+
+
+def test_resampling_still_agrees_with_the_reference_implementation() -> None:
+    """分块和 float32 都不许改变出来的采样。
+
+    第一版把 int16 直接相减，满量程的两个采样差超过 int16 的量程，
+    回绕出来是 55064 的尖峰。
+    """
+    import numpy as np
+
+    from mindsurf_omni.service.audio import resample
+
+    rng = np.random.default_rng(0)
+    clips = [
+        (rng.standard_normal(50_000) * 32_000).clip(-32768, 32767).astype(np.int16),
+        np.tile(np.array([32767, -32768], np.int16), 25_000),
+    ]
+    for clip in clips:
+        for source, target in ((48_000, 16_000), (16_000, 24_000), (44_100, 16_000)):
+            got = np.frombuffer(resample(clip.tobytes(), source, target), np.int16)
+            count = max(1, int(clip.size * target / source))
+            want = np.clip(
+                np.interp(
+                    np.arange(count) * (source / target),
+                    np.arange(clip.size),
+                    clip.astype(np.float32),
+                ),
+                -32768,
+                32767,
+            ).astype(np.int16)
+
+            assert got.size == want.size
+            assert np.abs(got.astype(int) - want.astype(int)).max() <= 1

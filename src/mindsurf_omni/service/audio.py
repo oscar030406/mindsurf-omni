@@ -21,6 +21,11 @@ PCM16_MAX = 32768.0
 
 # What a recorder can plausibly have been running at. Below the first, a header
 # turns a short clip into hours; above the second, into microseconds.
+# Output samples converted at a time. Big enough that the per-block overhead
+# does not show, small enough that the working set is a few tens of megabytes
+# whatever arrives.
+RESAMPLE_BLOCK = 1 << 18
+
 SLOWEST_RATE = 4_000
 FASTEST_RATE = 384_000
 
@@ -133,9 +138,30 @@ def resample(pcm: bytes, source_rate: int, target_rate: int) -> bytes:
         return b""
 
     count = max(1, int(samples.size * target_rate / source_rate))
-    wanted = np.arange(count) * (source_rate / target_rate)
-    drawn = np.interp(wanted, np.arange(samples.size), samples.astype(np.float32))
-    return np.clip(drawn, -32768, 32767).astype(np.int16).tobytes()
+    step = source_rate / target_rate
+    out = np.empty(count, dtype=np.int16)
+    # In blocks, and never through ``np.interp``. That function takes float64
+    # for all three arrays and materialises an index for every input sample, so
+    # an hour of 48 kHz wav -- a body this endpoint accepts -- peaked at 6 GB,
+    # eighteen times the bytes that arrived. A block is bounded whatever the
+    # recording is, and the positions inside one still come out in float64
+    # because a float32 index stops being exact past 2**24 samples, which is
+    # seventeen minutes.
+    for start in range(0, count, RESAMPLE_BLOCK):
+        stop = min(start + RESAMPLE_BLOCK, count)
+        where = np.arange(start, stop, dtype=np.float64) * step
+        # int32 is enough for any body this endpoint accepts: the transport
+        # limit is under 2**31 samples by an order of magnitude.
+        left = np.clip(where.astype(np.int32), 0, samples.size - 1)
+        rise = (where - left).astype(np.float32)
+        right = np.minimum(left + 1, samples.size - 1)
+        # Widened before subtracting: two int16 samples at opposite rails
+        # differ by more than int16 holds, and the wrap showed up as a spike of
+        # 55064 against the reference.
+        base = samples[left].astype(np.float32)
+        drawn = base + (samples[right].astype(np.float32) - base) * rise
+        out[start:stop] = np.clip(drawn, -32768, 32767).astype(np.int16)
+    return out.tobytes()
 
 
 def wav_header(sample_rate: int, channels: int = 1, data_bytes: int | None = None) -> bytes:
