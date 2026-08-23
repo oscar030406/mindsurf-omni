@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
+from mindsurf_omni.service.engine import TooLongForModel
+
 # SenseVoice emits inline tags for language, emotion and audio events. They are
 # not speech, and leaving them in would count them as characters against the
 # reference text.
@@ -59,6 +61,13 @@ RECOGNISER_RATE = 16_000
 # which reached the caller as a bare 500, and between one frame and about a
 # tenth of a second the model only ever writes punctuation.
 SHORTEST_SAMPLES = 400
+
+# The longest recording the encoder takes in one pass. Measured on the
+# deployment card: 600 seconds answers in 2.4 s holding half a gigabyte over
+# baseline, 1100 in 6.75 s, and 1200 asks the allocator for 44 GiB and fails.
+# The line sits below the cliff with room, and well above the 937 seconds the
+# repository already records as a request it made work.
+LONGEST_SECONDS = 1000.0
 
 
 def writes_something(text: str) -> bool:
@@ -213,6 +222,20 @@ class SenseVoiceRecogniser:
         samples = whole_samples(pcm)
         if len(samples) // 2 < SHORTEST_SAMPLES:
             return "", None
+
+        # Refused rather than attempted: the whole buffer goes through the
+        # encoder in one forward pass, and past this length that allocation is
+        # tens of gigabytes. Twenty minutes asked for 44 GiB and came back a
+        # bare 500, and the allocator then held the reserved block for the best
+        # part of a minute, so the next caller failed too. Below the check on
+        # purpose: silence short-circuits above it at no cost, and telling
+        # somebody to split a recording of nothing is advice they cannot use.
+        seconds = len(samples) / 2 / RECOGNISER_RATE
+        if seconds > LONGEST_SECONDS:
+            raise TooLongForModel(
+                f"this recording is {seconds:.0f} seconds; the recogniser reads up to "
+                f"{LONGEST_SECONDS:.0f} in one pass, so send it in pieces"
+            )
 
         self.load()
         audio = np.frombuffer(samples, dtype=np.int16).astype(np.float32) / 32768.0

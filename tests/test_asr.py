@@ -290,3 +290,39 @@ def test_a_buffer_under_a_second_is_not_judged_by_rate() -> None:
 
     assert said_enough("好", 0.4)
     assert said_enough("", 0.4)
+
+
+@pytest.mark.asyncio
+async def test_a_recording_too_long_for_one_pass_is_refused_with_a_way_out() -> None:
+    """Twenty minutes asked the allocator for 44 GiB and came back a bare 500,
+    and the reserved block was still held when the next caller arrived."""
+    from typing import Any
+
+    from mindsurf_omni.service.engine import TooLongForModel
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            raise AssertionError("the model should not have been asked")
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    with pytest.raises(TooLongForModel, match="pieces"):
+        await recogniser.transcribe(_tone(1200.0, amplitude=0.2), 16_000)
+
+
+@pytest.mark.asyncio
+async def test_a_long_silence_is_still_answered_not_refused() -> None:
+    """Silence short-circuits before any GPU work, so the length refusal must
+    sit below it: telling somebody to split a recording of nothing is advice
+    they cannot use."""
+    from typing import Any
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            raise AssertionError("the model should not have been asked")
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    assert await recogniser.transcribe(b"\x00\x00" * (16_000 * 1200), 16_000) == ("", None)
