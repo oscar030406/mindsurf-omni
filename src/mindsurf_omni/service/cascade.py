@@ -133,6 +133,35 @@ class CascadeTimings:
     time_to_first_audio_ms: float = 0.0
 
 
+def worth_answering(transcript: str) -> str | None:
+    """The transcript, or None when answering it would be answering nobody.
+
+    Empty is the obvious half: two seconds of silence came back as a real reply
+    to a question nobody asked, in English, synthesised and played.
+
+    The other half is a transcript that is nothing but one hesitation. Half a
+    second of a fan, of mains hum, of a room with people in it, all come back
+    from the recogniser as 嗯。 -- measured on 45 synthetic noise clips, 22 of
+    them wrote something and the ones under a second all wrote a single filler.
+    The recogniser cannot separate those from somebody actually saying 嗯,
+    because nothing in the audio does: the envelope test that would have is
+    unusable, since ordinary speech through a speakerphone in a live room lands
+    in the same range as steady noise.
+
+    So the split is made here instead, where the cost is not symmetric. In
+    dictation a stray 嗯 is two characters in the text box. In conversation it
+    is a spoken reply to a button somebody pressed by accident, and a person
+    whose whole turn was one 嗯 did not ask for one either.
+    """
+    from mindsurf_omni.service.polish import LEADING_FILLERS, RECOGNISED_FILLERS
+
+    said = transcript.strip(" .。,，!！?？、;；:：\n")
+    if not said:
+        return None
+    alone = {*LEADING_FILLERS, *RECOGNISED_FILLERS, "恩", "温", "饿", "恶", "啊", "扼"}
+    return None if said in alone else transcript
+
+
 class CascadeEngine(SpeechEngine):
     def __init__(
         self,
@@ -243,7 +272,7 @@ class CascadeEngine(SpeechEngine):
         # empty turns from history for the same reason -- a bare
         # <|im_start|>user<|im_end|> is a shape the model has never seen -- but
         # the current turn was reaching it unfiltered.
-        if not transcript.strip():
+        if not worth_answering(transcript):
             self.last_timings = timings
             return
 
