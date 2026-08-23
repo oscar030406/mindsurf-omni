@@ -1,0 +1,17 @@
+{
+ "calls_per_sentence": 0.7712287712287712,
+ "cer_after": 0.02692554808092587,
+ "content_kept": 0.9803015844279034,
+ "empty": 0,
+ "filler_removed_rate": 0.9721749006246451,
+ "invented": 0.01991254687859204,
+ "latency_ms_median": 120.5647480674088,
+ "latency_ms_p95": 473.94437598995864,
+ "model_calls": 772,
+ "n": 986,
+ "sentences": 1001,
+ "skip_clean": true,
+ "tagger": "polish_tagger_unionchar.pt",
+ "tagger_threshold": 0.4,
+ "audio_location": "clips stay on the machine that generated them, under that run's output directory; the archive keeps filenames because the audio itself is not committed"
+}
