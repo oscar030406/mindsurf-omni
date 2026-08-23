@@ -16,6 +16,12 @@ dependencies = [
     # product is, and funasr already brings jieba along, so a host that can
     # transcribe already has it.
     "jieba>=0.42",
+    # The hotword stage matches by sound, and the sound of a Chinese character
+    # is not derivable from the character. Alongside jieba rather than behind an
+    # extra for the same reason: the stage is off until an operator names a
+    # term, but a deployment that names one and finds the package absent learns
+    # it at the first request rather than at assembly.
+    "pypinyin>=0.53",
 ]
 
 [project.optional-dependencies]

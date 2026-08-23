@@ -12,7 +12,7 @@ tries to read the log.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +59,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     # container started, /health said the recogniser was ready, and the first
     # dictation came back 500 with ModuleNotFoundError: torchaudio.
     missing = [name for name in ("funasr", "torch", "torchaudio") if not _importable(name)]
+    repair = _build_hotword_repair(settings)
 
     async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         if missing:
@@ -66,7 +67,8 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
                 f"the recogniser needs {', '.join(missing)}, which this image does not "
                 "carry: install the 'asr' extra"
             )
-        return await recogniser.transcribe(pcm, sample_rate)
+        text, language = await recogniser.transcribe(pcm, sample_rate)
+        return repair(text), language
 
     generate = _build_generator(settings)
     synthesise = _build_synthesiser(settings)
@@ -95,6 +97,26 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     # a network-mounted checkpoint, and the app warms it at startup instead.
     engine._warm_recogniser = recogniser.load if not missing else None
     return engine
+
+
+def _build_hotword_repair(settings: Settings) -> Callable[[str], str]:
+    """The pass that puts the operator's proper nouns back, or one that does not.
+
+    Wrapped around the recogniser rather than bolted onto the dictation
+    endpoint so that conversation gets it too: the cascade answers what it
+    heard, and hearing a colleague's name wrong is the same defect on either
+    path. It sits before the polisher, which the endpoint calls on this
+    stage's output.
+
+    The table is built here, at assembly, because building it is where a bad
+    entry is refused -- see hotwords.build_table.
+    """
+    if not settings.hotwords:
+        return lambda text: text
+    from mindsurf_omni.service.hotwords import build_table, correct
+
+    table = build_table(settings.hotwords)
+    return lambda text: correct(text, table)
 
 
 def _build_polisher(settings: Settings) -> Any:

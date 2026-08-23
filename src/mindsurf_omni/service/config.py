@@ -138,6 +138,12 @@ class Settings:
     # too short for its own detector -- see asr.SHORT_AUDIO_SECONDS. "auto"
     # restores the behaviour this had before 2026-08-22 at every length.
     asr_language: str = "zh"
+    # Proper nouns this deployment says and the recogniser does not know, put
+    # back into the transcript by sound. Global rather than per request: the
+    # dictation endpoint takes a bare PCM body with no field to carry a table,
+    # and one deployment serves one vocabulary. See hotwords.py for what an
+    # entry has to survive to be taken.
+    hotwords: tuple[str, ...] = ()
 
     @classmethod
     def from_environment(cls, environment: dict[str, str] | None = None) -> Settings | None:
@@ -190,6 +196,11 @@ class Settings:
             ),
             polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.4")),
             asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
+            hotwords=tuple(
+                word.strip()
+                for word in source.get("MINDSURF_HOTWORDS", "").split(",")
+                if word.strip()
+            ),
         )
 
     def verify(self) -> None:
@@ -256,6 +267,15 @@ class Settings:
         # /v1/audio/transcriptions returned polished=null on every request. An
         # operator reading the health check had no way to see that the stage
         # they configured was not there.
+        # Only the cascade transcribes through a stage that can be wrapped.
+        # Same failure as the polisher's below: set on the native path it would
+        # be configured, reported, and inert.
+        if self.path == "native" and self.hotwords:
+            raise ConfigurationError(
+                "MINDSURF_HOTWORDS is set but MINDSURF_ENGINE=native, and the native path "
+                "transcribes inside the model rather than through a stage this can correct; "
+                "run the dictation product on MINDSURF_ENGINE=cascade"
+            )
         if self.path == "native" and self.polish is not None:
             raise ConfigurationError(
                 "MINDSURF_POLISH is set but MINDSURF_ENGINE=native, and the native path has "
