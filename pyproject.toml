@@ -7,6 +7,11 @@ requires-python = ">=3.11"
 # what goes into the container, and every entry there is something to patch.
 dependencies = [
     "fastapi>=0.115",
+    # Named although fastapi already brings it: the service imports
+    # ``ClientDisconnect`` from it directly, and fastapi does not re-export
+    # that one. A transitive dependency the code reaches into by name is a
+    # direct dependency however it got installed.
+    "starlette>=0.41",
     "uvicorn[standard]>=0.30",
     "pydantic>=2.9",
     "numpy>=1.26",

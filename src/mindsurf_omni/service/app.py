@@ -24,6 +24,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from starlette.requests import ClientDisconnect
 
 from mindsurf_omni.contract import (
     AUDIO_ENCODING,
@@ -180,15 +181,23 @@ async def audio_body(request: Request) -> bytes:
     """
     chunks: list[bytes] = []
     total = 0
-    async for piece in request.stream():
-        total += len(piece)
-        if total > LONGEST_BODY_BYTES:
-            raise TooLongForModel(
-                f"the request body is over {LONGEST_BODY_BYTES} bytes, which is more audio "
-                f"than the {LONGEST_SECONDS:.0f} seconds this endpoint transcribes in one "
-                "request; send it in pieces"
-            )
-        chunks.append(piece)
+    try:
+        async for piece in request.stream():
+            total += len(piece)
+            if total > LONGEST_BODY_BYTES:
+                raise TooLongForModel(
+                    f"the request body is over {LONGEST_BODY_BYTES} bytes, which is more audio "
+                    f"than the {LONGEST_SECONDS:.0f} seconds this endpoint transcribes in one "
+                    "request; send it in pieces"
+                )
+            chunks.append(piece)
+    except ClientDisconnect:
+        # Somebody hung up mid-upload. Not a server fault, and answered as one
+        # it cost 11 kB of traceback per abort -- 33 kB for three, and a process
+        # whose stderr goes to a pipe nobody drains stops at 64. There is nobody
+        # left to answer, so the shortest legal thing goes out; 499 is what a
+        # closed upload is called even though no RFC says so.
+        raise HTTPException(499, "the caller closed the connection mid-upload") from None
     return b"".join(chunks)
 
 

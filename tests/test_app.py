@@ -11,6 +11,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from mindsurf_omni.contract import ComponentInfo, TokenSpec
@@ -1477,7 +1478,6 @@ def test_a_header_sent_twice_is_the_same_header(client: TestClient) -> None:
     Starlette 的 get 只回第一个，而这道闸自己是拒绝逗号那个形式的——
     于是换成两行同样的语义就放过去了，裸 socket 上量到 identity 后跟 gzip 是 200。
     """
-    from fastapi import HTTPException
     from fastapi.datastructures import Headers
 
     from mindsurf_omni.service.app import refuse_envelope
@@ -1518,3 +1518,28 @@ def test_a_configuration_failure_does_not_name_the_directory_it_failed_in(
     with TestClient(create_app(), raise_server_exceptions=False) as started:
         for path in ("/health", "/v1/voices"):
             assert secret not in started.get(path).text, path
+
+
+def test_a_caller_that_hangs_up_mid_upload_is_not_a_server_error() -> None:
+    """对面挂电话不是服务端故障，按故障答要花 11 kB 的 traceback。
+
+    声明 600 MB 只发 40 MB 就 close，ClientDisconnect 一路冒到顶：
+    HTTP 500 加一份完整的 ASGI traceback，三次 33 kB。而一个 stderr 接在
+    没人读的管子上的进程，写到 64 kB 就整个停住——那正是当初把这条报成
+    「两次中断打死整台服务」的原因，量的工具自己在说谎。
+    """
+    from starlette.requests import ClientDisconnect
+
+    from mindsurf_omni.service.app import audio_body
+
+    class _HangsUp:
+        async def stream(self):  # type: ignore[no-untyped-def]
+            yield b"\x01\x40" * 1024
+            raise ClientDisconnect
+
+    with pytest.raises(HTTPException) as refusal:
+        asyncio.run(audio_body(_HangsUp()))  # type: ignore[arg-type]
+
+    assert refusal.value.status_code == 499
+    # 不许把 ClientDisconnect 的 traceback 带出去。
+    assert refusal.value.__cause__ is None
