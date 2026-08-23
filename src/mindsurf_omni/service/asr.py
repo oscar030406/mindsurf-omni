@@ -130,18 +130,27 @@ class SenseVoiceRecogniser:
     # it buys.
     language: str = "zh"
     _model: Any = None
-    # One forward pass at a time. Two do not overlap on one card anyway -- the
-    # driver serialises the kernels -- so the second concurrent request buys no
-    # throughput and doubles the peak: measured on an 8 GB card with 200-second
-    # audio, one pass reserved 2388 MiB, two 2558 and four 4550. Held around the
-    # model call rather than the whole request, so a short dictation waits for
-    # one piece of a long one rather than for all of it.
-    _one_at_a_time: threading.Semaphore = field(default_factory=threading.Semaphore)
+    # How many forward passes may be in flight. Not one: "the driver serialises
+    # the kernels so the second buys nothing" was measured and is wrong -- on an
+    # idle 4090, going from one to unlimited took throughput up 27% at two
+    # concurrent and 17% at four, because feature extraction and the Python
+    # around the pass do overlap even when the kernels do not.
+    #
+    # What the bound buys is the peak: unlimited reached 2356 MiB against 1438,
+    # and the tail at eight concurrent was worse (P95 1046 ms against 944).
+    # Two is where the throughput is won and the memory is not: 22-second audio
+    # went 1086 to 1172 MiB. Held around the model call rather than the whole
+    # request, so a short dictation waits for one piece of a long one.
+    in_flight: int = 2
+    _passes: threading.Semaphore = field(init=False, default=None)  # type: ignore[assignment]
 
     # Read by the evaluation harness, which refuses a recogniser that shares
     # lineage with the model under test.
     lineage: str = "sensevoice-small"
     eligible_as_judge: bool = False
+
+    def __post_init__(self) -> None:
+        self._passes = threading.Semaphore(self.in_flight)
 
     def load(self) -> None:
         if self._model is not None:
@@ -262,8 +271,21 @@ class SenseVoiceRecogniser:
             )
 
         self.load()
+        # Judged once over the whole recording, not once per piece. Splitting
+        # moved this from one call to one per piece, and a piece that is a
+        # pause for thought, a phone number or a URL is slow enough on its own
+        # to be thrown away -- measured, 4 characters of 145 disappeared with
+        # nothing in the log. The fast part of a dictation is what vouches for
+        # the slow part, which is what it did before the split.
+        voiced = voiced_seconds(samples, RECOGNISER_RATE)
+        # Also once, for the same reason: the language prior exists for audio
+        # too short for the detector, and a long recording whose last piece is
+        # short is not that.
+        short = seconds < SHORT_AUDIO_SECONDS
+
         if seconds <= SEGMENT_ABOVE_SECONDS:
-            return self._read(samples)
+            text, heard = self._read(samples, short)
+            return (text, heard) if said_enough(text, voiced) else ("", None)
 
         # Cut at the pauses rather than fed whole. The encoder's allocation
         # grows with the square of the input, and so does what it gets wrong:
@@ -283,40 +305,41 @@ class SenseVoiceRecogniser:
         parts: list[str] = []
         languages: list[str] = []
         for start, end in cuts:
-            text, heard = self._read(samples[start:end])
+            text, heard = self._read(samples[start:end], short)
             if not text:
                 continue
             parts.append(text)
             if heard:
                 languages.append(heard)
-        if not parts:
-            return "", None
         # Joined with nothing: use_itn ends each piece with its own punctuation,
         # and a separator here would show up as a space in the text box.
-        return "".join(parts), max(set(languages), key=languages.count) if languages else None
+        joined = "".join(parts)
+        if not said_enough(joined, voiced):
+            return "", None
+        return joined, max(set(languages), key=languages.count) if languages else None
 
-    def _read(self, samples: bytes) -> tuple[str, str | None]:
-        """One forward pass over one piece, with the guards that piece has to pass."""
+    def _read(self, samples: bytes, short: bool) -> tuple[str, str | None]:
+        """One forward pass over one piece, with the guards that piece has to pass.
+
+        ``short`` is about the whole recording, not this piece. With too little
+        evidence the model does not answer "I do not know", it invents, so
+        below SHORT_AUDIO_SECONDS it is given the deployment's language instead
+        of a guess -- and the last piece of a long recording being short is not
+        the same situation.
+        """
         import numpy as np
 
         if len(samples) // 2 < SHORTEST_SAMPLES:
             return "", None
 
         audio = np.frombuffer(samples, dtype=np.int16).astype(np.float32) / 32768.0
-        # Same shape as the silence check above: with too little evidence the
-        # model does not answer "I do not know", it invents. Silence has a
-        # right answer, so that one returns empty; this one does not, so it is
-        # given the deployment's language instead of a guess.
-        short = len(audio) < SHORT_AUDIO_SECONDS * RECOGNISER_RATE
         language = self.language if short else "auto"
-        with self._one_at_a_time:
+        with self._passes:
             result = self._read_once(audio, language)
         if not result:
             return "", None
         text, heard = strip_tags(str(result[0].get("text", "")))
         if heard == "nospeech" or not writes_something(text):
-            return "", None
-        if not said_enough(text, voiced_seconds(samples, RECOGNISER_RATE)):
             return "", None
         return text, heard
 

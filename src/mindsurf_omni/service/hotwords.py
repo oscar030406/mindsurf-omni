@@ -194,23 +194,17 @@ def _reads_as_words(text: str, start: int, end: int, tokens: list[tuple[int, int
       今天履新 must not come back as 今天吕鑫. A span with no entry at all is
       the segmenter's own model guessing at a name (吕新), which is where a
       misrecognition lives.
-    - Several words count only when each is a real multi-character one. Single
-      characters are what jieba falls back to when nothing fits, so 通/一千/问
-      is not evidence that 通一千问 is anything -- and reading it as evidence
-      left 通一千问的接口 unrepaired while 我们用通一千问 was repaired, the same
-      span decided by how the characters beside it happened to cut. Presence in
-      the dictionary rather than the admission floor: 前文 is there at 3, and a
-      rare word beside a common one is still two words somebody said.
+    - Several words are several words, whatever their length. Requiring each to
+      be multi-character was tried, to repair 通一千问 at the start of a
+      sentence where jieba cuts it 通/一千/问; it widened the door from 5.6% of
+      spans to 23.0% across 2695 transcripts, because Chinese single-character
+      words are everywhere and 我觉得 cuts as 我/觉得. One recovery is not worth
+      four times the surface.
     """
     covering = [span for span in tokens if start <= span[0] and span[1] <= end]
     if not covering or covering[0][0] != start or covering[-1][1] != end:
         return False
-    if len(covering) == 1:
-        return jieba.get_FREQ(text[start:end]) is not None
-    return all(
-        end_at - start_at >= 2 and jieba.get_FREQ(text[start_at:end_at]) is not None
-        for start_at, end_at in covering
-    )
+    return len(covering) > 1 or jieba.get_FREQ(text[start:end]) is not None
 
 
 def _replaceable(text: str, start: int, end: int, tokens: list[tuple[int, int]]) -> bool:

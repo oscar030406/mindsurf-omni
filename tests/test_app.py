@@ -987,3 +987,117 @@ def test_every_event_the_service_sends_is_declared_in_the_contract() -> None:
     from mindsurf_omni.contract import SERVER_EVENTS
 
     assert "session.updated" in SERVER_EVENTS
+
+
+def test_a_multipart_upload_is_refused_rather_than_read_as_audio(client: TestClient) -> None:
+    """The standard OpenAI call for this route answered 200 with the MIME envelope
+    decoded as speech: 128210 bytes reached the recogniser where 128000 were sent."""
+    response = client.post(
+        "/v1/audio/transcriptions", files={"file": ("a.pcm", b"\x00\x01" * 16_000)}
+    )
+
+    assert response.status_code == 415
+    assert "multipart" in response.json()["detail"]
+
+
+def test_the_multipart_refusal_does_not_depend_on_the_caller_shouting(
+    client: TestClient,
+) -> None:
+    """Header values are case-insensitive (RFC 9110), so a startswith against the raw
+    value lets the same upload through in capitals."""
+    response = client.post(
+        "/v1/audio/transcriptions",
+        content=b"\x00\x01" * 16_000,
+        headers={"Content-Type": "MULTIPART/FORM-DATA; boundary=zz"},
+    )
+
+    assert response.status_code == 415
+
+
+@pytest.mark.parametrize("coding", ["gzip", "br", "deflate", "zstd", "GZIP", "gzip, br"])
+def test_a_compressed_body_is_refused_rather_than_read_as_audio(
+    client: TestClient, coding: str
+) -> None:
+    """Nothing in this path decompresses, so the compressed bytes recognise as
+    plausible speech. Every coding fails that way, not only gzip."""
+    response = client.post(
+        "/v1/audio/transcriptions",
+        content=b"\x00\x01" * 16_000,
+        headers={"Content-Encoding": coding},
+    )
+
+    assert response.status_code == 415
+
+
+@pytest.mark.parametrize("coding", ["identity", "IDENTITY"])
+def test_an_uncompressed_body_is_not_refused_for_saying_so(
+    client: TestClient, coding: str
+) -> None:
+    response = client.post(
+        "/v1/audio/transcriptions",
+        content=b"\x00\x01" * 16_000,
+        headers={"Content-Encoding": coding},
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "content_type",
+    ["application/json", "text/plain", "application/octet-stream", "audio/wav", None],
+)
+def test_the_content_types_clients_already_send_still_work(
+    client: TestClient, content_type: str | None
+) -> None:
+    """An allowlist would be the shorter guard and would refuse every one of these,
+    all of which reach the endpoint today."""
+    headers = {} if content_type is None else {"Content-Type": content_type}
+    response = client.post(
+        "/v1/audio/transcriptions", content=b"\x00\x01" * 16_000, headers=headers
+    )
+
+    assert response.status_code == 200
+
+
+def test_a_whole_wav_posted_as_the_body_is_still_accepted(client: TestClient) -> None:
+    """Posting the container rather than bare samples is supported -- unwrap_wav reads
+    it -- so the envelope guard must not mistake a container for an envelope."""
+    header = (
+        b"RIFF"
+        + (36 + 32_000).to_bytes(4, "little")
+        + b"WAVEfmt "
+        + (16).to_bytes(4, "little")
+        + (1).to_bytes(2, "little")
+        + (1).to_bytes(2, "little")
+        + (16_000).to_bytes(4, "little")
+        + (32_000).to_bytes(4, "little")
+        + (2).to_bytes(2, "little")
+        + (16).to_bytes(2, "little")
+        + b"data"
+        + (32_000).to_bytes(4, "little")
+    )
+    response = client.post(
+        "/v1/audio/transcriptions",
+        content=header + b"\x00\x01" * 16_000,
+        headers={"Content-Type": "audio/wav"},
+    )
+
+    assert response.status_code == 200
+
+
+def test_an_unhandled_failure_answers_json_like_every_other_error() -> None:
+    """A client calling response.json() on the error path met Starlette's plain-text
+    'Internal Server Error' and threw a parse error instead of showing the failure."""
+
+    class Exploding(FakeEngine):
+        async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+            raise RuntimeError("CUDA out of memory: tried to allocate 44.00 GiB")
+
+    client = TestClient(create_app(Exploding()), raise_server_exceptions=False)
+    response = client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000)
+
+    assert response.status_code == 500
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json() == {"detail": "internal error"}
+    # The engine's own words name internals the caller has no business reading.
+    assert "CUDA" not in response.text

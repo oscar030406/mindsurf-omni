@@ -428,6 +428,20 @@
         "SenseVoice 的多语种和情绪标签会一起没了。"
       ],
       "source": "服务器 /home/oscar/omni/segcheck/seaco.json"
+    },
+    "the_door_was_briefly_opened_four_times_too_wide": {
+      "_": [
+        "b3497d2 把「跨度落在两个词边界上、中间还有边界就当普通文本」改成",
+        "「每一块都得是词典里的多字词」，为的是修回句首的 通一千问。",
+        "读起来是收紧，代码是反的：中文单字词遍地都是，我觉得 切成 我/觉得，",
+        "于是它不算普通文本、变成可改。已在 HEAD 上退回。"
+      ],
+      "corpus": "2695 条真语料（723 CS2W + 986 留出集 source 与 target）的 26 万个 2–4 字跨度",
+      "share_replaceable_before": 0.056,
+      "share_replaceable_after_the_mistake": 0.23,
+      "share_replaceable_now": 0.058,
+      "cost_of_reverting": "句首的 通一千问 不再修回，端到端召回 4/6 回到 3/6",
+      "found_by": "对抗式复核，scratchpad/fixes/五连击复核.md §2.1"
     }
   },
   "dictation_entry_gate": {
@@ -457,6 +471,35 @@
       }
     },
     "still_open": "45 段合成噪声里 17 段仍然出字（0.5 秒那一档从 seconds < 1.0 的豁免走掉，2 秒的 The. 和 我. 压线过）",
-    "source": "服务器 /home/oscar/omni/segcheck/padshort.py，缺陷编号 R1/N1 见复查表"
+    "source": "服务器 /home/oscar/omni/segcheck/padshort.py，缺陷编号 R1/N1 见复查表",
+    "denominator_needs_the_recordings_own_floor": {
+      "_": [
+        "语速的分母改成有声时长之后，还得让噪底的**起始值**也来自这段录音。",
+        "噪底只在判成静音的帧上更新，起始值是绝对先验时，房间一旦高过",
+        "先验 × speech_ratio = 0.015，第一帧就判成语音、噪底从此不动，",
+        "整段变成一个 span——分母又退回整段时长，修法在吵一点的房间静默失效。",
+        "真口述整体 RMS 中位 0.0983，所以信噪比 16 dB 开始失效、8 dB 完全失效。"
+      ],
+      "short_commands": 12,
+      "survive_by_room_and_padding": {
+        "room 0.0008, tail 8s": {
+          "absolute_prior": "12/12",
+          "from_the_recording": "12/12"
+        },
+        "room 0.005, tail 8s": {
+          "absolute_prior": "12/12",
+          "from_the_recording": "12/12"
+        },
+        "room 0.02, tail 8s": {
+          "absolute_prior": "0/12",
+          "from_the_recording": "12/12"
+        },
+        "room 0.04, tail 8s": {
+          "absolute_prior": "0/12",
+          "from_the_recording": "12/12"
+        }
+      },
+      "found_by": "对抗式复核，scratchpad/fixes/五连击复核.md §2.2"
+    }
   }
 }

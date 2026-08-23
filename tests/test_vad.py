@@ -122,10 +122,17 @@ def test_the_endpoint_offset_points_past_the_frame_that_ended_the_turn() -> None
 
 
 def _speech(seconds: float, level: int = 3000) -> bytes:
+    """噪声乘一层音节包络。
+
+    平的白噪不是语音的替身：这一级读的是「这段录音自己的安静档位」，
+    而真语音每个音节之间都弱下去一次，平的信号量不出档位来。
+    """
     import numpy as np
 
+    count = int(seconds * 16_000)
     rng = np.random.default_rng(int(seconds * 1000))
-    return (rng.standard_normal(int(seconds * 16_000)) * level).astype(np.int16).tobytes()
+    syllables = (0.5 + 0.5 * np.sin(2 * np.pi * 4 * np.arange(count) / 16_000)) ** 4
+    return (rng.standard_normal(count) * level * syllables).astype(np.int16).tobytes()
 
 
 def _quiet(seconds: float) -> bytes:
@@ -186,7 +193,12 @@ def test_the_quiet_level_comes_from_the_recording_not_from_a_constant() -> None:
     """
     import numpy as np
 
-    from mindsurf_omni.service.vad import EndpointDetector, _quiet_level, frame_energies
+    from mindsurf_omni.service.vad import (
+        EndpointDetector,
+        _quiet_level,
+        frame_energies,
+        voiced_seconds,
+    )
 
     # 恰好为零的帧是文件的静音，不是房间的，不参与取值。
     room = 0.001
@@ -202,10 +214,17 @@ def test_the_quiet_level_comes_from_the_recording_not_from_a_constant() -> None:
     fainter = _quiet_level(frame_energies(faint.tobytes(), 640))
     assert fainter < louder / 3
 
-    # 全程有声、一处停顿都没有的录音，分位数会落在语音本身上，
-    # 拿它当下限会把整段听聋——所以调用方用 initial_noise_floor 封顶。
-    blast = _speech(3)
-    assert _quiet_level(frame_energies(blast, 640)) > EndpointDetector().initial_noise_floor
+    # 起始值也来自这段录音，不是绝对先验。先验的毛病是：噪底只在判成静音的帧上
+    # 更新，房间一旦高过 先验 × speech_ratio，第一帧就判成语音、噪底从此不动，
+    # 整段变成一个 span。实测短指令加八秒尾巴，房间 0.02 时存活 12/12 变 0/12。
+    room = 0.02
+    noisy = np.clip(talk + rng.standard_normal(len(talk)) * room * 32768, -32768, 32767)
+    detected = voiced_seconds(noisy.astype(np.int16).tobytes())
+
+    assert detected < len(talk) / 16_000 * 0.95, "整段被当成一直在说话"
+    assert _quiet_level(frame_energies(noisy.astype(np.int16).tobytes(), 640)) > (
+        EndpointDetector().initial_noise_floor
+    ), "这个房间正是先验够不着的那一档"
 
 
 def test_leading_silence_does_not_make_the_room_tone_into_speech() -> None:

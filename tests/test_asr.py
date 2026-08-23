@@ -443,3 +443,29 @@ async def test_a_long_recording_with_no_detectable_pause_is_still_read() -> None
     assert seen, "整段被当成没有语音丢掉了"
     assert sum(seen) == pytest.approx(200.0, abs=1.0)
     assert text
+
+
+@pytest.mark.asyncio
+async def test_a_slow_stretch_is_vouched_for_by_the_rest_of_the_dictation() -> None:
+    """语速判一次，不是每段判一次。
+
+    切段之后这道闸从「整段一次」变成「每段一次」，于是一段停下来想事情、
+    念一串数字、念一个网址，自己就低于闸线，被静默丢掉——实测 145 个字里
+    消失 4 个，日志里什么都没有。说得快的那一段本来是给说得慢的那段作保的。
+    """
+    from typing import Any
+
+    written = ["一段听得见的话。" * 20, "嗯。"]
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            return [{"text": "<|zh|>" + (written.pop(0) if written else "。")}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    # 两段：一段说得飞快，一段只有两个字。
+    pcm = _tone(60.0, amplitude=0.2) + _tone(0.5, amplitude=0.0) + _tone(60.0, amplitude=0.2)
+    text, _ = await recogniser.transcribe(pcm, 16_000)
+
+    assert text.endswith("嗯。"), "慢的那一段被逐段的闸吃掉了"

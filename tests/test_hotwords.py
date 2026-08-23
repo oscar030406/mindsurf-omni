@@ -93,15 +93,21 @@ def test_nothing_outside_the_transcript_or_the_table_can_appear() -> None:
     assert len(out) == len(source)
 
 
-def test_the_same_mistake_is_repaired_wherever_it_falls_in_the_sentence() -> None:
-    """通一千问 在句首和在句中是同一个错，不该由旁边的字怎么切来决定修不修。
+def test_a_span_the_segmenter_reads_as_words_is_left_alone_even_when_it_is_wrong() -> None:
+    """句首的 通一千问 被分词器切成 通/一千/问 三个词，所以这一级不碰它——
+    即使那确实是识别器听错的。
 
-    分词器把句首那个切成 通/一千/问 三块，其中两块是单字——那是它没辙时的兜底，
-    不是"说话人说了三个词"的证据。按 ≥2 个整词判，这一条被读成普通文本放过了。
+    试过反过来：要求覆盖跨度的每一块都是**多字**词才算普通文本，好让句首那个也修回来。
+    它把放行面从 2695 条真语料里 5.6% 的跨度开到 23.0%（净 +308%），
+    因为中文单字词遍地都是——我觉得 切成 我/觉得，的时候 切成 的/时候，
+    这些全部变成可改。一条召回换四倍的暴露面，不换。
+
+    句中那个仍然会修，因为分词器在那里切出的 用通 跨过了跨度的左边界，
+    对不齐。同一个错两个位置两种结果，难看，但难看的那一半是安全的那一半。
     """
     table = build_table(["通义千问"])
 
-    assert correct("通一千问的接口改过了。", table) == "通义千问的接口改过了。"
+    assert correct("通一千问的接口改过了。", table) == "通一千问的接口改过了。"
     assert correct("我们用通一千问做的。", table) == "我们用通义千问做的。"
 
 

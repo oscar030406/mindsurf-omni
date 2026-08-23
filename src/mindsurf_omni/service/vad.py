@@ -192,10 +192,11 @@ SEGMENT_QUIET_MS = 200
 def _quiet_level(energies: list[float]) -> float:
     """This recording's own quiet level, ignoring the frames that are exactly zero.
 
-    Capped by the caller at ``initial_noise_floor``: a recording with no pauses
-    at all -- an open microphone next to a fan, somebody reading without
-    breathing -- has its percentile land on speech, and taking that as the floor
-    would deafen the detector to the whole thing.
+    A recording with no pauses at all -- an open microphone next to a fan,
+    somebody reading without breathing -- has its percentile land near speech
+    and comes back with nothing detected. That is the honest answer for a
+    detector that works off pauses, and ``_transcribe`` falls back to fixed
+    windows rather than to a guess.
     """
     heard = [energy for energy in energies if energy > 0.0]
     if not heard:
@@ -219,7 +220,6 @@ def speech_spans(
 
     # Read off an instance rather than restated, so the two stay one setting.
     tuning = EndpointDetector(sample_rate=sample_rate)
-    floor = tuning.initial_noise_floor
     quiet_frames = max(1, quiet_ms // FRAME_MS)
 
     # Every frame's level at once. The loop below still has to be a loop --
@@ -227,7 +227,15 @@ def speech_spans(
     # walks a list of floats instead of slicing and squaring the buffer, which
     # on a request-path call at fourteen seconds is 8 ms against 0.4.
     energies = frame_energies(pcm, frame)
-    floor_min = min(tuning.initial_noise_floor, _quiet_level(energies))
+    # Both the starting value and the bound, and both from this recording. The
+    # starting value used to be an absolute prior, and that is what made the
+    # detector fail in a room: the floor only moves on frames judged quiet, so
+    # once the room is above prior x speech_ratio the first frame reads as
+    # speech and the floor never moves again -- the whole buffer becomes one
+    # span. Measured on short commands with an eight-second tail, a room at
+    # 0.02 took survival from 12/12 to 0/12, which is the failure this floor
+    # exists to prevent, arriving through the floor itself.
+    floor = floor_min = _quiet_level(energies)
 
     spans: list[tuple[int, int]] = []
     start: int | None = None
