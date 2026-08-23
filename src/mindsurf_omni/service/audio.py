@@ -23,16 +23,9 @@ PCM16_MAX = 32768.0
 def whole_samples(pcm: bytes) -> bytes:
     """The part of a PCM16 buffer that is complete samples.
 
-    A recorder flushed mid-sample sends an odd number of bytes. The
-    array-backed helpers here and in the VAD have always trimmed it; the numpy
-    ones did not, and numpy refuses the buffer outright -- "buffer size must be
-    a multiple of element size", which /v1/audio/transcriptions served as a 500.
-    So one odd byte in the body failed a request that the same buffer passed
-    through the silence check moments earlier.
-
-    Trimmed rather than refused, deliberately: half a sample is 31 microseconds
-    of audio, and a client that chunks its stream on a byte boundary is not
-    doing anything wrong.
+    A recorder flushed mid-sample sends an odd number of bytes, which numpy refuses
+    outright. Trimmed rather than rejected: half a sample is 31 microseconds, and a
+    client that chunks its stream on a byte boundary is not doing anything wrong.
     """
     return pcm[: len(pcm) // 2 * 2]
 
@@ -148,22 +141,18 @@ CLIPPED_AMPLITUDE = 32_760
 def clipping_ratio(pcm: bytes, threshold: int = CLIPPED_AMPLITUDE) -> tuple[float, int]:
     """How much of a clip is pinned at the rail, and the longest stretch of it.
 
-    Two numbers rather than one because they describe different faults. A high
-    ratio spread thinly is a clip that was mastered too hot and will sound
-    harsh; a single long run is a decoder that produced a square edge, which is
-    the audible pop. One sample at full scale is neither -- speech legitimately
-    touches the rail on a plosive -- so the run length is what a threshold
-    should eventually be set on, and this returns both rather than deciding.
+    Two numbers because they describe different faults: a high ratio spread thinly
+    is a clip mastered too hot, a single long run is a decoder producing a square
+    edge, which is the audible pop. One sample at full scale is neither -- speech
+    touches the rail on a plosive.
 
-    Measure before ``peak_normalise``. Normalisation scales the peak down to
-    0.95 of full scale, so every clipped sample stops looking clipped while the
-    square edge it left in the waveform stays exactly where it was.
+    Measure before ``peak_normalise``: normalisation scales the peak down to 0.95,
+    so every clipped sample stops looking clipped while the square edge stays where
+    it was.
 
-    Deliberately not a verdict. The threshold that separates "a plosive" from
-    "a fault" is not knowable from first principles here; it comes from the
-    distribution over clips we already have. See section 2.4 of the group OKR
-    for where the requirement comes from, and scripts/measure_clipping.py for
-    the measurement that is meant to set the line.
+    Deliberately not a verdict. Where the line between a plosive and a fault sits
+    comes from the distribution over clips, not from first principles; see
+    ``scripts/measure_clipping.py``.
     """
     samples = array.array("h")
     samples.frombytes(pcm[: len(pcm) // 2 * 2])

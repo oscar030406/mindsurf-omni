@@ -29,12 +29,9 @@ PathName = Literal["native", "cascade"]
 class TooLongForModel(ValueError):
     """One message is longer than anything the model was trained to answer.
 
-    Not a configuration fault and not a model fault: the request is well formed
-    and the weights are the right ones, but this particular input is outside
-    what they can do. It is separate from ConfigurationError because the two
-    want different answers -- an operator fixes the first, a caller shortens
-    the second -- and because a 503 tells a caller to retry, which will not
-    help here.
+    Separate from ConfigurationError because the two want different answers: an
+    operator fixes the first, a caller shortens the second. A 503 would tell the
+    caller to retry, which will not help here.
     """
 
 
@@ -42,10 +39,8 @@ class TooLongForModel(ValueError):
 class SpeechChunk:
     """One piece of speech, ready to play.
 
-    Chunks are emitted as they are produced rather than at the end, because
-    the metric that matters is time to first audio, not total time. Waiting
-    for a complete reply before speaking is the single largest avoidable cost
-    in the latency budget.
+    Emitted as produced rather than at the end, because the metric that matters is
+    time to first audio.
     """
 
     pcm: bytes  # PCM16 little-endian, mono, OUTPUT_SAMPLE_RATE
@@ -117,30 +112,22 @@ class SpeechEngine(abc.ABC):
     ) -> AsyncIterator[SpeechChunk]:
         """Speech in, speech out.
 
-        The native path answers this without ever materialising a transcript;
-        the cascade path implements it as transcribe, complete, speak. Keeping
-        it as one method is what lets the native path skip work the cascade
-        cannot.
+        The native path answers without ever materialising a transcript; the cascade
+        implements it as transcribe, complete, speak. One method is what lets the
+        native path skip work the cascade cannot.
 
-        ``history`` is the turns before this one. The cascade prepends them to
-        the prompt; the native path ignores them, because its history is audio
-        tokens and this argument can only carry text -- prior user turns there
-        have no text to carry.
+        ``history`` is the turns before this one. The cascade prepends them to the
+        prompt; the native path ignores them, because its history is audio tokens and
+        this argument can only carry text.
         """
 
 
 def split_first_utterance(accumulated: str, minimum: int = 24, comma_after: int = 12) -> str | None:
     """Find the first chunk of text worth speaking, or None if it is too early.
 
-    Speech synthesis cannot start until there is a sentence to say, so where
-    this cuts sets the floor on time-to-first-audio. Sentence-final
-    punctuation is the natural boundary, but Chinese text often runs long
-    before reaching one; a clause boundary is used once the run is long enough
-    that waiting costs more than the slightly early cut.
-
-    The thresholds come from a sister project's measured voice pipeline, where
-    this split is what took first audio from whole-reply latency down to
-    P50 1.18 s.
+    Where this cuts sets the floor on time-to-first-audio. Sentence-final
+    punctuation is the natural boundary; Chinese often runs long before reaching
+    one, so a clause boundary is taken once waiting costs more than cutting early.
     """
     for index, character in enumerate(accumulated):
         if character in "。！？!?":

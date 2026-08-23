@@ -1,26 +1,13 @@
-"""Tidy a transcript without rewriting it.
+"""Delete spoken filler from a transcript without rewriting it.
 
-The second-phase product is dictation: speech goes to the recogniser, the
-recogniser's text goes here, and what comes out lands in the user's text box.
-The measured job (see the floor round) is 89% deleting spoken filler, 0.6%
-fixing a homophone, and nothing at all for punctuation -- SenseVoice already
-writes it, in the same places the original had it.
-
-So this stage is built to delete. The decode is restricted to a subsequence of
-the transcript, which makes three things true at once:
-
-* **Invention is impossible.** Every character in the output came from the
-  transcript. The unconstrained model rewrote a sentence in roughly one turn in
-  ten, and a dictation tool that edits what the user said is worse than one
-  that leaves the filler in.
-* **Substitution is impossible too.** 它 heard as 他 stays 他. That is the 0.6%
-  the floor measured, given up on purpose.
-* **A single step cannot jump a clause.** The window is bounded; without that
-  bound "delete only" quietly becomes "delete the rest of the sentence", which
-  is what the first constrained run did (content retention 0.88).
+The decode is restricted to a subsequence of the transcript, so the output can
+only be the input with characters removed. That buys three properties and costs
+one: nothing can be invented, nothing can be substituted (它 heard as 他 stays
+他), and a single step cannot jump a clause. Homophone repair is out of reach,
+which the floor round measured at 0.6% of the edits and gave up on purpose.
 
 The instruction is fixed here rather than passed in: the model was trained on
-these words, and a caller who changes them is running a different model.
+these words.
 """
 
 from __future__ import annotations
@@ -47,17 +34,13 @@ LOOKAHEAD = 6
 LEADING_FILLERS = ("嗯", "呃", "那个", "这个", "就是", "然后", "反正", "其实", "我觉得")
 BRIDGING_FILLERS = ("你知道吧", "怎么说呢", "对吧")
 
-# How the recogniser actually spells the above. The two lists were the same
-# thing until the service was driven by hand: 11.3% of the filler that reaches
-# a transcript is not spelled the way it was said. SenseVoice writes 呃 as
-# 饿 恶 啊 鄂 扼 2 and 嗯 as 恩 摁 温, so the decoder's door -- which matches the
-# vocabulary literally -- never opened for one occurrence in nine.
+# How the recogniser actually spells the above: SenseVoice writes 呃 as
+# 饿 恶 啊 鄂 扼 and 嗯 as 恩 摁 温, so a door matching the vocabulary literally
+# misses roughly one occurrence in nine.
 #
-# Only the spellings that never occur in the corpus as ordinary words are here.
-# Counted over both pools, 4168 sentences: 摁 鄂 唉 哎 呐 appear zero times, so
-# stepping over one can only ever be removing filler. 温 (289), 饿 (12) and
-# 啊 (11) are left out for exactly the opposite reason -- 水温 and 是不是饿了 are
-# what a user said, and a door that opens on them is a door onto content.
+# Only spellings that never occur in the corpus as ordinary words are here.
+# 温, 饿 and 啊 do occur -- 水温, 是不是饿了 -- and a door onto those is a door
+# onto content.
 RECOGNISED_FILLERS = ("摁", "鄂", "唉", "哎", "呐")
 
 
@@ -78,22 +61,16 @@ PUNCTUATION = set("，。！？；：、")
 # here -- "啊，太好了" is ordinary, and deleting that 啊 would be deleting content.
 STRANDED_PARTICLES = set("吧呢嘛")
 
-# The longest text the model was trained on. The pool that built the pairs
-# dropped anything past 160 characters, so this is not a guess about capacity --
-# it is the edge of what the weights have seen. Below it the transcript goes in
-# whole; above it, consecutive sentences are grouped up to this length.
-#
-# Grouping rather than one sentence per call, because a sentence on its own is
-# also out of distribution: measured over 986 held-out transcripts, splitting
-# every sentence cost 0.039 of filler clearance (0.8625 to 0.8234) and 0.007 of
-# CER for nothing, since none of them was long enough to need splitting.
+# The longest text the model was trained on: the pool that built the pairs
+# dropped anything past 160 characters. Above it, consecutive sentences are
+# grouped up to this length rather than sent one per call, because a lone
+# sentence is also out of distribution.
 TRAINED_LENGTH = 160
 
 # Spellings that mean the model might have work to do here. Wider than the
 # decoder's door on purpose: the door decides whether a span may be deleted, so
-# a wrong entry costs content, while this decides whether the model is called at
-# all, so a wrong entry costs one decode. The costs are not symmetric and the
-# lists should not be either -- 饿 恶 啊 温 are here and not in the door.
+# a wrong entry costs content, while this only decides whether the model is
+# called, so a wrong entry costs one decode.
 #
 # Measured over 986 held-out transcripts: skipping the pieces that match nothing
 # here removes 46.7% of the calls and the four numbers do not get worse -- CER
@@ -175,38 +152,16 @@ def group_sentences(text: str, longest: int = TRAINED_LENGTH) -> list[str]:
 
 
 def drop_bridging_with_mark(text: str) -> str:
-    """A bridging filler that survived, together with the mark it brought.
+    """Delete a surviving bridging filler together with its mid-sentence mark.
 
-    The mirror image of the first shape ``tidy`` handles. That one is a filler
-    that *was* deleted and left its punctuation behind; this one is a filler the
-    arms did not delete at all, sitting mid-sentence with its own question mark:
-    "记了下来。对吧？训练好之后", "热水擦，怎么说呢？重油污就上小苏打".
+    The mirror of ``tidy``'s first shape. There a deleted filler stranded its
+    punctuation; here an undeleted one keeps a question mark mid-sentence
+    ("记了下来。对吧？训练好之后"), which a listener meets as a wrong sentence
+    boundary rather than an extra word.
 
-    It is the only leftover filler that gets its own rule, and the reason is
-    that it is the only one a listener meets as a *wrong sentence boundary*
-    rather than as an extra word. Read aloud, that mark is a 0.66 s pause with
-    the pitch held flat where it should fall -- measured, and independently
-    reported by a person who only heard the audio and said the phrasing did not
-    match the grammar. The four criteria price it at zero: ``normalise_for_cer``
-    strips punctuation before comparing.
-
-    Only mid-sentence. A mark with nothing after it ends the sentence it is
-    supposed to end, so there is no wrong boundary to remove -- and taking the
-    filler there would strand the mark, which is the defect this file already
-    has a function for.
-
-    Only the bridging three. Measured on 986 held-out transcripts against the
-    wider option of deleting every leftover vocabulary filler: this shape moves
-    CER 0.0315 to 0.0302, filler clearance 0.9296 to 0.9364, invention 0.0248 to
-    0.0236, retention unchanged at 0.9806, and takes mid-sentence marks from 41
-    to 29. Deleting every leftover filler instead reads a better clearance
-    (0.9489) and a worse retention (0.9796), and leaves the mid-sentence marks
-    at 40 -- it is a lexicon overruling the model, and it does not fix the thing
-    this is for. Twelve of the 41 marks are this shape; the other 29 are the
-    recogniser putting a question mark inside a sentence it heard wrong, which
-    nothing here can reach.
-
-    Deleting only, so the copy constraint holds.
+    Mid-sentence only: a mark at the end is ending the sentence it should end.
+    Bridging fillers only, because widening it to every leftover filler is a
+    lexicon overruling the model. Deleting only, so the copy constraint holds.
     """
     words = sorted(BRIDGING_FILLERS, key=len, reverse=True)
     changed = True
@@ -227,27 +182,14 @@ def drop_bridging_with_mark(text: str) -> str:
 def tidy(text: str) -> str:
     """Drop what a deletion left with nothing in front of it.
 
-    Three shapes, all read off the output rather than tracked back to which
-    filler they belonged to, because all three are visible in the result.
-    The third is ``drop_bridging_with_mark`` above, run first because it can
-    leave doubled punctuation for the loop below to clear.
+    Three shapes, read off the output rather than traced back to the filler they
+    came from: a mid-sentence mark still attached to its filler
+    (``drop_bridging_with_mark``, first because it can double up punctuation),
+    punctuation stranded by a deleted filler ("彩塑，？特别震撼"), and a particle
+    stranded at the start ("吧这个真的挺好的").
 
-    Punctuation: deleting 对吧 out of "彩塑，对吧？特别震撼" leaves "彩塑，？特别
-    震撼", a stranded question mark that reads worse than the filler did.
-
-    Particles: deleting 我觉得 out of "我觉得吧这个真的挺好的" leaves "吧这个真的
-    挺好的", which is not a sentence. Measured on the running service, both of
-    these ship today.
-
-    Neither costs anything on the four acceptance numbers -- ``normalise_for_cer``
-    strips punctuation from both sides, and the stranded particle is a character
-    the source contained, so content_kept counts it as kept. That is how the
-    first one survived a whole round of tuning that reported the arm as better
-    on three criteria at once, and the second one survived the round that fixed
-    the first.
-
-    Deleting only, so the copy constraint holds: the result is still a
-    subsequence of the transcript.
+    None of them costs anything on the acceptance numbers, which normalise
+    punctuation away. They are visible to a reader and not to the metric.
     """
     text = drop_bridging_with_mark(text)
     out: list[str] = []
@@ -260,15 +202,9 @@ def tidy(text: str) -> str:
     return "".join(out)
 
 
-# ---------------------------------------------------------------------------
-# Merging two arms.
-#
-# These moved out of scripts/merge_polish_arms.py on 2026-08-16, for the reason
-# `tidy` moved before them: the product runs the merge now, and a function the
-# product depends on cannot live in a scoring script. The script imports them
-# from here, so there is one copy and the offline arms and the served text
-# cannot drift the way tidy did for a whole round.
-# ---------------------------------------------------------------------------
+# --- Merging two arms. The product runs the merge, so these live here and the
+# scoring script imports them: one copy, and no drift between the offline arms
+# and the served text. ------------------------------------------------------
 
 # Longest first, so 你知道吧 is matched before 你知道 would be.
 VOCABULARY = tuple(sorted((*LEADING_FILLERS, *BRIDGING_FILLERS), key=len, reverse=True))
@@ -309,28 +245,14 @@ def vocabulary_spans(source: str, drop: set[int]) -> set[int]:
 
 
 def repetition_spans(source: str, drop: set[int], shortest: int = 2, longest: int = 5) -> set[int]:
-    """Deletions that remove one copy of an exact adjacent repetition.
+    """Indices of deletions that remove one copy of an adjacent repetition.
 
-    Exempt from the veto because a per-token head cannot represent the
-    judgement at all -- it reads one position at a time and 时间时间 looks like
-    two ordinary words. Measured: the tagger clears 0.437 of the injected
-    repetition against the generator's 0.603, and letting it veto that work
-    costs the whole difference.
+    Exempt from the veto, because a per-token head cannot represent the judgement
+    at all: it reads one position at a time and 时间时间 looks like two ordinary
+    words.
 
-    Two characters and up, because one is not a repetition in Chinese: 今天天气
-    holds 天天 and 看看 is an ordinary word. Measured both ways over 986 sentences
-    -- a floor of one reads 0.9083 filler clearance against two's 0.9055, same
-    retention to four places -- so the shorter floor buys 0.003 that is inside
-    the noise and pays for it with a class of false positive that is not.
-
-    Either copy counts. The first version asked only whether the *first* copy
-    had been dropped, so an arm that removed the second one imported nothing at
-    all and the veto blocked the whole judgement -- which reads as the tagger
-    not seeing the repetition rather than as this function not recognising it.
-    Ten of the 24 repetitions the tagger wanted gone and the product kept were
-    that shape: 发挥发挥, 故事故事, 鼻涕鼻涕, 表面表面. Fixing it moves filler
-    clearance 0.9364 to 0.9443 and CER 0.0302 to 0.0296 with retention and the
-    word-cut rate unchanged.
+    Two characters and up. One is not a repetition in Chinese: 今天天气 holds 天天
+    and 看看 is a word.
     """
     found: set[int] = set()
     for copy in repetition_copies(source, drop, shortest, longest):
@@ -343,9 +265,9 @@ def repetition_copies(
 ) -> list[set[int]]:
     """The same judgement, one copy per entry rather than flattened.
 
-    `repetition_spans` answers "which characters may not be vetoed"; this
-    answers "which characters go together", which is what a stage downstream
-    needs before it may take some of them and leave the rest.
+    ``repetition_spans`` answers which characters may not be vetoed; this answers
+    which characters go together, which is what a stage that may take some of them
+    and leave the rest needs.
     """
     copies: list[set[int]] = []
     for size in range(shortest, longest + 1):
@@ -362,22 +284,11 @@ def repetition_copies(
 
 
 def stutter(unit: str) -> bool:
-    """Whether a repeated unit is a speaker stumbling rather than saying it.
+    """Whether a repeated unit is a stumble rather than something said twice.
 
-    Adjacent repetition is usually a stutter -- 花椒花椒, 粽子粽子, 土长土长期 --
-    and dropping one copy is what the stage is for. Three shapes are not, and
-    dropping a copy of those changes what the sentence says:
-
-    * **A-not-A.** 是不是不舒服 is how Chinese asks a yes/no question; taking
-      one 是不 leaves 是不舒服, which answers it instead.
-    * **是否**, the written form of the same question.
-    * **Digits and letters.** 2020法则 names a rule, 20法则 names nothing.
-
-    Measured over 986 held-out transcripts: without these three, exempting
-    repetition from the word constraint fixes 15 sentences and breaks 3, and
-    the three broken are one of each shape. With them it fixes 13 and breaks
-    none -- and reads better on every number than the unguarded version, the
-    two it gives up being worth less than the three it stops.
+    Three shapes are not stumbles, and dropping a copy of them changes the
+    sentence: A-not-A questions (是不是不舒服 would become 是不舒服), the written
+    是否, and digits or letters (2020法则 would become 20法则).
     """
     if any(char in unit for char in "不否"):
         return False
@@ -387,12 +298,9 @@ def stutter(unit: str) -> bool:
 def reached(source: str, output: str) -> int:
     """How far into ``source`` the output got, matching greedily in order.
 
-    Under the copy constraint the output is a subsequence of the source, so
-    this is exact. Used to tell a deletion from an absence: a generative arm
-    that emits its stop token early leaves the whole tail looking deleted, and
-    on a 184-character dictation that was 100 characters of "opinion" it never
-    formed. Measured by hand, the generator returned 82 of 184 characters and
-    stopped mid-phrase.
+    Exact under the copy constraint. Separates a deletion from an absence: an arm
+    that emits its stop token early leaves the whole untouched tail looking
+    deleted.
     """
     pointer = 0
     for char in output:
@@ -405,23 +313,13 @@ def reached(source: str, output: str) -> int:
 def keep_one_copy(source: str, drop: set[int], shortest: int = 2, longest: int = 5) -> set[int]:
     """A repetition loses one copy, never both.
 
-    A repetition is one copy too many, so removing it should leave one behind.
-    Taking both is content loss wearing a deletion's clothes, and the criteria
-    charge it exactly what they charge a correct removal -- measured on a
-    dictated note, 因为，因为上午张老师有课 came back with no 因为 at all and
-    the causal link with it.
+    Taking both is content loss wearing a deletion's clothes, and the acceptance
+    numbers charge it what they charge a correct removal. Neither arm does this on
+    its own; the merge introduces it, so the merge repairs it.
 
-    Measured over 986 held-out transcripts: the generator alone never did this
-    (0 sentences), the merged arm did it in 11 (1.12%) -- 确定 确定, 换个 换个,
-    背着 背着. So it is the merge that introduced it, and the merge is where it
-    is repaired.
-
-    A repeated filler is left alone: both copies of 就是就是 are filler, and
-    taking both is the vocabulary doing its job. Without that exemption this
-    reads 1.52% and the examples are 其实 / 这个 / 就是 straight down the list.
-
-    The second copy is the one restored, so what survives sits against the text
-    that follows it.
+    A repeated filler is left alone, both copies of 就是就是 being filler. The
+    second copy is the one restored, so what survives sits against the text that
+    follows it.
     """
     kept = set(drop)
     for size in range(shortest, longest + 1):
@@ -441,35 +339,15 @@ def keep_one_copy(source: str, drop: set[int], shortest: int = 2, longest: int =
 def whole_words(source: str, drop: set[int]) -> set[int]:
     """A word is dropped whole or not at all.
 
-    Deletion here is per character and nothing held it to a word boundary, so
-    it ate 那 out of 那边 and left 客户边, 恶 out of 恶魔 and left 魔, 生酱 out
-    of 花生酱 and left 花. The criteria charge one character for each; a reader
-    sees a word that does not exist. Measured on 986 held-out transcripts, 63
-    of them (6.39%) carried at least one, and the arm this replaced carried the
-    same 63 -- it is inherited, not introduced.
+    Per-character deletion ate 那 out of 那边 and left 客户边. jieba's segmentation
+    is the boundary.
 
-    The literature's answer is to work in words: disfluency is annotated on
-    words and subword tokens inherit their parent word's label (Kumar et al.,
-    ACL 2026). Re-annotating is a training round; this is the same idea as a
-    constraint, and it repairs all 63.
+    A cut that *contains* a filler is exempt, since jieba glues 就是 to its
+    neighbour in 就是说. Containment one way only: also exempting a cut *inside* a
+    filler lets 那 through, because 那 sits inside 那个.
 
-    A cut that *contains* a filler is exempt: jieba glues 就是 to its neighbour
-    in 就是说, and undoing that deletion is undoing the vocabulary's own work.
-
-    Containment one way only. The first version also exempted a cut that was
-    *inside* a filler, and that let 那 through because 那 sits inside 那个 --
-    so the constraint skipped 客户那边, the single case it was written for, and
-    the instrument that counts these skipped it too. Both read a number that
-    excluded the defect they were about.
-
-    **What it costs, stated plainly.** Filler clearance reads 0.9415 against
-    0.9307 with this on, and CER 0.0366 against 0.0376. But no sentence gains a
-    filler in the raw output -- the metric normalises punctuation away before
-    counting, so a restored character can re-form a token there that a reader
-    never sees. Weighed against 63 repaired words that a reader does see, and
-    against this project's standing rule that damaged content beats leftover
-    filler, the constraint is on. Read them yourself: 别一挪 -> 别一件件挪,
-    血糖上升平 -> 血糖上升平缓, 常穿的当不穿 -> 常穿的当即不穿.
+    It costs filler clearance and buys back words a reader can see, which is this
+    project's standing trade -- damaged content beats leftover filler.
     """
     import jieba
 
@@ -491,11 +369,8 @@ def whole_words(source: str, drop: set[int]) -> set[int]:
 def periodic_runs(source: str, longest: int = 5) -> list[tuple[int, int, int]]:
     """Maximal runs of one repeated unit, as ``(start, end, period)``.
 
-    A run is at least two copies long and comes back under its shortest period,
-    so 久坐久坐久 is reported once as period two rather than also as period four.
-    Reported whole, leftover included: that trailing 久 is the entire reason
-    this function exists -- a run whose length is not a multiple of its period
-    is where a deletion can land off-phase.
+    Shortest period wins, and the leftover tail is included: a run whose length is
+    not a multiple of its period is where a deletion can land off-phase.
     """
     runs: list[tuple[int, int, int]] = []
     for period in range(1, longest + 1):
@@ -523,28 +398,15 @@ def periodic_runs(source: str, longest: int = 5) -> list[tuple[int, int, int]]:
 def snap_periods(source: str, drop: set[int]) -> set[int]:
     """Round a deletion inside a repeated run to a whole number of copies.
 
-    The last stage, run on the settled deletion rather than on either arm,
-    because every arm and every stage above can land the cut off-phase and the
-    damage is the same whichever one did it.
+    Runs on the settled deletion rather than on either arm, because every stage
+    above can land the cut off-phase and the damage is the same whichever did.
+    Inside a run of period k the copies are interchangeable, so difflib is free to
+    record the deletion at any of them while jieba only knows the leftmost. Half a
+    copy is not a smaller edit than a whole one, it is a different and wrong one.
 
-    Where this came from: the deployed service wrote 久坐久坐站 for 久坐久坐久站.
-    Deleting 久坐 at 12, at 14, or 坐久 at 15 all spell 久坐久站 -- inside a run
-    of period two the copies are interchangeable, so difflib is free to record
-    the deletion at any of them and it recorded the rightmost. jieba only knows
-    the leftmost: 坐 at 15 is half of the word 久坐, so ``whole_words`` handed
-    that half back and left the other half deleted. Half a copy is not a
-    smaller edit than a whole one, it is a different and wrong one.
-
-    Measured over the 986 held-out transcripts against the deployed pair of
-    arms: 13 sentences change, all 13 drop their character error rate and none
-    rises (sign test p = 2**-13), and the four service numbers move together --
-    CER 0.035365 to 0.035088, retention 0.980431 to 0.980465, filler clearance
-    0.944918 to 0.945486, invention 0.022779 to 0.022539.
-
-    Two runs are left alone. Period one is ordinary reduplication -- 慢慢看,
-    走走, 试试 -- where "one copy" is a single character and this reasoning does
-    not hold. A unit that spells a filler belongs to ``keep_one_copy``, which
-    deliberately takes both copies of 就是就是 rather than one.
+    Two runs are left alone: period one is ordinary reduplication (慢慢看, 试试),
+    and a unit spelling a filler belongs to ``keep_one_copy``, which takes both
+    copies of 就是就是 on purpose.
     """
     settled = set(drop)
     for start, end, period in periodic_runs(source):
@@ -568,9 +430,9 @@ def snap_periods(source: str, drop: set[int]) -> set[int]:
         )
         if already:
             continue
-        # Round to the nearest whole number of copies, and never take the run
-        # down to nothing: deleting every copy is a judgement the stages above
-        # make on purpose, and this one only decides where an existing cut sits.
+        # Never take the run down to nothing: deleting every copy is a judgement
+        # the stages above make on purpose, and this one only decides where an
+        # existing cut sits.
         taken = min(max(1, round(len(inside) / period)), copies - 1)
         settled -= set(range(start, end))
         settled |= set(range(start, start + taken * period))
@@ -580,29 +442,12 @@ def snap_periods(source: str, drop: set[int]) -> set[int]:
 def duplicate_words(source: str, drop: set[int]) -> set[int]:
     """Take one copy of a repeated whole word, whether or not an arm asked.
 
-    Every other stage here only ever narrows what the arms proposed. This one
-    proposes, which is why it is the narrowest rule in the file: the repeated
-    unit has to start, split and end on a jieba word boundary, and it may not
-    contain a vocabulary filler -- that is `keep_one_copy`'s judgement, and it
-    is a different one.
+    The only rule here that proposes rather than narrows, because the arms do not
+    see most of these: 花椒花椒, 粽子粽子, 利率利率. The word constraint is the whole
+    safety argument -- the unit has to start, split and end on a jieba boundary,
+    which is what puts 是不是/不/舒服 and 2020/法则 out of reach.
 
-    It exists because the arms simply do not see most of these. Of the 66
-    repetitions that survived into the deployed output, 45 were proposed by
-    neither arm; 花椒花椒, 粽子粽子, 利率利率, 分类分类 are the shape, and no
-    amount of merging can recover a deletion nobody asked for.
-
-    Measured over 986 held-out transcripts: 33 sentences change, 26 improve and
-    7 get worse, and **all 7 are sentences whose own reference stutters** --
-    做饭、做饭、玩游戏, 怪石、温泉、温泉等, 大气层中的颗粒颗粒, one of them with
-    a U+FFFD in it. The corpus was written by a model and kept the duplication;
-    the output the rule produces reads better than the text it is scored
-    against. CER 0.028126 to 0.027487, filler clearance 0.952300 to 0.967064,
-    invention 0.021614 to 0.020672, retention 0.980795 to 0.980492.
-
-    The word constraint is what makes it safe, and it was checked against the
-    shapes that are not stutters rather than assumed: 是不是不舒服 segments as
-    是不是/不/舒服, 2020法则 as 2020/法则, and 慢慢 试试 走走 are single tokens.
-    None of them offers a boundary-aligned pair, so none is touched.
+    A unit spelling a filler is left to ``keep_one_copy``.
     """
     import logging
 
@@ -647,17 +492,9 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     elif mode == "intersection":
         combined = set.intersection(*drops)
     elif mode == "veto":
-        # Both kinds are taken from every arm, not just the first.
-        #
-        # Repetition used to be imported from arm 0 alone, as an exemption --
-        # the head could not see repetition at all (0.437 against the
-        # generator's 0.603), so letting it veto that work cost the whole
-        # difference, and there was nothing of its own worth taking. That
-        # premise died on 2026-08-16: with the repetition columns wired and
-        # CS2W's human annotation in the training set, the tagger clears
-        # 0.5044 of real repetition against the generator's 0.3049. The
-        # asymmetry the vocabulary/repetition split was built on has inverted
-        # for one of its two halves, so the import is symmetric now.
+        # Both kinds are taken from every arm. Repetition used to come from arm
+        # 0 alone, on the premise that the head could not see it at all; once the
+        # repetition columns were wired that inverted, so the import is symmetric.
         exempt: set[int] = set()
         for drop in drops:
             exempt |= vocabulary_spans(source, drop)
@@ -668,13 +505,10 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
         combined = set(drops[0])
         for drop in drops[1:]:
             combined |= vocabulary_spans(source, drop)
-    # One copy of a stutter is protected from the word constraint, which does
-    # not know it is looking at one. 土长土长期 has an arm asking for 土长 and
-    # jieba reading 土/长期, so the constraint handed the copy back and the
-    # stutter stayed in the text -- 19 of the 66 repetitions that survived to
-    # the deployed output, and every one of them by this route. Measured over
-    # 986 transcripts: 13 sentences change, all 13 improve, retention does not
-    # move, filler clearance 0.9455 to 0.9523.
+    # One copy of a stutter is protected from the word constraint, which cannot
+    # tell it is looking at one: 土长土长期 has an arm asking for 土长 and jieba
+    # reading 土/长期, so the constraint would hand the copy back and leave the
+    # stutter in the text.
     protected: set[int] = set()
     for drop in drops:
         for copy in repetition_copies(source, drop):
@@ -699,9 +533,8 @@ def has_content(text: str) -> bool:
 def consumed(source: str, output: str) -> float:
     """Share of ``source`` the output reached, matching greedily in order.
 
-    Exact rather than approximate: under the copy constraint the output is
-    always a subsequence of the input, so walking one against the other says
-    how much of it the decode got through before it stopped.
+    Exact under the copy constraint, so it says how much of the input the decode
+    got through before it stopped.
     """
     if not source:
         return 1.0
@@ -808,15 +641,10 @@ class Polisher:
     # wide batch is paid by its shortest piece. Measured at 64 on real-length
     # pieces the wait became minutes; eight keeps the throughput and not that.
     max_batch: int = 8
-    # The second arm, and the threshold it answers at. Unset is the shape this
-    # stage had before 2026-08-16 and still the fallback: generate, tidy, done.
-    #
-    # Set, the two arms are merged by veto -- the head's confidence protects the
-    # generator's content, and neither may veto a vocabulary filler or an exact
-    # repetition. Measured on 986 held-out transcripts against the generator
-    # alone: CER 0.0463 to 0.0370, filler clearance 0.8592 to 0.9443, retention
-    # 0.9760 to 0.9791, invention 0.0292 to 0.0231, and words cut through 6.39%
-    # of sentences to 6.59%. Better on four readings, level on the fifth.
+    # The second arm and the threshold it answers at. Unset, the stage is
+    # generate-tidy-done. Set, the two are merged by veto: the head's confidence
+    # protects the generator's content rather than removing more of it, and
+    # neither may veto a vocabulary filler or an exact repetition.
     tagger: Path | None = None
     tagger_backbone: Path | None = None
     tagger_threshold: float = 0.5
@@ -950,17 +778,11 @@ class Polisher:
         wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]
         if not wanted:
             return transcript
-        # The head runs on a thread, for the reason `_transcribe` does: it is a
-        # blocking GPU call and this is the service's only event loop, so inline
-        # it stalls every other connection for the length of the forward pass.
-        # Measured with eight concurrent dictations, /health answered in 90 ms
-        # at worst inline against 45 ms on a thread. Neither failed -- the
-        # effect is small at this size and grows with the piece.
-        #
-        # Gathered rather than awaited in turn because the arms do not depend on
-        # each other; that buys 12 ms of the median and no more. The tagger's
-        # 109 ms is compute, not scheduling: one card, both arms on it, so
-        # "concurrent" is a queue. Measuring said so, the guess did not.
+        # On a thread, for the reason `_transcribe` is: a blocking GPU call on
+        # the service's only event loop stalls every other connection for the
+        # length of the forward pass. Gathered rather than awaited in turn
+        # because the arms do not depend on each other, though the gain is small
+        # -- one card, both arms on it, so "concurrent" is mostly a queue.
         import asyncio
 
         decoded, tagged = await asyncio.gather(
@@ -995,14 +817,11 @@ class Polisher:
         # sentence boundary, so a particle stranded at the start of one is only
         # visible once its neighbour is in front of it.
         polished = tidy("".join(out))
-        # Never hand back an empty text box. Driving the deployed service, 1.5
-        # seconds of speech came back as text "嗯，这个。" and polished "" -- the
-        # whole utterance was filler, both arms deleted all of it, and FLOOR did
-        # not catch it because `consumed` measures how far the decode reached,
-        # not how much survived: a piece cut down to a lone 。 still reaches the
-        # end. The held-out set never showed this; every transcript in it has
-        # content. Kept at the whole-result level on purpose -- deleting an
-        # all-filler sentence out of a longer dictation is this stage working.
+        # Never hand back an empty text box. An utterance that is all filler
+        # gets deleted down to punctuation by both arms, which FLOOR cannot
+        # catch: `consumed` measures how far the decode reached, not how much
+        # survived. Whole-result level on purpose -- dropping one all-filler
+        # sentence out of a longer dictation is this stage working.
         if transcript.strip() and not has_content(polished):
             return transcript
         return polished

@@ -374,11 +374,8 @@ def test_the_whole_pair_verifies_when_it_is_all_there(tmp_path: Path) -> None:
 
 
 def test_the_second_arm_defaults_to_the_swept_threshold_not_the_first_one_tried() -> None:
-    """0.5 was the value the arm was first measured at, never the value it was
-    chosen at. Swept on the deployment card over 986 held-out transcripts,
-    every step below it reads better on three of the four numbers; 0.4 is the
-    point inside the flat stretch that leaves retention and invention a margin
-    rather than sitting them on their lines."""
+    """0.5 is the value the arm was first measured at; 0.4 is the one the sweep
+    chose."""
     settings = Settings.from_environment(
         {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": "/w"}
     )

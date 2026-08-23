@@ -214,6 +214,7 @@ def test_a_language_the_model_cannot_read_is_refused_at_startup() -> None:
     base = {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": "/w"}
 
     assert Settings.from_environment(base).asr_language == "zh"
-    assert Settings.from_environment({**base, "MINDSURF_ASR_LANGUAGE": "auto"}).asr_language == "auto"
+    auto = Settings.from_environment({**base, "MINDSURF_ASR_LANGUAGE": "auto"})
+    assert auto is not None and auto.asr_language == "auto"
     with pytest.raises(ConfigurationError, match="Chinese"):
         Settings.from_environment({**base, "MINDSURF_ASR_LANGUAGE": "Chinese"})

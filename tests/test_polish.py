@@ -366,11 +366,9 @@ def test_dropping_a_bridging_filler_still_only_deletes() -> None:
 
 
 async def test_an_all_filler_dictation_comes_back_rather_than_empty() -> None:
-    """Found by using the deployed service: 1.5 s of speech transcribed to
-    "嗯，这个。" and polished to "". FLOOR did not catch it because `consumed`
-    measures how far the decode reached, not how much survived -- a piece cut
-    down to a lone 。 still reaches the end. Every held-out transcript has
-    content, so the offline numbers never saw it."""
+    """A whole utterance of filler is deleted down to punctuation by both arms.
+    FLOOR cannot catch it: ``consumed`` measures how far the decode reached, not
+    how much survived."""
     polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
     polisher.answers = {"嗯，这个。": "。"}  # type: ignore[attr-defined]
 

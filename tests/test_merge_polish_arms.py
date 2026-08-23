@@ -201,11 +201,8 @@ def test_a_word_dropped_whole_stays_dropped() -> None:
 
 
 def test_either_copy_of_a_repetition_counts_as_removing_one() -> None:
-    """The first version asked only about the first copy, so an arm that removed
-    the second imported nothing and the veto blocked the whole judgement -- which
-    reads as the tagger not seeing the repetition rather than as this function
-    not recognising it. Ten of the 24 repetitions the tagger wanted gone and the
-    product kept were that shape: 发挥发挥, 故事故事, 鼻涕鼻涕."""
+    """An arm that removes the second copy has removed a repetition too, and the
+    veto must not read that as no repetition being seen."""
     from mindsurf_omni.service.polish import repetition_spans
 
     assert repetition_spans("时间时间上", {0, 1}) == {0, 1}
@@ -226,13 +223,9 @@ def test_a_tagger_that_deletes_the_second_copy_is_no_longer_vetoed() -> None:
 
 
 def test_a_cut_inside_a_repeated_run_is_rounded_to_whole_copies() -> None:
-    """The deployed service wrote 久坐久坐站 for 久坐久坐久站.
-
-    Inside a run of period two the copies are interchangeable -- deleting 久坐
-    at 12, 久坐 at 14 or 坐久 at 15 all spell 久坐久站 -- so difflib recorded the
-    deletion at the rightmost one and jieba, which only knows the leftmost,
-    handed back half of it. Half a copy is not a smaller edit than a whole one,
-    it is a different and wrong one."""
+    """Inside a run of period two the copies are interchangeable, so difflib can
+    record the deletion at any of them while jieba only knows the leftmost. Half a
+    copy is a different edit, not a smaller one."""
     from mindsurf_omni.service.polish import merge
 
     source = "盐分摄入过多，久坐久坐久站，或者睡眠不足"
@@ -243,11 +236,8 @@ def test_a_cut_inside_a_repeated_run_is_rounded_to_whole_copies() -> None:
 
 
 def test_rounding_a_cut_never_reaches_into_the_word_after_the_run() -> None:
-    """The rejected fix for this defect moved the deletion's phase instead of
-    its size, which silently switched off the whole-word repair for the rest of
-    the sentence: 绿茶树 lost its 树 and 想吃面还是想吃炒菜 lost its 面, both on
-    inputs where the two arms agree. Rounding to whole copies leaves the run's
-    neighbours alone by construction, and these two are the guard on that."""
+    """Both inputs lose a content word (绿茶树, 想吃面) if the rounding moves the
+    deletion's phase instead of its size."""
     from mindsurf_omni.service.polish import merge
 
     for source, arm, expected in (
@@ -302,9 +292,8 @@ def test_rounding_never_takes_a_run_down_to_nothing() -> None:
 
 
 def test_a_stutter_across_a_word_boundary_is_not_handed_back() -> None:
-    """土长土长期 kept its stutter all the way to the deployed output. An arm
-    asked for 土长, jieba reads 土/长期, and the word constraint handed the copy
-    back -- 19 of the 66 repetitions that survived, every one by this route."""
+    """土长土长期 has an arm asking for 土长 and jieba reading 土/长期, so the word
+    constraint would hand the copy back and leave the stutter in the text."""
     from mindsurf_omni.service.polish import merge
 
     source = "浇水太多，土长土长期潮湿，盆底积水"
@@ -314,9 +303,8 @@ def test_a_stutter_across_a_word_boundary_is_not_handed_back() -> None:
 
 
 def test_a_question_is_not_a_stutter() -> None:
-    """是不是不舒服 is how Chinese asks; taking one 是不 leaves 是不舒服, which
-    answers instead. Same for the written 是否, and for 2020法则, which names a
-    rule that 20法则 does not."""
+    """是不是不舒服 is how Chinese asks; taking one 是不 answers instead. 2020法则
+    names a rule that 20法则 does not."""
     from mindsurf_omni.service.polish import merge
 
     for source, arm in (
@@ -348,9 +336,8 @@ def test_the_copies_are_reported_one_at_a_time_as_well_as_flattened() -> None:
 
 
 def test_a_repeated_word_neither_arm_saw_is_still_taken() -> None:
-    """Of the 66 repetitions that survived into the deployed output, 45 were
-    proposed by neither arm. No amount of merging recovers a deletion nobody
-    asked for, so this one rule proposes -- under a word constraint."""
+    """Most surviving repetitions are proposed by neither arm, and no merge
+    recovers a deletion nobody asked for."""
     from mindsurf_omni.service.polish import merge
 
     source = "四川菜里花椒花椒带来的麻"
@@ -361,9 +348,7 @@ def test_a_repeated_word_neither_arm_saw_is_still_taken() -> None:
 
 def test_the_proposing_rule_needs_a_boundary_on_all_three_sides() -> None:
     """The word constraint is the whole safety argument, so the shapes that are
-    not stutters are checked rather than assumed: 是不是不舒服 segments as
-    是不是/不/舒服, 2020法则 as 2020/法则, and 慢慢 试试 走走 are single tokens.
-    None offers a boundary-aligned pair."""
+    not stutters are checked rather than assumed."""
     from mindsurf_omni.service.polish import merge
 
     for source in (

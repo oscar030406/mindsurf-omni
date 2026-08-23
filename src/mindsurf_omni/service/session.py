@@ -28,14 +28,13 @@ class Turn:
     def token_cost(self, characters_per_token: float = 1.5, count_audio: bool = True) -> int:
         """Roughly what this turn occupies in the sequence.
 
-        Approximate on purpose: an exact count needs the tokenizer, and this
-        runs on every append during a live conversation. It errs high, because
-        under-counting is what produces the failure it exists to prevent.
+        Approximate on purpose: an exact count needs the tokenizer and this runs on
+        every append. It errs high, because under-counting is the failure it exists to
+        prevent.
 
-        ``count_audio`` is false where the history that reaches the model is
-        text: the cascade sends transcripts, so charging ten seconds of speech
-        125 tokens there evicts turns while the real prompt is an eighth of the
-        budget. The native path does send audio, and pays for it.
+        ``count_audio`` is false where the history reaching the model is text. The
+        cascade sends transcripts, so charging speech there would evict turns while the
+        real prompt is a fraction of the budget; the native path does send audio.
         """
         text_tokens = int(len(self.text) / characters_per_token) + 1
         if not count_audio:
@@ -86,12 +85,10 @@ class Conversation:
     def messages(self) -> list[dict[str, str]]:
         """The history as a prompt, without the turns that have no text.
 
-        A turn can be empty two ways: the native path never transcribes, and
-        the cascade produces nothing for silence or for a barge-in that landed
-        before recognition finished. Either way an empty turn renders as a bare
-        ``<|im_start|>user<|im_end|>`` the model has never seen, and it would
-        ride in every prompt for the rest of the session. The turn stays in the
-        ledger -- it happened, and it occupied the sequence.
+        A turn can be empty two ways: the native path never transcribes, and the
+        cascade produces nothing for silence or an early barge-in. Either renders as a
+        bare ``<|im_start|>user<|im_end|>`` the model has never seen, and it would ride
+        in every prompt for the rest of the session. The turn stays in the ledger.
         """
         return [{"role": turn.role, "content": turn.text} for turn in self.turns if turn.text]
 

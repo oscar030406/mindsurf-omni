@@ -334,11 +334,8 @@ def test_the_message_also_names_the_installed_but_unloadable_case(tmp_path: Path
 
 
 def test_a_polisher_without_transformers_is_refused_by_name(tmp_path: Path) -> None:
-    """torch was guarded and transformers was not, so a host carrying one and
-    not the other reached `from transformers import AutoTokenizer` inside the
-    Thinker and raised a bare ModuleNotFoundError -- out of the polisher, out
-    of the engine, and out of a request as a 500 that /health cannot see. Both
-    packages are the same case; the difference was which one was remembered."""
+    """torch and transformers are the same case. Guarding only one of them lets a
+    bare ModuleNotFoundError out of a request as a 500 that /health cannot see."""
     from mindsurf_omni.service import factory
 
     checkpoint = tmp_path / "polish.pth"
@@ -386,15 +383,10 @@ def test_the_refusal_names_the_extra_that_fixes_it(tmp_path: Path) -> None:
 
 
 def test_a_recogniser_missing_torchaudio_refuses_before_the_request(tmp_path: Path) -> None:
-    """`import funasr` succeeds where `from funasr import AutoModel` does not.
-
-    funasr resolves its submodules lazily, and the submodule reaches torchaudio
-    -- which funasr imports and does not declare. Checking the top-level name
-    alone checked that a directory exists. Found by running the built image:
-    the container came up, /health said the recogniser was ready, and the first
-    dictation returned 500 with ModuleNotFoundError out of
-    funasr.utils.load_utils.
-    """
+    """``import funasr`` succeeds where ``from funasr import AutoModel`` does not:
+    funasr resolves submodules lazily and reaches torchaudio, which it imports and
+    does not declare. Checking the top-level name alone checks that a directory
+    exists."""
     import asyncio
 
     from mindsurf_omni.service import factory

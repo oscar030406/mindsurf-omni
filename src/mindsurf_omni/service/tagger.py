@@ -1,14 +1,8 @@
 """The tagging arm's inference half.
 
-Split out of ``scripts/train_polish_tagger.py`` on 2026-08-16, when the service
-started running the tagger: a script may import from the service, and the
-service may not import from a script. The trainer imports these from here, so
-the columns the head was trained on and the columns it is served are one piece
-of code -- the drift that hid a broken ``--repetition`` for a whole round
-started as exactly this kind of second copy.
-
-Training-only concerns (labelling, the optimiser, the unfrozen backbone) stay
-in the script.
+The trainer imports from here, so the columns the head was trained on and the
+columns it is served are one piece of code. Training-only concerns (labelling,
+the optimiser, the unfrozen backbone) stay in the script.
 """
 
 from __future__ import annotations
@@ -28,9 +22,8 @@ REPETITION_UNIT = "character"
 def token_spans(tokeniser: Any, text: str) -> tuple[list[int], list[tuple[int, int]]]:
     """Token ids and the character span each one covers.
 
-    Walked by decoding rather than read from an offset mapping: this tokenizer
-    is not a fast one, and a wrong span here silently mislabels the training
-    data -- which is the failure that cannot be seen in a loss curve.
+    Walked by decoding rather than read from an offset mapping: this tokenizer is
+    not a fast one, and a wrong span here mislabels the training data silently.
     """
     ids = list(tokeniser(text).input_ids)
     spans: list[tuple[int, int]] = []
@@ -48,35 +41,19 @@ def repetition_features(
 ) -> Any:
     """Whether this token overlaps an exact adjacent repetition, read on characters.
 
-    Handed over as a feature because the head cannot compute it. It reads one
-    position at a time, so 时间时间 looks like two ordinary words -- measured,
-    the tagger clears 0.437 of the injected repetition against the generative
-    arm's 0.603, and that gap is the whole reason the filler-clearance line is
-    still failing. Everything else it needs is in the hidden state; this is not.
+    Handed over as a feature because the head cannot compute it: it reads one
+    position at a time, so 时间时间 looks like two ordinary words.
 
-    **Characters, not token ids.** The first version compared token ids, and a
-    BPE vocabulary does not cut where a repetition starts: 地点还是还是在B203
-    tokenises to 地点 / 还是 / 还 / 是在, so the second 还是 is split across a
-    boundary with 在 and the columns stayed dark on a repetition that is plain
-    in the text. Measured on the four dictated notes -- 应该应该 and 这边这边
-    tokenise cleanly and were removed, 还是还是 did not and survived every arm.
-    Reading the characters and projecting onto the spans lights all of them.
-
-    The literature does not compute this on subwords either: disfluency is
-    annotated on words, and subword tokens inherit their parent word's label
-    (Kumar et al., ACL 2026, doi 10.18653/v1/2026.acl-long.2137).
+    Characters, not token ids. A BPE vocabulary does not cut where a repetition
+    starts -- 地点还是还是在B203 tokenises to 地点/还是/还/是在, so the second 还是
+    straddles a boundary and the columns stay dark on a repetition that is plain in
+    the text.
 
     Two columns per length: "the next k characters repeat me" and "I repeat the
-    previous k". Both, because which copy the alignment marks as deleted is not
-    fixed for two identical spans, and the head should be free to learn either.
-
-    A token overlapping a marked span is marked. It is an input, not a label --
-    the conservative "only if wholly covered" rule belongs to `label_tokens`,
-    where being wrong costs content; being wrong here costs the head one column
-    it can learn to discount.
-
-    Length 1 is included, unlike the merge rule's exemption: there the cost of a
-    false positive is keeping a deletion, here it is one input column.
+    previous k", because which copy an alignment marks as deleted is not fixed.
+    Overlap is enough to mark a token, and length 1 is included. This is an input,
+    where a false positive costs one column the head can learn to discount, not a
+    label, where it would cost content.
     """
     out = torch.zeros((len(spans), 2 * longest), device=device)
     for size in range(1, longest + 1):
@@ -98,9 +75,8 @@ def repetition_features(
 def feature_width(embedding_size: int, lookahead: int, repetition: int = 0) -> int:
     """How wide one token's row is, so the head is built to match it.
 
-    Stated once. The unfrozen path used to compute this itself and left the
-    repetition columns out of the arithmetic, which is half of why
-    ``--repetition`` never worked.
+    One statement for both the frozen and unfrozen paths. Computed separately, the
+    two widths drift and the mismatch only surfaces at inference.
     """
     return embedding_size * (1 + lookahead) + 2 * repetition
 
@@ -117,13 +93,9 @@ def assemble(
 ) -> Any:
     """The hidden state, the lookahead embeddings, and the repetition columns.
 
-    Shared by the frozen and unfrozen paths rather than written twice. It was
-    written twice, and the two copies drifted: the frozen one grew the
-    repetition columns and the unfrozen one did not, so ``--repetition 3``
-    trained a head that had never seen the feature, wrote ``repetition: 3``
-    into the checkpoint anyway, and then failed at inference with a shape
-    mismatch -- 2310 columns arriving at a 2304-wide head. Nothing caught it
-    because nothing had ever run the flag end to end.
+    Shared by the frozen and unfrozen paths for the reason ``feature_width`` is: a
+    second copy drifts, and a head trained without the feature still writes the
+    feature's name into its checkpoint.
     """
     pieces = [hidden]
     for step in range(1, lookahead + 1):
@@ -148,10 +120,9 @@ def features(
 ) -> Any:
     """One hidden state per token, plus the next tokens' input embeddings.
 
-    ``repetition`` appends the hand-crafted repetition columns, which are read
-    off ``text`` rather than off the ids -- see ``repetition_features``. Zero
-    keeps the old width, so a head trained before this existed still loads and
-    still means the same thing.
+    ``repetition`` appends the hand-crafted columns, read off ``text`` rather than
+    off the ids -- see ``repetition_features``. Zero keeps the old width, so a head
+    trained before this existed still loads and still means the same thing.
     """
     if repetition and spans is None:
         raise ValueError(

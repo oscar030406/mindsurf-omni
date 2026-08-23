@@ -1,10 +1,7 @@
 """The cut reading, on outputs whose answer a person can check by eye.
 
-It had no test, and for a week it reported 7 broken words out of 986 that were
-all correct Chinese -- 先熟悉, 太平洋, 老少皆宜. Every one came from a repeated
-run, where the same output can be spelled by deleting any of the copies and
-difflib picks one arbitrarily.
-"""
+Deletions inside a repeated run have several equivalent placements; judging one
+arbitrary alignment reports broken words that are not broken."""
 
 from __future__ import annotations
 

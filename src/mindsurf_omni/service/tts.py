@@ -47,13 +47,9 @@ EDGE_PROSODY = {
 class SynthesiserUnavailable(RuntimeError):
     """The synthesiser was asked for audio and produced none.
 
-    A RuntimeError still, so every existing caller and test keeps working, but
-    named so the service can answer 502 instead of 500. The distinction is the
-    one an operator acts on: 500 says this service has a bug, 502 says the
-    thing it depends on did not answer -- and for the hosted synthesiser that
-    is measured at 2 turns in 160 even when the network is healthy, before any
-    outage. Every one of those turns used to be an Internal Server Error with
-    no detail in the body.
+    A RuntimeError still, so existing callers keep working, but named so the
+    service can answer 502 rather than 500: an operator acts differently on "this
+    service has a bug" and "the thing it depends on did not answer".
     """
 
 
@@ -70,16 +66,13 @@ _SPEAKABLE = re.compile(r"[\w一-鿿]")
 def clean_for_speech(text: str) -> str:
     """Remove what reads badly aloud while keeping what was meant.
 
-    A short parenthetical becomes an aside between commas, because a speaker
-    would say it. A long one is dropped, because a speaker would not read a
-    paragraph inside brackets and doing so buries the sentence it interrupts.
+    A short parenthetical becomes an aside between commas, because a speaker would
+    say it; a long one is dropped, because reading a paragraph inside brackets
+    buries the sentence it interrupts.
 
     Text with nothing speakable left comes back empty rather than as bare
-    punctuation. The strip below only removes the two marks a sentence tends to
-    end on, so "。。。？！" survived it as "？！" -- which the hosted synthesiser
-    answers with no audio at all, and this module turns that into a RuntimeError
-    the endpoint has no choice but to serve as a 500. A reply of "……" is
-    ordinary text for a chat model to produce, and it is not a server fault.
+    punctuation: "。。。？！" is ordinary output for a chat model, and the hosted
+    synthesiser answers it with no audio at all.
     """
     cleaned = _MARKDOWN.sub("", text)
     cleaned = cleaned.replace("——", "，").replace("—", "，")
@@ -110,17 +103,11 @@ class Synthesiser(Protocol):
 async def stream_utterance(synthesiser: Any, utterance: Utterance) -> AsyncIterator[bytes]:
     """Audio as it becomes available, or the whole utterance once.
 
-    The cascade spends 94% of its budget waiting for a clause to finish
-    synthesising -- 2133.9 ms at the median against 126.0 ms for recognition
-    and the Thinker together, measured on the deployment card. Time to first
-    audio does not need the clause to be finished; it needs the first samples.
-
-    Not every synthesiser can do that, and the split is not about effort. The
-    hosted one pays a network round trip that cannot be divided, so chunking it
-    buys the tail and not the head. A local model pays compute, which can be
-    handed over as it is produced. So this asks, and falls back to one whole
-    piece for anything that cannot -- a caller written against it does not
-    branch.
+    Time to first audio needs the first samples, not the finished clause. Not every
+    synthesiser can do that: a hosted one pays a network round trip that cannot be
+    divided, while a local model pays compute, which can be handed over as it is
+    produced. So this asks, and falls back to one whole piece -- a caller written
+    against it does not branch.
     """
     streamer = getattr(synthesiser, "stream", None)
     if streamer is None:
@@ -214,37 +201,19 @@ class EdgeSynthesiser:
 def delay_stop(model: Any, patches: int) -> Any:
     """Make the model keep going for ``patches`` more steps after it says stop.
 
-    VoxCPM ends a sentence a syllable short. Reported by ear -- 慢慢看 losing its
-    看, 一碗面就成了 losing its 了 -- and none of the instruments on this project
-    could see it: the recogniser reconstructs the character from a partial
-    syllable so read-back CER does not move, the file ends in silence so there is
-    no cut to find, and timbre and level are about other things.
+    VoxCPM ends a sentence a syllable short: 慢慢看 loses its 看. The cause is in
+    the decoder's own loop, which computes the stop flag from ``lm_hidden`` -- the
+    state that produced the patch it has just appended and has not yet been fed
+    back -- so the decision runs one patch behind the audio.
 
-    The cause is in the decoder's own loop. It computes the stop flag from
-    ``lm_hidden``, the state that produced the patch it has just appended and
-    that has not yet been fed that patch back -- so the decision runs one patch
-    behind the audio. Holding the first ``patches`` stop signals gives the tail
-    back, measured over eight held-out notes with the trim sweep in
-    ``measure_tail_syllable``:
+    Two is what ships. It clears edge's 150 ms of final syllable with read-back
+    CER, closing-segment length and total duration all unchanged; four starts
+    producing a detached blip rather than the rest of the word, which none of these
+    numbers can hear and a person can.
 
-        delay   final syllable survives     read-back CER   last segment
-        0       100 ms (median)             0.0081          1.87 s
-        1       100                         0.0075          2.00
-        2       200                         0.0075          1.90
-        4       400                         0.0081          0.85
-        edge    150                         --              --
-
-    Two is what ships: it clears edge's 150 ms with read-back CER, the length of
-    the closing segment and the total duration all unchanged, and it was the one
-    a listener picked. Four doubles the reading again and the closing segment
-    halves -- the extra patches start becoming a detached blip rather than the
-    rest of the word, which is the shape none of these numbers can hear and a
-    person can.
-
-    Wrapping the head rather than editing the loop: the loop is a third party's
-    and the patch has to survive their upgrades. Per-thread counter because
-    synthesis runs on the event loop's worker threads and two requests must not
-    share one budget.
+    Wrapping the head rather than editing the loop, because the loop is a third
+    party's. Per-thread counter, because synthesis runs on the event loop's worker
+    threads and two requests must not share one budget.
     """
     import torch
 
@@ -264,11 +233,8 @@ def delay_stop(model: Any, patches: int) -> Any:
     class Held(torch.nn.Module):
         """An ``nn.Module``, not a closure.
 
-        ``stop_head`` is a registered child of an ``nn.Module``, and assigning a
-        plain function to that name raises TypeError. A fake without that rule
-        does not catch it, so the unit tests passed and the first real synthesis
-        died -- which is why this landed with a run of the actual class at both
-        settings rather than a reading of the code.
+        ``stop_head`` is a registered child of an ``nn.Module``, and assigning a plain
+        function to that name raises TypeError.
         """
 
         def forward(self, hidden: torch.Tensor) -> torch.Tensor:
@@ -364,10 +330,8 @@ class VoxCPMSynthesiser:
     def _arm_stop_budget(self) -> None:
         """Give this utterance its own held-stop budget.
 
-        On the calling thread, and immediately before generating: the counter is
-        per-thread so two concurrent requests cannot spend each other's, and
-        re-arming per utterance is what keeps a long batch from exhausting it on
-        the first sentence.
+        Per-thread, so two concurrent requests cannot spend each other's, and re-armed
+        per utterance so a long batch does not exhaust it on the first sentence.
         """
         if self._stop_state is not None:
             self._stop_state.left = self.stop_delay
@@ -480,21 +444,13 @@ class VoxCPMSynthesiser:
 def instruction_leaked(spoken_text: str, transcript: str) -> bool:
     """Did the synthesiser read the delivery instruction aloud?
 
-    Compared against the instruction rather than the text, because the failure
-    is additive: the reply is still there, with the instruction in front of it.
-    A length or similarity check on the reply alone would not see it.
+    Compared against the instruction rather than the text, because the failure is
+    additive: the reply is still there with the instruction in front of it.
 
-    What actually leaks is not always the whole instruction. The sister project
-    that hit this reproducibly saw only its *tail* -- "…的语气说吗？" -- survive
-    into the audio, because the template's instruction and text are separated
-    by a marker the synthesiser sometimes starts reading just after. Matching
-    the instruction's first characters therefore misses the observed failure,
-    so any suffix of the instruction counts.
-
-    Still anchored at the start rather than containment: whatever fragment
-    leaks, it is read *before* the reply. A reply that merely discusses tone
-    contains those words in the middle, and flagging it would train everyone to
-    ignore the screen.
+    Any suffix counts, since what leaks is often only the instruction's tail. Still
+    anchored at the start rather than containment: whatever fragment leaks is read
+    *before* the reply, and a reply that merely discusses tone would otherwise be
+    flagged until everyone ignored the screen.
     """
     if not transcript:
         return False
@@ -517,16 +473,11 @@ def screen_batch(
 ) -> list[tuple[Utterance, str]]:
     """Return the utterances whose audio does not match what was asked for.
 
-    Run over every synthesised batch, not a sample of it. The leak is
-    intermittent, so a spot check finds it in the batches it did not ruin.
+    Every batch, not a sample: the leak is intermittent, so a spot check finds it
+    in the batches it did not ruin.
 
-    Necessary and not sufficient. A recogniser only reports words, so this
-    screen is blind to anything that is not speech: the sister project chased
-    intermittent pops through 38 clips of acoustic screening and clean
-    spectrograms before concluding they were random and unreproducible. Their
-    fix was at playback -- a limiter after the analyser -- not a better screen.
-    A batch that passes here has been shown to say the right words, not to
-    sound right.
+    Necessary and not sufficient. A recogniser reports words, so a batch that
+    passes here has been shown to say the right things, not to sound right.
     """
     if len(utterances) != len(transcripts):
         raise ValueError(
