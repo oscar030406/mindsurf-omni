@@ -14,12 +14,35 @@ def test_the_deletions_are_read_back_off_the_alignment() -> None:
 
 
 def test_union_deletes_what_either_arm_deleted() -> None:
-    """The two get things wrong in different places, which is the whole point."""
-    source = "嗯，今天那个天气怎么样"
-    left = {"source": source, "polished": "今天那个天气怎么样"}  # dropped 嗯，
-    right = {"source": source, "polished": "嗯，今天天气怎么样"}  # dropped 那个
+    """The two get things wrong in different places, which is the whole point.
+
+    Both words here are single-duty. This test used to use 那个 for the second
+    one, which now reads the content-word rule's answer rather than the union's
+    -- see ``test_a_double_duty_word_before_content_survives_every_mode`` for
+    what that costs and why it is still the answer we want.
+    """
+    source = "嗯，今天你知道吧天气怎么样"
+    left = {"source": source, "polished": "今天你知道吧天气怎么样"}  # dropped 嗯，
+    right = {"source": source, "polished": "嗯，今天天气怎么样"}  # dropped 你知道吧
 
     assert merge([left, right], "union") == "今天天气怎么样"
+
+
+def test_a_double_duty_word_before_content_survives_every_mode() -> None:
+    """The rule's admitted cost, recorded rather than hidden.
+
+    In 今天那个天气怎么样 the 那个 is a hesitation, and nothing in the text says
+    so: it is spelled the same as the 那个 in 那个文件你发我一下 and stands in
+    the same slot. Handing it back is the trade -- on 723 human-marked
+    sentences it takes deletion recall from 0.3218 to 0.2934 and precision from
+    0.4049 to 0.4889. The rule runs in every mode, so an offline comparison of
+    the modes is still comparing like with like.
+    """
+    source = "嗯，今天那个天气怎么样"
+    left = {"source": source, "polished": "今天那个天气怎么样"}
+    right = {"source": source, "polished": "嗯，今天天气怎么样"}
+
+    assert merge([left, right], "union") == "今天那个天气怎么样"
 
 
 def test_intersection_deletes_only_what_both_agreed_on() -> None:
@@ -403,3 +426,141 @@ def test_the_proposing_rule_leaves_repeated_filler_to_keep_one_copy() -> None:
     source = "这个方案就是就是可以的"
 
     assert duplicate_words(source, set()) == set()
+
+
+# --- Double-duty words: 这个 in 这个模块 is not a hesitation ------------------
+#
+# Each shape below broke a previous attempt at this rule, and each passes for a
+# different reason, so they are tests rather than one comment.
+
+
+def test_a_content_word_both_arms_deleted_comes_back() -> None:
+    """The defect itself. The arms share a training lexicon, so agreeing that
+    这个 goes is not evidence -- it is one mistake made twice."""
+    source = "这个模块和那个模块的接口不一样。"
+    arm = {"source": source, "polished": "模块和模块的接口不一样。"}
+
+    assert merge([dict(arm), dict(arm)], "veto") == source
+
+
+def test_a_single_duty_filler_is_not_covered_by_the_rule() -> None:
+    """嗯 and 呃 are what a person marks as filler nearly every time, so they
+    stay deletable. Without this the rule would just switch the stage off."""
+    source = "嗯，我马上就来。"
+    arm = {"source": source, "polished": "我马上就来。"}
+
+    assert merge([dict(arm), dict(arm)], "veto") == "我马上就来。"
+
+
+def test_a_stuttered_double_duty_word_still_loses_a_copy() -> None:
+    """One copy of a stutter is not a content word. Both neighbours are checked,
+    because the alignment records the drop on whichever copy has text in front
+    of it -- 方案这个这个 and 我觉得我觉得这个 arrive with different halves in
+    the drop set."""
+    for source, polished in (
+        ("我觉得我觉得这个方案不错", "我觉得这个方案不错"),
+        ("方案这个这个不错", "方案这个不错"),
+        ("方案就是就是不错", "方案就是不错"),
+        ("方案那个那个不错", "方案那个不错"),
+    ):
+        arm = {"source": source, "polished": polished}
+        assert merge([dict(arm), dict(arm)], "veto") == polished
+
+
+def test_a_triple_stutter_does_not_come_back_half_a_word_at_a_time() -> None:
+    """The last copy of 这个这个这个 sits before content, so a rule that only
+    asked "is it before content" restores that copy and leaves the surviving
+    deletion off-phase: 这这个方案可以, half a word."""
+    for source, polished, expected in (
+        ("这个这个这个方案可以", "这方案可以", "这个这个方案可以"),
+        ("其实其实其实我也不确定", "其我也不确定", "其实其实我也不确定"),
+        ("就是就是就是可以的", "就可以的", "就是就是可以的"),
+    ):
+        arm = {"source": source, "polished": polished}
+        assert merge([dict(arm), dict(arm)], "veto") == expected
+
+
+def test_a_word_the_arm_ate_along_with_the_content_stays_deleted() -> None:
+    """Handing the filler back while the content stays gone is worse than the
+    plain over-deletion: 轻轻 is still missing and now 反正 sits in its slot.
+    The surviving right-hand neighbour is what rules this out."""
+    for source, polished in (
+        ("淘米反正轻轻搓两遍", "淘米搓两遍"),
+        ("血糖上升，反正相对平缓", "血糖上升平缓"),
+        ("我们要这个报销单的模板", "我们要的模板"),
+        ("你把那个红色的盒子拿来", "你把拿来"),
+    ):
+        arm = {"source": source, "polished": polished}
+        assert merge([dict(arm), dict(arm)], "veto") == polished
+
+
+def test_a_run_of_fillers_before_content_gives_back_only_the_last_one() -> None:
+    """然后我觉得，我们… gives back neither, because 我 after 然后 and the comma
+    after 我觉得 are both still deleted. 就是我觉得这样挺好 gives back 我觉得
+    alone. No position index is built, so there is no loop for a per-word
+    exemption to sit in the wrong half of."""
+    source = "然后我觉得，我们已经做完了"
+    arm = {"source": source, "polished": "我们已经做完了"}
+    assert merge([dict(arm), dict(arm)], "veto") == "我们已经做完了"
+
+    source = "就是我觉得这样挺好"
+    arm = {"source": source, "polished": "这样挺好"}
+    assert merge([dict(arm), dict(arm)], "veto") == "我觉得这样挺好"
+
+
+def test_a_demonstrative_before_a_pause_is_content() -> None:
+    """Position is deliberately not consulted, and this is why: 我要这个。 is
+    the commonest content use there is, and it stands exactly where the pairs
+    builder injects filler."""
+    for source, polished in (
+        ("我要这个。", "我要。"),
+        ("我说的是这个，不是那个。", "我说的是，不是。"),
+    ):
+        arm = {"source": source, "polished": polished}
+        assert merge([dict(arm), dict(arm)], "veto") == source
+
+
+def test_a_clause_that_is_nothing_but_filler_still_goes_whole() -> None:
+    """那个。 on its own is not a demonstrative with a pause after it, it is a
+    clause with no content in it, and the stage deletes those whole."""
+    source = "嗯，那个。嗯，会议改到三点了。"
+    arm = {"source": source, "polished": "。会议改到三点了。"}
+
+    assert merge([dict(arm), dict(arm)], "veto") == "会议改到三点了。"
+
+
+def test_a_word_at_the_very_end_has_no_neighbour_to_vouch_for_it() -> None:
+    """Nothing follows it, so nothing says the arm did not eat content with it.
+    The conservative answer is the one that changes nothing."""
+    from mindsurf_omni.service.polish import content_words
+
+    assert content_words("答案就是", {2, 3}) == set()
+
+
+def test_the_single_arm_path_runs_the_same_rule() -> None:
+    """``merge`` only happens when a tagger is configured, and 14 of the 20
+    reported dictations break with one arm too."""
+    from mindsurf_omni.service.polish import keep_content
+
+    source = "我把这个改成了三号字体。"
+    assert keep_content(source, "我把改成了三号字体。") == source
+    assert keep_content("嗯，我马上就来。", "我马上就来。") == "我马上就来。"
+    # Nothing to give back: the arm's own text goes through untouched rather
+    # than being re-rendered off the alignment.
+    assert keep_content("今天天气不错。", "今天天气不错。") == "今天天气不错。"
+
+
+def test_an_alignment_that_loses_a_character_leaves_the_arm_alone() -> None:
+    """difflib does not promise the longest common subsequence. Here it aligns
+    我一手机 as 我 + 手机 and drops the 一, so re-rendering from that drop set
+    would hand back a sentence the arm never wrote. One row of 723 in the
+    human-marked corpus, and returning 我一手机 with 这个 still missing beats
+    returning 我手机."""
+    from mindsurf_omni.service.polish import dropped, keep_content
+
+    source = "我这个手机一是一个五G手机"
+    arm = "我一手机"
+    drop = dropped(source, arm)
+
+    assert "".join(c for i, c in enumerate(source) if i not in drop) != arm
+    assert keep_content(source, arm) == arm

@@ -37,11 +37,19 @@ from mindsurf_omni.evaluation.metrics import (  # noqa: E402
 )
 from mindsurf_omni.service.polish import (  # noqa: E402  # noqa: E402
     BRIDGING_FILLERS,
+    DOUBLE_DUTY,
     LEADING_FILLERS,
     project_onto,
     reachable,
 )
 from scripts.train_polish import build_prompt  # noqa: E402
+
+# The rest of the vocabulary: the words a human-marked corpus calls filler
+# nearly every time they appear, so deleting them is the judgement the gate is
+# meant to be about.
+SINGLE_DUTY = tuple(
+    word for word in (*LEADING_FILLERS, *BRIDGING_FILLERS) if word not in DOUBLE_DUTY
+)
 
 # 判据，训练之前写死。
 #
@@ -123,11 +131,35 @@ def invented(target: str, output: str) -> float:
     return max(0, len(right) - matched) / len(left)
 
 
-def filler_removed(row: dict[str, Any], output: str) -> tuple[int, int]:
+def filler_removed(
+    row: dict[str, Any],
+    output: str,
+    only: tuple[str, ...] | None = None,
+    exclude: tuple[str, ...] = (),
+) -> tuple[int, int]:
     """Injected filler that reached the transcript, and how much of it went away.
 
     Counted against the source rather than the injection record: filler the
     recogniser already dropped is not work the polisher did.
+
+    ``only`` restricts the count to some of the vocabulary, and exists because
+    this number answers two different questions depending on the word. The
+    injector picks uniformly from all nine leading fillers, so a 这个 it planted
+    is labelled "delete this" while the 这个 in 这个模块 is not -- same spelling,
+    same slot, and only the injection record can tell them apart. On the
+    single-duty words (嗯, 呃, the bridging ones) the label and the judgement
+    agree, and the number means what it says. On ``DOUBLE_DUTY`` it measures
+    obedience to the injector, not correctness, which is why the two are
+    reported apart and only the first is a release gate. Omit ``only`` and the
+    old combined figure comes back unchanged.
+
+    ``exclude`` is the other half of the same idea and the one that keeps the
+    arithmetic honest. ``only`` is a whitelist, and the injector plants a third
+    kind the whitelist does not name: repeated content words, 16.4% of what
+    arrives, cleared at 0.82 -- the one bucket that does not pass the line. Split
+    into single and double alone, that bucket falls out of the report entirely
+    and the gate can no longer fail. The gate is therefore taken over everything
+    whose label is trustworthy, which is everything except ``DOUBLE_DUTY``.
     """
     heard, clean, written = (
         normalise_for_cer(row["source"], fold_numbers=FOLD_NUMERALS),
@@ -137,7 +169,9 @@ def filler_removed(row: dict[str, Any], output: str) -> tuple[int, int]:
     arrived = removed = 0
     for item in row.get("injections", []):
         token = normalise_for_cer(item["token"])
-        if not token:
+        if not token or (only is not None and item["token"] not in only):
+            continue
+        if item["token"] in exclude:
             continue
         into_source = max(0, heard.count(token) - clean.count(token))
         into_output = max(0, written.count(token) - clean.count(token))
@@ -368,6 +402,9 @@ def main() -> None:
             scored: dict[str, Any] = {}
             if not args.latency_only:
                 arrived, removed = filler_removed(row, text)
+                single_in, single_out = filler_removed(row, text, SINGLE_DUTY)
+                double_in, double_out = filler_removed(row, text, DOUBLE_DUTY)
+                gated_in, gated_out = filler_removed(row, text, exclude=DOUBLE_DUTY)
                 scored = {
                     "cer_before": polished_cer(row["target"], row["source"]),
                     "cer_after": polished_cer(row["target"], text),
@@ -375,6 +412,12 @@ def main() -> None:
                     "invented": invented(row["target"], text),
                     "filler_arrived": arrived,
                     "filler_removed": removed,
+                    "filler_arrived_gated": gated_in,
+                    "filler_removed_gated": gated_out,
+                    "filler_arrived_single": single_in,
+                    "filler_removed_single": single_out,
+                    "filler_arrived_double": double_in,
+                    "filler_removed_double": double_out,
                 }
             written.append({**row, "polished": text, **scored, "elapsed_ms": elapsed})
             if index % 20 == 0:
@@ -423,6 +466,9 @@ def main() -> None:
         scored: dict[str, Any] = {}
         if not args.latency_only:
             arrived, removed = filler_removed(row, text)
+            single_in, single_out = filler_removed(row, text, SINGLE_DUTY)
+            double_in, double_out = filler_removed(row, text, DOUBLE_DUTY)
+            gated_in, gated_out = filler_removed(row, text, exclude=DOUBLE_DUTY)
             scored = {
                 "cer_before": polished_cer(row["target"], row["source"]),
                 "cer_after": polished_cer(row["target"], text),
@@ -430,6 +476,12 @@ def main() -> None:
                 "invented": invented(row["target"], text),
                 "filler_arrived": arrived,
                 "filler_removed": removed,
+                "filler_arrived_gated": gated_in,
+                "filler_removed_gated": gated_out,
+                "filler_arrived_single": single_in,
+                "filler_removed_single": single_out,
+                "filler_arrived_double": double_in,
+                "filler_removed_double": double_out,
             }
         written.append({**row, "polished": text, **scored, "elapsed_ms": elapsed})
         if index % 20 == 0:
@@ -453,9 +505,26 @@ def main() -> None:
     after = assess("cer_after", [r["cer_after"] for r in written], effect_of_interest=POLISHED_CER)
     arrived = sum(r["filler_arrived"] for r in written)
     removed = sum(r["filler_removed"] for r in written)
+    arrived_single = sum(r["filler_arrived_single"] for r in written)
+    removed_single = sum(r["filler_removed_single"] for r in written)
+    arrived_double = sum(r["filler_arrived_double"] for r in written)
+    removed_double = sum(r["filler_removed_double"] for r in written)
+    arrived_gated = sum(r["filler_arrived_gated"] for r in written)
+    removed_gated = sum(r["filler_removed_gated"] for r in written)
     kept = statistics.mean(r["content_kept"] for r in written)
     made_up = statistics.mean(r["invented"] for r in written)
     empty = sum(1 for r in written if not r["polished"].strip())
+    double_duty_line = (
+        f"{removed_double / arrived_double:.3f}" if arrived_double else "没有双职词进到输入"
+    ) + (f"；旧合计口径 {removed / arrived:.3f}" if arrived else "")
+    # 三桶必须加得回合计，否则被丢掉的那桶不会有人发现。
+    arrived_rest = arrived - arrived_single - arrived_double
+    removed_rest = removed - removed_single - removed_double
+    rest_line = (
+        f"{removed_rest / arrived_rest:.3f}（{arrived_rest} 字）"
+        if arrived_rest
+        else "没有重复注入进到输入"
+    )
 
     verdicts = {
         "主判据 CER": (
@@ -463,15 +532,31 @@ def main() -> None:
             if after.value <= POLISHED_CER
             else f"不过（{after.value:.4f} > {POLISHED_CER}，输入端 {before.value:.4f}）"
         ),
-        "口语词清除": (
-            f"过（{removed / arrived:.3f} ≥ {FILLER_REMOVED}）"
-            if arrived and removed / arrived >= FILLER_REMOVED
+        # 门槛取「标签可信的那部分」，也就是全部减去双职词，而不是只取单职词。
+        # 双职词量的是「有没有照注入器的话删」——注入器把 这个 和 嗯 按同一个概率
+        # 注进去，而 CS2W 723 句真人转写上 嗯 78/78 是口语词、这个 3/80。
+        # 拿它当门槛等于要求模型把 这个模块 删成 模块。
+        #
+        # 但注入的不止这两类：还有重复（口吃/叠词），占到达字数 16.4%，清除率 0.82，
+        # 是唯一一个本来就不过线的桶。只取单职词那个白名单会把它整桶丢掉，
+        # 门槛因此再也不会不过——所以这里用「排除双职」而不是「只要单职」，
+        # 并且把三桶分别打出来，加起来必须等于旧口径的合计。
+        "口语词清除（标签可信的部分）": (
+            f"过（{removed_gated / arrived_gated:.3f} ≥ {FILLER_REMOVED}）"
+            if arrived_gated and removed_gated / arrived_gated >= FILLER_REMOVED
             else (
-                f"不过（{removed / max(1, arrived):.3f} < {FILLER_REMOVED}）"
-                if arrived
-                else "无法判定（没有口语词进到输入）"
+                f"不过（{removed_gated / max(1, arrived_gated):.3f} < {FILLER_REMOVED}）"
+                if arrived_gated
+                else "无法判定（没有标签可信的注入进到输入）"
             )
         ),
+        "　　其中单职口语词": (
+            f"{removed_single / arrived_single:.3f}（{arrived_single} 字）"
+            if arrived_single
+            else "没有单职口语词进到输入"
+        ),
+        "　　其中重复": rest_line,
+        "口语词清除（双职，不判定）": double_duty_line,
         "内容保留": (
             f"过（{kept:.4f} ≥ {CONTENT_KEPT}）"
             if kept >= CONTENT_KEPT
@@ -495,6 +580,24 @@ def main() -> None:
         "filler_arrived": arrived,
         "filler_removed": removed,
         "filler_removed_rate": removed / arrived if arrived else None,
+        "filler_arrived_single": arrived_single,
+        "filler_removed_single": removed_single,
+        "filler_removed_rate_single": (
+            removed_single / arrived_single if arrived_single else None
+        ),
+        "filler_arrived_gated": arrived_gated,
+        "filler_removed_gated": removed_gated,
+        "filler_removed_rate_gated": (
+            removed_gated / arrived_gated if arrived_gated else None
+        ),
+        "filler_arrived_rest": arrived_rest,
+        "filler_removed_rest": removed_rest,
+        "filler_removed_rate_rest": removed_rest / arrived_rest if arrived_rest else None,
+        "filler_arrived_double": arrived_double,
+        "filler_removed_double": removed_double,
+        "filler_removed_rate_double": (
+            removed_double / arrived_double if arrived_double else None
+        ),
         "content_kept": kept,
         "invented": made_up,
         "empty": empty,
@@ -509,7 +612,9 @@ def main() -> None:
     }
     print(
         f"n={len(written)}  CER {before.value:.4f} → {after.value:.4f} ± {after.noise_floor:.4f}\n"
-        f"  口语词 {removed}/{arrived} 清掉，内容保留 {kept:.4f}，多出来的字 {made_up:.4f}\n"
+        f"  口语词 {removed}/{arrived} 清掉"
+        f"（单职 {removed_single}/{arrived_single}，双职 {removed_double}/{arrived_double}）"
+        f"，内容保留 {kept:.4f}，多出来的字 {made_up:.4f}\n"
         f"  整段延迟 中位 {report['latency_ms_median']:.0f} ms / P95 "
         f"{report['latency_ms_p95']:.0f} ms（多的这一跳要提前告诉前端）"
     )

@@ -209,6 +209,15 @@ def tidy(text: str) -> str:
 # Longest first, so 你知道吧 is matched before 你知道 would be.
 VOCABULARY = tuple(sorted((*LEADING_FILLERS, *BRIDGING_FILLERS), key=len, reverse=True))
 
+# The words above that a human-marked corpus says are usually content, not
+# filler. The pairs builder injects all nine of LEADING_FILLERS at one
+# probability, so in the training data "delete this" and "this spelling" are the
+# same label and both arms learned to delete the spelling. Membership here is
+# decided by the corpus, not by us: run ``scripts/measure_content_words.py
+# --distribution`` to recount it against CS2W. The two words that stay out of
+# this list are the ones that corpus marks as filler nearly every time.
+DOUBLE_DUTY = ("那个", "这个", "就是", "然后", "反正", "其实", "我觉得")
+
 
 def dropped(source: str, output: str) -> set[int]:
     """Indices of ``source`` the arm did not carry into ``output``.
@@ -497,6 +506,98 @@ def duplicate_words(source: str, drop: set[int]) -> set[int]:
     return taken
 
 
+def content_words(source: str, drop: set[int]) -> set[int]:
+    """The part of ``drop`` that spells a double-duty word standing in a content slot.
+
+    This is the only stage that overrules every arm at once, so each of its
+    four conditions earns its place; dropping any one of them was measured to
+    make the output worse, and ``tests/test_merge_polish_arms.py`` holds the
+    shape that goes wrong.
+
+    Dropped whole. Half a word is a different defect and ``whole_words`` owns it.
+
+    Something follows it, and that something survived. An arm that ate the word
+    together with the content behind it has already lost the content; handing
+    the word back then wedges filler into the hole and reads worse than the
+    plain over-deletion -- 淘米反正轻轻搓两遍 -> 淘米反正搓两遍, with 轻轻
+    still gone.
+
+    Neither neighbour is another copy of it. A stutter is one word said twice
+    and one copy is meant to go; which copy the alignment recorded depends only
+    on whether there was text in front of it, so both sides are checked. This is
+    what stops a triple 这个这个这个 coming back a copy at a time until half a
+    word is left.
+
+    Its clause has something else left in it. A clause that is nothing but
+    filler is deleted whole on purpose, and a word cannot be the content of a
+    clause with no content: 嗯，那个。会议改到三点了。 must not come back as
+    那个。会议改到三点了。
+
+    Position is deliberately not consulted beyond that. The obvious extra rule
+    -- refuse to restore a word standing before a pause, because that is where
+    the builder injects filler -- is a rule about the builder, not about
+    Chinese. It costs the commonest content use there is, the bare
+    demonstrative 我要这个。, and buys nothing a human-marked corpus can see.
+    """
+    give_back: set[int] = set()
+    for word in DOUBLE_DUTY:
+        width = len(word)
+        start = source.find(word)
+        while start != -1:
+            end = start + width
+            if (
+                all(index in drop for index in range(start, end))
+                and end < len(source)
+                and end not in drop
+                and source[end : end + width] != word
+                and source[max(0, start - width) : start] != word
+                and _clause_has_other_survivors(source, drop, start, end)
+            ):
+                give_back |= set(range(start, end))
+            start = source.find(word, start + 1)
+    return give_back
+
+
+def _clause_has_other_survivors(source: str, drop: set[int], start: int, end: int) -> bool:
+    """Whether anything besides ``source[start:end]`` survives between its pauses."""
+    left = start
+    while left > 0 and source[left - 1] not in PUNCTUATION:
+        left -= 1
+    right = end
+    while right < len(source) and source[right] not in PUNCTUATION:
+        right += 1
+    return any(
+        index not in drop
+        for index in range(left, right)
+        if not start <= index < end
+    )
+
+
+def keep_content(source: str, output: str) -> str:
+    """``output``, with any double-duty word it deleted from a content slot put back.
+
+    The single-arm path's share of ``content_words``. Unlike ``merge``, which
+    renders its answer from the source either way, this one is editing text an
+    arm already wrote, so it hands that text straight back unless it is sure
+    what it is doing to it: nothing to give back, or an alignment that does not
+    reproduce the arm's own output, and the arm's text goes through untouched.
+
+    The second guard is not theoretical. ``dropped`` reads difflib's blocks,
+    and difflib does not promise the longest common subsequence: 我一手机 out of
+    我这个手机一是一个五G手机 aligns as 我 + 手机, losing the 一. Re-rendering
+    from that drop set would quietly return a different sentence than the arm
+    wrote, which is a worse failure than leaving 这个 deleted.
+    """
+    drop = dropped(source, output)
+    give_back = content_words(source, drop)
+    if not give_back:
+        return output
+    kept = "".join(char for index, char in enumerate(source) if index not in drop)
+    if kept != output:
+        return output
+    return "".join(char for index, char in enumerate(source) if index not in drop - give_back)
+
+
 def merge(rows: list[dict[str, Any]], mode: str) -> str:
     source = rows[0]["source"]
     drops = [dropped(source, row["polished"]) for row in rows]
@@ -537,6 +638,11 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     combined = whole_words(source, settled - protected) | (settled & protected)
     combined = snap_periods(source, combined)
     combined = duplicate_words(source, combined)
+    # Last, on the settled deletion rather than on either arm. Both arms were
+    # trained on the same lexicon, so they delete 这个 for the same wrong reason
+    # and the veto reads that agreement as evidence -- there is no stage above
+    # this one that can tell the difference.
+    combined -= content_words(source, combined)
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
@@ -831,6 +937,12 @@ class Polisher:
                     ],
                     "veto",
                 )
+            else:
+                # `merge` ends with the same rule. Without this branch a
+                # deployment with no tagger keeps the whole defect: the
+                # generator arm deletes 这个 on its own, and 14 of the 20
+                # reported dictations break with one arm too.
+                written = keep_content(piece, written)
             out.append(written)
         # Tidied over the joined text, not per piece: a piece boundary is a
         # sentence boundary, so a particle stranded at the start of one is only

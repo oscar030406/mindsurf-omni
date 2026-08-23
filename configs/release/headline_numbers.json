@@ -277,7 +277,6 @@
     "worst_case_characters_split": 4084,
     "note_last_piece": "ms_last_piece 是客户端边说边送时松开后还要等的时间：整段那条随长度线性涨，分段之后是常数",
     "longest_seconds_accepted": 3600.0,
-    "source": "服务器 /home/oscar/omni/segcheck/{segcheck.json,sweep2.json}",
     "concurrency_with_and_without_the_lock": {
       "_": "22.2 秒口述，每档 24 请求，两个服务交替发。卡上有别的进程，绝对值偏高，横向比较成立。",
       "rows": [
@@ -356,7 +355,9 @@
       "rule": "下限 = min(initial_noise_floor, 非零帧能量的 10 分位)",
       "why_capped": "全程有声、一处停顿都没有的录音，分位数会落在语音本身上，不封顶会把整段听聋",
       "why_nonzero_only": "恰好为零的帧是文件的静音，不是房间的"
-    }
+    },
+    "source_note": "服务器 /home/oscar/omni/segcheck/{segcheck.json,sweep2.json}",
+    "source": "src/mindsurf_omni/service/vad.py"
   },
   "dictation_hotwords": {
     "_": [
@@ -382,7 +383,6 @@
     "end_to_end_traps_damaged": 1,
     "out_of_reach": "声母不同的够不着：李欣 vs 吕鑫、林犀 vs 灵犀。放宽到前后鼻音实测更差（吕鑫 折叠后撞 履行 被入口闸拒，修回 4/6 掉到 2/6）",
     "cost_ms_per_transcript": 0.38,
-    "source": "服务器 /home/oscar/omni/segcheck/hotlive.json",
     "decode_time_bias_was_measured_and_dropped": {
       "_": [
         "解码期偏置（FunASR 的 SeACo-Paraformer，冻结主干外挂 bias encoder）是唯一能治",
@@ -441,10 +441,11 @@
       "share_replaceable_before": 0.056,
       "share_replaceable_after_the_mistake": 0.23,
       "share_replaceable_now": 0.058,
-      "cost_of_reverting": "句首的 通一千问 不再修回，端到端修回 4/6 回到 3/6，陷阱改坏仍是 1/10",
-      "found_by": "对抗式复核，scratchpad/fixes/五连击复核.md §2.1"
+      "cost_of_reverting": "句首的 通一千问 不再修回，端到端修回 4/6 回到 3/6，陷阱改坏仍是 1/10"
     },
-    "_note_repaired": "b3497d2 期间是 4，那一版把放行面开到 23%，已退回；见 the_door_was_briefly_opened_four_times_too_wide"
+    "_note_repaired": "b3497d2 期间是 4，那一版把放行面开到 23%，已退回；见 the_door_was_briefly_opened_four_times_too_wide",
+    "source_note": "服务器 /home/oscar/omni/segcheck/hotlive.json",
+    "source": "src/mindsurf_omni/service/hotwords.py"
   },
   "dictation_entry_gate": {
     "_": [
@@ -473,7 +474,6 @@
       }
     },
     "still_open": "45 段合成噪声里 17 段仍然出字（0.5 秒那一档从 seconds < 1.0 的豁免走掉，2 秒的 The. 和 我. 压线过）",
-    "source": "服务器 /home/oscar/omni/segcheck/padshort.py，缺陷编号 R1/N1 见复查表",
     "denominator_needs_the_recordings_own_floor": {
       "_": [
         "语速的分母改成有声时长之后，还得让噪底的**起始值**也来自这段录音。",
@@ -500,8 +500,115 @@
           "absolute_prior": "0/12",
           "from_the_recording": "12/12"
         }
+      }
+    },
+    "source_note": "服务器 /home/oscar/omni/segcheck/padshort.py，缺陷编号 R1/N1 见复查表",
+    "source": "src/mindsurf_omni/service/asr.py"
+  },
+  "dictation_content_words": {
+    "_": [
+      "内容词误删：这个/那个/就是/然后/其实/反正/我觉得 被当口语词删掉。",
+      "根因是 inject_fillers.py 把九个词按同一概率注进训练数据，「该删」这个标签",
+      "就等于这个拼写；两条臂在同一份数据上训，veto 把「都错」读成「互相印证」。",
+      "规则只收窄不提议：双职词整词被删、右邻还活着、左右都不是自己的另一份、",
+      "所在小句还有别的活字时，还回来。没有位置判别（CS2W 上那七个词只有 3 次",
+      "站在停顿前，而它会赔掉 我要这个。这类最常见的指示代词用法）。"
+    ],
+    "external_ruler_cs2w": {
+      "_": "723 句真人转写，唯一一把不是我们造的尺子，单臂",
+      "human_wanted_kept_but_deleted_before": 782,
+      "human_wanted_kept_but_deleted_after": 509,
+      "of_which_double_duty_before": 381,
+      "of_which_double_duty_after": 105,
+      "precision_before": 0.4049,
+      "precision_after": 0.4879,
+      "recall_before": 0.3218,
+      "recall_after": 0.2934
+    },
+    "probes_40": {
+      "file": "configs/polish_probes_zh_v1.jsonl",
+      "two_arms_exact_before": "3/40",
+      "two_arms_exact_after": "30/40",
+      "two_arms_false_deletion_before": 0.904,
+      "two_arms_false_deletion_after": 0.096,
+      "two_arms_clearance_before": 0.75,
+      "two_arms_clearance_after": 0.75,
+      "single_arm_exact_before": "14/40",
+      "single_arm_exact_after": "31/40",
+      "_": "两个数必须一起报：只报误删率，什么都不删能拿满分"
+    },
+    "the_twenty_plain_dictations": {
+      "two_arms": "0/20 -> 18/20",
+      "single_arm": "6/20 -> 17/20"
+    },
+    "a13_对了": "不加。CS2W 723 句里出现 0 次，数不出分布；而且它本来就不在任何一张词表里",
+    "source": [
+      "configs/polish_probes_zh_v1.jsonl",
+      "scripts/measure_content_words.py",
+      "artifacts/polish_train/val_cs2w_polish6.jsonl"
+    ]
+  },
+  "dictation_criterion": {
+    "_": [
+      "四条判据里三条在量同一件事：有没有删掉注入器注进去的字。",
+      "986 的 target 是把九个词全部拿掉的干净文本，所以留一个 这个 在输出里，",
+      "CER 记一次删除错、invented 记一个多余字、filler_removed 记一次没清掉，三个数一起动。",
+      "把 986 按「这一行有没有被注入双职词」切开，判据有效的那一半 CER 是变好的。"
+    ],
+    "split_by_whether_the_row_got_a_double_duty_injection": {
+      "two_arms": {
+        "clean_377_rows": {
+          "before": 0.0234,
+          "after": 0.0198
+        },
+        "injected_609_rows": {
+          "before": 0.0304,
+          "after": 0.1006
+        }
       },
-      "found_by": "对抗式复核，scratchpad/fixes/五连击复核.md §2.2"
-    }
+      "single_arm": {
+        "clean_377_rows": {
+          "before": 0.0362,
+          "after": 0.0336
+        },
+        "injected_609_rows": {
+          "before": 0.0481,
+          "after": 0.1136
+        }
+      }
+    },
+    "the_gate_is_now_taken_over_everything_whose_label_is_trustworthy": {
+      "_": [
+        "拆成「单职 / 双职」两桶时，第三类注入（重复：口吃与叠词，占到达字数 16.4%）",
+        "两个桶都不收，被静默丢弃——而它正是唯一一个本来就不过 0.90 线的桶，",
+        "门槛因此再也不会不过。改成排除双职，三桶加起来等于旧口径的合计。"
+      ],
+      "arrived_total": 1761,
+      "arrived_single": 399,
+      "arrived_repetition": 289,
+      "arrived_double": 1073,
+      "two_arms": {
+        "gated": 0.9244,
+        "single": 1.0,
+        "repetition": 0.8201,
+        "double": 0.1044,
+        "old_combined": 0.4248,
+        "verdict": "过"
+      },
+      "single_arm": {
+        "gated": 0.8488,
+        "single": 0.9799,
+        "repetition": 0.6678,
+        "double": 0.1212,
+        "old_combined": 0.4055,
+        "verdict": "不过"
+      },
+      "delete_nothing_regression": {
+        "gated": 0.0,
+        "verdict": "不过"
+      }
+    },
+    "still_open": "(b) 按 CS2W 的真实比例重注一份留出集没做——重注只解决标签，还要把两条臂在新语料上重跑一遍才有输出可打分",
+    "source": "scripts/measure_polish.py"
   }
 }
