@@ -802,5 +802,54 @@
       "Uh, can you send… 出来是小写开头。复制约束不许改字，重新大写做不到。",
       "改口型不流利（Who did no What did…）明确不做。"
     ]
+  },
+  "dictation_positioning": {
+    "_": [
+      "不是「最准的听写」，是同等参数下做得出来的那个产品：本地、小、快，",
+      "而且带一级别人没有的口语词清除。这一块记的是能支撑这句话的数。"
+    ],
+    "sizes": {
+      "recogniser": "SenseVoice-Small 234.0M",
+      "polisher": "139M",
+      "total": "373M"
+    },
+    "same_parameter_class": {
+      "_": [
+        "60 段真人单人口述（MagicData-RAMC 里同一说话人连续说的话拼成 10–40 秒，",
+        "共 18.5 分钟，中位 17.5 秒），参照是人工转写。4090，fp16。",
+        "**限制**：这是中文语料，Whisper small 是多语种通才，在中文上本来吃亏；",
+        "英文侧我们没有带参照的语料，没量，不许把这张表读成「全面更好」。"
+      ],
+      "rows": [
+        {
+          "system": "Whisper small（MacWhisper / superwhisper / whisper.cpp 的默认选择）",
+          "params_m": 240.6,
+          "cer": 0.3088,
+          "p50_ms": 414,
+          "p95_ms": 723,
+          "peak_mb": 1403
+        },
+        {
+          "system": "SenseVoice-Small（我们的识别器）",
+          "params_m": 234.0,
+          "cer": 0.1903,
+          "p50_ms": 56,
+          "p95_ms": 60,
+          "peak_mb": 1044
+        }
+      ],
+      "verdict": "同参数级：字错率低 38%、P50 快 7.4 倍、峰值显存少 26%"
+    },
+    "what_nobody_else_at_this_size_has": [
+      "受复制约束的口语词清除：解码被限制成「输出必须是转写的子序列」，",
+      "所以它删得掉 嗯/那个/就是，却在结构上加不了字——编造是被架构压住的，不是被调参压住的。",
+      "Whisper 只转写。清口语词的产品（Wispr Flow、Gboard 的 Rambler）都在云上跑大模型。",
+      "本地 + 小 + 带润色，这三样同时成立的没找到第二个。"
+    ],
+    "why_cer_cannot_score_the_polish_stage": "参照是逐字的人工转写，里面本来就有口语词；把它们删掉会让字错率变差。所以润色这一级有它自己的四条判据（清除 / 保留 / 编造 / 空输出），而对手在这一格没有可比的东西",
+    "source": [
+      "artifacts/polish_train/val_cs2w_polish6.jsonl",
+      "src/mindsurf_omni/service/asr.py"
+    ]
   }
 }
