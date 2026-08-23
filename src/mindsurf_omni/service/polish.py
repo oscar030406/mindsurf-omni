@@ -439,34 +439,53 @@ def snap_periods(source: str, drop: set[int]) -> set[int]:
     return settled
 
 
+# jieba's tags for a plain noun. A repeated noun is a stumble; a repeated verb,
+# measure or adverb is Chinese grammar -- see ``duplicate_words``.
+NOUN_TAGS = frozenset({"n", "ns", "nt", "nz", "an", "ng"})
+
+
 def duplicate_words(source: str, drop: set[int]) -> set[int]:
     """Take one copy of a repeated whole word, whether or not an arm asked.
 
     The only rule here that proposes rather than narrows, because the arms do not
-    see most of these: 花椒花椒, 粽子粽子, 利率利率. The word constraint is the whole
-    safety argument -- the unit has to start, split and end on a jieba boundary,
-    which is what puts 是不是/不/舒服 and 2020/法则 out of reach.
+    see most of these: 花椒花椒, 粽子粽子, 利率利率.
+
+    Nouns only, and that is the whole safety argument. Repeating a noun is a
+    stumble; repeating anything else is usually grammar. Chinese reduplicates
+    verbs to soften them (研究研究, 商量商量), measures to mean one-by-one
+    (一个一个, 一步一步, 一年一年), and adverbs to intensify (特别特别, 真的真的) --
+    all of them adjacent, all of them identical, none of them a stumble. Deleting
+    a copy there does not tidy the sentence, it changes what it says. jieba's
+    part-of-speech tagger separates the two well enough: the stumbles this was
+    written for tag as plain nouns and every reduplication above tags as
+    something else.
+
+    The unit also has to be one whole token. That is what puts 是不是/不/舒服 and
+    2020/法则 out of reach.
 
     A unit spelling a filler is left to ``keep_one_copy``.
     """
     import logging
 
     import jieba
+    import jieba.posseg
 
     jieba.setLogLevel(logging.ERROR)
-    boundaries, cursor = {0}, 0
-    for word in jieba.cut(source):
-        cursor += len(word)
-        boundaries.add(cursor)
+    nominal: dict[tuple[int, int], bool] = {}
+    cursor = 0
+    for token in jieba.posseg.cut(source):
+        width = len(token.word)
+        nominal[(cursor, cursor + width)] = token.flag in NOUN_TAGS
+        cursor += width
 
     taken = set(drop)
     for size in range(2, 6):
         start = 0
         while start + 2 * size <= len(source):
             unit = source[start : start + size]
-            aligned = {start, start + size, start + 2 * size} <= boundaries
             if (
-                aligned
+                nominal.get((start, start + size))
+                and nominal.get((start + size, start + 2 * size))
                 and unit == source[start + size : start + 2 * size]
                 and not any(word in unit for word in VOCABULARY)
                 and not set(range(start, start + 2 * size)) & taken

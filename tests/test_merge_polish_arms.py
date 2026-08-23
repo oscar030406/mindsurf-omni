@@ -346,6 +346,41 @@ def test_a_repeated_word_neither_arm_saw_is_still_taken() -> None:
     assert merge([arm, arm], "veto") == "四川菜里花椒带来的麻"
 
 
+def test_the_proposing_rule_leaves_chinese_reduplication_alone() -> None:
+    """Repeating a noun is a stumble; repeating anything else is grammar.
+    Chinese reduplicates verbs to soften (研究研究), measures to mean one-by-one
+    (一个一个) and adverbs to intensify (真的真的). The first version deleted a
+    copy of all of them, 12 of 14 natural forms, and the held-out set could not
+    see it: clean written text with filler injected is not what a person says."""
+    from mindsurf_omni.service.polish import duplicate_words
+
+    for source in (
+        "请大家一个一个来",
+        "他一步一步走过来的",
+        "这个问题我们研究研究再决定",
+        "一年一年过去了",
+        "特别特别重要",
+        "我真的真的很急",
+        "谢谢谢谢你",
+        "这事得讨论讨论",
+        "一件一件慢慢来",
+        "非常非常感谢",
+    ):
+        assert duplicate_words(source, set()) == set(), source
+
+
+def test_the_proposing_rule_still_takes_a_repeated_noun() -> None:
+    from mindsurf_omni.service.polish import merge
+
+    for source, expected in (
+        ("四川菜里花椒花椒带来的麻", "四川菜里花椒带来的麻"),
+        ("粽子粽子用箬叶包糯米", "粽子用箬叶包糯米"),
+        ("银行存款利率利率很低", "银行存款利率很低"),
+    ):
+        arm = {"source": source, "polished": source}
+        assert merge([arm, arm], "veto") == expected
+
+
 def test_the_proposing_rule_needs_a_boundary_on_all_three_sides() -> None:
     """The word constraint is the whole safety argument, so the shapes that are
     not stutters are checked rather than assumed."""
