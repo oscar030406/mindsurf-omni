@@ -644,8 +644,11 @@ WebSocket 的 `session.update` 同样校验，成功时回一个 `session.update
 
 | 状态 | 含义 | 该做什么 |
 | --- | --- | --- |
-| 503 | 没配引擎，或那一段还没接上 | 看 detail，它会点名缺的是哪个变量、哪一段 |
-| 400 | 请求体没有音频 | 检查是否真的发了 PCM |
+| 503 | 没配引擎，或那一段还没接上 | 看 detail，它会点名缺的是哪个**变量**（不给路径，那是服务器上的东西） |
+| 400 | 请求体没有音频；或 wav 不是 16 bit 单声道 | 看 detail 分辨这两种。第二种要转成 16 bit 单声道，不是「有没有发 PCM」的问题 |
+| 413 | 录音比这个端点一次收的长 | detail 里带实际秒数和上限，按它分段发 |
+| 415 | body 裹在这条路不拆的壳里（multipart、gzip 等） | 直接发裸 PCM 或整个 wav，别用 `files=`，别压缩 |
+| 500 | 兜底，正文是 JSON，带 `X-Request-Id` | 拿这个 id 去对服务端日志 |
 | WS `error` 帧 | 事件类型不认识，或缓冲区为空 | 看 `error.message` |
 
 错误信息会写清楚是什么坏了、怎么修。
@@ -793,12 +796,14 @@ MINDSURF_ENGINE=cascade docker compose up
 ### 启动直接退出
 
 ```text
-the cascade path needs these, and they are not on disk:
-tokenizer=/app/weights/tokenizer, codec=/app/weights/mimi
+the cascade path needs these, and the file each names is not on disk:
+MINDSURF_TOKENIZER, MINDSURF_CODEC
 -- mount the weights directory or set the matching variable
 ```
 
-按名字挂载或设对应变量。看到笼统的「engine unavailable」请报给我谢谢喵。
+按名字挂载或设对应变量。**报文里只有变量名，没有路径**——这两个端点都不需要认证，
+而绝对路径会说出服务器上的用户名和目录结构。路径写在服务端日志里。
+看到笼统的「engine unavailable」请报给我谢谢喵。
 
 ### 起来了，但服务的是错的模型
 

@@ -12,12 +12,15 @@ exist. "Engine unavailable" tells an operator nothing at three in the morning.
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 from mindsurf_omni.contract import ComponentInfo, TokenSpec
+
+_log = logging.getLogger("mindsurf.config")
 
 PathName = Literal["native", "cascade"]
 
@@ -48,15 +51,21 @@ class Paths:
     codec: Path
     speaker: Path
 
-    def missing(self) -> list[str]:
+    def missing(self) -> list[tuple[str, Path]]:
+        """The variables whose path is not there, each with the path it pointed at.
+
+        Both, because the two halves go to different readers: the operator
+        needs the path, and the message that reaches an unauthenticated caller
+        must not carry it. See ``Settings.verify``.
+        """
         return [
-            f"{name}={value}"
+            (name, value)
             for name, value in (
-                ("weights", self.weights),
-                ("tokenizer", self.tokenizer),
-                ("audio_encoder", self.audio_encoder),
-                ("codec", self.codec),
-                ("speaker", self.speaker),
+                ("MINDSURF_WEIGHTS", self.weights),
+                ("MINDSURF_TOKENIZER", self.tokenizer),
+                ("MINDSURF_ASR", self.audio_encoder),
+                ("MINDSURF_CODEC", self.codec),
+                ("MINDSURF_SPEAKER", self.speaker),
             )
             if not value.exists()
         ]
@@ -214,7 +223,7 @@ class Settings:
         # weaker check, and then the digest in /v1/models is null -- which is
         # the field that says which weights a measurement was taken on.
         if self.thinker is not None and not self.thinker.is_file():
-            missing = [*missing, f"thinker={self.thinker}"]
+            missing = [*missing, ("MINDSURF_THINKER", self.thinker)]
         # The cascade's Thinker loads lazily, so a mistyped checkout used to
         # surface as the connection dropping on the first thing a caller said.
         # The native path already refuses this at assembly, with a message
@@ -222,7 +231,7 @@ class Settings:
         if self.path == "cascade" and self.minimind_root is not None:
             definition = self.minimind_root / "model" / "model_minimind.py"
             if not definition.is_file():
-                missing = [*missing, f"minimind_root={self.minimind_root} (no {definition.name})"]
+                missing = [*missing, (f"MINIMIND_O_ROOT (no {definition.name})", definition)]
         # Both or neither. VoxCPM rejects a clip without its text, and it is
         # right to -- the text is what tells it which sounds belong to which
         # characters. Refused here rather than at the first request, because
@@ -235,12 +244,12 @@ class Settings:
                 "clip without its text clones nothing"
             )
         if self.tts_prompt_wav is not None and not self.tts_prompt_wav.is_file():
-            missing = [*missing, f"tts_prompt_wav={self.tts_prompt_wav}"]
+            missing = [*missing, ("MINDSURF_TTS_PROMPT_WAV", self.tts_prompt_wav)]
         # Same reason as the Thinker's: a mistyped path would otherwise surface
         # as the first dictation coming back unpolished, which reads as the
         # model doing nothing rather than as a path that is not there.
         if self.polish is not None and not self.polish.is_file():
-            missing = [*missing, f"polish={self.polish}"]
+            missing = [*missing, ("MINDSURF_POLISH", self.polish)]
         # Both or neither, and only alongside a polisher. The head is a probe of
         # the blocks tuned with it, so half the pair measures nothing -- and a
         # tagger without a generator has no arm to be merged with.
@@ -256,11 +265,11 @@ class Settings:
                 "the second arm of a merge and has no first arm to be merged with"
             )
         for name, value in (
-            ("polish_tagger", self.polish_tagger),
-            ("polish_tagger_backbone", self.polish_tagger_backbone),
+            ("MINDSURF_POLISH_TAGGER", self.polish_tagger),
+            ("MINDSURF_POLISH_TAGGER_BACKBONE", self.polish_tagger_backbone),
         ):
             if value is not None and not value.is_file():
-                missing = [*missing, f"{name}={value}"]
+                missing = [*missing, (name, value)]
         # Only the cascade builds one. Set on the native path it did nothing at
         # all, and worse, it did nothing loudly: /health answered
         # "polisher: ready" and /v1/models carried its sha256, while
@@ -283,10 +292,21 @@ class Settings:
                 "unset MINDSURF_POLISH to serve conversation from this checkpoint"
             )
         if missing:
+            # The variables, not the paths they hold. This message is the body
+            # of a 503 and the detail on /health, and neither endpoint asks for
+            # a credential -- so a deployment whose weights live under a
+            # customer's name was handing that name to anyone who could reach
+            # the port. The variable is what an operator has to change anyway;
+            # the value they set it to is something they already know.
+            _log.error(
+                "%s path is missing files: %s",
+                self.path,
+                ", ".join(f"{name}={value}" for name, value in missing),
+            )
             raise ConfigurationError(
-                f"the {self.path} path needs these, and they are not on disk: "
-                + ", ".join(missing)
-                + " -- mount the weights directory or set the matching variable"
+                f"the {self.path} path needs these, and the file each names is not on "
+                "disk: " + ", ".join(name for name, _ in missing) + " -- mount the weights "
+                "directory or set the matching variable; the paths themselves are in the log"
             )
 
 

@@ -11,10 +11,41 @@ explains why -- crash-looping takes that explanation away.
 
 from __future__ import annotations
 
+import time
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Literal
 
 Status = Literal["ready", "degraded", "unavailable"]
+
+
+# What has happened since this process started, and nothing else. Not a metrics
+# system: no registry, no exposition format, no scraper. The question it exists
+# to answer is the one an operator asks first -- "is it refusing everything, or
+# was it just me?" -- and for that, numbers that reset on restart are enough.
+# Reach for Prometheus when the answer needs to survive a restart or span
+# replicas.
+#
+# Incremented from the event loop thread only, so a plain Counter is safe;
+# nothing here runs in the recogniser's thread.
+COUNTS: Counter[str] = Counter()
+_STARTED = time.monotonic()
+
+
+def count(name: str, amount: float = 1) -> None:
+    COUNTS[name] += amount
+
+
+def counters() -> dict[str, object]:
+    """The counters and how long they have been counting.
+
+    The uptime rides along because a count without a window is unreadable: 40
+    refusals in an hour is a bad client, 40 in four seconds is an outage.
+    """
+    return {
+        "uptime_seconds": round(time.monotonic() - _STARTED, 1),
+        "counts": {name: round(value, 3) for name, value in sorted(COUNTS.items())},
+    }
 
 
 @dataclass(frozen=True, slots=True)

@@ -50,9 +50,34 @@ def test_missing_files_are_listed_individually_not_summarised(tmp_path: Path) ->
         settings.verify()
 
     message = str(error.value)
-    assert "tokenizer=" in message
-    assert "codec=" in message
+    assert "MINDSURF_TOKENIZER" in message
+    assert "MINDSURF_CODEC" in message
     assert "mount the weights directory" in message
+
+
+def test_the_missing_file_message_names_variables_and_not_paths(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """This message is the body of a 503 and the detail on /health, and neither
+    endpoint asks for a credential -- so a weights directory named after the
+    customer it belongs to was being handed to anyone who could reach the port.
+
+    The operator still needs the path, so it goes to the log instead.
+    """
+    root = tmp_path / "customer-a" / "weights"
+    settings = Settings.from_environment(
+        {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": str(root)}
+    )
+    assert settings is not None
+
+    with caplog.at_level("ERROR", logger="mindsurf.config"), pytest.raises(
+        ConfigurationError
+    ) as error:
+        settings.verify()
+
+    assert str(root) not in str(error.value)
+    assert "customer-a" not in str(error.value)
+    assert str(root) in caplog.text
 
 
 def test_verification_passes_once_everything_is_present(tmp_path: Path) -> None:
@@ -191,7 +216,7 @@ def test_a_checkpoint_that_is_not_on_disk_is_refused_at_startup(tmp_path: Path) 
     )
     assert settings is not None
 
-    with pytest.raises(ConfigurationError, match="typo.pth"):
+    with pytest.raises(ConfigurationError, match="MINDSURF_THINKER"):
         settings.verify()
 
     (tmp_path / "typo.pth").write_bytes(b"")
@@ -242,7 +267,7 @@ def test_a_reference_clip_that_is_not_on_disk_is_refused_at_startup(tmp_path: Pa
     )
     assert settings is not None
 
-    with pytest.raises(ConfigurationError, match="typo.wav"):
+    with pytest.raises(ConfigurationError, match="MINDSURF_TTS_PROMPT_WAV"):
         settings.verify()
 
     (tmp_path / "typo.wav").write_bytes(b"")

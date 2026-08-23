@@ -114,9 +114,19 @@ class TranscriptionResponse(BaseModel):
     # Null means no polisher is wired -- which a caller must be able to tell
     # apart from "this text needed no polishing".
     polished: str | None = None
+    # Extension: the polish stage ran and raised. Needed because `polished`
+    # being null now means three things -- no polisher is wired, a polisher
+    # answered with nothing, and this -- and only this one is a fault. Without
+    # it a deployment whose polisher has been broken since a bad deploy looks
+    # exactly like one that never had a polisher, from every response.
+    polish_failed: bool = False
     # Extension: the language the encoder actually detected, so a caller can
     # notice when Chinese audio was read as English before the answer is wrong.
     language: str | None = None
+    # How long the recording is, taken from the container's own header when it
+    # has one. Not derived from the body length: a 24 kHz wav is more bytes per
+    # second than the endpoint's default rate, and this field used to report
+    # that arithmetic rather than the recording -- 15.00 for ten seconds.
     duration_seconds: float | None = None
 
 

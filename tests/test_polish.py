@@ -57,7 +57,7 @@ def test_a_missing_polish_checkpoint_is_refused_at_startup(tmp_path: Path) -> No
     )
     assert settings is not None
 
-    with pytest.raises(ConfigurationError, match="typo.pth"):
+    with pytest.raises(ConfigurationError, match="MINDSURF_POLISH"):
         settings.verify()
 
     (tmp_path / "typo.pth").write_bytes(b"")

@@ -15,13 +15,14 @@ import base64
 import binascii
 import contextlib
 import json
+import logging
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, status
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from mindsurf_omni.contract import (
     AUDIO_ENCODING,
@@ -38,10 +39,22 @@ from mindsurf_omni.contract import (
     VoiceInfo,
     VoiceList,
 )
-from mindsurf_omni.service.audio import frames, to_wav
+from mindsurf_omni.service.audio import UnsupportedAudio, frames, to_wav, unwrap_wav, whole_samples
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine, TooLongForModel
+from mindsurf_omni.service.health import count, counters
 from mindsurf_omni.service.tts import SynthesiserUnavailable
+
+# One JSON object per request, on its own line. Not a metrics stack: everything
+# an operator needs for the question "which requests went wrong and what did
+# they look like" fits on a line, and a line is greppable from inside the
+# container without deploying anything to read it.
+#
+# The transcript never appears here. A dictation service's logs would otherwise
+# be a copy of everything its users said, sitting on a disk with a different
+# retention policy from the product. Lengths go in instead: they answer "did it
+# return nothing" without keeping the words.
+_log = logging.getLogger("mindsurf.access")
 
 
 class Unreadable(Exception):
@@ -116,6 +129,44 @@ UNAVAILABLE = (
 )
 
 
+def refuse_envelope(request: Request) -> None:
+    """Refuse a body that is wrapped in something this route does not unwrap.
+
+    The route reads the whole body as audio, so anything around the audio is
+    read as audio too, and a recogniser handed noise does not fail -- it writes
+    something. Both of these were HTTP 200:
+
+    * The standard OpenAI client call for this path is a multipart form.
+      Measured, the recogniser received 181 bytes more than were sent, and 181
+      is odd, so every 16-bit sample after the boundary was shifted a byte and
+      the recording became noise.
+    * ``Content-Encoding: gzip`` -- nothing on this path decompresses, so the
+      deflate stream went to the recogniser as samples.
+
+    Named rather than allowlisted, on purpose. Callers reach this endpoint
+    today with application/json, text/plain, application/octet-stream,
+    audio/wav and with no Content-Type at all; an allowlist is the shorter
+    guard and would refuse all five.
+    """
+    # Case-insensitive: header values are (RFC 9110), and a startswith against
+    # the raw value lets the same upload through in capitals.
+    encoding = request.headers.get("content-encoding", "").strip().lower()
+    if encoding and encoding != "identity":
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            f"the body arrived under Content-Encoding: {encoding}, and nothing on this "
+            "path decompresses it -- the compressed bytes would be read as samples. "
+            "Send the audio uncompressed",
+        )
+    if request.headers.get("content-type", "").strip().lower().startswith("multipart/"):
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "this endpoint takes the audio as the entire request body, not as a "
+            "multipart form field -- the MIME boundary would be read as samples. Post "
+            "the bytes directly: PCM16 mono little-endian, or a wav container",
+        )
+
+
 def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     """Build the app, taking the engine from the environment when not given.
 
@@ -160,6 +211,113 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             app.state.configuration_error = str(error)
 
     app.state.engine = engine
+
+    # Nothing prints INFO by default, and uvicorn configures its own loggers
+    # rather than the root one, so without this the access line is written and
+    # discarded. Attached to "mindsurf" rather than to the root logger on
+    # purpose: basicConfig would also turn on INFO for httpx, funasr and torch,
+    # and the access line would arrive buried in them. Skipped entirely when
+    # anything else is already configured, so a real logging setup wins.
+    _service_log = logging.getLogger("mindsurf")
+    if not _service_log.handlers and not logging.getLogger().handlers:
+        _service_log.setLevel(logging.INFO)
+        _handler = logging.StreamHandler()
+        _handler.setFormatter(logging.Formatter("%(message)s"))
+        _service_log.addHandler(_handler)
+
+    @app.middleware("http")
+    async def observe(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        """Give every request an id, count it, and write one line about it.
+
+        The id goes out on the response header so that a user reporting "it
+        returned nothing at 14:02" hands over something that finds the line.
+        Generated here rather than read from the request: there is no proxy in
+        front of this today, and taking an id from the caller means sanitising
+        a value that ends up in a log and a header.
+
+        The endpoint hangs its own numbers on ``request.state.observed``;
+        Starlette backs that with the ASGI scope, so what the endpoint sets is
+        what this reads. For a streaming response the duration is time to the
+        headers, not to the last byte -- ``call_next`` returns at the first
+        message.
+        """
+        request_id = uuid.uuid4().hex[:16]
+        request.state.request_id = request_id
+        started = time.perf_counter()
+        code = 500
+        try:
+            response = await call_next(request)
+            code = response.status_code
+            response.headers["x-request-id"] = request_id
+            return response
+        finally:
+            # Bounded on purpose: keyed on the matched route rather than the
+            # path, so a scanner walking /a, /b, /c cannot grow this without
+            # limit. Unmatched paths all land in one bucket.
+            route = getattr(request.scope.get("route"), "path", "unmatched")
+            count(f"requests {route} {code}")
+            _log.info(
+                json.dumps(
+                    {
+                        "event": "request",
+                        "id": request_id,
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status": code,
+                        "ms": round((time.perf_counter() - started) * 1000, 1),
+                        **getattr(request.state, "observed", {}),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+
+    @app.get("/stats")
+    async def stats() -> dict[str, object]:
+        """What this process has counted since it started, and nothing older.
+
+        Deliberately not /metrics: a Prometheus scraper pointed at that name
+        and handed JSON fails in a way that reads as the service being down.
+        """
+        return counters()
+
+    @app.exception_handler(UnsupportedAudio)
+    async def unreadable_audio(request: Request, error: Exception) -> JSONResponse:
+        """400: the file is intact and this service cannot read it.
+
+        Not 415 -- the media type was right, the samples inside it were not --
+        and not 500, because nothing here is broken. Sending the same file
+        again cannot help, and the message says which conversion does.
+        """
+        count("audio refused")
+        return JSONResponse({"detail": str(error)}, status_code=status.HTTP_400_BAD_REQUEST)
+
+    @app.exception_handler(Exception)
+    async def unexpected(request: Request, error: Exception) -> JSONResponse:
+        """Every other failure, in the shape the rest of the contract uses.
+
+        Starlette's default here is 21 bytes of ``text/plain``, so a client that
+        calls ``.json()`` on the error path -- which is every client, because
+        every other error on this service is JSON -- meets a parse error instead
+        of the failure. The id is the one this request has been carrying, so the
+        line in the log is findable from what the caller was shown.
+
+        The reason is not in the body. It is the engine's own words -- "CUDA out
+        of memory: tried to allocate 44.00 GiB" -- and these endpoints take no
+        credential. It is in the log, under the same id.
+
+        Nothing is logged here: Starlette re-raises after this returns, so the
+        server logs the traceback itself, and logging it here as well puts two
+        copies of it in the file.
+        """
+        request_id = getattr(request.state, "request_id", None)
+        count("unhandled")
+        return JSONResponse(
+            {"detail": "internal error"},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            headers={"x-request-id": request_id} if request_id else None,
+        )
 
     @app.exception_handler(ConfigurationError)
     async def unconfigured(request: Request, error: Exception) -> JSONResponse:
@@ -286,16 +444,90 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     @app.post("/v1/audio/transcriptions", response_model=TranscriptionResponse)
     async def transcribe(request: Request) -> TranscriptionResponse:
         engine = require_engine(request)
+        refuse_envelope(request)
         pcm = await request.body()
         if not pcm:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "request body carried no audio")
+
+        # The same call the recogniser makes, for the same reason: a container
+        # states its own rate and the endpoint only assumes one. The field used
+        # to divide the whole body -- header included -- by the assumed rate,
+        # which reported a ten-second 24 kHz recording as 15.00 seconds and a
+        # 48 kHz one as 30.00. Doing it here also moves the refusal of a
+        # container this service cannot read in front of the model, where it
+        # costs nothing.
+        samples, rate = unwrap_wav(pcm, INPUT_SAMPLE_RATE)
+        seconds = len(whole_samples(samples)) / 2 / rate
+        # Dropped here rather than left to fall out of scope: this name is a
+        # real copy of the body's data chunk and the scope it is in spans the
+        # await below, so without this every in-flight request holds a second
+        # whole recording -- measured at 3.0x the body against 2.0x, which for
+        # a twenty-minute dictation is 38 MB each.
+        del samples
+
+        started = time.perf_counter()
         text, language = await engine.transcribe(pcm, INPUT_SAMPLE_RATE)
+        asr_ms = (time.perf_counter() - started) * 1000
+
+        polished: str | None = None
+        polish_failed = False
+        polish_ms = 0.0
         polish = getattr(engine, "polish", None)
+        if polish is not None:
+            started = time.perf_counter()
+            try:
+                polished = await polish(text)
+            except Exception as error:  # noqa: BLE001 - transcript is worth more than the reason
+                # Dictation's second stage is optional; its first is not. This
+                # used to be evaluated inside the response object, so a
+                # polisher that raised took the finished transcript with it and
+                # the caller got a 500 and not one word. Degrading to the raw
+                # text is what a dictation client would do with the failure
+                # anyway -- what it could not do was get the text at all.
+                polish_failed = True
+                # The only place this is ever recorded, since the caller is
+                # deliberately not told why -- so the traceback goes in, even
+                # though it costs the tidiness of one JSON object per line. The
+                # first line stays parseable and names the exception; the
+                # continuation lines are the frames.
+                polish_failed_at = f"{type(error).__name__}: {error}"
+                _log.exception(
+                    json.dumps(
+                        {
+                            "event": "polish_failed",
+                            "id": getattr(request.state, "request_id", None),
+                            "chars": len(text),
+                            "error": polish_failed_at[:200],
+                        },
+                        ensure_ascii=False,
+                    )
+                )
+            polish_ms = (time.perf_counter() - started) * 1000
+
+        count("transcriptions")
+        count("audio seconds", seconds)
+        if not text:
+            # The entry gate refused it, or there was genuinely no speech. Which
+            # rule fired is not visible from here -- it is decided inside the
+            # recogniser -- so this counts the outcome the caller sees.
+            count("transcriptions empty")
+        if polish_failed:
+            count("polish failed")
+        request.state.observed = {
+            "audio_seconds": round(seconds, 3),
+            "asr_ms": round(asr_ms, 1),
+            "polish_ms": round(polish_ms, 1),
+            "chars": len(text),
+            "polished_chars": len(polished) if polished is not None else None,
+            "polish_failed": polish_failed,
+            "language": language,
+        }
         return TranscriptionResponse(
             text=text,
-            polished=await polish(text) if polish is not None else None,
+            polished=polished,
+            polish_failed=polish_failed,
             language=language,
-            duration_seconds=len(pcm) / 2 / INPUT_SAMPLE_RATE,
+            duration_seconds=seconds,
         )
 
     @app.post("/v1/chat/completions")
@@ -695,8 +927,9 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                                 }
                             )
                     if not cancelled and (failure := speaking.exception()) is not None:
-                        if isinstance(failure, TooLongForModel):
-                            # A dictated turn longer than the model answers.
+                        if isinstance(failure, TooLongForModel | UnsupportedAudio):
+                            # A dictated turn longer than the model answers, or
+                            # a container whose samples cannot be read.
                             # Reported like any other event the session can
                             # survive: the caller says something shorter and
                             # keeps the connection, rather than being

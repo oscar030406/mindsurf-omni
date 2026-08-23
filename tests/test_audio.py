@@ -235,22 +235,42 @@ def test_raw_samples_pass_through_untouched() -> None:
     assert unwrap_wav(b"RIFF", 16_000) == (b"RIFF", 16_000)
 
 
-def test_a_container_this_does_not_understand_is_handed_on_as_it_came() -> None:
-    """Stereo or 24-bit is left to the old accidental behaviour rather than
-    decoded wrongly."""
+def test_a_container_whose_samples_cannot_be_read_is_refused_not_guessed_at() -> None:
+    """This used to hand the whole container on as if it were raw PCM.
+
+    The recogniser does not fail on nonsense, it writes something. Scored over
+    12 clips against what each gives when read properly: 16 kHz stereo mean CER
+    0.029, 8-bit 0.852, 24-bit empty on all twelve -- every one of them HTTP
+    200. The header states exactly what the file is, so the refusal can name it;
+    wrong words returned confidently cost more than a 400 naming the conversion.
+    """
     import struct
 
-    from mindsurf_omni.service.audio import unwrap_wav
+    import pytest
 
-    stereo = b"".join(
-        [
-            b"RIFF",
-            struct.pack("<I", 236),
-            b"WAVEfmt ",
-            struct.pack("<IHHIIHH", 16, 1, 2, 16_000, 64_000, 4, 16),
-            b"data",
-            struct.pack("<I", 200),
-            bytes(200),
-        ]
-    )
-    assert unwrap_wav(stereo, 16_000) == (stereo, 16_000)
+    from mindsurf_omni.service.audio import UnsupportedAudio, unwrap_wav
+
+    def container(channels: int, bits: int) -> bytes:
+        width = channels * bits // 8
+        return b"".join(
+            [
+                b"RIFF",
+                struct.pack("<I", 236),
+                b"WAVEfmt ",
+                struct.pack(
+                    "<IHHIIHH", 16, 1, channels, 16_000, 16_000 * width, width, bits
+                ),
+                b"data",
+                struct.pack("<I", 200),
+                bytes(200),
+            ]
+        )
+
+    with pytest.raises(UnsupportedAudio, match="2-channel"):
+        unwrap_wav(container(channels=2, bits=16), 16_000)
+    with pytest.raises(UnsupportedAudio, match="8-bit"):
+        unwrap_wav(container(channels=1, bits=8), 16_000)
+
+    # A body that is not a container at all is still taken as raw samples --
+    # that is the endpoint's documented input, not an accident.
+    assert unwrap_wav(b"\x00\x01" * 100, 16_000) == (b"\x00\x01" * 100, 16_000)

@@ -30,7 +30,7 @@ def test_missing_weights_name_themselves(tmp_path: Path) -> None:
         {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": str(tmp_path / "absent")}
     )
 
-    with pytest.raises(ConfigurationError, match="tokenizer="):
+    with pytest.raises(ConfigurationError, match="MINDSURF_TOKENIZER"):
         build(settings)
 
 

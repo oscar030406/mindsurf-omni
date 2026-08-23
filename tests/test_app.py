@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
+import logging
 import struct
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -323,8 +325,9 @@ def test_a_configuration_error_reaches_the_caller_instead_of_crashing_startup(
 ) -> None:
     """A crash-looping container gives an operator no log and no health check.
 
-    The error has to arrive as a 503 body, naming the missing file, so it can
-    be read from outside the container.
+    The error has to arrive as a 503 body, naming the variable behind the
+    missing file, so it can be read from outside the container. The variable
+    and not the path: this body is unauthenticated.
     """
     monkeypatch.setenv("MINDSURF_ENGINE", "cascade")
     monkeypatch.setenv("MINDSURF_WEIGHTS", str(tmp_path / "absent"))
@@ -333,7 +336,8 @@ def test_a_configuration_error_reaches_the_caller_instead_of_crashing_startup(
     response = TestClient(app).get("/v1/voices")
 
     assert response.status_code == 503
-    assert "tokenizer=" in response.json()["detail"]
+    assert "MINDSURF_TOKENIZER" in response.json()["detail"]
+    assert str(tmp_path) not in response.json()["detail"]
 
 
 def test_an_engine_passed_in_wins_over_the_environment(
@@ -1101,3 +1105,194 @@ def test_an_unhandled_failure_answers_json_like_every_other_error() -> None:
     assert response.json() == {"detail": "internal error"}
     # The engine's own words name internals the caller has no business reading.
     assert "CUDA" not in response.text
+
+
+def _wav(rate: int, samples: int, *, channels: int = 1, bits: int = 16) -> bytes:
+    """A container the way a recorder writes one."""
+    width = channels * bits // 8
+    data = bytes(samples * width)
+    return b"".join(
+        [
+            b"RIFF",
+            struct.pack("<I", 36 + len(data)),
+            b"WAVEfmt ",
+            struct.pack("<IHHIIHH", 16, 1, channels, rate, rate * width, width, bits),
+            b"data",
+            struct.pack("<I", len(data)),
+            data,
+        ]
+    )
+
+
+@pytest.mark.parametrize("rate", [16_000, 24_000, 44_100, 48_000])
+def test_the_reported_duration_is_the_recording_not_the_byte_count(
+    client: TestClient, rate: int
+) -> None:
+    """The field divided the whole body -- container header included -- by the rate
+    the endpoint assumes rather than the one the recording states. Ten seconds of
+    24 kHz was reported as 15.00 and 48 kHz as 30.00, while the transcript was
+    right, so nothing else in the response disagreed with it."""
+    body = client.post("/v1/audio/transcriptions", content=_wav(rate, rate * 10)).json()
+
+    assert body["duration_seconds"] == pytest.approx(10.0, abs=0.01)
+
+
+def test_a_polisher_that_raises_does_not_take_the_transcript_with_it() -> None:
+    """Dictation's second stage is optional and its first is not.
+
+    Evaluated inside the response object, a polisher that raised became a 500 and
+    the caller got no words at all -- for a failure in the step that only tidies
+    words it already had.
+    """
+
+    class _Breaks(FakeEngine):
+        async def polish(self, transcript: str) -> str:
+            raise RuntimeError("polish checkpoint returned NaN")
+
+    response = TestClient(create_app(_Breaks()), raise_server_exceptions=False).post(
+        "/v1/audio/transcriptions", content=b"\x00\x01" * 16_000
+    )
+
+    assert response.status_code == 200
+    assert response.json()["text"] == "今天天气怎么样"
+    assert response.json()["polished"] is None
+    # Null now means three things and only this one is a fault; a deployment whose
+    # polisher broke on a bad deploy must not look like one that never had a
+    # polisher, from every response it sends.
+    assert response.json()["polish_failed"] is True
+
+
+def test_a_working_polisher_does_not_claim_to_have_failed(client: TestClient) -> None:
+    body = client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000).json()
+
+    assert body["polish_failed"] is False
+
+
+@pytest.mark.parametrize(("channels", "bits"), [(2, 16), (1, 8)], ids=["stereo", "8-bit"])
+def test_a_wav_this_service_cannot_read_is_refused_rather_than_transcribed(
+    client: TestClient, channels: int, bits: int
+) -> None:
+    """Handed on as raw PCM these transcribed at mean CER 0.029 and 0.852 over 12
+    clips, both HTTP 200. See test_audio for the readings."""
+    response = client.post(
+        "/v1/audio/transcriptions",
+        content=_wav(16_000, 8_000, channels=channels, bits=bits),
+    )
+
+    assert response.status_code == 400
+    assert "16-bit mono" in response.json()["detail"]
+
+
+def test_a_session_survives_audio_it_cannot_read_instead_of_dropping() -> None:
+    """The realtime path has no status code to answer with, so an exception here
+    closes the connection and the caller sees the model go silent."""
+    from mindsurf_omni.service.audio import UnsupportedAudio
+
+    class _Refuses(FakeEngine):
+        async def respond(  # type: ignore[override]
+            self,
+            pcm: bytes,
+            sample_rate: int,
+            settings: GenerationSettings,
+            history: list[dict[str, str]] | None = None,
+        ) -> AsyncIterator[SpeechChunk]:
+            raise UnsupportedAudio("this wav holds 2-channel 16-bit samples")
+            yield  # pragma: no cover - makes this an async generator
+
+    with TestClient(create_app(_Refuses())).websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        socket.send_json(
+            {
+                "type": "input_audio_buffer.append",
+                "audio": base64.b64encode(b"\x00" * 32_000).decode(),
+            }
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        events = [socket.receive_json() for _ in range(3)]
+        # Still open: the caller sends a different file rather than reconnecting.
+        socket.send_json({"type": "session.clear"})
+        events.append(socket.receive_json())
+
+    assert any(event["type"] == "error" and "2-channel" in str(event) for event in events)
+    assert events[-1]["type"] == "session.created"
+
+
+def test_every_response_carries_an_id_that_finds_its_line_in_the_log(
+    client: TestClient,
+) -> None:
+    """A user reporting "it returned nothing at 14:02" needs to hand over something
+    narrower than a timestamp."""
+    good = client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000)
+    refused = client.post("/v1/audio/transcriptions", content=b"")
+
+    assert len(good.headers["x-request-id"]) == 16
+    assert len(refused.headers["x-request-id"]) == 16
+    assert good.headers["x-request-id"] != refused.headers["x-request-id"]
+
+
+def test_the_failure_path_carries_an_id_too() -> None:
+    """The 500 is produced outside the middleware that sets the header, so it is
+    the one response that could quietly lose it -- and the one that needs it."""
+
+    class _Explodes(FakeEngine):
+        async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+            raise RuntimeError("CUDA out of memory: tried to allocate 44.00 GiB")
+
+    response = TestClient(create_app(_Explodes()), raise_server_exceptions=False).post(
+        "/v1/audio/transcriptions", content=b"\x00\x01" * 16_000
+    )
+
+    assert response.status_code == 500
+    assert len(response.headers["x-request-id"]) == 16
+
+
+def test_the_access_line_says_what_happened_without_saying_what_was_said(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A dictation service that logs transcripts keeps a copy of everything its
+    users said, on a disk with a different retention policy from the product.
+    Lengths answer "did it return nothing" without keeping the words."""
+    with caplog.at_level(logging.INFO, logger="mindsurf.access"):
+        client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000)
+
+    line = json.loads(caplog.messages[-1])
+    assert line["path"] == "/v1/audio/transcriptions"
+    assert line["status"] == 200
+    assert line["chars"] == len("今天天气怎么样")
+    assert line["audio_seconds"] == pytest.approx(1.0)
+    assert "asr_ms" in line
+    assert "polish_ms" in line
+    assert "今天天气怎么样" not in caplog.text
+
+
+def test_the_counters_separate_a_refusal_from_a_success(client: TestClient) -> None:
+    """"It is returning errors" and "it is returning errors to one caller" want
+    different people woken up, so they are counted apart."""
+    before = client.get("/stats").json()["counts"]
+    client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000)
+    client.post("/v1/audio/transcriptions", content=_wav(16_000, 8_000, channels=2))
+    after = client.get("/stats").json()
+
+    moved = {
+        key: after["counts"][key] - before.get(key, 0)
+        for key in after["counts"]
+        if after["counts"][key] != before.get(key, 0)
+    }
+    assert moved["transcriptions"] == 1
+    assert moved["audio refused"] == 1
+    assert moved["requests /v1/audio/transcriptions 200"] == 1
+    assert moved["requests /v1/audio/transcriptions 400"] == 1
+    assert after["uptime_seconds"] >= 0
+
+
+def test_the_counters_do_not_grow_a_key_per_path_a_scanner_tries(
+    client: TestClient,
+) -> None:
+    """Keyed on the path, anything walking /a, /b, /c grows this without limit."""
+    for path in ("/aaa", "/bbb", "/ccc"):
+        client.get(path)
+
+    keys = client.get("/stats").json()["counts"]
+
+    assert not [key for key in keys if "/aaa" in key or "/bbb" in key]
+    assert keys["requests unmatched 404"] >= 3
