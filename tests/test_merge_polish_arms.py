@@ -599,3 +599,57 @@ def test_the_fragment_only_protects_it_while_the_fragment_is_still_there() -> No
     arm = {"source": source, "polished": "方案可以。"}
 
     assert merge([arm, dict(arm)], "veto") == "这个方案可以。"
+
+
+# --- 英文：只删无歧义的，剩下的一律不碰 -----------------------------------
+
+
+def _english(text: str) -> str:
+    from mindsurf_omni.service.polish import (
+        english_disfluency,
+        spaces_follow_their_words,
+        tidy,
+    )
+
+    drop = spaces_follow_their_words(text, english_disfluency(text))
+    return tidy("".join(char for index, char in enumerate(text) if index not in drop))
+
+
+def test_english_reduplication_that_is_grammar_survives() -> None:
+    """Pago Pago 是地名，had had 是过去完成时，very very 是强调。
+
+    这一级挂在内容否决之后，中文那套守卫够不到它，所以它得自己有一套。
+    和中文那七个双职词同一笔取舍：内容是贵的那一侧，可能是故意说两遍的就留着。
+    代价是这些词上的真口吃会漏。
+    """
+    for text in (
+        "We flew to Pago Pago last year.",
+        "Baden Baden is in Germany.",
+        "New York, New York is the song.",
+        "He had had enough of it.",
+        "I heard that that was wrong.",
+        "It was very very slow.",
+    ):
+        assert _english(text) == text, text
+
+
+def test_the_pronoun_I_is_not_a_proper_noun() -> None:
+    """英文里 I 永远大写，所以大写在它身上不带信息——而 I I 是最常见的口吃。"""
+    assert _english("I I think it is fine.") == "I think it is fine."
+
+
+def test_a_mark_the_deleted_filler_left_behind_goes_with_it() -> None:
+    """标点表原来只有中日韩的，句中的 ASCII 逗号裸在那里：
+    I fixed the build. Um, then… 出来是 . , then…"""
+    assert _english("I fixed the build. Um, then I pushed it.") == (
+        "I fixed the build. then I pushed it."
+    )
+
+
+def test_tidy_does_not_eat_the_space_between_two_pieces() -> None:
+    """tidy 跑在每一段上，而 split_sentences 把段间的空格留在下一段开头。
+    在那里 strip 一下，两段拼回去就是 …today.I rolled it back…。
+    中文没有空格，所以 986 条留出集看不见这一条。"""
+    from mindsurf_omni.service.polish import tidy
+
+    assert tidy(" I rolled it back.") == " I rolled it back."

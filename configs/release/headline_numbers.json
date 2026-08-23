@@ -683,9 +683,10 @@
           "wrongly_deleted": 0
         },
         "rule_only": {
-          "exact": "277/300",
-          "missed_words": 24,
-          "wrongly_deleted": 0
+          "exact": "265/300",
+          "missed_words": 35,
+          "wrongly_deleted": 0,
+          "_": "277/300 是没保护英文叠词那一版；保护 Pago Pago / had had / very very 之后是 265，误删仍然 0"
         }
       },
       "repair_type_n300": {
@@ -705,6 +706,21 @@
     "source": [
       "configs/polish_probes_multilingual_v1.jsonl",
       "src/mindsurf_omni/service/polish.py"
+    ],
+    "english_reduplication_is_protected": {
+      "_": [
+        "Pago Pago 是地名，had had 是过去完成时，very very 是强调，that that 开从句。",
+        "这一级挂在内容否决之后，中文那套守卫够不到，所以它自己带一套：",
+        "句中的大写词当专名（I 除外——它永远大写，而 I I 是最常见的英文口吃），",
+        "外加 had / that / very / so / no 五个词。",
+        "和中文那七个双职词同一笔取舍：内容是贵的那一侧。代价是这些词上的真口吃会漏。"
+      ],
+      "cost": "n=300 完全一致 277 -> 265"
+    },
+    "known_gaps": [
+      "Mr. Chen 会被分句切开——ef125c9 的提交信息说前瞻保住了它，那句是错的，只有 3.5 保住了。group_sentences 会把两段并回去，所以代价有界。",
+      "Uh, can you send… 出来是小写开头。复制约束不许改字，重新大写做不到。",
+      "改口型不流利（Who did no What did…）明确不做。"
     ]
   }
 }

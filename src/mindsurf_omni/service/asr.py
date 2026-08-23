@@ -78,7 +78,32 @@ LONGEST_SECONDS = 3600.0
 FALLBACK_WINDOW = int(SEGMENT_HARD_SECONDS * RECOGNISER_RATE) * 2
 
 
-def writes_something(text: str) -> bool:
+# What each spoken language is written in. Latin letters and digits are in
+# every one of them, so they are not listed: a transcript of 咖啡, demo or B203
+# has to survive whatever the deployment declared.
+SCRIPTS: dict[str, tuple[tuple[str, str], ...]] = {
+    "zh": (("\u3400", "\u9fff"), ("\uf900", "\ufaff")),
+    "yue": (("\u3400", "\u9fff"), ("\uf900", "\ufaff")),
+    "ja": (("\u3040", "\u30ff"), ("\u3400", "\u9fff"), ("\uff66", "\uff9d")),
+    "ko": (("\uac00", "\ud7a3"), ("\u1100", "\u11ff"), ("\u3130", "\u318f")),
+    "en": (),
+}
+
+
+def spoken_scripts(language: str) -> tuple[tuple[str, str], ...]:
+    """The character ranges a deployment declaring this language could produce.
+
+    ``auto`` means the operator did not narrow it, so every script the
+    recogniser knows counts. Anything else narrows the gate below to that one --
+    which is what the gate is for, and also why it has to be asked rather than
+    assumed.
+    """
+    if language == "auto":
+        return tuple({span for spans in SCRIPTS.values() for span in spans})
+    return SCRIPTS.get(language, SCRIPTS["zh"])
+
+
+def writes_something(text: str, language: str = "zh") -> bool:
     """Whether the transcript is made of characters this deployment could have said.
 
     Asked to read a room with a fan in it SenseVoice does not answer "I do not
@@ -86,21 +111,31 @@ def writes_something(text: str) -> bool:
     reported: the reported language is wrong for 8% of ordinary short Mandarin,
     so a rule keyed on it deletes 咖啡 and 猫 along with the noise.
 
+    Which characters count comes from what the deployment declared, and that is
+    not decoration. Hardcoded to Chinese, this returned False for every Korean
+    transcript and for every Japanese one written without kanji -- somebody
+    spoke, the recogniser heard them, and the text box stayed empty. A Chinese
+    deployment still refuses 그., because for it that really is invention.
+
     English inventions (I., The.) get through here; ``said_enough`` takes most
     of what is left. Readings in headline_numbers.json under dictation_entry_gate.
     """
-    return bool(spoken_body(text))
+    return bool(spoken_body(text, language))
 
 
-def spoken_body(text: str) -> str:
+def spoken_body(text: str, language: str = "zh") -> str:
     """The transcript with the punctuation a listener would not have said stripped."""
     body = text.strip(" .。,，!！?？、;；:：\n")
-    if not any("一" <= char <= "鿿" or (char.isascii() and char.isalnum()) for char in body):
+    spans = spoken_scripts(language)
+    if not any(
+        (char.isascii() and char.isalnum()) or any(low <= char <= high for low, high in spans)
+        for char in body
+    ):
         return ""
     return body
 
 
-def said_enough(text: str, seconds: float) -> bool:
+def said_enough(text: str, seconds: float, language: str = "zh") -> bool:
     """Whether this many characters in this much speech is a person talking.
 
     Steady noise makes the recogniser write one or two Chinese characters
@@ -114,7 +149,7 @@ def said_enough(text: str, seconds: float) -> bool:
     """
     if seconds < 1.0:
         return True
-    return len(spoken_body(text)) / seconds >= 0.5
+    return len(spoken_body(text, language)) / seconds >= 0.5
 
 
 @dataclass(slots=True)
@@ -285,7 +320,7 @@ class SenseVoiceRecogniser:
 
         if seconds <= SEGMENT_ABOVE_SECONDS:
             text, heard = self._read(samples, short)
-            return (text, heard) if said_enough(text, voiced) else ("", None)
+            return (text, heard) if said_enough(text, voiced, self.language) else ("", None)
 
         # Cut at the pauses rather than fed whole. The encoder's allocation
         # grows with the square of the input, and so does what it gets wrong:
@@ -314,7 +349,7 @@ class SenseVoiceRecogniser:
         # Joined with nothing: use_itn ends each piece with its own punctuation,
         # and a separator here would show up as a space in the text box.
         joined = "".join(parts)
-        if not said_enough(joined, voiced):
+        if not said_enough(joined, voiced, self.language):
             return "", None
         return joined, max(set(languages), key=languages.count) if languages else None
 
@@ -339,7 +374,7 @@ class SenseVoiceRecogniser:
         if not result:
             return "", None
         text, heard = strip_tags(str(result[0].get("text", "")))
-        if heard == "nospeech" or not writes_something(text):
+        if heard == "nospeech" or not writes_something(text, self.language):
             return "", None
         return text, heard
 

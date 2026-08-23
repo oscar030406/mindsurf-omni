@@ -80,6 +80,11 @@ FLOOR = 0.90
 
 PUNCTUATION = set("，。！？；：、")
 
+# The same job for Latin text. Kept apart from PUNCTUATION because the rules
+# above it are about Chinese shapes; this one only has to catch the mark a
+# deleted English filler leaves standing.
+_ANY_MARK = PUNCTUATION | set(",;:.!?")
+
 # Particles that never open a Chinese sentence. 啊 and 呀 are deliberately not
 # here -- "啊，太好了" is ordinary, and deleting that 啊 would be deleting content.
 STRANDED_PARTICLES = set("吧呢嘛")
@@ -262,6 +267,12 @@ def tidy(text: str) -> str:
     text = drop_bridging_with_mark(text)
     out: list[str] = []
     for char in text:
+        # ASCII marks count too, and only since English joined: Um, then I …
+        # left its comma behind as . , then I …. Whitespace does not separate
+        # them -- the comma a deleted filler strands has a space in front of it.
+        behind = "".join(out).rstrip(" ")
+        if char in _ANY_MARK and (not behind or behind[-1] in _ANY_MARK):
+            continue
         if char in PUNCTUATION and (not out or out[-1] in PUNCTUATION):
             continue
         if char in STRANDED_PARTICLES and (not out or out[-1] in PUNCTUATION):
@@ -272,13 +283,7 @@ def tidy(text: str) -> str:
         if char == " " and out and out[-1] == " ":
             continue
         out.append(char)
-    text = "".join(out).lstrip(" ,;:.!?")
-    # Whatever the loop above left standing in front of the first word: a filled
-    # pause at the start takes its own comma with it, and Uh, can you… must not
-    # come back as , can you….
-    while text and text[0] == " ":
-        text = text[1:]
-    return text.strip()
+    return "".join(out)
 
 
 # --- Merging two arms. The product runs the merge, so these live here and the
@@ -461,6 +466,37 @@ def _gap_is_only_space(source: str, left: _Word, right: _Word) -> bool:
     return source[left[1] : right[0]].strip(" ") == ""
 
 
+# English words that stand next to themselves on purpose. had had is the past
+# perfect, that that opens a clause, very very and so so are emphasis. Short,
+# and short on purpose: every entry here is a stutter this stage will now miss,
+# and the list only holds the ones where the doubling is grammar rather than a
+# stumble.
+DOUBLES_ON_PURPOSE = frozenset({"had", "that", "very", "so", "no"})
+
+
+def _says_it_twice_on_purpose(
+    raw: list[str], words: list[_Word], index: int, size: int
+) -> bool:
+    """Whether this repetition is English rather than a stumble.
+
+    Two shapes. A capitalised word away from the start of a sentence is a name,
+    and Pago Pago, Baden Baden and New York, New York are places somebody said
+    once -- except I, which is capitalised in every position and so carries no
+    information here, while I I is the commonest English stutter there is. The
+    rest is grammar: had had, that that, very very.
+
+    Same trade as the Chinese double-duty words, and settled the same way --
+    content is the expensive side, so a doubling that might be meant is left
+    alone. What it costs is the stutters that happen to use these words.
+    """
+    if size == 1 and words[index][2] in DOUBLES_ON_PURPOSE:
+        return True
+    return any(
+        raw[place][:1].isupper() and place > 0 and raw[place] != "I"
+        for place in range(index, index + 2 * size)
+    )
+
+
 def english_disfluency(source: str, already: set[int] | None = None) -> set[int]:
     """Indices of the Latin disfluency a rule can be sure about.
 
@@ -495,6 +531,7 @@ def english_disfluency(source: str, already: set[int] | None = None) -> set[int]
         (match.start(), match.end(), match.group().lower())
         for match in re.finditer(r"[A-Za-z']+", source)
     ]
+    raw = [source[start:stop] for start, stop, _ in words]
     taken: set[int] = set()
     for size in range(3, 0, -1):
         for index in range(len(words) - 2 * size + 1):
@@ -514,6 +551,8 @@ def english_disfluency(source: str, already: set[int] | None = None) -> set[int]
             # The second copy, not the first: The the migration keeps its
             # capital that way, and recasing is not available to a stage whose
             # output has to be a subsequence of its input.
+            if _says_it_twice_on_purpose(raw, words, index, size):
+                continue
             span = set(range(second[0][0], second[-1][1]))
             whole = set(range(first[0][0], second[-1][1]))
             # One copy, and only if nobody has taken one already. The arms had
