@@ -16,6 +16,7 @@ import binascii
 import contextlib
 import json
 import logging
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -191,6 +192,23 @@ async def audio_body(request: Request) -> bytes:
     return b"".join(chunks)
 
 
+# Anything that looks like a filesystem path: a Windows drive letter or a POSIX
+# absolute path, up to the next whitespace or quote.
+_A_PATH = re.compile(r"(?:[A-Za-z]:[\\/]|/)[^\s'\"),;]*")
+
+
+def without_paths(message: str) -> str:
+    """A message safe to hand an unauthenticated caller.
+
+    Absolute paths name the account and the directory layout of the machine
+    serving the request, and a deployment whose weights sit under a customer's
+    name was handing that name to anyone who could reach the port. The variable
+    that was wrong is what the caller can act on; the path is what the operator
+    needs, and it goes to the log.
+    """
+    return _A_PATH.sub("<path>", message)
+
+
 def refuse_envelope(request: Request) -> None:
     """Refuse a body that is wrapped in something this route does not unwrap.
 
@@ -210,9 +228,13 @@ def refuse_envelope(request: Request) -> None:
     audio/wav and with no Content-Type at all; an allowlist is the shorter
     guard and would refuse all five.
     """
-    # Case-insensitive: header values are (RFC 9110), and a startswith against
-    # the raw value lets the same upload through in capitals.
-    encoding = request.headers.get("content-encoding", "").strip().lower()
+    # Joined, not ``get``: a header sent on two lines is the same message as
+    # one line with a comma (RFC 9110 section 5.2), and Starlette's ``get``
+    # returns only the first of them. This gate already refused the comma form,
+    # so reading one line let the same request through in two -- measured on a
+    # raw socket, ``identity`` then ``gzip`` was a 200. Case-insensitive for the
+    # same reason: a startswith against the raw value lets it through in capitals.
+    encoding = ",".join(request.headers.getlist("content-encoding")).strip().lower()
     if encoding and encoding != "identity":
         raise HTTPException(
             status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -220,7 +242,8 @@ def refuse_envelope(request: Request) -> None:
             "path decompresses it -- the compressed bytes would be read as samples. "
             "Send the audio uncompressed",
         )
-    if request.headers.get("content-type", "").strip().lower().startswith("multipart/"):
+    content_type = ",".join(request.headers.getlist("content-type")).strip().lower()
+    if "multipart/" in content_type:
         raise HTTPException(
             status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             "this endpoint takes the audio as the entire request body, not as a "
@@ -276,7 +299,13 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         try:
             engine = build(Settings.from_environment())
         except ConfigurationError as error:
-            app.state.configuration_error = str(error)
+            # Scrubbed at the join rather than at each raise: six other places
+            # under build() put a Path into a ConfigurationError, and this
+            # string reaches /health and /v1/voices, neither of which needs
+            # authentication. A deployment whose weights live under a customer's
+            # name was handing that name to anyone who could reach the port.
+            app.state.configuration_error = without_paths(str(error))
+            logging.getLogger("mindsurf").error("configuration: %s", error)
 
     app.state.engine = engine
 
@@ -556,19 +585,29 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                 # text is what a dictation client would do with the failure
                 # anyway -- what it could not do was get the text at all.
                 polish_failed = True
-                # The only place this is ever recorded, since the caller is
-                # deliberately not told why -- so the traceback goes in, even
-                # though it costs the tidiness of one JSON object per line. The
-                # first line stays parseable and names the exception; the
-                # continuation lines are the frames.
-                polish_failed_at = f"{type(error).__name__}: {error}"
-                _log.exception(
+                # The type and where it was raised, never the message and never
+                # the traceback. An exception message is written by whoever
+                # raised it, and the ones on this path are raised by a tokeniser
+                # and a chat template, which put the input they choked on into
+                # the message because that is where the message earns its keep.
+                # Measured against a stub that does the same: the transcript
+                # appeared in the log ten times. The caller has the request id
+                # and the text; what is missing here is only the reason.
+                import traceback
+
+                where = [
+                    f"{frame.filename.rsplit('/', 1)[-1]}:{frame.lineno}"
+                    for frame in traceback.extract_tb(error.__traceback__)[-3:]
+                ]
+                polish_failed_at = type(error).__name__
+                _log.error(
                     json.dumps(
                         {
                             "event": "polish_failed",
                             "id": getattr(request.state, "request_id", None),
                             "chars": len(text),
-                            "error": polish_failed_at[:200],
+                            "error": polish_failed_at,
+                            "where": where,
                         },
                         ensure_ascii=False,
                     )

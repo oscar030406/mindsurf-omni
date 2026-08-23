@@ -19,6 +19,11 @@ import struct
 
 PCM16_MAX = 32768.0
 
+# What a recorder can plausibly have been running at. Below the first, a header
+# turns a short clip into hours; above the second, into microseconds.
+SLOWEST_RATE = 4_000
+FASTEST_RATE = 384_000
+
 
 class UnsupportedAudio(ValueError):
     """A container whose header parsed and whose samples this service cannot read.
@@ -65,7 +70,13 @@ def unwrap_wav(body: bytes, declared_rate: int) -> tuple[bytes, int]:
         payload = cursor + 8
         if name == b"fmt " and payload + 16 <= len(body):
             channels = int.from_bytes(body[payload + 2 : payload + 4], "little") or 1
-            rate = int.from_bytes(body[payload + 4 : payload + 8], "little") or declared_rate
+            stated = int.from_bytes(body[payload + 4 : payload + 8], "little")
+            # Only inside the range a recorder can produce. The header is the
+            # caller's to write, and four bytes of it decided three things:
+            # duration_seconds became whatever the caller said (rate 1 turned a
+            # one-second clip into 16000 seconds), the /stats audio counter went
+            # with it, and resample allocated against the ratio.
+            rate = stated if SLOWEST_RATE <= stated <= FASTEST_RATE else declared_rate
             bits = int.from_bytes(body[payload + 14 : payload + 16], "little") or 16
         elif name == b"data":
             samples = body[payload : payload + size] if size else body[payload:]

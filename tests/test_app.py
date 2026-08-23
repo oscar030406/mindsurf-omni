@@ -1439,3 +1439,82 @@ def test_a_warm_up_that_failed_once_stops_being_reported_once_it_works() -> None
 
         report = started.get("/health").json()
         assert "warm-up" not in report["not_ready"], "好了之后还在说坏"
+
+
+def test_the_polish_failure_log_does_not_carry_what_was_said(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """异常消息是抛它的人写的，而这条路上抛异常的是分词器和 chat template——
+    它们把噎住的输入写进消息里，因为那正是这条消息值钱的地方。
+
+    上一版这里记的是 f"{type(error).__name__}: {error}" 外加 _log.exception，
+    拿一个会把输入写进消息的桩量：转写在日志里出现了十次。
+    """
+    said = "我的社保号是三三零一零二一九九零"
+
+    class _Blabs(FakeEngine):
+        async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+            return said, "zh"
+
+        async def polish(self, transcript: str) -> str:
+            raise ValueError(f"cannot tokenise {transcript!r}: 0x4e2d out of vocabulary")
+
+    client = TestClient(create_app(_Blabs()), raise_server_exceptions=False)
+    with caplog.at_level(logging.INFO):
+        response = client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000)
+
+    assert response.json()["text"] == said
+    assert response.json()["polished"] is None
+    assert said not in caplog.text
+    # 但要留得下线索：类型和抛在哪。
+    assert "ValueError" in caplog.text
+    assert "polish_failed" in caplog.text
+
+
+def test_a_header_sent_twice_is_the_same_header(client: TestClient) -> None:
+    """同名头分两行发 = 一行逗号连接（RFC 9110 §5.2）。
+
+    Starlette 的 get 只回第一个，而这道闸自己是拒绝逗号那个形式的——
+    于是换成两行同样的语义就放过去了，裸 socket 上量到 identity 后跟 gzip 是 200。
+    """
+    from fastapi import HTTPException
+    from fastapi.datastructures import Headers
+
+    from mindsurf_omni.service.app import refuse_envelope
+
+    class _Twice:
+        def __init__(self, name: str, *values: str) -> None:
+            self.headers = Headers(raw=[(name.encode(), v.encode()) for v in values])
+
+    for name, values in (
+        ("content-encoding", ("identity", "gzip")),
+        ("content-encoding", ("gzip", "identity")),
+        ("content-type", ("application/octet-stream", "multipart/form-data; boundary=z")),
+    ):
+        with pytest.raises(HTTPException) as refusal:
+            refuse_envelope(_Twice(name, *values))  # type: ignore[arg-type]
+        assert refusal.value.status_code == 415
+
+
+def test_a_configuration_failure_does_not_name_the_directory_it_failed_in(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """/health 和 /v1/voices 都不认证，而权重路径会说出这台机器上的账号和目录。
+
+    上一版只改了 Settings.verify() 那一条消息；build() 下面还有六处把 Path
+    插进 ConfigurationError。要修的是 str(error) 进 configuration_error 这个汇合点。
+    """
+    from mindsurf_omni.service import config, factory
+    from mindsurf_omni.service.config import ConfigurationError
+
+    secret = "customer-a-nda-2026"
+
+    def _explodes(_: object) -> None:
+        raise ConfigurationError(f"the checkout is not at /srv/{secret}/minimind/model")
+
+    monkeypatch.setattr(factory, "build", _explodes)
+    monkeypatch.setattr(config.Settings, "from_environment", staticmethod(lambda: object()))
+
+    with TestClient(create_app(), raise_server_exceptions=False) as started:
+        for path in ("/health", "/v1/voices"):
+            assert secret not in started.get(path).text, path
