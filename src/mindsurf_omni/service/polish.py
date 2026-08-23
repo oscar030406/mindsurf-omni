@@ -53,7 +53,7 @@ RECOGNISED_FILLERS = ("摁", "鄂", "唉", "哎", "呐")
 # Cased pairs rather than a case fold, because the match is a substring test
 # against the transcript: "Um" starts a sentence and "um" sits inside one, while
 # a fold would also match the "um" inside "number".
-ENGLISH_FILLERS = ("um", "Um", "uh", "Uh", "erm", "Erm", "uhh", "Uhh")
+ENGLISH_FILLERS = ("um", "Um", "uh", "Uh", "er", "Er", "erm", "Erm", "uhh", "Uhh")
 
 # Where an English filler needs a boundary to be one. Substring matching finds
 # "um" inside "number" and "uh" inside "though"; these are the characters that

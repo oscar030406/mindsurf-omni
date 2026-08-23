@@ -649,5 +649,62 @@
     },
     "still_open": "(b) 按 CS2W 的真实比例重注一份留出集没做——重注只解决标签，还要把两条臂在新语料上重跑一遍才有输出可打分",
     "source": "scripts/measure_polish.py"
+  },
+  "dictation_multilingual": {
+    "_": [
+      "识别器支持 zh / en / yue / ja / ko；润色这一级中文靠模型、英文靠规则、",
+      "其余语种原样通过。「不支持」和「弄坏」是两件事，判据里分开。",
+      "定位：不是最准，是同等参数下没人做出来的那个产品——本地、小、快，",
+      "而且带一级受复制约束的口语词清除（输出必须是转写的子序列，编造被结构性压住）。"
+    ],
+    "recogniser_languages": [
+      "zh",
+      "en",
+      "yue",
+      "ja",
+      "ko"
+    ],
+    "polish_by_language": {
+      "zh": "模型（sft_polish6_768，139M）+ 逐字标注器，veto 合并",
+      "en": "规则：填充音 um/uh/er/erm/uhh + 相邻重复删一份。模型在这一格没有发言权",
+      "yue/ja/ko": "原样通过，不进模型"
+    },
+    "why_english_is_a_rule": {
+      "_": [
+        "中文训的润色器在英文上留下每一个填充音、却删掉实词。",
+        "n=25 时就看得出，用 Disfl-QA 的 300 句压到 n=300 仍然成立。"
+      ],
+      "benchmark": "Disfl-QA dev（google-research-datasets/Disfl-QA，CC BY 4.0）",
+      "filled_pauses_and_repeats_n300": {
+        "_": "拿 Disfl-QA 的干净句子注入填充音与重复；注入标签的老毛病仍在，所以只比三条臂不当绝对分",
+        "model_only": {
+          "exact": "38/300",
+          "missed_words": 584,
+          "wrongly_deleted": 0
+        },
+        "rule_only": {
+          "exact": "277/300",
+          "missed_words": 24,
+          "wrongly_deleted": 0
+        }
+      },
+      "repair_type_n300": {
+        "_": "Disfl-QA 原样：Who did no What did… 这一类要识别被改掉的那半句",
+        "model_only": {
+          "exact": "0/300"
+        },
+        "rule_only": {
+          "exact": "1/300"
+        },
+        "verdict": "**明确不做**。它需要理解，不是删除启发式；我们的复制约束做得到，模型做不到"
+      }
+    },
+    "discourse_markers_are_not_touched": "like / well / actually / right / so / I mean / you know 一个都不删。它们是英文版的双职词——I like the layout 和 it's, like, twice as fast 是同样四个字母，而能定这条线的人工标注语料我们还没有。和中文那七个词的取舍对称：内容是贵的那一侧",
+    "probe": "configs/polish_probes_multilingual_v1.jsonl（44 条人写期望）",
+    "chinese_regression": "986 条留出集输出逐字节相同，四项判据一位不差",
+    "source": [
+      "configs/polish_probes_multilingual_v1.jsonl",
+      "src/mindsurf_omni/service/polish.py"
+    ]
   }
 }
