@@ -32,15 +32,19 @@ from dataclasses import dataclass, field
 
 FRAME_MS = 20
 
-# The floor may not decay below this, however quiet the room. Digital silence
-# reads as exactly zero, and a floor tracking it geometrically reaches nothing
-# in about a second and a half -- after which anything at all is three times
-# the floor. Measured: a clip with leading silence followed by room tone at
-# 0.0008 had the room tone marked as speech and the speech before it marked as
-# silence, which is the detector exactly inverted. Set so that three times it
-# stays at or above the level ``asr.SILENCE_RMS`` already calls "nobody is
-# talking", so the two do not disagree about the same buffer.
-QUIETEST_NOISE_FLOOR = 0.0007
+# Which of the recording's own frames the floor may not decay below. Digital
+# silence reads as exactly zero, and a floor tracking it geometrically reaches
+# nothing in about a second and a half -- after which anything at all is three
+# times the floor, and a clip of leading silence then speech then room tone had
+# the room tone marked as speech and the speech marked as silence.
+#
+# Taken from the recording rather than fixed, because a fixed floor is a fixed
+# assumption about the microphone's level. At 0.0007 -- three times which is
+# the level ``asr.SILENCE_RMS`` already calls "nobody is talking" -- a recording
+# made ten times quieter than the corpus had 22 of 58 seams land inside speech;
+# from this percentile, 3. Frames that are exactly zero are left out: they are
+# the file's silence, not the room's.
+QUIET_PERCENTILE = 10
 
 
 def frame_energy(pcm: bytes) -> float:
@@ -85,6 +89,9 @@ class EndpointDetector:
     # absolute level, so a quiet microphone does not read as permanent silence.
     speech_ratio: float = 3.0
     initial_noise_floor: float = 0.005
+    # Streaming has no second pass to read a percentile off, so this one takes
+    # the bound as a setting. ``speech_spans`` computes it; see QUIET_PERCENTILE.
+    quietest_floor: float = 0.0007
 
     _noise_floor: float = field(default=0.0, init=False)
     _speech_ms: int = field(default=0, init=False)
@@ -127,7 +134,7 @@ class EndpointDetector:
 
         # Track the floor only while quiet, so loud speech cannot drag it up
         # and deafen the detector to everything that follows.
-        self._noise_floor = max(QUIETEST_NOISE_FLOOR, 0.95 * self._noise_floor + 0.05 * energy)
+        self._noise_floor = max(self.quietest_floor, 0.95 * self._noise_floor + 0.05 * energy)
 
         if not self._started:
             return False
@@ -182,6 +189,21 @@ SEGMENT_HARD_SECONDS = 45.0
 SEGMENT_QUIET_MS = 200
 
 
+def _quiet_level(energies: list[float]) -> float:
+    """This recording's own quiet level, ignoring the frames that are exactly zero.
+
+    Capped by the caller at ``initial_noise_floor``: a recording with no pauses
+    at all -- an open microphone next to a fan, somebody reading without
+    breathing -- has its percentile land on speech, and taking that as the floor
+    would deafen the detector to the whole thing.
+    """
+    heard = [energy for energy in energies if energy > 0.0]
+    if not heard:
+        return 0.0
+    heard.sort()
+    return heard[min(len(heard) - 1, len(heard) * QUIET_PERCENTILE // 100)]
+
+
 def speech_spans(
     pcm: bytes, sample_rate: int = 16_000, quiet_ms: int = SEGMENT_QUIET_MS
 ) -> list[tuple[int, int]]:
@@ -205,6 +227,7 @@ def speech_spans(
     # walks a list of floats instead of slicing and squaring the buffer, which
     # on a request-path call at fourteen seconds is 8 ms against 0.4.
     energies = frame_energies(pcm, frame)
+    floor_min = min(tuning.initial_noise_floor, _quiet_level(energies))
 
     spans: list[tuple[int, int]] = []
     start: int | None = None
@@ -218,7 +241,7 @@ def speech_spans(
             spoke = offset + frame
             quiet = 0
             continue
-        floor = max(QUIETEST_NOISE_FLOOR, 0.95 * floor + 0.05 * energy)
+        floor = max(floor_min, 0.95 * floor + 0.05 * energy)
         if start is None:
             continue
         quiet += 1

@@ -21,7 +21,12 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from mindsurf_omni.service.engine import TooLongForModel
-from mindsurf_omni.service.vad import SEGMENT_ABOVE_SECONDS, segments, voiced_seconds
+from mindsurf_omni.service.vad import (
+    SEGMENT_ABOVE_SECONDS,
+    SEGMENT_HARD_SECONDS,
+    segments,
+    voiced_seconds,
+)
 
 # SenseVoice emits inline tags for language, emotion and audio events. They are
 # not speech, and leaving them in would count them as characters against the
@@ -67,6 +72,10 @@ SHORTEST_SAMPLES = 400
 # SEGMENT_ABOVE_SECONDS no single forward pass sees more than one piece. What
 # this bounds is the request body -- an hour of 16 kHz PCM16 is 115 MB.
 LONGEST_SECONDS = 3600.0
+
+# What to cut a long recording into when the pause detector finds no pauses at
+# all. Bytes, at SEGMENT_HARD_SECONDS -- the same bound a forced cut uses.
+FALLBACK_WINDOW = int(SEGMENT_HARD_SECONDS * RECOGNISER_RATE) * 2
 
 
 def writes_something(text: str) -> bool:
@@ -261,9 +270,19 @@ class SenseVoiceRecogniser:
         # fifteen minutes in one pass wrote 3409 characters where 4243 were
         # spoken. Per piece both are flat, and every piece but the last is work
         # a caller streaming its audio can finish before the key comes up.
+        # The detector answering "no speech here" is not the same answer as the
+        # silence check above, which this buffer already passed: a quiet
+        # recording with a flat envelope reads as nothing to a detector working
+        # off a percentile of its own frames. Falling back to fixed windows
+        # gives up the good seams rather than the recording.
+        cuts = segments(samples, RECOGNISER_RATE) or [
+            (start, min(start + FALLBACK_WINDOW, len(samples)))
+            for start in range(0, len(samples), FALLBACK_WINDOW)
+        ]
+
         parts: list[str] = []
         languages: list[str] = []
-        for start, end in segments(samples, RECOGNISER_RATE):
+        for start, end in cuts:
             text, heard = self._read(samples[start:end])
             if not text:
                 continue

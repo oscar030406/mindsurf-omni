@@ -412,3 +412,34 @@ async def test_holding_the_key_after_speaking_does_not_delete_what_was_said() ->
         quiet = _tone(padding, amplitude=0.0008) if padding else b""
         text, _ = await recogniser.transcribe(spoken + quiet, 16_000)
         assert text == "好的。", f"{padding} 秒的尾巴把它删了"
+
+
+@pytest.mark.asyncio
+async def test_a_long_recording_with_no_detectable_pause_is_still_read() -> None:
+    """停顿检测说「这里没有语音」和上游的静音闸说的不是同一句话。
+
+    上游那道闸已经放行了，说明缓冲区里有东西。这时候检测器数不出有声段
+    （安静而且包络平的录音会这样），退回定长切窗——丢的是好切口，不是整段录音。
+    """
+    from typing import Any
+
+    seen: list[float] = []
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            seconds = len(kwargs["input"]) / 16_000
+            seen.append(seconds)
+            return [{"text": "<|zh|>" + "一段听得见的话。" * int(seconds)}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    # 恒定电平、无停顿、刚好过静音闸：检测器取不到「安静档位」。
+    import numpy as np
+
+    flat = (np.full(200 * 16_000, 900, dtype=np.int16)).tobytes()
+    text, _ = await recogniser.transcribe(flat, 16_000)
+
+    assert seen, "整段被当成没有语音丢掉了"
+    assert sum(seen) == pytest.approx(200.0, abs=1.0)
+    assert text

@@ -176,6 +176,38 @@ def test_the_last_piece_stops_at_the_last_word() -> None:
     assert (end - start) / 32_000 < 3.5
 
 
+def test_the_quiet_level_comes_from_the_recording_not_from_a_constant() -> None:
+    """噪底的下限如果写死，那就是对麦克风电平写死一个假设。
+
+    实测（80 段真语料拼成 26 分钟，逐级衰减）：写死 0.0007 时，录得轻十倍的那份
+    58 个切口有 22 个落在语音里；按录音自己的安静档位取，是 3 个。
+    合成信号复现不出这个差别（真语料每段都有自己的电平和首尾余音），
+    所以这里守的是这一级的性质，对比读数在 headline_numbers.json。
+    """
+    import numpy as np
+
+    from mindsurf_omni.service.vad import EndpointDetector, _quiet_level, frame_energies
+
+    # 恰好为零的帧是文件的静音，不是房间的，不参与取值。
+    room = 0.001
+    energies = [0.0] * 90 + [room] * 30 + [0.05] * 100
+    assert abs(_quiet_level(energies) - room) < 1e-9
+
+    # 录得轻十倍，取出来的档位也跟着轻十倍。
+    rng = np.random.default_rng(5)
+    talk = np.frombuffer(_speech(3), dtype=np.int16).astype(np.float32)
+    loud = np.clip(talk + rng.standard_normal(len(talk)) * 80, -32768, 32767).astype(np.int16)
+    faint = np.clip(talk * 0.1 + rng.standard_normal(len(talk)) * 8, -32768, 32767).astype(np.int16)
+    louder = _quiet_level(frame_energies(loud.tobytes(), 640))
+    fainter = _quiet_level(frame_energies(faint.tobytes(), 640))
+    assert fainter < louder / 3
+
+    # 全程有声、一处停顿都没有的录音，分位数会落在语音本身上，
+    # 拿它当下限会把整段听聋——所以调用方用 initial_noise_floor 封顶。
+    blast = _speech(3)
+    assert _quiet_level(frame_energies(blast, 640)) > EndpointDetector().initial_noise_floor
+
+
 def test_leading_silence_does_not_make_the_room_tone_into_speech() -> None:
     """噪底跟着数字静音一路衰减到零，之后任何声音都是它的三倍。
 

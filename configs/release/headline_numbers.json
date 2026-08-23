@@ -164,5 +164,299 @@
     "why": "文本基座继承语料许可，传导到所有衍生物",
     "unverified": "上游 Talker 权重的 apache-2.0 声明未独立核实——用可以，再分发要先核",
     "source": "configs/release/licence.json"
+  },
+  "dictation": {
+    "_": [
+      "第二阶段的产品：说话 → 转写 → 润色 → 文本框。不经过对话，也不合成语音。",
+      "下面的判据是算法侧自拟的工作标尺，不是小组 OKR 的验收线；写在这里是为了",
+      "让引用的人知道 0.02 这条线是谁定的。",
+      "读数全部来自部署卡（RTX 4090）上的服务真路径，986 条留出集，标注器阈值 0.4。",
+      "「过线」按配对自助 4000 次重抽里落在线内侧的比例报，不按点估计——",
+      "点估计越过线而重抽只有一半在内侧，那不叫过了，叫和线分不清。"
+    ],
+    "holdout_sentences": 986,
+    "card": "RTX 4090",
+    "tagger_threshold": 0.4,
+    "cer_to_reference": 0.0269,
+    "cer_line": 0.02,
+    "cer_resamples_inside": 0.0,
+    "filler_removed": 0.9722,
+    "filler_removed_line": 0.9,
+    "filler_removed_resamples_inside": 1.0,
+    "content_kept": 0.9803,
+    "content_kept_line": 0.98,
+    "content_kept_resamples_inside": 0.62,
+    "invented": 0.0199,
+    "invented_line": 0.02,
+    "invented_resamples_inside": 0.54,
+    "empty_outputs": 0,
+    "word_cuts": "0/986",
+    "baseline_no_polish_cer": 0.106,
+    "ceiling_deletion_only_cer": 0.0156,
+    "generative_arm_only_cer": 0.0435,
+    "polish_stage_ms_median": 120.6,
+    "polish_stage_ms_p95": 473.9,
+    "whole_turn_ms_p50": 198,
+    "whole_turn_ms_p95": 204,
+    "whole_turn_speech_seconds": 13.8,
+    "in_flight_recommended": 8,
+    "in_flight_throughput_per_second": 9.83,
+    "in_flight_p95_ms": 860,
+    "peak_throughput_at": 16,
+    "peak_throughput_per_second": 10.14,
+    "peak_p95_ms": 2201,
+    "failures": "0/24 每一档",
+    "source": [
+      "artifacts/polish-eval-4090-dup.json",
+      "artifacts/capacity-4090-dictation.json",
+      "artifacts/polish-cer-split-2026-08-16.json"
+    ]
+  },
+  "dictation_long": {
+    "_": [
+      "长口述。整段音频走一次前向时，字错率随长度爆炸，而且是静默的——HTTP 200，",
+      "日志里什么都没有。之前只在 600/1100 秒上量过延迟和显存，没量过它写对没有。",
+      "分段是按停顿切开逐段转写（vad.segments），90 秒以下不切。",
+      "素材是 edge 合成语音拼接的，停顿分布是合成器的不是人的；90 秒那个拐点在",
+      "真人录音上可能会动。参照文本是合成用的原文，逐条单独转写那一列是上界。"
+    ],
+    "card": "RTX 4090",
+    "corpus": "artifacts/tts_edge 160 条中文合成语音拼接，两种停顿长度",
+    "segment_above_seconds": 90.0,
+    "segment_target_seconds": 25.0,
+    "segment_hard_seconds": 45.0,
+    "by_length": [
+      {
+        "seconds": 22,
+        "cer_whole": 0.0128,
+        "cer_split": 0.0128,
+        "cer_ideal": 0.0128,
+        "ms_whole": 55,
+        "ms_split": 54,
+        "ms_last_piece": 54
+      },
+      {
+        "seconds": 81,
+        "cer_whole": 0.0198,
+        "cer_split": 0.0198,
+        "cer_ideal": 0.0165,
+        "ms_whole": 100,
+        "ms_split": 169,
+        "ms_last_piece": 56
+      },
+      {
+        "seconds": 110,
+        "cer_whole": 0.0189,
+        "cer_split": 0.0165,
+        "cer_ideal": 0.0118,
+        "ms_whole": 145,
+        "ms_split": 278,
+        "ms_last_piece": 49
+      },
+      {
+        "seconds": 315,
+        "cer_whole": 0.0194,
+        "cer_split": 0.0113,
+        "cer_ideal": 0.0105,
+        "ms_whole": 648,
+        "ms_split": 692,
+        "ms_last_piece": 53
+      },
+      {
+        "seconds": 900,
+        "cer_whole": 0.1373,
+        "cer_split": 0.0125,
+        "cer_ideal": 0.0105,
+        "ms_whole": 4263,
+        "ms_split": 1861,
+        "ms_last_piece": 54
+      }
+    ],
+    "worst_case_characters_spoken": 4243,
+    "worst_case_characters_whole": 3409,
+    "worst_case_characters_split": 4084,
+    "note_last_piece": "ms_last_piece 是客户端边说边送时松开后还要等的时间：整段那条随长度线性涨，分段之后是常数",
+    "longest_seconds_accepted": 3600.0,
+    "source": "服务器 /home/oscar/omni/segcheck/{segcheck.json,sweep2.json}",
+    "concurrency_with_and_without_the_lock": {
+      "_": "22.2 秒口述，每档 24 请求，两个服务交替发。卡上有别的进程，绝对值偏高，横向比较成立。",
+      "rows": [
+        {
+          "in_flight": 1,
+          "throughput_before": 2.05,
+          "throughput_after": 1.83,
+          "p95_before": 544,
+          "p95_after": 570
+        },
+        {
+          "in_flight": 2,
+          "throughput_before": 2.06,
+          "throughput_after": 2.9,
+          "p95_before": 1065,
+          "p95_after": 702
+        },
+        {
+          "in_flight": 4,
+          "throughput_before": 4.57,
+          "throughput_after": 4.74,
+          "p95_before": 931,
+          "p95_after": 901
+        },
+        {
+          "in_flight": 8,
+          "throughput_before": 6.29,
+          "throughput_after": 7.14,
+          "p95_before": 1347,
+          "p95_after": 1183
+        },
+        {
+          "in_flight": 16,
+          "throughput_before": 7.25,
+          "throughput_after": 8.62,
+          "p95_before": 2933,
+          "p95_after": 2407
+        }
+      ],
+      "failures": "0 两边每一档"
+    },
+    "cut_placement_vs_recording_level": {
+      "_": [
+        "噪底的下限写死是对麦克风电平写死一个假设。同一段 26 分钟的录音逐级衰减，",
+        "看分段的切口有几个落在语音里（切口应该落在停顿里）。",
+        "增益 1.0 是语料原始电平。"
+      ],
+      "corpus": "artifacts/tts_edge 80 条拼接，1549 秒，句间 0.4 秒",
+      "rows": [
+        {
+          "gain": 1.0,
+          "bad_cuts_fixed_floor": "1/57",
+          "bad_cuts_adaptive": "2/57"
+        },
+        {
+          "gain": 0.2,
+          "bad_cuts_fixed_floor": "5/58",
+          "bad_cuts_adaptive": "2/58"
+        },
+        {
+          "gain": 0.1,
+          "bad_cuts_fixed_floor": "22/58",
+          "bad_cuts_adaptive": "3/58"
+        },
+        {
+          "gain": 0.05,
+          "bad_cuts_fixed_floor": "46/59",
+          "bad_cuts_adaptive": "16/58"
+        }
+      ],
+      "voiced_ratio_at_gain_0.1": {
+        "fixed_floor": 0.53,
+        "adaptive": 0.77,
+        "at_gain_1.0": 0.83
+      },
+      "rule": "下限 = min(initial_noise_floor, 非零帧能量的 10 分位)",
+      "why_capped": "全程有声、一处停顿都没有的录音，分位数会落在语音本身上，不封顶会把整段听聋",
+      "why_nonzero_only": "恰好为零的帧是文件的静音，不是房间的"
+    }
+  },
+  "dictation_hotwords": {
+    "_": [
+      "热词：把说话人自己的专名按无声调拼音放回转写里。风险全在反方向——",
+      "部署 和 不熟 同音，李工 和 理工 同音，表里放进任何一个，另一个所在的",
+      "每个普通句子都会被改成胡话。所以主判据是「没碰的有多少」，不是「修好几条」。",
+      "两道闸：装配时拒绝同音撞上 jieba 词频 ≥ 10 的常用词；请求时拒绝分词器",
+      "已经读成普通文本的跨度。"
+    ],
+    "frequency_floor": 10,
+    "damage_corpora": [
+      "artifacts/polish_train/pairs_holdout.jsonl source 986",
+      "artifacts/polish_train/pairs_holdout.jsonl target 986",
+      "artifacts/polish_train/val_cs2w_polish6.jsonl 723（真人转写）",
+      "configs/talker_texts_zh_v1.jsonl 160"
+    ],
+    "damage_sentences": 2855,
+    "damage_changed": 0,
+    "end_to_end_sentences": 19,
+    "end_to_end_misheard": 6,
+    "end_to_end_repaired": 4,
+    "end_to_end_traps": 10,
+    "end_to_end_traps_damaged": 1,
+    "out_of_reach": "声母不同的够不着：李欣 vs 吕鑫、林犀 vs 灵犀。放宽到前后鼻音实测更差（吕鑫 折叠后撞 履行 被入口闸拒，修回 4/6 掉到 2/6）",
+    "cost_ms_per_transcript": 0.38,
+    "source": "服务器 /home/oscar/omni/segcheck/hotlive.json",
+    "decode_time_bias_was_measured_and_dropped": {
+      "_": [
+        "解码期偏置（FunASR 的 SeACo-Paraformer，冻结主干外挂 bias encoder）是唯一能治",
+        "「声母不同」那一类的路子——李欣 对 吕鑫，无声调拼音也不同音，后处理够不着。",
+        "同一批 19 句探针上量了，结论是不换：召回多一条，误伤多两条，慢四倍，没有标点。"
+      ],
+      "probe_sentences": 19,
+      "rows": [
+        {
+          "arm": "SenseVoice 裸",
+          "hit": "4/9",
+          "trap_damage": "—",
+          "median_ms": 50,
+          "punctuation": true
+        },
+        {
+          "arm": "SenseVoice + 后处理替换（现在）",
+          "hit": "8/9",
+          "trap_damage": "1/10",
+          "median_ms": 50,
+          "punctuation": true
+        },
+        {
+          "arm": "SeACo-Paraformer 裸",
+          "hit": "4/9",
+          "trap_damage": "—",
+          "median_ms": 208,
+          "punctuation": false
+        },
+        {
+          "arm": "SeACo-Paraformer + 解码期热词",
+          "hit": "9/9",
+          "trap_damage": "3/10",
+          "median_ms": 213,
+          "punctuation": false
+        }
+      ],
+      "damage_per_recovery": "我们 1 赔 4，SeACo 3 赔 5",
+      "why_not": [
+        "误伤坏在同一处：先统一前文的术语 → 先通义千问的术语，正是我们那道闸挡的那句。解码期的偏置事后撤不掉。",
+        "213 ms 对 50 ms，延迟是这个产品被夸的点。",
+        "不写标点不做 ITN，而润色靠标点分句；补 ct-punc 已在上一轮被证伪（会让正常听写变差）。",
+        "SenseVoice 的多语种和情绪标签会一起没了。"
+      ],
+      "source": "服务器 /home/oscar/omni/segcheck/seaco.json"
+    }
+  },
+  "dictation_entry_gate": {
+    "_": [
+      "入口闸：噪声不许冒字，说过的话不许被删。语速那条的分母是有声时长",
+      "（vad.voiced_seconds），不是 buffer 长度——用 buffer 长度时，按住录音键",
+      "多按几秒就把短指令整条删成空串。"
+    ],
+    "short_commands": 36,
+    "corpus": "edge 合成，三个音色 × 12 条短指令，1.4–1.9 秒",
+    "survive_by_padding": {
+      "0s": {
+        "before": "35/36",
+        "after": "35/36"
+      },
+      "3s": {
+        "before": "13/36",
+        "after": "35/36"
+      },
+      "5s": {
+        "before": "3/36",
+        "after": "35/36"
+      },
+      "8s": {
+        "before": "0/36",
+        "after": "35/36"
+      }
+    },
+    "still_open": "45 段合成噪声里 17 段仍然出字（0.5 秒那一档从 seconds < 1.0 的豁免走掉，2 秒的 The. 和 我. 压线过）",
+    "source": "服务器 /home/oscar/omni/segcheck/padshort.py，缺陷编号 R1/N1 见复查表"
   }
 }
