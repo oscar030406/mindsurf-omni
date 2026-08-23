@@ -476,31 +476,30 @@
     "still_open": "45 段合成噪声里 17 段仍然出字（0.5 秒那一档从 seconds < 1.0 的豁免走掉，2 秒的 The. 和 我. 压线过）",
     "denominator_needs_the_recordings_own_floor": {
       "_": [
-        "语速的分母改成有声时长之后，还得让噪底的**起始值**也来自这段录音。",
-        "噪底只在判成静音的帧上更新，起始值是绝对先验时，房间一旦高过",
-        "先验 × speech_ratio = 0.015，第一帧就判成语音、噪底从此不动，",
-        "整段变成一个 span——分母又退回整段时长，修法在吵一点的房间静默失效。",
-        "真口述整体 RMS 中位 0.0983，所以信噪比 16 dB 开始失效、8 dB 完全失效。"
+        "语速的分母改成有声时长之后，还得让这个判断和「切录音」分开——两件事要的错误方向相反。",
+        "切录音要把停顿找准；语速的分母宁可少算：分母小、速率高、话留下，",
+        "而误杀一句真话是这一格最贵的错。共用一个自适应噪底服务不了两件事，两个方向都实测坏过：",
+        "起始值取绝对先验时，房间高过 0.015 整段变成一个 span（分母退回整段时长）；",
+        "起始值取录音自己的 10 分位时，分位落到了片段的「文件级静音」（2e-5）而不是房间底噪（7.7e-4），",
+        "尾巴又被算成说话。现在 voiced_seconds 自己按「相对峰值 0.2」数帧，speech_spans 保留自适应噪底。"
       ],
       "short_commands": 12,
       "survive_by_room_and_padding": {
-        "room 0.0008, tail 8s": {
-          "absolute_prior": "12/12",
-          "from_the_recording": "12/12"
+        "room 0.0008, tail 0/3/5/8s": {
+          "absolute_prior": "12/12/12/0",
+          "share_of_peak_0.2": "12/12/12/12"
         },
-        "room 0.005, tail 8s": {
-          "absolute_prior": "12/12",
-          "from_the_recording": "12/12"
-        },
-        "room 0.02, tail 8s": {
-          "absolute_prior": "0/12",
-          "from_the_recording": "12/12"
-        },
-        "room 0.04, tail 8s": {
-          "absolute_prior": "0/12",
-          "from_the_recording": "12/12"
+        "room 0.02, tail 0/3/5/8s": {
+          "absolute_prior": "12/12/12/0",
+          "share_of_peak_0.2": "12/12/12/12"
         }
-      }
+      },
+      "noise_leak": {
+        "wrote_something": "24/45",
+        "adaptive_floor_denominator": 24,
+        "share_of_peak_0.2": 21
+      },
+      "out_of_reach": "信噪比低到 14 dB 左右能量就分不开语音和房间，这道闸会误杀。真短指令的最大帧 RMS 中位 0.226，对 0.02 的房间是 21 dB，够得着。"
     },
     "source_note": "服务器 /home/oscar/omni/segcheck/padshort.py，缺陷编号 R1/N1 见复查表",
     "source": "src/mindsurf_omni/service/asr.py"

@@ -46,6 +46,18 @@ FRAME_MS = 20
 # the file's silence, not the room's.
 QUIET_PERCENTILE = 10
 
+# How loud a frame has to be, against this recording's loudest, to count as
+# somebody talking. Swept on 12 short commands against four tail lengths and
+# two room levels: at 0.02, 0.05 and 0.1 a room at 0.02 still swallowed the
+# commands whole; at 0.2 every one of them survived every combination, and the
+# leak on 45 noise clips went from 24 to 21. Higher counts less as speech, and
+# counting less is the safe direction for the rate that uses it.
+VOICED_SHARE_OF_PEAK = 0.2
+
+# And never below this, so a recording of nothing does not make its own faint
+# hiss into speech by being the loudest thing in it.
+QUIETEST_VOICED = 0.0005
+
 
 def frame_energy(pcm: bytes) -> float:
     """Root-mean-square amplitude of one frame, normalised to 0..1."""
@@ -320,10 +332,29 @@ def voiced_seconds(pcm: bytes, sample_rate: int = 16_000) -> float:
 
     The denominator for a speaking rate. Using the length of the buffer instead
     makes the rate a function of how long the key was held: a correct 好的。 with
-    three seconds of room tone after it reads as 0.7 characters a second, and
-    with eight it reads as 0.25 -- both below the floor a real utterance clears,
-    so the transcript the model got right is thrown away as noise. Measured over
-    36 short commands: no padding lost none of them, three seconds lost 30, and
-    eight seconds lost all 36.
+    eight seconds of room tone after it reads as 0.25 characters a second, below
+    the floor a real utterance clears, so the transcript the model got right is
+    thrown away. Measured over 36 short commands: no padding lost none of them,
+    three seconds lost 30, eight lost all 36.
+
+    Its own rule rather than ``speech_spans``, because the two want opposite
+    mistakes. Cutting a recording wants the pauses found exactly; this wants to
+    undercount, since a smaller denominator means a higher rate means the words
+    are kept, and losing a real utterance is the expensive error here. Sharing
+    one adaptive floor served neither: tuned for one, the other broke, and both
+    directions were measured breaking.
+
+    Relative to the recording's own peak, so the microphone's level drops out.
+    It also separates the two cases better than a floor does: speech has
+    syllables, so only part of it clears the line and the rate comes out high;
+    steady noise is flat, so nearly every frame clears and the rate comes out
+    low, which is the answer that rejects it.
     """
-    return sum(end - start for start, end in speech_spans(pcm, sample_rate)) / (sample_rate * 2)
+    import numpy as np
+
+    frame = int(sample_rate * FRAME_MS / 1000) * 2
+    energies = np.asarray(frame_energies(pcm, frame))
+    if energies.size == 0:
+        return 0.0
+    line = max(float(energies.max()) * VOICED_SHARE_OF_PEAK, QUIETEST_VOICED)
+    return float((energies >= line).sum()) * FRAME_MS / 1000

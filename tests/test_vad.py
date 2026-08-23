@@ -197,7 +197,6 @@ def test_the_quiet_level_comes_from_the_recording_not_from_a_constant() -> None:
         EndpointDetector,
         _quiet_level,
         frame_energies,
-        voiced_seconds,
     )
 
     # 恰好为零的帧是文件的静音，不是房间的，不参与取值。
@@ -216,12 +215,10 @@ def test_the_quiet_level_comes_from_the_recording_not_from_a_constant() -> None:
 
     # 起始值也来自这段录音，不是绝对先验。先验的毛病是：噪底只在判成静音的帧上
     # 更新，房间一旦高过 先验 × speech_ratio，第一帧就判成语音、噪底从此不动，
-    # 整段变成一个 span。实测短指令加八秒尾巴，房间 0.02 时存活 12/12 变 0/12。
+    # 整段变成一个 span。
     room = 0.02
     noisy = np.clip(talk + rng.standard_normal(len(talk)) * room * 32768, -32768, 32767)
-    detected = voiced_seconds(noisy.astype(np.int16).tobytes())
 
-    assert detected < len(talk) / 16_000 * 0.95, "整段被当成一直在说话"
     assert _quiet_level(frame_energies(noisy.astype(np.int16).tobytes(), 640)) > (
         EndpointDetector().initial_noise_floor
     ), "这个房间正是先验够不着的那一档"
@@ -242,5 +239,39 @@ def test_leading_silence_does_not_make_the_room_tone_into_speech() -> None:
     pcm = _quiet(1.5) + _speech(1.8) + room
 
     # 只有那 1.8 秒算说话，八秒底噪不算。
-    assert 1.0 < voiced_seconds(pcm) < 3.0
+    assert 0.2 < voiced_seconds(pcm) < 3.0
     assert len(segments(pcm)) == 1
+
+
+def test_the_speaking_rate_denominator_survives_a_room() -> None:
+    """尾巴不许被算成说话，房间吵起来也不许。
+
+    这一条和 `segments` 要的是相反的错误：切录音要把停顿找准，
+    这里宁可少算——分母小、速率高、话留下，而误杀一句真话是这一格最贵的错。
+    共用一个自适应噪底服务不了两件事，两个方向都实测坏过。
+
+    信号按真的短指令标定：edge 合成的 12 条，最大帧 RMS 中位 0.226、最小 0.183。
+    **够不着的那一档写在这里而不是断言里**：信噪比低到 14 dB 左右
+    （房间 0.02 对最大帧 0.09），能量分不开语音和房间，这道闸会误杀。
+    真语音在 0.02 的房间里是 21 dB，够得着。
+    """
+    import numpy as np
+
+    from mindsurf_omni.service.vad import voiced_seconds
+
+    rng = np.random.default_rng(11)
+    raw = np.frombuffer(_speech(1.8), dtype=np.int16).astype(np.float32)
+    said = raw / max(float(np.abs(raw).max()), 1.0) * 0.226 * 32768 * 2.5
+    spoken = len(said) / 16_000
+
+    for room in (0.0008, 0.02):
+        for pad in (0.0, 3.0, 8.0):
+            tail = rng.standard_normal(int(pad * 16_000)) * room * 32768
+            pcm = np.clip(
+                np.concatenate([said, tail]), -32768, 32767
+            ).astype(np.int16).tobytes()
+
+            # 三个字的短指令，闸线 0.5 字每秒——不许因为尾巴长就掉下去。
+            voiced = voiced_seconds(pcm)
+            assert voiced < 1.0 or 3 / voiced >= 0.5, f"room={room} pad={pad} 有声 {voiced:.2f}s"
+            assert voiced <= spoken * 1.5, f"room={room} pad={pad} 把尾巴算进去了"
