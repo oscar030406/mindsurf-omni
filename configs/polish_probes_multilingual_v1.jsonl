@@ -1,0 +1,44 @@
+{"id": "en01", "lang": "en", "source": "So um I think we should ship it on Friday.", "wanted": "So I think we should ship it on Friday.", "why": "um 一律删"}
+{"id": "en02", "lang": "en", "source": "Uh, can you send me the file?", "wanted": "Can you send me the file?", "why": "句首 uh"}
+{"id": "en03", "lang": "en", "source": "It's er about thirty percent.", "wanted": "It's about thirty percent.", "why": "er"}
+{"id": "en04", "lang": "en", "source": "We need to um double check the numbers.", "wanted": "We need to double check the numbers.", "why": "句中 um"}
+{"id": "en05", "lang": "en", "source": "I was uh looking at the logs yesterday.", "wanted": "I was looking at the logs yesterday.", "why": "句中 uh"}
+{"id": "en06", "lang": "en", "source": "I mean, we could just revert it.", "wanted": "I mean, we could just revert it.", "why": "I mean 在句首是缓冲，保留（人写的期望）"}
+{"id": "en07", "lang": "en", "source": "It's, like, twice as fast now.", "wanted": "It's twice as fast now.", "why": "like 夹在逗号里是填充"}
+{"id": "en08", "lang": "en", "source": "I like the new layout.", "wanted": "I like the new layout.", "why": "like 是动词，不许删"}
+{"id": "en09", "lang": "en", "source": "Things that are like this one are rare.", "wanted": "Things that are like this one are rare.", "why": "like 是介词"}
+{"id": "en10", "lang": "en", "source": "You know, the build is still red.", "wanted": "The build is still red.", "why": "句首 you know 是填充"}
+{"id": "en11", "lang": "en", "source": "You know the answer already.", "wanted": "You know the answer already.", "why": "you know 是实义"}
+{"id": "en12", "lang": "en", "source": "Actually, I already fixed that.", "wanted": "Actually, I already fixed that.", "why": "actually 带对比义，保留"}
+{"id": "en13", "lang": "en", "source": "Well, it depends on the input.", "wanted": "Well, it depends on the input.", "why": "well 句首，保留"}
+{"id": "en14", "lang": "en", "source": "The tests are running well.", "wanted": "The tests are running well.", "why": "well 是副词"}
+{"id": "en15", "lang": "en", "source": "It's basically the same thing.", "wanted": "It's basically the same thing.", "why": "basically 是实义修饰"}
+{"id": "en16", "lang": "en", "source": "Right, so the plan is to ship Tuesday.", "wanted": "So the plan is to ship Tuesday.", "why": "句首 right 是应答填充"}
+{"id": "en17", "lang": "en", "source": "Turn right at the second light.", "wanted": "Turn right at the second light.", "why": "right 是方向"}
+{"id": "en18", "lang": "en", "source": "Sort of like a cache but smaller.", "wanted": "Sort of like a cache but smaller.", "why": "sort of like 是实义比较"}
+{"id": "en19", "lang": "en", "source": "We need to to fix the parser.", "wanted": "We need to fix the parser.", "why": "词级口吃"}
+{"id": "en20", "lang": "en", "source": "The the migration is done.", "wanted": "The migration is done.", "why": "冠词重复"}
+{"id": "en21", "lang": "en", "source": "Can you can you check the log?", "wanted": "Can you check the log?", "why": "短语重复"}
+{"id": "en22", "lang": "en", "source": "I I think it's fine.", "wanted": "I think it's fine.", "why": "单词重复"}
+{"id": "en23", "lang": "en", "source": "It's on Thursday, no wait, Friday.", "wanted": "It's on Thursday, no wait, Friday.", "why": "改口——我们不做替换，原样"}
+{"id": "en24", "lang": "en", "source": "Send the report to Dr. Chen by 5 p.m.", "wanted": "Send the report to Dr. Chen by 5 p.m.", "why": "缩写与时间，不许切不许删"}
+{"id": "en25", "lang": "en", "source": "Version 1.2.3 fixes the 3.5 percent drift.", "wanted": "Version 1.2.3 fixes the 3.5 percent drift.", "why": "小数点不是句号"}
+{"id": "mx01", "lang": "zh-en", "source": "这个 deadline 我们可能要往后推一下。", "wanted": "这个 deadline 我们可能要往后推一下。", "why": "主语 我们 不许删"}
+{"id": "mx02", "lang": "zh-en", "source": "嗯，这个 deadline 我们 um 可能要往后推。", "wanted": "这个 deadline 我们可能要往后推。", "why": "两种填充都要删，主语要留"}
+{"id": "mx03", "lang": "zh-en", "source": "就是那个 sprint review 改到周四了。", "wanted": "那个 sprint review 改到周四了。", "why": "句首 就是 是填充，那个 是指示词"}
+{"id": "mx04", "lang": "zh-en", "source": "我们用的是 PostgreSQL 不是 MySQL。", "wanted": "我们用的是 PostgreSQL 不是 MySQL。", "why": "一个字都不许动"}
+{"id": "mx05", "lang": "zh-en", "source": "那个 API 的 rate limit 是多少来着？", "wanted": "那个 API 的 rate limit 是多少来着？", "why": "那个 在名词前是指示词"}
+{"id": "mx06", "lang": "zh-en", "source": "呃，我先 merge 一下这个 branch。", "wanted": "我先 merge 一下这个 branch。", "why": "呃 删，这个 留"}
+{"id": "mx07", "lang": "zh-en", "source": "这个 bug 就是就是那个 null pointer。", "wanted": "这个 bug 就是那个 null pointer。", "why": "就是 口吃删一份"}
+{"id": "mx08", "lang": "zh-en", "source": "你知道吧，CI 又挂了。", "wanted": "CI 又挂了。", "why": "你知道吧 是过渡词"}
+{"id": "mx09", "lang": "zh-en", "source": "我觉得这个 design 还可以。", "wanted": "我觉得这个 design 还可以。", "why": "我觉得 是立场词，删了变断言"}
+{"id": "mx10", "lang": "zh-en", "source": "然后我们就 deploy 到 staging 了。", "wanted": "然后我们就 deploy 到 staging 了。", "why": "然后 在这里是时序连词"}
+{"id": "mx11", "lang": "zh-en", "source": "um 这个 PR 我还没 review。", "wanted": "这个 PR 我还没 review。", "why": "英文填充在中文句子里"}
+{"id": "mx12", "lang": "zh-en", "source": "Let me 先看看这个 log 再说。", "wanted": "Let me 先看看这个 log 再说。", "why": "整句混说，不许动"}
+{"id": "ja01", "lang": "ja", "source": "えーと、明日の会議は三時からです。", "wanted": "えーと、明日の会議は三時からです。", "why": "不支持，必须原样"}
+{"id": "ja02", "lang": "ja", "source": "あの、資料はまだできていません。", "wanted": "あの、資料はまだできていません。", "why": "不支持，必须原样"}
+{"id": "ja03", "lang": "ja", "source": "そのバグはもう直しました。", "wanted": "そのバグはもう直しました。", "why": "不支持，必须原样"}
+{"id": "ko01", "lang": "ko", "source": "음 내일 회의는 세 시부터입니다.", "wanted": "음 내일 회의는 세 시부터입니다.", "why": "不支持，必须原样"}
+{"id": "ko02", "lang": "ko", "source": "어 자료는 아직 준비가 안 됐어요.", "wanted": "어 자료는 아직 준비가 안 됐어요.", "why": "不支持，必须原样"}
+{"id": "yue01", "lang": "yue", "source": "嗰個，聽日開會三點開始。", "wanted": "嗰個，聽日開會三點開始。", "why": "不支持，必须原样"}
+{"id": "yue02", "lang": "yue", "source": "呢個資料仲未準備好。", "wanted": "呢個資料仲未準備好。", "why": "不支持，必须原样"}

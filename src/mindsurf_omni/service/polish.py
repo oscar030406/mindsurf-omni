@@ -48,7 +48,13 @@ RECOGNISED_FILLERS = ("摁", "鄂", "唉", "哎", "呐")
 # was actually trained on. Commas are not here on purpose: a clause is not a
 # sentence, and cutting at every comma would take away the context the model
 # needs to tell a filler 就是 from a copula one.
-_SENTENCE_END = re.compile(r"[。！？；\n]+")
+#
+# The Latin marks need whitespace after them and the CJK ones must not: a full
+# stop with no space is a decimal point or an abbreviation, and splitting 3.5 or
+# Mr. Chen hands the model half a token. Without the Latin half at all, a
+# 388-character English dictation came back as one piece against a TRAINED_LENGTH
+# of 160 -- two and a half times the longest input the model has ever seen.
+_SENTENCE_END = re.compile(r"[。！？；\n]+|[.!?]+(?=[\s\u3000]|$)")
 
 # How much of a piece the output has to have consumed to be trusted. Not tuned:
 # an output that reached less than nine tenths of its input has dropped a
