@@ -382,3 +382,27 @@ async def test_the_sample_rate_reaches_the_recogniser() -> None:
 
     await recogniser.transcribe(_tone(2.0, rate=48_000), 48_000)
     assert lengths == [pytest.approx(2.0 * 16_000, rel=0.01)]
+
+
+@pytest.mark.asyncio
+async def test_holding_the_key_after_speaking_does_not_delete_what_was_said() -> None:
+    """按住录音键多按几秒，整条转写被删成空串——语速的分母用错了。
+
+    分母是 buffer 的长度时，好的。加三秒室内底噪读出 0.7 字每秒、加八秒读出 0.25，
+    两个都在真人的下限之下。实测 36 段短指令：不加尾巴 0 条被吃，加三秒 30 条，
+    加八秒 36 条。没有人在话音落地的那一刻松手。
+    """
+    from typing import Any
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            return [{"text": "<|zh|>好的。"}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    spoken = _tone(0.8, amplitude=0.2)
+    for padding in (0.0, 3.0, 8.0):
+        quiet = _tone(padding, amplitude=0.0008) if padding else b""
+        text, _ = await recogniser.transcribe(spoken + quiet, 16_000)
+        assert text == "好的。", f"{padding} 秒的尾巴把它删了"

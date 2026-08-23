@@ -15,12 +15,13 @@ nobody remembers in three weeks.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
 from mindsurf_omni.service.engine import TooLongForModel
-from mindsurf_omni.service.vad import SEGMENT_ABOVE_SECONDS, segments
+from mindsurf_omni.service.vad import SEGMENT_ABOVE_SECONDS, segments, voiced_seconds
 
 # SenseVoice emits inline tags for language, emotion and audio events. They are
 # not speech, and leaving them in would count them as characters against the
@@ -101,7 +102,7 @@ def spoken_body(text: str) -> str:
 
 
 def said_enough(text: str, seconds: float) -> bool:
-    """Whether this many characters in this many seconds is a person talking.
+    """Whether this many characters in this much speech is a person talking.
 
     Steady noise makes the recogniser write one or two characters however long
     the buffer is -- three seconds of mains hum comes back as 我. -- and the
@@ -111,10 +112,17 @@ def said_enough(text: str, seconds: float) -> bool:
     median of 0.33 characters per second against 1.35 and 4.52, and the slowest
     real utterance is 0.67.
 
-    The floor is half a character per second, which is a third below that
-    slowest real one: it drops 33 of the 60 noise clips and none of the 88
-    spoken ones. Buffers under a second are exempt -- a single word is over the
-    line anyway, and the rate of a fraction of a second is not a rate.
+    ``seconds`` is how long somebody was talking, not how long the buffer is.
+    That distinction is the whole rule: measured against the buffer, a correct
+    好的。 followed by three seconds of room tone reads as 0.7 characters a
+    second and by eight seconds as 0.25, and this threw away 30 of 36 short
+    commands at three seconds and all 36 at eight. Nobody lets go of the key
+    the instant they stop speaking.
+
+    The floor is half a character per second, a third below the slowest real
+    utterance: it drops 33 of the 60 noise clips and none of the 88 spoken
+    ones. Under a second is exempt -- a single word is over the line anyway,
+    and the rate of a fraction of a second is not a rate.
     """
     if seconds < 1.0:
         return True
@@ -134,6 +142,13 @@ class SenseVoiceRecogniser:
     # it buys.
     language: str = "zh"
     _model: Any = None
+    # One forward pass at a time. Two do not overlap on one card anyway -- the
+    # driver serialises the kernels -- so the second concurrent request buys no
+    # throughput and doubles the peak: measured on an 8 GB card with 200-second
+    # audio, one pass reserved 2388 MiB, two 2558 and four 4550. Held around the
+    # model call rather than the whole request, so a short dictation waits for
+    # one piece of a long one rather than for all of it.
+    _one_at_a_time: threading.Semaphore = field(default_factory=threading.Semaphore)
 
     # Read by the evaluation harness, which refuses a recogniser that shares
     # lineage with the model under test.
@@ -195,6 +210,27 @@ class SenseVoiceRecogniser:
                 return conf
         return {"fs": 16000, "window": "hamming", "n_mels": 80, "lfr_m": 7, "lfr_n": 6}
 
+    def _read_once(self, audio: Any, language: str) -> Any:
+        """One call into funasr, giving the card back if the call runs out of room.
+
+        Out of memory is not the end of it: the exception keeps a traceback,
+        the traceback keeps every frame's locals, and the locals keep the
+        encoder's activations, so the block stays reserved after the request
+        that failed has gone. Measured: reserved sat at 1782 MiB against a 986
+        MiB baseline, and ``empty_cache`` on its own returned none of it,
+        because the traceback still held the tensors. Dropping the traceback
+        first is what makes the release work -- and it costs the caller nothing,
+        since the message rather than the frames is what reaches them.
+        """
+        try:
+            return self._model.generate(input=audio, cache={}, language=language, use_itn=True)
+        except Exception as error:  # noqa: BLE001 - re-raised; this only hands the card back
+            import torch
+
+            if isinstance(error, torch.OutOfMemoryError):
+                error.__traceback__ = None
+                torch.cuda.empty_cache()
+            raise
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         # On a thread, because funasr is synchronous and holds the GIL for the
         # length of the utterance. Run inline it stops the event loop, which on
@@ -287,12 +323,14 @@ class SenseVoiceRecogniser:
         # given the deployment's language instead of a guess.
         short = len(audio) < SHORT_AUDIO_SECONDS * RECOGNISER_RATE
         language = self.language if short else "auto"
-        result = self._model.generate(input=audio, cache={}, language=language, use_itn=True)
+        with self._one_at_a_time:
+            result = self._read_once(audio, language)
         if not result:
             return "", None
         text, heard = strip_tags(str(result[0].get("text", "")))
-        seconds = len(audio) / RECOGNISER_RATE
-        if heard == "nospeech" or not writes_something(text) or not said_enough(text, seconds):
+        if heard == "nospeech" or not writes_something(text):
+            return "", None
+        if not said_enough(text, voiced_seconds(samples, RECOGNISER_RATE)):
             return "", None
         return text, heard
 

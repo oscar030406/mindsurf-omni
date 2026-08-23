@@ -174,3 +174,22 @@ def test_the_last_piece_stops_at_the_last_word() -> None:
     (start, end), = segments(pcm)
 
     assert (end - start) / 32_000 < 3.5
+
+
+def test_leading_silence_does_not_make_the_room_tone_into_speech() -> None:
+    """噪底跟着数字静音一路衰减到零，之后任何声音都是它的三倍。
+
+    实测的形状：片段开头是数字静音，后面接 0.0008 的室内底噪，
+    结果底噪被标成语音、前面真的语音被标成静音——检测器整个反过来。
+    """
+    import numpy as np
+
+    from mindsurf_omni.service.vad import segments, voiced_seconds
+
+    rng = np.random.default_rng(3)
+    room = (rng.standard_normal(8 * 16_000) * 26).astype(np.int16).tobytes()
+    pcm = _quiet(1.5) + _speech(1.8) + room
+
+    # 只有那 1.8 秒算说话，八秒底噪不算。
+    assert 1.0 < voiced_seconds(pcm) < 3.0
+    assert len(segments(pcm)) == 1

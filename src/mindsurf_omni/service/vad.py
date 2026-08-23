@@ -32,6 +32,16 @@ from dataclasses import dataclass, field
 
 FRAME_MS = 20
 
+# The floor may not decay below this, however quiet the room. Digital silence
+# reads as exactly zero, and a floor tracking it geometrically reaches nothing
+# in about a second and a half -- after which anything at all is three times
+# the floor. Measured: a clip with leading silence followed by room tone at
+# 0.0008 had the room tone marked as speech and the speech before it marked as
+# silence, which is the detector exactly inverted. Set so that three times it
+# stays at or above the level ``asr.SILENCE_RMS`` already calls "nobody is
+# talking", so the two do not disagree about the same buffer.
+QUIETEST_NOISE_FLOOR = 0.0007
+
 
 def frame_energy(pcm: bytes) -> float:
     """Root-mean-square amplitude of one frame, normalised to 0..1."""
@@ -45,6 +55,18 @@ def frame_energy(pcm: bytes) -> float:
         return 0.0
     total = sum(float(sample) * sample for sample in samples)
     return math.sqrt(total / len(samples)) / 32768.0
+
+
+def frame_energies(pcm: bytes, frame_bytes: int) -> list[float]:
+    """``frame_energy`` for every whole frame in a buffer, in one pass."""
+    import numpy as np
+
+    count = len(pcm) // frame_bytes
+    if count == 0:
+        return []
+    block = np.frombuffer(pcm[: count * frame_bytes], dtype=np.int16)
+    block = block.reshape(count, frame_bytes // 2).astype(np.float32)
+    return (np.sqrt((block * block).mean(axis=1)) / 32768.0).tolist()  # type: ignore[no-any-return]
 
 
 @dataclass(slots=True)
@@ -105,7 +127,7 @@ class EndpointDetector:
 
         # Track the floor only while quiet, so loud speech cannot drag it up
         # and deafen the detector to everything that follows.
-        self._noise_floor = 0.95 * self._noise_floor + 0.05 * energy
+        self._noise_floor = max(QUIETEST_NOISE_FLOOR, 0.95 * self._noise_floor + 0.05 * energy)
 
         if not self._started:
             return False
@@ -178,19 +200,25 @@ def speech_spans(
     floor = tuning.initial_noise_floor
     quiet_frames = max(1, quiet_ms // FRAME_MS)
 
+    # Every frame's level at once. The loop below still has to be a loop --
+    # the floor at frame n depends on the decision at frame n-1 -- but it now
+    # walks a list of floats instead of slicing and squaring the buffer, which
+    # on a request-path call at fourteen seconds is 8 ms against 0.4.
+    energies = frame_energies(pcm, frame)
+
     spans: list[tuple[int, int]] = []
     start: int | None = None
     spoke = 0
     quiet = 0
-    for offset in range(0, len(pcm) - frame + 1, frame):
-        energy = frame_energy(pcm[offset : offset + frame])
+    for index, energy in enumerate(energies):
+        offset = index * frame
         if energy > floor * tuning.speech_ratio:
             if start is None:
                 start = offset
             spoke = offset + frame
             quiet = 0
             continue
-        floor = 0.95 * floor + 0.05 * energy
+        floor = max(QUIETEST_NOISE_FLOOR, 0.95 * floor + 0.05 * energy)
         if start is None:
             continue
         quiet += 1
@@ -254,3 +282,17 @@ def segments(
             begin += limit
         forced.append((begin, finish))
     return forced
+
+
+def voiced_seconds(pcm: bytes, sample_rate: int = 16_000) -> float:
+    """How long somebody was actually talking, ignoring the pauses around it.
+
+    The denominator for a speaking rate. Using the length of the buffer instead
+    makes the rate a function of how long the key was held: a correct 好的。 with
+    three seconds of room tone after it reads as 0.7 characters a second, and
+    with eight it reads as 0.25 -- both below the floor a real utterance clears,
+    so the transcript the model got right is thrown away as noise. Measured over
+    36 short commands: no padding lost none of them, three seconds lost 30, and
+    eight seconds lost all 36.
+    """
+    return sum(end - start for start, end in speech_spans(pcm, sample_rate)) / (sample_rate * 2)
