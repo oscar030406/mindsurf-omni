@@ -377,7 +377,7 @@
     "damage_changed": 0,
     "end_to_end_sentences": 19,
     "end_to_end_misheard": 6,
-    "end_to_end_repaired": 4,
+    "end_to_end_repaired": 3,
     "end_to_end_traps": 10,
     "end_to_end_traps_damaged": 1,
     "out_of_reach": "声母不同的够不着：李欣 vs 吕鑫、林犀 vs 灵犀。放宽到前后鼻音实测更差（吕鑫 折叠后撞 履行 被入口闸拒，修回 4/6 掉到 2/6）",
@@ -403,7 +403,8 @@
           "hit": "8/9",
           "trap_damage": "1/10",
           "median_ms": 50,
-          "punctuation": true
+          "punctuation": true,
+          "_": "这一列是 9 句热词探针；另一批 19 句的端到端是 3/6，两批不同不要混"
         },
         {
           "arm": "SeACo-Paraformer 裸",
@@ -440,9 +441,10 @@
       "share_replaceable_before": 0.056,
       "share_replaceable_after_the_mistake": 0.23,
       "share_replaceable_now": 0.058,
-      "cost_of_reverting": "句首的 通一千问 不再修回，端到端召回 4/6 回到 3/6",
+      "cost_of_reverting": "句首的 通一千问 不再修回，端到端修回 4/6 回到 3/6，陷阱改坏仍是 1/10",
       "found_by": "对抗式复核，scratchpad/fixes/五连击复核.md §2.1"
-    }
+    },
+    "_note_repaired": "b3497d2 期间是 4，那一版把放行面开到 23%，已退回；见 the_door_was_briefly_opened_four_times_too_wide"
   },
   "dictation_entry_gate": {
     "_": [
