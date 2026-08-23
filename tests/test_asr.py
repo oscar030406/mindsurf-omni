@@ -326,3 +326,25 @@ async def test_a_long_silence_is_still_answered_not_refused() -> None:
     recogniser._model = Recorder()
 
     assert await recogniser.transcribe(b"\x00\x00" * (16_000 * 1200), 16_000) == ("", None)
+
+
+@pytest.mark.asyncio
+async def test_the_sample_rate_reaches_the_recogniser() -> None:
+    """It used to travel from the endpoint and stop one call short, so 48 kHz
+    posted as 16 kHz produced a transcript that reads like Chinese and says
+    something else -- 200, no exception, nothing in the log. Measured on four
+    recordings, that mislabelling scores a character error rate of 1.0."""
+    from typing import Any
+
+    lengths: list[int] = []
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            lengths.append(len(kwargs["input"]))
+            return [{"text": "<|zh|>你好，今天天气怎么样。"}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    await recogniser.transcribe(_tone(2.0, rate=48_000), 48_000)
+    assert lengths == [pytest.approx(2.0 * 16_000, rel=0.01)]

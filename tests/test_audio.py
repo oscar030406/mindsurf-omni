@@ -211,3 +211,46 @@ def test_an_odd_number_of_bytes_is_trimmed_not_refused() -> None:
     assert whole_samples(b"\x01") == b""
     assert whole_samples(b"") == b""
     assert whole_samples(b"\x01\x02") == b"\x01\x02"
+
+
+def test_a_whole_wav_body_is_read_rather_than_guessed_at() -> None:
+    """Posting a container instead of raw samples has always worked by accident:
+    the 44-byte header decodes to about twenty samples of noise and the
+    recogniser reads past it. The header is also the one place the real rate is
+    written down."""
+    from mindsurf_omni.service.audio import to_wav, unwrap_wav
+
+    samples = bytes(range(0, 200, 2)) * 20
+    for rate in (16_000, 24_000, 48_000):
+        body, heard = unwrap_wav(to_wav(samples, rate), 16_000)
+        assert (body, heard) == (samples, rate)
+
+
+def test_raw_samples_pass_through_untouched() -> None:
+    from mindsurf_omni.service.audio import unwrap_wav
+
+    raw = bytes(range(0, 200, 2)) * 20
+    assert unwrap_wav(raw, 16_000) == (raw, 16_000)
+    assert unwrap_wav(b"", 16_000) == (b"", 16_000)
+    assert unwrap_wav(b"RIFF", 16_000) == (b"RIFF", 16_000)
+
+
+def test_a_container_this_does_not_understand_is_handed_on_as_it_came() -> None:
+    """Stereo or 24-bit is left to the old accidental behaviour rather than
+    decoded wrongly."""
+    import struct
+
+    from mindsurf_omni.service.audio import unwrap_wav
+
+    stereo = b"".join(
+        [
+            b"RIFF",
+            struct.pack("<I", 236),
+            b"WAVEfmt ",
+            struct.pack("<IHHIIHH", 16, 1, 2, 16_000, 64_000, 4, 16),
+            b"data",
+            struct.pack("<I", 200),
+            bytes(200),
+        ]
+    )
+    assert unwrap_wav(stereo, 16_000) == (stereo, 16_000)

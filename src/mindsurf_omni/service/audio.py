@@ -30,6 +30,43 @@ def whole_samples(pcm: bytes) -> bytes:
     return pcm[: len(pcm) // 2 * 2]
 
 
+def unwrap_wav(body: bytes, declared_rate: int) -> tuple[bytes, int]:
+    """Samples and their real rate, whether the caller sent a container or not.
+
+    The endpoint takes raw PCM, and a client that posts a whole .wav instead has
+    always worked by accident: the 44-byte header decodes to about twenty
+    samples of noise in front of the speech and the recogniser reads past it.
+    Read properly it costs nothing and the rate comes from the one place that
+    actually records it -- a header inside the file is worth more than a rate
+    the caller declares out of band, because a client that gets one wrong
+    usually gets the other wrong the same way.
+
+    Anything that is not a RIFF/WAVE container is returned untouched under the
+    rate the caller declared.
+    """
+    if len(body) < 44 or body[:4] != b"RIFF" or body[8:12] != b"WAVE":
+        return body, declared_rate
+
+    cursor, rate, bits, channels = 12, declared_rate, 16, 1
+    while cursor + 8 <= len(body):
+        name = body[cursor : cursor + 4]
+        size = int.from_bytes(body[cursor + 4 : cursor + 8], "little")
+        payload = cursor + 8
+        if name == b"fmt " and payload + 16 <= len(body):
+            channels = int.from_bytes(body[payload + 2 : payload + 4], "little") or 1
+            rate = int.from_bytes(body[payload + 4 : payload + 8], "little") or declared_rate
+            bits = int.from_bytes(body[payload + 14 : payload + 16], "little") or 16
+        elif name == b"data":
+            samples = body[payload : payload + size] if size else body[payload:]
+            if bits != 16 or channels != 1:
+                # Only 16-bit mono is understood; anything else is handed on as
+                # it came so the old accidental behaviour is what happens.
+                return body, declared_rate
+            return samples, rate
+        cursor = payload + size + (size & 1)
+    return body, declared_rate
+
+
 def resample(pcm: bytes, source_rate: int, target_rate: int) -> bytes:
     """Linear interpolation between rates.
 
@@ -37,25 +74,26 @@ def resample(pcm: bytes, source_rate: int, target_rate: int) -> bytes:
     recogniser or a person will consume, and the aliasing a linear resampler
     leaves at that ratio is far below what the codec already introduces.
     Reach for a proper filter if this ever touches music.
+
+    Done in numpy rather than a Python loop over samples. The loop holds the
+    GIL for its whole length, and this runs on the thread the recogniser runs
+    on: four concurrent minute-long conversions took the event loop's heartbeat
+    from 6 ms late to 205 ms late, which is the health check missing its window
+    for a reason nothing in the logs would explain.
     """
     if source_rate == target_rate or not pcm:
         return pcm
 
-    samples = array.array("h")
-    samples.frombytes(pcm[: len(pcm) // 2 * 2])
-    if not samples:
+    import numpy as np
+
+    samples = np.frombuffer(pcm[: len(pcm) // 2 * 2], dtype=np.int16)
+    if samples.size == 0:
         return b""
 
-    ratio = source_rate / target_rate
-    count = max(1, int(len(samples) / ratio))
-    output = array.array("h", [0]) * count
-    for index in range(count):
-        position = index * ratio
-        left = int(position)
-        right = min(left + 1, len(samples) - 1)
-        weight = position - left
-        output[index] = int(samples[left] * (1 - weight) + samples[right] * weight)
-    return output.tobytes()
+    count = max(1, int(samples.size * target_rate / source_rate))
+    wanted = np.arange(count) * (source_rate / target_rate)
+    drawn = np.interp(wanted, np.arange(samples.size), samples.astype(np.float32))
+    return np.clip(drawn, -32768, 32767).astype(np.int16).tobytes()
 
 
 def wav_header(sample_rate: int, channels: int = 1, data_bytes: int | None = None) -> bytes:

@@ -202,13 +202,22 @@ class SenseVoiceRecogniser:
         # one, and the long one is what a stuck microphone sends.
         import asyncio
 
-        return await asyncio.to_thread(self._transcribe, pcm)
+        return await asyncio.to_thread(self._transcribe, pcm, sample_rate)
 
-    def _transcribe(self, pcm: bytes) -> tuple[str, str | None]:
+    def _transcribe(self, pcm: bytes, sample_rate: int = RECOGNISER_RATE) -> tuple[str, str | None]:
         import numpy as np
 
-        from mindsurf_omni.service.audio import whole_samples
+        from mindsurf_omni.service.audio import resample, unwrap_wav, whole_samples
         from mindsurf_omni.service.vad import frame_energy
+
+        # The rate travelled from the endpoint to here and then stopped: this
+        # function used to take the buffer and nothing else, so a caller sending
+        # 48 kHz got a transcript that reads like Chinese and says something
+        # else -- 200, no exception, nothing in the log. A container in the body
+        # carries the rate more reliably than the caller does, so it wins.
+        pcm, sample_rate = unwrap_wav(pcm, sample_rate)
+        if sample_rate != RECOGNISER_RATE:
+            pcm = resample(pcm, sample_rate, RECOGNISER_RATE)
 
         # Silence in, nothing out. Asked to read a room with nobody in it,
         # SenseVoice does not return empty -- it invents. Measured on three
