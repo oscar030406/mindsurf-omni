@@ -59,36 +59,26 @@ SHORT_AUDIO_SECONDS = 1.5
 # What SenseVoice's frontend runs at; the service resamples to it before here.
 RECOGNISER_RATE = 16_000
 
-# One fbank frame. Below it the frontend asserts ("choose a window size 1"),
-# which reached the caller as a bare 500, and between one frame and about a
-# tenth of a second the model only ever writes punctuation.
+# One fbank frame. Shorter than this the model only ever writes punctuation,
+# and a single sample makes the frontend assert rather than return.
 SHORTEST_SAMPLES = 400
 
-# The longest recording accepted at all. Nothing to do with the allocator any
-# more: past SEGMENT_ABOVE_SECONDS the audio is cut at the pauses and no single
-# forward pass sees more than one piece, so the 44 GiB cliff at 1200 seconds is
-# not reachable from here. What is left is the transport -- an hour of 16 kHz
-# PCM16 is 115 MB in one request body -- and the caller's patience, and both of
-# those are the caller's to judge, so the line is drawn generously.
+# The longest recording accepted in one request. Not a memory limit: past
+# SEGMENT_ABOVE_SECONDS no single forward pass sees more than one piece. What
+# this bounds is the request body -- an hour of 16 kHz PCM16 is 115 MB.
 LONGEST_SECONDS = 3600.0
 
 
 def writes_something(text: str) -> bool:
     """Whether the transcript is made of characters this deployment could have said.
 
-    Asked to read a room with a fan in it, SenseVoice does not answer "I do not
-    know" -- it writes 그. or うん。 and reports 0.99 confidence in Korean. The
-    reported language is the wrong thing to gate on: measured over 48 short
-    spoken commands it calls 8% of ordinary Mandarin something other than
-    Chinese, so a rule keyed on it deletes 咖啡 and 猫 along with the noise.
+    Asked to read a room with a fan in it SenseVoice does not answer "I do not
+    know", it writes 그. or うん。. Gate on what it wrote, not on the language it
+    reported: the reported language is wrong for 8% of ordinary short Mandarin,
+    so a rule keyed on it deletes 咖啡 and 猫 along with the noise.
 
-    This asks instead what the model actually wrote. Hangul and kana carry no
-    Chinese and no Latin word characters, so an output made only of them is the
-    recogniser inventing; 咖啡, demo and B203 all survive. Measured on 36
-    synthetic noise clips it catches 11 with no correct transcript lost.
-
-    The English inventions (I., The.) survive this; ``said_enough`` catches most
-    of what is left, and separating the rest needs the language tag.
+    English inventions (I., The.) get through here; ``said_enough`` takes most
+    of what is left. Readings in headline_numbers.json under dictation_entry_gate.
     """
     return bool(spoken_body(text))
 
@@ -104,25 +94,14 @@ def spoken_body(text: str) -> str:
 def said_enough(text: str, seconds: float) -> bool:
     """Whether this many characters in this much speech is a person talking.
 
-    Steady noise makes the recogniser write one or two characters however long
-    the buffer is -- three seconds of mains hum comes back as 我. -- and the
-    character is often Chinese, so ``writes_something`` passes it. Speaking rate
-    separates the two where script and reported language do not: measured over
-    60 noise clips, 48 short spoken commands and 40 sentences, noise sits at a
-    median of 0.33 characters per second against 1.35 and 4.52, and the slowest
-    real utterance is 0.67.
+    Steady noise makes the recogniser write one or two Chinese characters
+    however long the buffer is, so ``writes_something`` passes it and speaking
+    rate is what separates them. The floor is a third below the slowest real
+    utterance measured.
 
-    ``seconds`` is how long somebody was talking, not how long the buffer is.
-    That distinction is the whole rule: measured against the buffer, a correct
-    好的。 followed by three seconds of room tone reads as 0.7 characters a
-    second and by eight seconds as 0.25, and this threw away 30 of 36 short
-    commands at three seconds and all 36 at eight. Nobody lets go of the key
-    the instant they stop speaking.
-
-    The floor is half a character per second, a third below the slowest real
-    utterance: it drops 33 of the 60 noise clips and none of the 88 spoken
-    ones. Under a second is exempt -- a single word is over the line anyway,
-    and the rate of a fraction of a second is not a rate.
+    ``seconds`` must be how long somebody was talking, not how long the buffer
+    is -- pass the buffer and every short command with a held key is deleted.
+    Under a second is exempt: the rate of a fraction of a second is not a rate.
     """
     if seconds < 1.0:
         return True
@@ -231,13 +210,11 @@ class SenseVoiceRecogniser:
                 error.__traceback__ = None
                 torch.cuda.empty_cache()
             raise
+
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
-        # On a thread, because funasr is synchronous and holds the GIL for the
-        # length of the utterance. Run inline it stops the event loop, which on
-        # a live service is not "this request is slow": every other session
-        # stops receiving, the heartbeat stops ticking, and health checks stop
-        # answering. Measured at 94 ms for a short turn and minutes for a long
-        # one, and the long one is what a stuck microphone sends.
+        # On a thread: funasr is synchronous and holds the GIL for the length
+        # of the utterance, so run inline it stops every other session and the
+        # health check along with them.
         import asyncio
 
         return await asyncio.to_thread(self._transcribe, pcm, sample_rate)
@@ -246,21 +223,17 @@ class SenseVoiceRecogniser:
         from mindsurf_omni.service.audio import resample, unwrap_wav, whole_samples
         from mindsurf_omni.service.vad import frame_energy
 
-        # The rate travelled from the endpoint to here and then stopped: this
-        # function used to take the buffer and nothing else, so a caller sending
-        # 48 kHz got a transcript that reads like Chinese and says something
-        # else -- 200, no exception, nothing in the log. A container in the body
-        # carries the rate more reliably than the caller does, so it wins.
+        # A rate declared in the body's own header beats one the caller passes
+        # out of band: a client that gets one wrong usually gets both wrong, and
+        # the wrong rate produces a transcript that reads like Chinese and says
+        # something else.
         pcm, sample_rate = unwrap_wav(pcm, sample_rate)
         if sample_rate != RECOGNISER_RATE:
             pcm = resample(pcm, sample_rate, RECOGNISER_RATE)
 
-        # Silence in, nothing out. Asked to read a room with nobody in it,
-        # SenseVoice does not return empty -- it invents. Measured on three
-        # seconds of digital silence: it returned the Korean "그.", the model
-        # answered that in English, and the caller heard a 9.6-second reply to
-        # a button they pressed by accident. The recogniser is where this
-        # belongs: every path into it has the same problem.
+        # Silence in, nothing out. Asked to read a room with nobody in it
+        # SenseVoice invents rather than returning empty. Here rather than at
+        # the endpoint because every path in has the same problem.
         if frame_energy(pcm) < SILENCE_RMS:
             return "", None
 
@@ -268,17 +241,14 @@ class SenseVoiceRecogniser:
         if len(samples) // 2 < SHORTEST_SAMPLES:
             return "", None
 
-        # Refused rather than attempted: the whole buffer goes through the
-        # encoder in one forward pass, and past this length that allocation is
-        # tens of gigabytes. Twenty minutes asked for 44 GiB and came back a
-        # bare 500, and the allocator then held the reserved block for the best
-        # part of a minute, so the next caller failed too. Below the check on
-        # purpose: silence short-circuits above it at no cost, and telling
-        # somebody to split a recording of nothing is advice they cannot use.
+        # Below the silence check on purpose: telling somebody to split a
+        # recording of nothing is advice they cannot use. The actual length
+        # keeps a decimal so that a request just over the line does not read as
+        # "this is 3600, the limit is 3600".
         seconds = len(samples) / 2 / RECOGNISER_RATE
         if seconds > LONGEST_SECONDS:
             raise TooLongForModel(
-                f"this recording is {seconds:.0f} seconds, past the {LONGEST_SECONDS:.0f} "
+                f"this recording is {seconds:.1f} seconds, past the {LONGEST_SECONDS:.0f} "
                 "this endpoint takes in one request; send it in pieces"
             )
 
@@ -286,14 +256,11 @@ class SenseVoiceRecogniser:
         if seconds <= SEGMENT_ABOVE_SECONDS:
             return self._read(samples)
 
-        # Cut at the pauses rather than fed whole. Two reasons, and the second
-        # is the one that shows: the encoder's allocation grows with the square
-        # of the input, so twenty minutes in one pass asked for 44 GiB; and the
-        # wait after the key comes up grew with the length of the recording --
-        # 200 ms at fourteen seconds, 3.3 s at ten minutes -- because none of
-        # the work could start until all of the audio had arrived. Per piece
-        # that wait is flat, and the pieces before the last one are work that a
-        # caller streaming its audio can have finished before the key is up.
+        # Cut at the pauses rather than fed whole. The encoder's allocation
+        # grows with the square of the input, and so does what it gets wrong:
+        # fifteen minutes in one pass wrote 3409 characters where 4243 were
+        # spoken. Per piece both are flat, and every piece but the last is work
+        # a caller streaming its audio can finish before the key comes up.
         parts: list[str] = []
         languages: list[str] = []
         for start, end in segments(samples, RECOGNISER_RATE):

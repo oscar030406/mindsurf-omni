@@ -341,8 +341,14 @@ async def test_a_recording_past_the_endpoint_limit_is_still_refused() -> None:
     recogniser = SenseVoiceRecogniser(model_dir="/unused")
     recogniser._model = Recorder()
 
-    with pytest.raises(TooLongForModel, match="pieces"):
+    with pytest.raises(TooLongForModel, match="pieces") as refusal:
         await recogniser.transcribe(_tone(LONGEST_SECONDS + 10, amplitude=0.2), 16_000)
+
+    # 边界上不能自相矛盾：两边都四舍五入的话，刚过线的请求收到的是
+    # 「this recording is 3600 seconds, past the 3600」，读完不知道该改什么。
+    said, limit = f"{LONGEST_SECONDS + 10:.1f}", f"{LONGEST_SECONDS:.0f}"
+    assert said in str(refusal.value)
+    assert said != limit
 
 
 @pytest.mark.asyncio
