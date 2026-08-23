@@ -859,7 +859,40 @@
     "source": [
       "artifacts/polish_train/val_cs2w_polish6.jsonl",
       "src/mindsurf_omni/service/asr.py"
-    ]
+    ],
+    "aishell1_test": {
+      "_": [
+        "标准集，朗读语音、近场、单人——听写产品最接近的分布，和 MagicData 的双人对话互补。",
+        "400 条（完整 test 是 7176 条），4090 fp16，参照去标点去空格按字算。",
+        "**我们量的 6.14% 和上游报的 2.96% 对不上**：口径不同（条数、归一化、是否用官方脚本），",
+        "这里报的是我们自己在同一口径下跑两个系统的比较，不是去复现别人的数。"
+      ],
+      "clips": 400,
+      "minutes": 30.8,
+      "rows": [
+        {
+          "system": "Whisper small",
+          "params_m": 240.6,
+          "cer": 0.1333,
+          "p50_ms": 100,
+          "p95_ms": 149,
+          "peak_mb": 1403
+        },
+        {
+          "system": "SenseVoice-Small",
+          "params_m": 234.0,
+          "cer": 0.0614,
+          "p50_ms": 52,
+          "p95_ms": 54,
+          "peak_mb": 944
+        }
+      ],
+      "verdict": "同参数级：字错率是它的 46%、P50 快 1.9 倍、峰值显存少 33%",
+      "published_for_reference_not_measured_by_us": {
+        "Paraformer-large 220M": "test 1.95%",
+        "SenseVoice-Small 上游自报": "test 2.96%"
+      }
+    }
   },
   "dictation_real_speech": {
     "_": [
@@ -899,7 +932,7 @@
       "呃（不在名单，该删）": 0.956,
       "verdict": "原来那七个词其实只是注入器认识的那九个词，不是判据挑出来的"
     },
-    "residue_now": "剩下的残渣头名变成代词（他 6、你 3、我们 2），那是另一类问题",
+    "residue_now": "剩下 79 处残渣，头名是识别器自己听错的（西步、伊斯伊斯伊斯）和真人的改口（你咱们、感觉他、我感觉就是伊斯）。**改口这一类明确不做**——它要识别被改掉的那半句，和英文侧 Disfl-QA 上的结论是同一个",
     "source": [
       "src/mindsurf_omni/service/polish.py",
       "scripts/measure_content_words.py"
