@@ -218,3 +218,75 @@ def test_a_language_the_model_cannot_read_is_refused_at_startup() -> None:
     assert auto is not None and auto.asr_language == "auto"
     with pytest.raises(ConfigurationError, match="Chinese"):
         Settings.from_environment({**base, "MINDSURF_ASR_LANGUAGE": "Chinese"})
+
+
+def test_a_transcript_of_only_foreign_script_is_not_delivered() -> None:
+    """Asked to read a room with a fan in it, SenseVoice writes 그. and reports
+    0.99 confidence in Korean. Gating on the reported language deletes ordinary
+    Mandarin with it -- measured over 48 short spoken commands it calls 8% of
+    them something other than Chinese, taking 咖啡 and 猫 down. This asks what
+    the model wrote instead."""
+    from mindsurf_omni.service.asr import writes_something
+
+    for invented in ("그.", "うん。", "。", ".", "", "  ", "ら"):
+        assert not writes_something(invented), invented
+    for real in ("咖啡。", "嗯。", "demo", "B203", "60%", "Cafe。"):
+        assert writes_something(real), real
+
+
+@pytest.mark.asyncio
+async def test_audio_shorter_than_one_frame_is_refused_not_crashed() -> None:
+    """A single sample reached the frontend as `choose a window size 1` and left
+    the caller with a bare 500."""
+    from typing import Any
+
+    seen: list[Any] = []
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            seen.append(kwargs)
+            return [{"text": "<|zh|>。"}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    assert await recogniser.transcribe(_tone(0.01, amplitude=0.5), 16_000) == ("", None)
+    assert seen == [], "the model was asked to read a fifth of a frame"
+
+
+@pytest.mark.asyncio
+async def test_the_models_own_nospeech_verdict_is_honoured() -> None:
+    """It already said this is not speech; the service used to ship the `.`."""
+    from typing import Any
+
+    class Recorder:
+        def generate(self, **kwargs: Any) -> list[dict[str, str]]:
+            return [{"text": "<|nospeech|><|Event_UNK|>."}]
+
+    recogniser = SenseVoiceRecogniser(model_dir="/unused")
+    recogniser._model = Recorder()
+
+    assert await recogniser.transcribe(_tone(2.0), 16_000) == ("", None)
+
+
+def test_steady_noise_is_caught_by_how_little_it_says() -> None:
+    """Three seconds of mains hum comes back as 我. -- one Chinese character, so
+    the script check passes it. Speaking rate is what separates them: noise sits
+    at a third of a character per second against a person's 1.35, and the
+    slowest real utterance measured is 0.67."""
+    from mindsurf_omni.service.asr import said_enough
+
+    assert not said_enough("我.", 3.0)
+    assert not said_enough("I.", 3.0)
+    assert said_enough("你好。", 1.2)
+    assert said_enough("停。", 1.0)
+    assert said_enough("你想看什么类型的电影，比如浪漫爱情、惊悚、恐怖。", 8.0)
+
+
+def test_a_buffer_under_a_second_is_not_judged_by_rate() -> None:
+    """A single word is over the line anyway, and the rate of a fraction of a
+    second is not a rate."""
+    from mindsurf_omni.service.asr import said_enough
+
+    assert said_enough("好", 0.4)
+    assert said_enough("", 0.4)

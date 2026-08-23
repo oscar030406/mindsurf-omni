@@ -55,6 +55,60 @@ SHORT_AUDIO_SECONDS = 1.5
 # What SenseVoice's frontend runs at; the service resamples to it before here.
 RECOGNISER_RATE = 16_000
 
+# One fbank frame. Below it the frontend asserts ("choose a window size 1"),
+# which reached the caller as a bare 500, and between one frame and about a
+# tenth of a second the model only ever writes punctuation.
+SHORTEST_SAMPLES = 400
+
+
+def writes_something(text: str) -> bool:
+    """Whether the transcript is made of characters this deployment could have said.
+
+    Asked to read a room with a fan in it, SenseVoice does not answer "I do not
+    know" -- it writes 그. or うん。 and reports 0.99 confidence in Korean. The
+    reported language is the wrong thing to gate on: measured over 48 short
+    spoken commands it calls 8% of ordinary Mandarin something other than
+    Chinese, so a rule keyed on it deletes 咖啡 and 猫 along with the noise.
+
+    This asks instead what the model actually wrote. Hangul and kana carry no
+    Chinese and no Latin word characters, so an output made only of them is the
+    recogniser inventing; 咖啡, demo and B203 all survive. Measured on 36
+    synthetic noise clips it catches 11 with no correct transcript lost.
+
+    The English inventions (I., The.) survive this; ``said_enough`` catches most
+    of what is left, and separating the rest needs the language tag.
+    """
+    return bool(spoken_body(text))
+
+
+def spoken_body(text: str) -> str:
+    """The transcript with the punctuation a listener would not have said stripped."""
+    body = text.strip(" .。,，!！?？、;；:：\n")
+    if not any("一" <= char <= "鿿" or (char.isascii() and char.isalnum()) for char in body):
+        return ""
+    return body
+
+
+def said_enough(text: str, seconds: float) -> bool:
+    """Whether this many characters in this many seconds is a person talking.
+
+    Steady noise makes the recogniser write one or two characters however long
+    the buffer is -- three seconds of mains hum comes back as 我. -- and the
+    character is often Chinese, so ``writes_something`` passes it. Speaking rate
+    separates the two where script and reported language do not: measured over
+    60 noise clips, 48 short spoken commands and 40 sentences, noise sits at a
+    median of 0.33 characters per second against 1.35 and 4.52, and the slowest
+    real utterance is 0.67.
+
+    The floor is half a character per second, which is a third below that
+    slowest real one: it drops 33 of the 60 noise clips and none of the 88
+    spoken ones. Buffers under a second are exempt -- a single word is over the
+    line anyway, and the rate of a fraction of a second is not a rate.
+    """
+    if seconds < 1.0:
+        return True
+    return len(spoken_body(text)) / seconds >= 0.5
+
 
 @dataclass(slots=True)
 class SenseVoiceRecogniser:
@@ -156,8 +210,12 @@ class SenseVoiceRecogniser:
         if frame_energy(pcm) < SILENCE_RMS:
             return "", None
 
+        samples = whole_samples(pcm)
+        if len(samples) // 2 < SHORTEST_SAMPLES:
+            return "", None
+
         self.load()
-        audio = np.frombuffer(whole_samples(pcm), dtype=np.int16).astype(np.float32) / 32768.0
+        audio = np.frombuffer(samples, dtype=np.int16).astype(np.float32) / 32768.0
         # Same shape as the silence check above: with too little evidence the
         # model does not answer "I do not know", it invents. Silence has a
         # right answer, so that one returns empty; this one does not, so it is
@@ -167,7 +225,11 @@ class SenseVoiceRecogniser:
         result = self._model.generate(input=audio, cache={}, language=language, use_itn=True)
         if not result:
             return "", None
-        return strip_tags(str(result[0].get("text", "")))
+        text, heard = strip_tags(str(result[0].get("text", "")))
+        seconds = len(audio) / RECOGNISER_RATE
+        if heard == "nospeech" or not writes_something(text) or not said_enough(text, seconds):
+            return "", None
+        return text, heard
 
 
 @dataclass(slots=True)
