@@ -128,7 +128,7 @@ def corrections(text: str, table: dict[tuple[str, ...], str]) -> list[tuple[int,
     term rather than half of it.
     """
     sizes = sorted({len(word) for word in table.values()}, reverse=True)
-    boundaries = _boundaries(text)
+    tokens = _tokens(text)
     found: list[tuple[int, int, str]] = []
     taken: set[int] = set()
     for run in _CHINESE.finditer(text):
@@ -146,7 +146,7 @@ def corrections(text: str, table: dict[tuple[str, ...], str]) -> list[tuple[int,
                     continue
                 if not taken.isdisjoint(range(start, start + size)):
                     continue
-                if not _replaceable(text, start, start + size, boundaries):
+                if not _replaceable(text, start, start + size, tokens):
                     continue
                 found.append((start, start + size, word))
                 taken.update(range(start, start + size))
@@ -167,17 +167,17 @@ def _sound(word: str) -> tuple[str, ...]:
     return tuple(lazy_pinyin(word))
 
 
-def _boundaries(text: str) -> set[int]:
-    """Character offsets where jieba puts a word boundary, ends included."""
-    offsets = {0}
+def _tokens(text: str) -> list[tuple[int, int]]:
+    """Where the segmenter puts each word, as ``(start, end)`` offsets."""
+    spans: list[tuple[int, int]] = []
     cursor = 0
     for token in jieba.cut(text):
+        spans.append((cursor, cursor + len(token)))
         cursor += len(token)
-        offsets.add(cursor)
-    return offsets
+    return spans
 
 
-def _reads_as_words(text: str, start: int, end: int, boundaries: set[int]) -> bool:
+def _reads_as_words(text: str, start: int, end: int, tokens: list[tuple[int, int]]) -> bool:
     """Whether the segmenter already reads this span as ordinary words.
 
     The door the first version of this stage did not have, and the one that
@@ -186,23 +186,34 @@ def _reads_as_words(text: str, start: int, end: int, boundaries: set[int]) -> bo
     and 先统一前文的术语 came back as 先通义千问的术语. The word doing the damage
     was wholly inside the span, where nothing was looking.
 
-    A span standing on two boundaries with a boundary inside it is two words
-    the speaker said that happen to rhyme with the table's entry. A span
-    standing on two boundaries with nothing inside is one word, and a rare one
-    is still one: 履新 is in the dictionary at 8, below the admission floor,
-    and 今天履新 must not become 今天吕鑫. What is left -- a span the segmenter
-    cuts across, or one it made up (吕新, which jieba's own model emits as a
-    name with no dictionary entry behind it) -- is where a misrecognition
-    lives.
+    A span the segmenter cuts across is not ordinary text, so it may be
+    repaired. A span it covers exactly is read two ways:
+
+    - One word, however rare, is what the speaker said. 履新 sits in the
+      dictionary at 8, below the admission floor that let 吕鑫 in, and
+      今天履新 must not come back as 今天吕鑫. A span with no entry at all is
+      the segmenter's own model guessing at a name (吕新), which is where a
+      misrecognition lives.
+    - Several words count only when each is a real multi-character one. Single
+      characters are what jieba falls back to when nothing fits, so 通/一千/问
+      is not evidence that 通一千问 is anything -- and reading it as evidence
+      left 通一千问的接口 unrepaired while 我们用通一千问 was repaired, the same
+      span decided by how the characters beside it happened to cut. Presence in
+      the dictionary rather than the admission floor: 前文 is there at 3, and a
+      rare word beside a common one is still two words somebody said.
     """
-    if start not in boundaries or end not in boundaries:
+    covering = [span for span in tokens if start <= span[0] and span[1] <= end]
+    if not covering or covering[0][0] != start or covering[-1][1] != end:
         return False
-    if any(start < inside < end for inside in boundaries):
-        return True
-    return jieba.get_FREQ(text[start:end]) is not None
+    if len(covering) == 1:
+        return jieba.get_FREQ(text[start:end]) is not None
+    return all(
+        end_at - start_at >= 2 and jieba.get_FREQ(text[start_at:end_at]) is not None
+        for start_at, end_at in covering
+    )
 
 
-def _replaceable(text: str, start: int, end: int, boundaries: set[int]) -> bool:
+def _replaceable(text: str, start: int, end: int, tokens: list[tuple[int, int]]) -> bool:
     """Whether this span is the recogniser's mistake rather than ordinary text.
 
     A span that is itself a common word is what the speaker said -- 锻炼 in
@@ -213,7 +224,7 @@ def _replaceable(text: str, start: int, end: int, boundaries: set[int]) -> bool:
     frequency = jieba.get_FREQ(text[start:end])
     if frequency is not None and frequency >= FREQUENCY_FLOOR:
         return False
-    if _reads_as_words(text, start, end, boundaries):
+    if _reads_as_words(text, start, end, tokens):
         return False
     return not _crossed_by_a_word(text, start) and not _crossed_by_a_word(text, end)
 

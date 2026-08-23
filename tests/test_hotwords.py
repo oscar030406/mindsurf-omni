@@ -91,3 +91,28 @@ def test_nothing_outside_the_transcript_or_the_table_can_appear() -> None:
 
     assert set(out) <= set(source) | set("吕鑫") | set("通义千问")
     assert len(out) == len(source)
+
+
+def test_the_same_mistake_is_repaired_wherever_it_falls_in_the_sentence() -> None:
+    """通一千问 在句首和在句中是同一个错，不该由旁边的字怎么切来决定修不修。
+
+    分词器把句首那个切成 通/一千/问 三块，其中两块是单字——那是它没辙时的兜底，
+    不是"说话人说了三个词"的证据。按 ≥2 个整词判，这一条被读成普通文本放过了。
+    """
+    table = build_table(["通义千问"])
+
+    assert correct("通一千问的接口改过了。", table) == "通义千问的接口改过了。"
+    assert correct("我们用通一千问做的。", table) == "我们用通义千问做的。"
+
+
+def test_the_recogniser_getting_the_neighbours_wrong_is_this_stages_ceiling() -> None:
+    """识别器把 履新 听成 旅欣，这一级只看得见 旅欣——不是词，同音，就改了。
+
+    留在这里是因为它是这套做法的天花板，不是可以修的缺陷：同音表读的是声音，
+    而说话人说了一个和热词同音、又被识别器写坏的词时，没有信息能分开这两种。
+    识别器听对的那一份（他刚刚履新上任）这一级不碰，那是闸能守住的部分。
+    """
+    table = build_table(["吕鑫"])
+
+    assert correct("他刚刚履新上任。", table) == "他刚刚履新上任。"
+    assert correct("新来的同事，今天旅欣。", table) == "新来的同事，今天吕鑫。"
