@@ -299,8 +299,22 @@ VOCABULARY = tuple(sorted((*LEADING_FILLERS, *BRIDGING_FILLERS), key=len, revers
 # same label and both arms learned to delete the spelling. Membership here is
 # decided by the corpus, not by us: run ``scripts/measure_content_words.py
 # --distribution`` to recount it against CS2W. The two words that stay out of
-# this list are the ones that corpus marks as filler nearly every time.
-DOUBLE_DUTY = ("那个", "这个", "就是", "然后", "反正", "其实", "我觉得")
+# this list are the ones that corpus marks as filler nearly every time (嗯 78/78,
+# 呃 43/45).
+#
+# The single-character 那 and 就 were added after the first look at real
+# spontaneous speech. On the injected hold-out they never appear -- the builder
+# plants 那个 and 就是 -- so nothing in the release numbers could see them; on
+# 120 real dictations they were the two largest classes of content this stage
+# deleted (那 22 times, 就 15). CS2W marks them filler 0.275 and 0.203 of the
+# time, against 0.250 for 那个 and 0.190 for 就是 already on the list: by the
+# criterion that chose the original seven they always belonged here, and the
+# original seven were really just the nine words the injector knew.
+# Longest first: 那个 has to be considered before 那, or a wholly deleted 那个
+# gets its 那 handed back and leaves a bare 个 behind.
+DOUBLE_DUTY = (
+    "我觉得", "那个", "这个", "就是", "然后", "反正", "其实", "那种", "那些", "那", "就",
+)
 
 
 def dropped(source: str, output: str) -> set[int]:
@@ -792,11 +806,20 @@ def content_words(source: str, drop: set[int]) -> set[int]:
     measurement.
     """
     give_back: set[int] = set()
+    handled: set[int] = set()
     for word in DOUBLE_DUTY:
         width = len(word)
         start = source.find(word)
         while start != -1:
             end = start + width
+            if set(range(start, end)) & handled:
+                start = source.find(word, start + 1)
+                continue
+            # Claimed whether or not it is handed back. A shorter entry must not
+            # reach inside a longer one at all: 就 sitting inside 就是就是就是
+            # would restore a copy the longer word deliberately refused, and the
+            # result is half a word.
+            handled |= set(range(start, end))
             if (
                 all(index in drop for index in range(start, end))
                 and end < len(source)
