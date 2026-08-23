@@ -89,8 +89,23 @@ class ChatCompletionResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+# The longest text the speech endpoint will accept in one request. Nothing in
+# the service produces more -- a spoken turn is capped at
+# ``cascade.ANSWERABLE_CHARACTERS``, the same 1300 -- and the synthesiser has no
+# limit of its own and no chunking, so without this the field was unbounded:
+# two million characters were accepted and handed straight on, HTTP 200. Stated
+# here rather than imported because ``cascade`` imports this module.
+LONGEST_SPOKEN_CHARACTERS = 1300
+
+
 class SpeechRequest(BaseModel):
     model: str = "mindsurf-omni"
+    # Length is checked in the route, not with ``max_length``. pydantic puts the
+    # rejected value into its ValidationError and FastAPI serialises the error
+    # whole, so the field constraint does not keep a large body out -- it sends
+    # it back: two million characters came back as a 6 MB 422, and 512 MB posted
+    # chunked came back as 512 MB while peak memory rose half a gigabyte. A
+    # limit that answers in proportion to the attack is an amplifier.
     input: str
     # An OpenAI client sends a voice name. Ours are reference-audio ids
     # registered through /v1/voices, because voice control is in-context

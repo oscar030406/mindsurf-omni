@@ -120,3 +120,16 @@ def test_the_endpoint_answers_503_when_nothing_can_serve() -> None:
     assert response.status_code == 503
     assert response.json()["status"] == "unavailable"
     assert response.json()["not_ready"] == ["engine"]
+
+
+def test_weights_that_failed_to_load_are_not_reported_ready() -> None:
+    """`describe()` reports what was assembled, not what loaded. Startup is the
+    only place the weights are really pulled in, and its exception was dropped."""
+    report = assess(_Engine(), warm_up_error="RuntimeError: checkpoint is truncated")
+
+    assert report.status != "ready"
+    assert "warm-up" in report.to_dict()["not_ready"]
+
+
+def test_a_clean_start_says_nothing_about_a_warm_up() -> None:
+    assert "warm-up" not in {component.name for component in assess(_Engine()).components}

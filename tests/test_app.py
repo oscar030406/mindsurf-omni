@@ -1296,3 +1296,146 @@ def test_the_counters_do_not_grow_a_key_per_path_a_scanner_tries(
 
     assert not [key for key in keys if "/aaa" in key or "/bbb" in key]
     assert keys["requests unmatched 404"] >= 3
+# --- resource limits: the request body, the realtime buffer, the spoken text ---
+
+
+class _CountingStream:
+    """A body that reports how much of itself was actually pulled."""
+
+    def __init__(self, chunk: bytes, count: int) -> None:
+        self.chunk, self.count, self.pulled = chunk, count, 0
+
+    async def stream(self) -> AsyncIterator[bytes]:
+        for _ in range(self.count):
+            self.pulled += 1
+            yield self.chunk
+
+
+def test_an_oversized_body_is_refused_before_all_of_it_has_been_read() -> None:
+    """`await request.body()` decided the 413 only after the whole thing landed:
+    512 MB sent chunked cost 1036 MB of peak RSS and 11.4 s before the refusal."""
+    from mindsurf_omni.service.app import LONGEST_BODY_BYTES, audio_body
+
+    body = _CountingStream(b"\x00" * 2**20, LONGEST_BODY_BYTES // 2**20 * 4)
+
+    with pytest.raises(TooLongForModel):
+        asyncio.run(audio_body(body))
+
+    assert body.pulled < body.count, "the whole body was read before it was refused"
+
+
+def test_a_body_inside_the_limit_arrives_whole() -> None:
+    from mindsurf_omni.service.app import audio_body
+
+    body = _CountingStream(b"\x01\x40" * 1024, 8)
+
+    assert asyncio.run(audio_body(body)) == b"\x01\x40" * 1024 * 8
+    assert body.pulled == 8
+
+
+def test_an_oversized_recording_is_413_over_http(client: TestClient) -> None:
+    from mindsurf_omni.service.app import LONGEST_BODY_BYTES
+
+    response = client.post("/v1/audio/transcriptions", content=b"\x00" * (LONGEST_BODY_BYTES + 2))
+
+    assert response.status_code == 413
+
+
+def test_a_realtime_turn_stops_growing_at_the_limit(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """256 MiB appended with no commit was taken in full and counted nowhere."""
+    from mindsurf_omni.service import app as app_module
+
+    monkeypatch.setattr(app_module, "LONGEST_BUFFER_BYTES", 4096)
+    audio = base64.b64encode(b"\x01\x40" * 1024).decode()
+
+    with client.websocket_connect("/v1/realtime") as socket:
+        socket.receive_json()
+        for _ in range(2):
+            socket.send_json({"type": "input_audio_buffer.append", "audio": audio})
+        socket.send_json({"type": "input_audio_buffer.append", "audio": audio})
+        refusal = socket.receive_json()
+        # Refused, not disconnected, and what was already said is still there.
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        assert socket.receive_json()["type"] == "response.created"
+
+    assert refusal["type"] == "error"
+    assert "seconds" in refusal["error"]["message"]
+
+
+def test_text_longer_than_the_synthesiser_is_given_is_refused(client: TestClient) -> None:
+    """Two million characters were accepted and handed straight on, HTTP 200."""
+    from mindsurf_omni.contract import LONGEST_SPOKEN_CHARACTERS
+
+    over = client.post("/v1/audio/speech", json={"input": "啊" * (LONGEST_SPOKEN_CHARACTERS + 1)})
+    at_the_line = client.post("/v1/audio/speech", json={"input": "啊" * LONGEST_SPOKEN_CHARACTERS})
+
+    assert over.status_code == 413
+    assert at_the_line.status_code == 200
+
+
+def test_the_refusal_is_not_the_size_of_the_thing_it_refused(client: TestClient) -> None:
+    """`Field(max_length=...)` reads like a limit and behaves like a mirror.
+
+    pydantic puts the rejected value into the ValidationError and FastAPI
+    serialises the error whole, so the endpoint answers in proportion to what
+    was thrown at it: two million characters came back as a 6 MB body, and
+    512 MB posted chunked came back as 512 MB with peak memory up half a
+    gigabyte. The check belongs in the route, where the answer can name two
+    numbers and nothing else.
+    """
+    huge = "啊" * 200_000
+    response = client.post("/v1/audio/speech", json={"input": huge})
+
+    assert response.status_code == 413
+    assert len(response.content) < 1_000, "被拒的正文本身成了放大器"
+    assert huge not in response.text
+
+
+def test_a_warm_up_that_failed_is_not_reported_ready() -> None:
+    """/health answered 200 "ready" with an empty not_ready list at the same
+    moment every transcription returned 500."""
+
+    class Broken(FakeEngine):
+        def warm(self) -> None:
+            raise RuntimeError("checkpoint is truncated")
+
+    with TestClient(create_app(Broken()), raise_server_exceptions=False) as started:
+        report = started.get("/health").json()
+
+    assert report["status"] != "ready"
+    assert "warm-up" in report["not_ready"]
+    assert "truncated" in dict((c["name"], c["detail"]) for c in report["components"])["warm-up"]
+
+
+def test_a_warm_up_that_failed_once_stops_being_reported_once_it_works() -> None:
+    """/health 报的是此刻，不是开机时的一段历史。
+
+    `load()` 加载失败不缓存，所以开机那八秒卡被别的进程占了一下，第一个请求
+    会重试并成功——机器其实完全是好的。而 warm_up_error 写一次之后没人清它，
+    于是 /health 会永远说它坏了，也不会自己好。运维照 not_ready 摘轮换的话，
+    这台好机器被永久摘掉，而且什么日志都不会响——比原来那个「坏了还说 ready」
+    更难查，至少那个有 traceback。
+    """
+    from typing import Any
+
+    class Flaky(FakeEngine):
+        """warm 挂过一次，引擎本身好好的。"""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.recogniser: Any = type("R", (), {"_model": None})()
+
+        def warm(self) -> None:
+            raise RuntimeError("CUDA out of memory: another process held the card")
+
+    engine = Flaky()
+    with TestClient(create_app(engine), raise_server_exceptions=False) as started:
+        assert "warm-up" in started.get("/health").json()["not_ready"]
+
+        # 第一个请求把权重加载上了（load() 不缓存失败）。
+        engine.recogniser._model = object()
+
+        report = started.get("/health").json()
+        assert "warm-up" not in report["not_ready"], "好了之后还在说坏"

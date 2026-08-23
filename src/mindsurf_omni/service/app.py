@@ -28,6 +28,7 @@ from mindsurf_omni.contract import (
     AUDIO_ENCODING,
     EMOTIONS,
     INPUT_SAMPLE_RATE,
+    LONGEST_SPOKEN_CHARACTERS,
     OUTPUT_SAMPLE_RATE,
     ChatChoice,
     ChatCompletionRequest,
@@ -39,6 +40,7 @@ from mindsurf_omni.contract import (
     VoiceInfo,
     VoiceList,
 )
+from mindsurf_omni.service.asr import LONGEST_SECONDS
 from mindsurf_omni.service.audio import UnsupportedAudio, frames, to_wav, unwrap_wav, whole_samples
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine, TooLongForModel
@@ -98,6 +100,25 @@ def event_audio(event: dict[str, Any]) -> bytes:
         raise Unreadable(f"the audio field is not base64: {error}") from error
 
 
+def buffer_audio(buffer: bytearray, event: dict[str, Any]) -> None:
+    """Add this event's audio to the turn, or refuse it and say why.
+
+    A turn past LONGEST_SECONDS cannot be committed -- ``transcribe`` raises on
+    it -- so storing the bytes only costs memory nobody can spend. Refusing the
+    append rather than clearing the buffer is deliberate: what has already been
+    said is still committable, and the barge-in path keeps its buffer on
+    purpose (see the cancel branch), which a clear-on-overflow would undo.
+    """
+    chunk = event_audio(event)
+    if len(buffer) + len(chunk) > LONGEST_BUFFER_BYTES:
+        raise TooLongForModel(
+            f"this turn already holds {len(buffer) / 2 / INPUT_SAMPLE_RATE:.0f} seconds of "
+            f"audio and the recogniser reads up to {LONGEST_SECONDS:.0f} in one turn; "
+            "commit what is buffered or clear it"
+        )
+    buffer.extend(chunk)
+
+
 async def first_and_rest(source: Any) -> tuple[Any, Any]:
     """Pull one item out before the response starts, and hand back the rest.
 
@@ -127,6 +148,47 @@ UNAVAILABLE = (
     "no speech engine is configured; set MINDSURF_ENGINE to 'native' or 'cascade' "
     "and point it at a checkpoint"
 )
+
+# The most audio one realtime turn may buffer before it is committed. Raw
+# PCM16 at the rate session.created announces, so no container multiplies it
+# the way it can over HTTP: this is exactly LONGEST_SECONDS of audio. Past it
+# the commit could only ever raise TooLongForModel, so the bytes are refused
+# rather than stored -- an append-only session held 256 MiB with no commit and
+# nothing in the service counted it.
+LONGEST_BUFFER_BYTES = int(LONGEST_SECONDS) * INPUT_SAMPLE_RATE * 2
+
+# The most audio a single request may carry, counted in bytes as they arrive.
+#
+# This is the transport backstop, not the duration rule -- LONGEST_SECONDS still
+# decides that, after the container has been unwrapped and resampled. So it is
+# drawn wide enough to keep every body the recogniser accepts today: an hour of
+# 16 kHz PCM16 is 115 MB, and the same hour sent as a 48 kHz wav is 346 MB.
+# Four times the raw hour covers that with room for the container.
+LONGEST_BODY_BYTES = 4 * int(LONGEST_SECONDS) * INPUT_SAMPLE_RATE * 2
+
+
+async def audio_body(request: Request) -> bytes:
+    """The request body, refused as it arrives rather than after it has landed.
+
+    ``await request.body()`` reads the whole thing into memory and only then
+    lets anything look at it, so the 413 for an oversized recording was paid
+    for in full first: measured against a real uvicorn, 256 MB cost 523 MB of
+    peak RSS before the refusal, and 512 MB sent chunked cost 1036 MB and
+    11.4 seconds. Chunked is the case that matters -- there is no
+    Content-Length to consult, so nothing but counting can know.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    async for piece in request.stream():
+        total += len(piece)
+        if total > LONGEST_BODY_BYTES:
+            raise TooLongForModel(
+                f"the request body is over {LONGEST_BODY_BYTES} bytes, which is more audio "
+                f"than the {LONGEST_SECONDS:.0f} seconds this endpoint transcribes in one "
+                "request; send it in pieces"
+            )
+        chunks.append(piece)
+    return b"".join(chunks)
 
 
 def refuse_envelope(request: Request) -> None:
@@ -189,14 +251,20 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         checkpoint exactly as it was (the failure still surfaces at the first
         request) and takes the wait off the person.
 
-        Failure is swallowed on purpose: this is a warm-up, and a service that
+        Failure is still swallowed: this is a warm-up, and a service that
         refuses to start because a warm-up failed is the crash-loop the lazy
-        load exists to avoid.
+        load exists to avoid. What it no longer does is stay quiet about it.
+        Suppressed outright, the only component that actually loads weights
+        could fail and /health would answer 200 "ready" with an empty
+        not_ready list while every transcription returned 500 -- measured.
         """
+        app.state.warm_up_error = None
         warm_up = getattr(app.state.engine, "warm", None)
         if warm_up is not None:
-            with contextlib.suppress(Exception):
+            try:
                 await asyncio.to_thread(warm_up)
+            except Exception as error:  # noqa: BLE001 -- reported, not raised
+                app.state.warm_up_error = f"{type(error).__name__}: {error}"
         yield
 
     app = FastAPI(title="MindSurf Omni", version="0.1.0", lifespan=lifespan)
@@ -400,6 +468,7 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         report = assess_health(
             getattr(request.app.state, "engine", None),
             getattr(request.app.state, "configuration_error", None),
+            getattr(request.app.state, "warm_up_error", None),
         )
         code = status.HTTP_503_SERVICE_UNAVAILABLE if report.status == "unavailable" else 200
         return JSONResponse(report.to_dict(), status_code=code)
@@ -444,8 +513,10 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     @app.post("/v1/audio/transcriptions", response_model=TranscriptionResponse)
     async def transcribe(request: Request) -> TranscriptionResponse:
         engine = require_engine(request)
+        # Headers first, body second: a wrapped body is refused before a byte
+        # of it is read, and what is left is refused as it arrives.
         refuse_envelope(request)
-        pcm = await request.body()
+        pcm = await audio_body(request)
         if not pcm:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "request body carried no audio")
 
@@ -590,6 +661,14 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
 
     @app.post("/v1/audio/speech")
     async def speech(request: Request, body: SpeechRequest) -> StreamingResponse:
+        # Here rather than on the field: see contract.SpeechRequest.input. The
+        # message names the two numbers and never the text.
+        if len(body.input) > LONGEST_SPOKEN_CHARACTERS:
+            raise HTTPException(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                f"this text is {len(body.input)} characters; the synthesiser is given up to "
+                f"{LONGEST_SPOKEN_CHARACTERS} in one request",
+            )
         engine = require_engine(request)
         # Both of these are in the request shape an OpenAI client already
         # sends, and neither reaches a synthesiser: `speed` stops at this
@@ -716,10 +795,10 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
 
                 if kind == "input_audio_buffer.append":
                     try:
-                        buffer.extend(event_audio(event))
-                    except Unreadable as unreadable:
+                        buffer_audio(buffer, event)
+                    except (Unreadable, TooLongForModel) as refused:
                         await websocket.send_json(
-                            {"type": "error", "error": {"message": str(unreadable)}}
+                            {"type": "error", "error": {"message": str(refused)}}
                         )
                 elif kind == "input_audio_buffer.clear":
                     buffer.clear()
@@ -908,10 +987,10 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                             cancelled = True
                         elif told == "input_audio_buffer.append":
                             try:
-                                buffer.extend(event_audio(heard))
-                            except Unreadable as unreadable:
+                                buffer_audio(buffer, heard)
+                            except (Unreadable, TooLongForModel) as refused:
                                 await websocket.send_json(
-                                    {"type": "error", "error": {"message": str(unreadable)}}
+                                    {"type": "error", "error": {"message": str(refused)}}
                                 )
                         elif told == "input_audio_buffer.clear":
                             buffer.clear()

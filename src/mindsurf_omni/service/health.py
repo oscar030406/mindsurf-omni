@@ -14,7 +14,7 @@ from __future__ import annotations
 import time
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 Status = Literal["ready", "degraded", "unavailable"]
 
@@ -87,7 +87,17 @@ class Health:
         }
 
 
-def assess(engine: object | None, configuration_error: str | None = None) -> Health:
+def _weights_are_loaded(engine: Any) -> bool:
+    """Whether the recogniser is holding weights right now."""
+    recogniser = getattr(engine, "recogniser", None)
+    return recogniser is not None and getattr(recogniser, "_model", None) is not None
+
+
+def assess(
+    engine: object | None,
+    configuration_error: str | None = None,
+    warm_up_error: str | None = None,
+) -> Health:
     """Build a health report from what the process actually holds."""
     health = Health()
 
@@ -105,6 +115,24 @@ def assess(engine: object | None, configuration_error: str | None = None) -> Hea
 
     description = engine.describe()  # type: ignore[attr-defined]
     health.add("engine", True, f"path={description.path}")
+
+    # The one thing here that was actually exercised. `describe()` reports what
+    # was assembled, which is not the same as what loaded: the components below
+    # are listed because configuration named them, and a checkpoint truncated
+    # on disk changes none of that. Startup is where the weights are really
+    # pulled in, so its exception is the only evidence this function has that
+    # the parts work, and it was being thrown away.
+    # Only while the weights are still not loaded. The warm-up error is a fact
+    # about one moment at start-up, and health has to answer about this one:
+    # ``load()`` does not cache a failure, so a card that was busy for the eight
+    # seconds of warm-up is retried on the first request and succeeds. Reported
+    # from the stored error alone, that machine says it is broken for ever and
+    # never comes back -- and an operator watching ``not_ready`` takes a healthy
+    # box out of rotation with nothing in the log to explain it. Worse than the
+    # bug it replaced: "ready but 500" at least leaves a traceback.
+    if warm_up_error and not _weights_are_loaded(engine):
+        health.add("warm-up", False, f"loading the weights failed: {warm_up_error}")
+
     for component in description.components:
         # A frozen component that failed to load is as fatal as a trainable
         # one; frozen describes what training did, not whether it is needed.
