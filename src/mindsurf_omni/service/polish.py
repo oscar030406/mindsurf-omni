@@ -125,6 +125,22 @@ _WORTH_A_LOOK = (
 )
 
 
+# Steps a decode may take beyond the length of its input. Marks it inserts have
+# no source character to consume, and the stop token costs one more.
+INSERT_MARGIN = 32
+
+
+def decode_budget(longest_source: int, ceiling: int) -> int:
+    """How many steps a copy-constrained decode may take.
+
+    The output is a subsequence of the input, so the input's own length is the
+    real bound and a fixed ceiling is a length limit on the whole stage wearing
+    a safety cap's clothes. Kept as a floor rather than replaced, so a short
+    piece still gets the room it always had.
+    """
+    return max(ceiling, longest_source + INSERT_MARGIN)
+
+
 def worth_polishing(piece: str, longest_repeat: int = 5) -> bool:
     """Whether this piece holds anything the stage could remove.
 
@@ -1190,7 +1206,27 @@ class Polisher:
     # Off until an arm measures it: the failure it fixes is visible (the first
     # word of a sentence disappearing) but the fix has not been scored yet.
     protect_head: bool = False
+    # A ceiling, not a budget: the budget is the piece itself. Under the copy
+    # constraint the output is a subsequence of the input, so it can never be
+    # longer than the input, and a fixed 256 was silently a length limit on the
+    # whole stage. Measured on 230 real long dictations: 256 tokens is about
+    # 305 characters, and a piece past that can never finish copying, so it
+    # fails the FLOOR test and the whole piece comes back unpolished. At the
+    # trained group length that is one piece in 639; ungrouped it was 55% of
+    # the text, which is what made the first sweep of TRAINED_LENGTH read as
+    # "longer is better" -- the long arm had most of its text never polished,
+    # and the ruler of the day rewarded not deleting.
     max_new_tokens: int = 256
+    # Longest group the transcript is cut into before the model sees it. A knob
+    # rather than a constant because it has never been answered: the one sweep
+    # we ran scored arms on how little they deleted, so it measured which
+    # setting deletes less, not which is better.
+    group_longest: int = TRAINED_LENGTH
+    # How often the FLOOR fallback threw a decode away and kept the input, and
+    # how many characters that covered. Read by scripts/measure_group_length.py;
+    # a longer group means one early stop discards more text.
+    floored: int = 0
+    floored_chars: int = 0
     # How many pieces one decode may carry. Wide enough that a step is full,
     # narrow enough that one caller's long dictation does not hold everyone
     # else's: a batch runs until its longest member stops, so the cost of a
@@ -1359,7 +1395,7 @@ class Polisher:
         """
         if not transcript.strip():
             return transcript
-        pieces = group_sentences(transcript)
+        pieces = group_sentences(transcript, self.group_longest)
         wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]
         if not wanted:
             return transcript
@@ -1382,7 +1418,16 @@ class Polisher:
                 out.append(piece)
                 continue
             answer = answers[piece]
-            written = answer if consumed(piece, answer) >= FLOOR else piece
+            reached = consumed(piece, answer)
+            if reached < FLOOR:
+                # Counted here rather than inferred from the output, because a
+                # piece that fell back is character-for-character identical to
+                # one the model chose not to touch. The punctuation reading this
+                # stage lost a whole night to was exactly that shape: a check
+                # that could not see the thing it was counting.
+                self.floored += 1
+                self.floored_chars += len(piece)
+            written = answer if reached >= FLOOR else piece
             if tagged is not None:
                 # Veto, not union: the head's confidence protects the
                 # generator's content rather than removing more of it, and
@@ -1546,6 +1591,11 @@ class Polisher:
             device=self.device,
         )
 
+        # Room for the piece itself plus what a decode may add on top of it:
+        # an inserted mark has no character in the source to match, and the
+        # stop token needs a step of its own.
+        budget = decode_budget(max(len(ids) for ids in sources), self.max_new_tokens)
+
         produced: list[list[int]] = [[] for _ in pieces]
         # Advanced a token at a time instead of recomputed from the whole
         # output each step. Identical to subsequence_pointer while nothing is
@@ -1558,7 +1608,7 @@ class Polisher:
         done = [False] * len(pieces)
         cache, step_in = None, padded
         with torch.no_grad():
-            for _ in range(self.max_new_tokens):
+            for _ in range(budget):
                 out = self._model(
                     input_ids=step_in, attention_mask=mask, past_key_values=cache, use_cache=True
                 )
@@ -1674,8 +1724,9 @@ class Polisher:
 
         produced: list[int] = []
         cache = None
+        budget = decode_budget(len(source), self.max_new_tokens)
         with torch.no_grad():
-            for _ in range(self.max_new_tokens):
+            for _ in range(budget):
                 # Only what the model has not seen yet. Without the cache this
                 # loop re-ran the whole prefix every step: a 25-token answer
                 # behind a 40-token prompt cost 25 forwards averaging 52

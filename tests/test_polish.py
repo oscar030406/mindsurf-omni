@@ -539,3 +539,50 @@ def test_insertions_are_counted_where_they_happen() -> None:
     # after a batch rather than trying to recover it from the text.
     polisher.inserted += 3
     assert polisher.inserted == 3
+
+
+def test_the_decode_gets_room_for_the_piece_it_was_given() -> None:
+    """A fixed step count is a length limit on the stage, not a safety cap.
+
+    Measured on 230 real long dictations: 256 tokens is about 305 characters,
+    and a piece past that can never finish copying itself, so it fails the
+    FLOOR test and comes back unpolished. At the trained group length that is
+    one piece in 639. Ungrouped it was 55% of the text -- which is what made
+    the first sweep of TRAINED_LENGTH read as "longer is better", because the
+    long arm had most of its text never polished and the ruler of the day
+    rewarded not deleting.
+    """
+    from mindsurf_omni.service.polish import INSERT_MARGIN, decode_budget
+
+    assert decode_budget(40, 256) == 256
+    assert decode_budget(400, 256) == 400 + INSERT_MARGIN
+    assert decode_budget(2400, 256) == 2400 + INSERT_MARGIN
+
+
+def test_the_group_length_is_a_knob_and_not_a_constant() -> None:
+    """Wired with an input that has to come out different, because a setting
+    read from the wrong place looks exactly like one that has no effect."""
+    from mindsurf_omni.service.polish import TRAINED_LENGTH, group_sentences
+
+    text = "".join(f"这是第{n}句话，说了一点内容。" for n in range(12))
+
+    assert len(group_sentences(text, 60)) > len(group_sentences(text, 240))
+
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    assert polisher.group_longest == TRAINED_LENGTH
+    polisher.group_longest = 60
+    assert polisher.group_longest != TRAINED_LENGTH
+
+
+async def test_the_fallback_is_counted_where_it_happens() -> None:
+    """A piece that fell back is character-for-character identical to one the
+    model chose not to touch, so it cannot be recovered from the output."""
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    piece = "嗯，第一句很长很长很长很长很长。"
+    polisher.answers = {piece: "嗯，第一"}  # type: ignore[attr-defined]
+
+    assert polisher.floored == 0
+    await polisher.polish(piece)
+
+    assert polisher.floored == 1
+    assert polisher.floored_chars == len(piece)
