@@ -388,3 +388,50 @@ async def test_an_all_filler_sentence_inside_a_dictation_still_goes() -> None:
     out = await polisher.polish("嗯，那个。嗯，会议改到三点了。")
 
     assert out == "会议改到三点了。"
+
+
+def test_the_mark_door_opens_for_marks_and_nothing_else() -> None:
+    """The graded constraint lets punctuation in and keeps content out.
+
+    The copy constraint made invention impossible and, as a side effect nobody
+    chose, made punctuation uneditable. On the training pool that cost nothing:
+    every target there is a subsequence already. On real spontaneous speech
+    87.7% of targets are unreachable and every one of them fails on punctuation
+    alone -- the content is a subsequence in 100% of them.
+    """
+    from mindsurf_omni.service.polish import PUNCTUATION, Polisher
+
+    class Vocab:
+        def get_vocab(self) -> dict[str, int]:
+            return {"，": 1, "。": 2, "，。": 3, "今天": 4, "天气": 5, "，天": 6}
+
+        def convert_tokens_to_string(self, tokens: list[str]) -> str:
+            return "".join(tokens)
+
+    polisher = Polisher(
+        checkpoint=Path("unused.pth"),
+        tokenizer_dir=Path("unused"),
+        minimind_root=Path("unused"),
+        punctuation_insertable=True,
+    )
+    polisher._tokeniser = Vocab()  # noqa: SLF001
+
+    door = polisher._insertable_ids()  # noqa: SLF001
+    assert door == {1, 2, 3}, "只有纯标点的 token 该进门"
+    assert 4 not in door and 5 not in door, "内容词进了门，复制约束就废了"
+    # 「，天」是标点加内容，整体不算标点——否则一个 token 就能带进一个字。
+    assert 6 not in door
+    assert all(ch in PUNCTUATION | set(",;:.!?") for ch in "，。")
+
+
+def test_the_door_is_shut_unless_it_is_opened() -> None:
+    """Default behaviour is the copy constraint, byte for byte."""
+    from mindsurf_omni.service.polish import Polisher
+
+    polisher = Polisher(
+        checkpoint=Path("unused.pth"),
+        tokenizer_dir=Path("unused"),
+        minimind_root=Path("unused"),
+    )
+    assert polisher.punctuation_insertable is False
+    assert polisher._insertable_ids() == frozenset()  # noqa: SLF001

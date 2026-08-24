@@ -1089,6 +1089,21 @@ class Polisher:
     tagger: Path | None = None
     tagger_backbone: Path | None = None
     tagger_threshold: float = 0.5
+    # Marks the decode may emit even though the transcript did not. Off by
+    # default, which is the copy constraint exactly as it has always been.
+    #
+    # The constraint says the output must be a subsequence of the transcript,
+    # and that is what makes invention structurally impossible. It also, as a
+    # side effect nobody chose, makes punctuation uneditable -- a mark can be
+    # dropped but never moved, so the recogniser's punctuation is final. On the
+    # training pool that costs nothing: every target there is already a
+    # subsequence, because §18 built them that way. On real spontaneous speech
+    # 87.7% of targets are unreachable, and every one of them is unreachable
+    # *only* on punctuation -- the content is a subsequence in 100% of them.
+    #
+    # So this opens the one door and no other: content still comes from the
+    # transcript, and the set below is closed and small.
+    punctuation_insertable: bool = False
     _model: Any = None
     _queue: Any = field(default_factory=list)
     _queue_lock: Any = None
@@ -1099,6 +1114,7 @@ class Polisher:
     _tagger_head: Any = None
     _tagger_model: Any = None
     _tagger_spec: Any = None
+    _insertable: Any = None
 
     def load(self) -> None:
         if self._model is not None:
@@ -1394,6 +1410,14 @@ class Polisher:
         )
 
         produced: list[list[int]] = [[] for _ in pieces]
+        # Advanced a token at a time instead of recomputed from the whole
+        # output each step. Identical to subsequence_pointer while nothing is
+        # inserted -- both walk the transcript greedily -- and the only version
+        # that stays correct once something is: an inserted mark has nothing to
+        # match, so the greedy scan would run to the end of the transcript and
+        # take the rest of the sentence with it.
+        pointer = [0] * len(pieces)
+        insertable = self._insertable_ids()
         done = [False] * len(pieces)
         cache, step_in = None, padded
         with torch.no_grad():
@@ -1408,15 +1432,16 @@ class Polisher:
                     if done[row]:
                         nxt.append(stop)
                         continue
-                    ahead = set(
+                    window = set(
                         reachable(
                             piece_source,
-                            subsequence_pointer(piece_source, produced[row]),
+                            pointer[row],
                             self.lookahead,
                             self._filler_spans(),
                             self.protect_head,
                         )
                     )
+                    ahead = window | insertable
                     ahead.add(stop)
                     keep = torch.tensor(sorted(ahead), device=logits.device, dtype=torch.long)
                     masked = torch.full_like(logits[row], float("-inf"))
@@ -1426,6 +1451,15 @@ class Polisher:
                         done[row] = True
                     else:
                         produced[row].append(chosen)
+                        # A token the transcript offered consumes it. A mark
+                        # that only the insertable set offered consumes
+                        # nothing, so the window does not move past content the
+                        # model has not written yet.
+                        if chosen in window:
+                            at = pointer[row]
+                            while at < len(piece_source) and piece_source[at] != chosen:
+                                at += 1
+                            pointer[row] = min(at + 1, len(piece_source))
                     nxt.append(chosen)
                 if all(done):
                     break
@@ -1437,6 +1471,25 @@ class Polisher:
             text = self._tokeniser.decode(tokens, skip_special_tokens=True).strip()
             answers.append(text or piece)
         return answers
+
+    def _insertable_ids(self) -> frozenset[int]:
+        """Token ids for the marks, when the graded constraint is on.
+
+        Every id whose decoded text is nothing but marks, not just the ids of
+        the single characters: a tokeniser that has a token for 。」 would
+        otherwise let a whole shape through the door unnoticed.
+        """
+        if not self.punctuation_insertable:
+            return frozenset()
+        if self._insertable is None:
+            marks = PUNCTUATION | set(",;:.!?")
+            found = set()
+            for token, index in self._tokeniser.get_vocab().items():
+                text = self._tokeniser.convert_tokens_to_string([token])
+                if text and all(ch in marks for ch in text):
+                    found.add(index)
+            self._insertable = frozenset(found)
+        return self._insertable
 
     def _filler_spans(self) -> tuple[tuple[int, ...], ...]:
         """The filler vocabulary as token ids, tokenised once per process."""

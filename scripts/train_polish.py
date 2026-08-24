@@ -167,6 +167,7 @@ def main() -> None:
     optimiser = torch.optim.AdamW(policy.parameters(), lr=args.learning_rate)
     generator = random.Random(args.seed)
     history: list[dict[str, float]] = []
+    best: tuple[float, int, dict] | None = None
     if heldout:
         before = evaluate(policy, heldout, args.device)
         print(f"训练前留出 loss {before:.4f}", flush=True)
@@ -195,6 +196,21 @@ def main() -> None:
                 flush=True,
             )
         history.append(record)
+        # Kept by held-out loss, not by being last. All four runs on 2026-08-24
+        # reached their minimum at epoch 4 and rose at epoch 5, and the script
+        # wrote the epoch-5 weights: the loop was already measuring the thing it
+        # then threw away. With no held-out pairs there is nothing to choose on,
+        # so the last epoch stays the answer.
+        if heldout and (best is None or record["heldout_loss"] < best[0]):
+            best = (
+                record["heldout_loss"],
+                epoch,
+                {key: value.detach().clone() for key, value in policy.state_dict().items()},
+            )
+
+    if best is not None and best[1] != args.epochs:
+        print(f"留出最低在 epoch {best[1]}（{best[0]:.4f}），写它而不是最后一个", flush=True)
+        policy.load_state_dict(best[2])
 
     # The parent's tensors with the Thinker replaced, so anything measured
     # afterwards belongs to the text half and the Talker is bit-identical to

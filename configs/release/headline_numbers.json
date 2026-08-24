@@ -890,7 +890,7 @@
     "same_parameter_class": {
       "_": [
         "60 段真人单人口述（MagicData-RAMC 里同一说话人连续说的话拼成 10–40 秒，",
-        "共 18.5 分钟，中位 17.5 秒），参照是人工转写。4090，fp16。",
+        "共 18.5 分钟，中位 17.5 秒），参照是人工转写。4090。**精度不齐**：Whisper 走 fp16（脚本显式传了），SenseVoice 走 FunASR 默认的 fp32，没传过精度参数。所以显存那一列对 SenseVoice 是偏高的，延迟那一列对 Whisper 是偏优的。",
         "**限制**：这是中文语料，Whisper small 是多语种通才，在中文上本来吃亏；",
         "英文侧我们没有带参照的语料，没量，不许把这张表读成「全面更好」。"
       ],
@@ -937,7 +937,7 @@
     "aishell1_test": {
       "_": [
         "标准集，朗读语音、近场、单人——听写产品最接近的分布，和 MagicData 的双人对话互补。",
-        "400 条（完整 test 是 7176 条），4090 fp16，参照去标点去空格按字算。",
+        "**这一格已作废，见 dictation_asr_protocol**：400 条是 sorted(glob)[:400] 取的，而 AISHELL test 按说话人分目录、每人约 370 条——那 400 条其实是一个说话人零一点，不是语料读数。已按 20 个说话人全量 7176 条重跑。",
         "**我们量的 6.14% 和上游报的 2.96% 对不上**：口径不同（条数、归一化、是否用官方脚本），",
         "这里报的是我们自己在同一口径下跑两个系统的比较，不是去复现别人的数。"
       ],
@@ -1111,7 +1111,17 @@
       "scripts/measure_repetition_shape.py",
       "artifacts/polish_train/pairs_cs2w.jsonl",
       "artifacts/polish_train/pairs_v3.jsonl"
-    ]
+    ],
+    "chance_control": {
+      "_": [
+        "「重复占人工删除的一半」这条判据是「被删的字在附近有没有再出现」。",
+        "而真人重复 58% 是单字，我/你/的 这种字在一句话里本来就容易出现两次——",
+        "所以拿同句、同长度、随机位置、且标注员没删的跨度问同一个问题。"
+      ],
+      "real_deleted_spans_called_repetition": 0.523,
+      "random_same_length_spans": 0.087,
+      "verdict": "虚报底 8.7%，信号高出 43.6 个点。判据不是在自说自话"
+    }
   },
   "dictation_asr_protocol": {
     "_": [
@@ -1146,11 +1156,29 @@
     "real_speech_barely_moved": "真人自发语料上折数字只从 0.1900 到 0.1830——自发语音里数字本来就少。被坑的只有 AISHELL 那个数",
     "source": [
       "scripts/measure_asr_protocol.py"
-    ]
+    ],
+    "full_test_7176": {
+      "_": "400 条那版是 sorted(glob)[:400]，AISHELL test 按说话人分目录、每人约 370 条——那是一个说话人零一点。这里是全部 7176 条、20 个说话人，两边都繁转简、去标点。",
+      "rows": [
+        {
+          "arm": "ITN 开（现在部署的）",
+          "cer_upstream_protocol": 0.0624,
+          "cer_product_protocol": 0.0587
+        },
+        {
+          "arm": "ITN 关",
+          "cer_upstream_protocol": 0.0295,
+          "cer_product_protocol": 0.0848
+        }
+      ],
+      "verdict": "对齐上游口径我们是 0.0295，上游自报 0.0296——逐位复现。那个「差一倍」百分之百是我们自己的口径",
+      "product_number": "产品口径（ITN 开、参考数字正向归一）0.0587，这是朗读语音上真实的听写字错率",
+      "latency_not_reported_here": "这一轮八个作业抢卡，p50 读出 102.7ms 而独占时是 55ms。延迟要清场重量"
+    }
   },
   "dictation_swap_recogniser": {
     "_": [
-      "60 段真人单人口述（MagicData-RAMC，18.5 分钟，中位 17.5 秒），4090 fp16，字错率折数字。",
+      "60 段真人单人口述（MagicData-RAMC，18.5 分钟，中位 17.5 秒），字错率折数字。4090。**精度不齐**：Whisper 走 fp16（脚本显式传了），SenseVoice 走 FunASR 默认的 fp32，没传过精度参数。所以显存那一列对 SenseVoice 是偏高的，延迟那一列对 Whisper 是偏优的。",
       "Paraformer 是同一个 FunASR，换过去几乎零集成成本，所以它是这条路上唯一不用先付集成代价就能量的候选。"
     ],
     "rows": [
@@ -1213,6 +1241,143 @@
     ],
     "source": [
       "scripts/measure_punctuation_trust.py"
+    ]
+  },
+  "dictation_graded_constraint_refuted": {
+    "_": [
+      "**这一格的结论已被推翻，见下面 reopened**。原判断是：先算天花板，放开插入解锁零。",
+      "那个零只对我们自己的训练池成立——而池子当初就是照着「可达」造的。"
+    ],
+    "targets_reachable_under_current_constraint": {
+      "ours_n": 3171,
+      "ours": 1.0,
+      "cs2w_n": 6501,
+      "cs2w": 1.0
+    },
+    "blocked_only_by_punctuation": 0,
+    "why": [
+      "§18 把目标改成「转写去掉注入段」时，顺带把每一条目标都造成了转写的子序列。",
+      "所以放开插入解锁不了任何一条现有目标。",
+      "因果也搞反了：不是模型不能插标点，是训练目标从来没要求过它插——",
+      "目标全部继承转写的标点，包括那 60% 的过量和那些错位。"
+    ],
+    "what_would_unblock_it": [
+      "要教标点修复，需要（ASR 输出，人写标点）的配对，而且必须是自发语音。",
+      "手上唯一有这个的是 MagicData——CC BY-NC-ND，不能拿来训。",
+      "CS2W 也不行：它的 source 是人工逐字转写不是 ASR 输出，链里没有识别器。"
+    ],
+    "source": [
+      "scripts/build_graded_targets.py"
+    ],
+    "reopened": {
+      "_": "同一把尺子换到真人自发语音上（RAMC 600 段，目标 = 内容投影到转写 + 人的标点）",
+      "ours_pool": {
+        "reachable_whole": 1.0,
+        "blocked_on_punctuation": 0.0
+      },
+      "real_spontaneous": {
+        "n": 600,
+        "reachable_whole": 0.123,
+        "content_reachable": 1.0,
+        "blocked_on_punctuation": 0.877
+      },
+      "verdict": [
+        "真人语音上 87.7% 的目标够不着，而且每一条都只卡在标点上——内容 100% 可达。",
+        "§18 把每条目标造成了转写的子序列，所以九轮消融从来没碰到过这堵墙。",
+        "分级约束从「买不到东西」变成「解锁八成七」。"
+      ],
+      "my_error": "我上一轮拿自造池的天花板宣布这条路堵死。天花板算对了，语料选错了——池子是照着约束造的，用它量约束是拿靶子当尺子"
+    }
+  },
+  "dictation_base_ablation": {
+    "_": [
+      "「文本模型还要不要继续后训练」的直接读数。同一份数据、同一套超参，",
+      "只把起点从预训练 / SFT / SFT+DPO 合并各换一次，880 句留出，配对自助 2000 次。",
+      "判据取重复清除——聚合的口语词清除率四条臂是 0.388/0.393/0.383/0.393，什么都看不见。"
+    ],
+    "repetition_clearance": [
+      {
+        "arm": "A 只自造数据 · merge 基座",
+        "value": 0.536
+      },
+      {
+        "arm": "B 并集 · merge 基座",
+        "value": 0.598
+      },
+      {
+        "arm": "C 并集 · 只预训练基座",
+        "value": 0.613
+      },
+      {
+        "arm": "D 并集 · 只 SFT 基座",
+        "value": 0.607
+      }
+    ],
+    "paired_bootstrap": [
+      {
+        "pair": "B−A 加 CS2W",
+        "delta": 0.0623,
+        "ci": [
+          0.0318,
+          0.092
+        ],
+        "crosses_zero": false
+      },
+      {
+        "pair": "C−A 加 CS2W",
+        "delta": 0.0778,
+        "ci": [
+          0.0468,
+          0.1086
+        ],
+        "crosses_zero": false
+      },
+      {
+        "pair": "D−A 加 CS2W",
+        "delta": 0.0714,
+        "ci": [
+          0.0426,
+          0.102
+        ],
+        "crosses_zero": false
+      },
+      {
+        "pair": "C−B 换基座",
+        "delta": 0.0152,
+        "ci": [
+          -0.009,
+          0.0405
+        ],
+        "crosses_zero": true
+      },
+      {
+        "pair": "D−B 换基座",
+        "delta": 0.0088,
+        "ci": [
+          -0.0047,
+          0.024
+        ],
+        "crosses_zero": true
+      },
+      {
+        "pair": "D−C 换基座",
+        "delta": -0.0065,
+        "ci": [
+          -0.0302,
+          0.017
+        ],
+        "crosses_zero": true
+      }
+    ],
+    "verdict": [
+      "CS2W 进训练池对重复清除是真效应，+6 到 +8 个点，三条比较全部不跨 0。",
+      "**三个基座之间一个都分不开。** 横跨整条后训练阶梯——只预训练、SFT、SFT+DPO 合并——",
+      "对润色这个任务量不出差别。「文本模型要不要继续后训练」的答案：不要，它在这条链上买不到东西。"
+    ],
+    "caveat": "这批是 epoch 5 的权重，而四条臂的留出最低都在 epoch 4——训练脚本存的是最后一个而不是最好的那个（已修）。按留出留最好的重跑正在评估，结论待复核",
+    "source": [
+      "scripts/train_polish.py",
+      "scripts/measure_polish_service.py"
     ]
   }
 }
