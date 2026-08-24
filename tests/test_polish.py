@@ -231,8 +231,14 @@ def test_the_door_opens_for_the_spellings_the_recogniser_writes() -> None:
 
 
 def test_a_transcript_the_model_was_trained_on_is_not_split() -> None:
-    """Splitting every sentence cost 0.039 of filler clearance over 986
-    held-out transcripts, none of which was long enough to need it."""
+    """The 0.039 this used to cite held up, and only for texts inside the gate.
+
+    Rescored on the same 986 against their own exact labels, splitting every
+    sentence costs recall 0.3571 against 0.3829 and precision 0.8197 against
+    0.8401. Where it does not hold is past the gate: those transcripts run to a
+    median of 43 characters and cannot speak for a 241-character one, and on
+    real long dictation splitting every sentence wins on everything measured.
+    """
     from mindsurf_omni.service.polish import TRAINED_LENGTH, group_sentences
 
     text = "嗯，今天天气怎么样？我想出门散步。"
@@ -240,16 +246,39 @@ def test_a_transcript_the_model_was_trained_on_is_not_split() -> None:
     assert group_sentences(text) == [text]
 
 
-def test_a_long_transcript_is_grouped_not_shredded() -> None:
-    """Pieces up to the trained length, not one sentence per call."""
-    from mindsurf_omni.service.polish import group_sentences
+def test_a_long_transcript_goes_one_sentence_at_a_time() -> None:
+    """Past the gate, every sentence on its own -- measured, not assumed.
+
+    On 230 real long dictations against grouping to 160: 712 filler words
+    removed instead of 557, 217 repetitions instead of 197, 2006 unjustified
+    deletions instead of 2046, and 18% less wall clock. Nothing traded.
+
+    The grouping this replaced was never measured. Its one sweep scored the arms
+    on character error rate against a target built as "the transcript minus its
+    filler", where an arm that deletes less wins by construction.
+    """
+    from mindsurf_omni.service.polish import group_sentences, split_sentences
 
     text = "这是一句测试用的句子。" * 40
     pieces = group_sentences(text, longest=100)
 
-    assert len(pieces) > 1
-    assert all(len(piece) <= 100 for piece in pieces)
+    assert pieces == split_sentences(text)
+    assert all(len(piece) == 11 for piece in pieces)
     assert "".join(pieces) == text
+
+
+def test_a_transcript_inside_the_gate_is_still_never_split() -> None:
+    """The other half, and the 986 held-out transcripts are what answer it.
+
+    They run to a median of 43 characters, so nearly every one is a single piece
+    either way. Scored against their own exact labels, whole beats split: recall
+    0.3829 against 0.3571, precision 0.8401 against 0.8197.
+    """
+    from mindsurf_omni.service.polish import TRAINED_LENGTH, group_sentences
+
+    text = "嗯，第一句。第二句也不长。第三句收尾。"
+    assert len(text) < TRAINED_LENGTH
+    assert group_sentences(text) == [text]
 
 
 def test_a_single_sentence_past_the_line_is_left_whole() -> None:

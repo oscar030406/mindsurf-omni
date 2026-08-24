@@ -36,6 +36,14 @@ NEGATIONS = set("不没别无非莫勿甭")
 # character before it decides.
 NOT_NEGATION_AFTER = set("沉淹埋出湮")
 
+# The mirror of the rule above: these two negate on their own but not in front
+# of one particular character. 非常 is "very", not "not", and it is the most
+# common thing 非 does in speech -- 169 of the 非 in CS2W are the 非 of 非常.
+# 无论 is "whether"; the negation is not doing negation work there either.
+# Both showed up as lost negations in a reading of the group-length arms, in
+# text where the arm had removed a filler beside them and nothing else.
+NOT_NEGATION_BEFORE = {"非": set("常"), "无": set("论")}
+
 # 别 is the awkward one: it negates in 别去 and 别动, and does not in 特别,
 # 分别, 差别, 个别, 区别, 级别, 性别, 告别, 送别, 派别. The first version of
 # this script reported exactly one lost negation on the holdout and it was 特别.
@@ -54,6 +62,9 @@ def negation_positions(text: str) -> list[int]:
         if i and text[i - 1] in NOT_NEGATION_AFTER:
             continue
         if ch == "别" and i and text[i - 1] in BIE_IS_NOT_NEGATION_AFTER:
+            continue
+        nxt = NOT_NEGATION_BEFORE.get(ch)
+        if nxt and i + 1 < len(text) and text[i + 1] in nxt:
             continue
         out.append(i)
     return out

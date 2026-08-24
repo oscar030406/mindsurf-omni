@@ -142,6 +142,7 @@ async def main() -> None:
     args = parser.parse_args()
 
     from mindsurf_omni.service.asr import SenseVoiceRecogniser
+    from mindsurf_omni.service.audio import resample
 
     recogniser = SenseVoiceRecogniser(
         model_dir=args.model_dir, device=args.device, language=args.language
@@ -159,8 +160,10 @@ async def main() -> None:
     for clip in clips:
         pcm, rate = read_wav(clip)
         if rate != RATE:
-            print(f"  跳过 {clip.name}：{rate} Hz，不是 16 kHz")
-            continue
+            # The service's own converter, so the clip arrives the way a caller's
+            # would. The dictation recordings are 24 kHz and skipping them left
+            # the only right-register audio out of the reading.
+            pcm, rate = resample(pcm, rate, RATE), RATE
         got = await one_clip(recogniser, pcm, rate, args.step, args.start)
         report[clip.name] = got
         depths.extend(got["rewrite_depth"])

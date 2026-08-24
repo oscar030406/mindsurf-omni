@@ -201,6 +201,10 @@ def score(source: str, output: str, target: str | None = None) -> dict[str, int]
         "truth_total": 0,
         "truth_hit": 0,
         "truth_claimed": 0,
+        "truth_total_ambiguous": 0,
+        "truth_hit_ambiguous": 0,
+        "truth_total_plain": 0,
+        "truth_hit_plain": 0,
     }
 
 
@@ -214,6 +218,16 @@ def with_truth(counts: dict[str, int], source: str, output: str, target: str) ->
     counts["truth_total"] = len(gold)
     counts["truth_hit"] = len(gone & gold)
     counts["truth_claimed"] = len(gone)
+    # The same recall, split by whether the character sits inside a word the
+    # detector refuses to call. Whatever the two rulers disagree about has to
+    # be on one side of this line.
+    ambiguous = unscorable(source)
+    inside = gold & ambiguous
+    outside = gold - ambiguous
+    counts["truth_total_ambiguous"] = len(inside)
+    counts["truth_hit_ambiguous"] = len(gone & inside)
+    counts["truth_total_plain"] = len(outside)
+    counts["truth_hit_plain"] = len(gone & outside)
 
 
 def totals(rows: list[dict[str, int]]) -> dict[str, float]:
@@ -235,6 +249,14 @@ def totals(rows: list[dict[str, int]]) -> dict[str, float]:
         recall, precision = out["truth_recall"], out["truth_precision"]
         out["truth_f1"] = (
             2 * recall * precision / (recall + precision) if recall + precision else 0.0
+        )
+        out["truth_recall_ambiguous"] = (
+            out["truth_hit_ambiguous"] / out["truth_total_ambiguous"]
+            if out["truth_total_ambiguous"]
+            else 0.0
+        )
+        out["truth_recall_plain"] = (
+            out["truth_hit_plain"] / out["truth_total_plain"] if out["truth_total_plain"] else 0.0
         )
     return out
 
@@ -333,16 +355,23 @@ def shape(sources: list[str], longest: int) -> dict[str, float]:
 
 
 async def run_arm(
-    polisher: Polisher, sources: list[str], longest: int, targets: list[str] | None = None
+    polisher: Polisher,
+    sources: list[str],
+    longest: int,
+    targets: list[str] | None = None,
+    dump: Path | None = None,
 ) -> dict:
     targets = targets or [""] * len(sources)
     polisher.group_longest = longest if longest else 10**9
     polisher.floored = polisher.floored_chars = 0
     polisher.emptied = polisher.emptied_chars = 0
-    rows = []
+    rows: list[dict[str, int]] = []
+    written: list[dict[str, str]] = []
     started = time.perf_counter()
     for index, text in enumerate(sources):
         output = await polisher.polish(text)
+        if dump is not None:
+            written.append({"source": text, "polished": output})
         row = score(text, output)
         row["chars_to_model"] = reached_model(text, polisher.group_longest)
         with_truth(row, text, output, targets[index])
@@ -359,6 +388,12 @@ async def run_arm(
     out["emptied_pieces"] = polisher.emptied
     out["emptied_chars"] = polisher.emptied_chars
     out["unpolished_chars"] = polisher.floored_chars + polisher.emptied_chars
+    if dump is not None:
+        dump.parent.mkdir(parents=True, exist_ok=True)
+        dump.write_text(
+            "\n".join(json.dumps(row, ensure_ascii=False) for row in written) + "\n",
+            encoding="utf-8",
+        )
     out["unpolished_share"] = (
         out["unpolished_chars"] / out["chars_to_model"] if out["chars_to_model"] else 0.0
     )
@@ -378,6 +413,9 @@ def main() -> None:
     parser.add_argument("--tokenizer", type=Path, default=_ROOT / "assets/tokenizer")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--report", type=Path)
+    parser.add_argument(
+        "--dump", type=Path, help="每档把 source/polished 写一份，供否定词等安全判据读"
+    )
     args = parser.parse_args()
 
     report: dict = {}
@@ -424,7 +462,7 @@ def main() -> None:
         polisher.load()
         report["arms"] = {}
         print(
-            f"\n{'档位':>6}{'口语词召回':>12}{'重复召回':>10}{'误删/千字':>11}{'删除率':>9}{'退回字占比':>12}{'停住片':>8}{'答空片':>8}{'秒':>8}{'真标签召回':>12}{'真标签精确':>12}"
+            f"\n{'档位':>6}{'口语词召回':>12}{'重复召回':>10}{'误删/千字':>11}{'删除率':>9}{'退回字占比':>12}{'停住片':>8}{'答空片':>8}{'秒':>8}{'真标签召回':>12}{'真标签精确':>12}{'两栖词召回':>14}{'非两栖召回':>14}"
         )
 
         async def every_arm() -> None:
@@ -434,7 +472,8 @@ def main() -> None:
             # rather than as a hang. The first version of this script did that.
             for longest in lengths:
                 print(f"  跑 {longest or '不切'} …", flush=True)
-                got = await run_arm(polisher, sources, longest, targets)
+                spill = args.dump / f"arm{longest}.jsonl" if args.dump else None
+                got = await run_arm(polisher, sources, longest, targets, spill)
                 report["arms"][str(longest)] = got
                 name = "不切" if not longest else str(longest)
                 print(
@@ -444,6 +483,9 @@ def main() -> None:
                     f"{got['emptied_pieces']:>8}{got['seconds']:>8.0f}"
                     + (
                         f"{got['truth_recall']:>10.4f}{got['truth_precision']:>10.4f}"
+                        f"{got['truth_recall_ambiguous']:>12.4f}"
+                        f"{got['truth_recall_plain']:>12.4f}"
+                        f"  ({got['truth_total_ambiguous']}/{got['truth_total_plain']})"
                         if "truth_recall" in got
                         else ""
                     ),

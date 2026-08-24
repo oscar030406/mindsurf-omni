@@ -221,28 +221,37 @@ def split_sentences(text: str) -> list[str]:
 
 
 def group_sentences(text: str, longest: int = TRAINED_LENGTH) -> list[str]:
-    """The text in pieces the model was trained on, splitting only when it must.
+    """Whole while it is short enough, one sentence per piece once it is not.
 
-    A transcript inside ``longest`` comes back as one piece, so the ordinary
-    dictation is polished exactly as it was before any of this existed. Past
-    that, consecutive sentences are grouped until adding the next would cross
-    the line -- and a single sentence longer than the line is left whole rather
-    than cut mid-clause, because a piece that starts halfway through a sentence
-    is worse input than a long one.
+    Two regimes, and each was measured on the only data that can speak for it.
+
+    **Inside ``longest``, the transcript goes whole.** Unchanged, and it is the
+    half the 986 held-out transcripts can answer: they run to a median of 43
+    characters, so almost every one of them is one piece either way, and scored
+    against their own exact labels, keeping them whole beats splitting them --
+    recall 0.3829 against 0.3571, precision 0.8401 against 0.8197.
+
+    **Past it, every sentence goes on its own.** That is the half only real long
+    dictation can answer, and on 230 of them, against 160: 712 filler words
+    removed instead of 557, 217 repetitions instead of 197, and 2006 deletions
+    with nothing to justify them instead of 2046. More of what should go, less
+    of what should not, and 18% less wall clock. Nothing traded.
+
+    The grouping that used to sit here -- consecutive sentences packed up to
+    ``longest`` -- was never measured. The one sweep of it scored the arms on
+    character error rate against a target built as "the transcript minus its
+    filler", so an arm that deleted less scored better by construction, and the
+    reading came out as "longer is better". Ungrouped, 73.6% of the text came
+    back unpolished: past roughly 400 tokens in one message this model ends the
+    sequence instead of answering (thinker.py:73), the FLOOR test throws the
+    decode away and keeps the input, and an arm that deletes nothing wins a
+    ruler that rewards not deleting.
+
+    A single sentence longer than ``longest`` is still left whole. A piece that
+    starts halfway through a sentence is worse input than a long one, and there
+    is no evidence either way on cutting one.
     """
-    if len(text) <= longest:
-        return [text]
-    pieces: list[str] = []
-    current = ""
-    for sentence in split_sentences(text):
-        if current and len(current) + len(sentence) > longest:
-            pieces.append(current)
-            current = sentence
-        else:
-            current += sentence
-    if current:
-        pieces.append(current)
-    return pieces
+    return [text] if len(text) <= longest else split_sentences(text)
 
 
 def drop_bridging_with_mark(text: str) -> str:
@@ -1229,10 +1238,12 @@ class Polisher:
     # Kept anyway, because ``group_longest`` is a knob now: turn it up and the
     # fixed number would start to bite for real.
     max_new_tokens: int = 256
-    # Longest group the transcript is cut into before the model sees it. A knob
-    # rather than a constant because it has never been answered: the one sweep
-    # we ran scored arms on how little they deleted, so it measured which
-    # setting deletes less, not which is better.
+    # The gate, not the group size: a transcript this long or shorter goes to the
+    # model whole, and a longer one goes one sentence at a time. It stayed a
+    # knob after the sweep because the sweep answered where the two regimes
+    # belong, not where the line between them sits -- the held-out transcripts
+    # top out at 170 characters and the long ones start at 160, so nothing here
+    # has ever been read on a transcript that lands near it.
     group_longest: int = TRAINED_LENGTH
     # The two ways a piece can come back unpolished, counted apart because they
     # are reached by different roads and only one of them was visible.
