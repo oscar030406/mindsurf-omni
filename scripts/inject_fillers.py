@@ -156,9 +156,7 @@ def inject(
             said_twice = repeat_of(clause, rng)
             if said_twice:
                 spoken.append(said_twice)
-                injections.append(
-                    {"kind": "repetition", "token": said_twice, "clause": index}
-                )
+                injections.append({"kind": "repetition", "token": said_twice, "clause": index})
         # Inside the clause as well as in front of it. The first round put every
         # filler at a boundary, and the polisher learned the boundary rather
         # than the word: measured on the held-out set, a filler at the front of

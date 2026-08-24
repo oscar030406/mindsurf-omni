@@ -18,7 +18,9 @@ ROOT = Path(__file__).resolve().parent.parent
 # Provided by MiniMind-O's checkout at run time, not by a package. Imported
 # inside functions so that importing our modules never requires them.
 # Our own scripts/, imported by path from a test rather than installed.
-VENDORED = {"model", "dataset", "trainer", "build_graded_targets"}
+# Our own scripts/, imported by path from a test rather than installed;
+# and vllm, which only ever runs inside the vLLM container image.
+VENDORED = {"model", "dataset", "trainer", "build_graded_targets", "inject_fillers", "vllm"}
 
 # Import name to distribution name, where they differ by more than punctuation.
 ALIASES = {"whisper": "openai-whisper", "yaml": "pyyaml", "sklearn": "scikit-learn"}
