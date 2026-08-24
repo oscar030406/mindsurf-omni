@@ -399,3 +399,42 @@ def test_every_measuring_script_states_whether_it_folds_numbers() -> None:
         "these call sites take whatever fold_numbers defaults to, and the number "
         f"they print does not say which ruler it is on: {silent}"
     )
+
+
+def test_our_edit_distance_agrees_with_jiwer() -> None:
+    """An outside oracle for the part of the metric we wrote ourselves.
+
+    jiwer is what HF `evaluate` and the Whisper evaluations use. It does none of
+    the normalisation above -- that is the part worth having and the part that
+    has to stay ours -- so the comparison runs on already-normalised strings and
+    checks only the distance. 3000 random pairs, agreement to 0.0.
+    """
+    jiwer = pytest.importorskip("jiwer")
+
+    rng = random.Random(20260824)
+    pool = "今天天气真好我们去公园散步吧他说这个方案有问题需要再讨论一下abc123"
+    worst = 0.0
+    for _ in range(300):
+        reference = "".join(rng.choice(pool) for _ in range(rng.randint(3, 30)))
+        hypothesis = list(reference)
+        for _ in range(rng.randint(0, 6)):
+            where = rng.randrange(len(hypothesis) + 1)
+            match rng.choice(("substitute", "delete", "insert")):
+                case "substitute" if hypothesis:
+                    hypothesis[min(where, len(hypothesis) - 1)] = rng.choice(pool)
+                case "delete" if hypothesis:
+                    hypothesis.pop(min(where, len(hypothesis) - 1))
+                case _:
+                    hypothesis.insert(where, rng.choice(pool))
+        hypothesis = "".join(hypothesis)
+        normalised = normalise_for_cer(reference)
+        if not normalised:
+            continue
+        worst = max(
+            worst,
+            abs(
+                character_error_rate(reference, hypothesis)
+                - jiwer.cer(normalised, normalise_for_cer(hypothesis))
+            ),
+        )
+    assert worst < 1e-9, f"和 jiwer 分开了 {worst:.2e}"

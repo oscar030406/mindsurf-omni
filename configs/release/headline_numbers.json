@@ -1214,6 +1214,8 @@
   },
   "dictation_punctuation_trust": {
     "_": [
+      "**这一格的尺子已被换掉，见 sklearn_standard**。原来是自造的：±2 字容差的断句召回，",
+      "随机基线读出 0.3851——容差窗口把它抬高了六倍，信号被压扁。",
       "§18 决定「照抄识别器的标点」，推翻条件写着：输入换成真人之后断句召回明显掉下来，",
       "照抄就不再是对的默认。那个 0.939 是在 TTS→ASR 合成回环上量的。这里量真人。"
     ],
@@ -1241,7 +1243,40 @@
     ],
     "source": [
       "scripts/measure_punctuation_trust.py"
-    ]
+    ],
+    "superseded_by": "dictation_punctuation_trust.sklearn_standard",
+    "sklearn_standard": {
+      "_": [
+        "换成这个任务的通用报法：逐 token 打标签（NONE / COMMA / PERIOD / QUESTION / EXCLAM），",
+        "sklearn classification_report 出每类 P/R/F1。IWSLT 的标点任务和 punctuator2 就是这么报的。",
+        "我们加的只有两样并且标明：一是对齐（识别器错 18% 的字，两边不共享 token 序列），",
+        "二是随机行（今晚差点把 0.5652 当好消息，所以每张表都带）。",
+        "语料 RAMC 600 段真人口述，参照是人工转写的标点。"
+      ],
+      "micro_f1": {
+        "地板（照抄转写的标点）": 0.4322,
+        "随机（同标点撒开）": 0.0589,
+        "天花板（目标对自己）": 1.0
+      },
+      "by_class_floor": {
+        "COMMA": {
+          "f1": 0.502,
+          "n": 3410
+        },
+        "PERIOD": {
+          "f1": 0.196,
+          "n": 700
+        },
+        "QUESTION": {
+          "f1": 0.416,
+          "n": 85
+        }
+      },
+      "verdict": "识别器的标点 micro-F1 0.4322，随机 0.0589，天花板 1.0。最差的是句末——PERIOD F1 只有 0.196，和 §37 量到的「长口述连读」是同一件事",
+      "source": [
+        "scripts/measure_punctuation_placement.py"
+      ]
+    }
   },
   "dictation_graded_constraint_refuted": {
     "_": [

@@ -65,7 +65,15 @@ evaluate = ["openai-whisper>=20231117", "mindsurf-omni[metrics]"]
 # Split out of `evaluate` because that set also drags openai-whisper: CI runs
 # the metric tests and has no business installing a 2 GB recogniser to do it.
 # Both are small and pure Python, so the set is cheap to depend on.
-metrics = ["zhconv>=1.4", "cn2an>=0.5"]
+# jiwer is the standard WER/CER implementation -- what HF `evaluate` and the
+# Whisper evaluations call. Ours is not replaced by it: the normalisation
+# above is the part that matters and jiwer does none of it. It is here as an
+# oracle, and test_metrics checks the two agree on 3000 random pairs (they do,
+# to 0.0), so the edit distance has an external check instead of only tests we
+# wrote ourselves. scikit-learn is for punctuation restoration, which the field
+# scores as per-class precision/recall/F1 over sequence labels --
+# classification_report is the reference implementation of that table.
+metrics = ["zhconv>=1.4", "cn2an>=0.5", "jiwer>=4.0", "scikit-learn>=1.5"]
 # The cascade path's recogniser. Separate from the runtime set because the
 # native path does not need it, and funasr pulls in torch.
 # pyyaml reads the checkpoint's own frontend settings, so that turning dither
