@@ -104,6 +104,56 @@ def graded_target(source: str, human: str) -> str:
     return "".join(out)
 
 
+def punctuation_only_target(source: str, human: str, drop: set[str] = frozenset()) -> str:
+    """The transcript's own words, punctuated the way the human punctuated them.
+
+    ``graded_target`` projects the human's *content* onto the transcript, and
+    that carries a cost this task does not need to pay: wherever the recogniser
+    got a word wrong the projection reads it as content to delete, so the target
+    teaches "remove what the recogniser misheard". At 18% CER on real
+    conversation the median target loses 6.4% of its characters that way, and
+    none of it is learnable -- the model cannot know which characters the
+    recogniser got wrong.
+
+    For teaching punctuation none of that is wanted. Keep every character the
+    transcript wrote, take out only the interjections in ``drop`` (which are
+    unambiguous and are what the rest of the pool teaches), and put the marks
+    where the human put them. Then the only thing that differs between source
+    and target is punctuation, which is the only thing being taught.
+    """
+    source_bare, _ = strip_marks(source)
+    human_bare, human_marks = strip_marks(forward_tn(human))
+    if not source_bare:
+        return ""
+
+    import difflib
+
+    # Where each human character landed in the transcript. Marks ride along on
+    # the characters that survived the recogniser; the rest are dropped rather
+    # than guessed onto a neighbour.
+    where: dict[int, int] = {}
+    matcher = difflib.SequenceMatcher(None, human_bare, source_bare, autojunk=False)
+    for block in matcher.get_matching_blocks():
+        for k in range(block.size):
+            where[block.a + k] = block.b + k
+
+    at: dict[int, list[str]] = {}
+    for index, mark in human_marks:
+        if index == 0:
+            continue
+        landed = where.get(index - 1)
+        if landed is not None:
+            at.setdefault(landed + 1, []).append(mark)
+
+    out: list[str] = []
+    for i, ch in enumerate(source_bare):
+        out.extend(at.get(i, ()))
+        if ch not in drop:
+            out.append(ch)
+    out.extend(at.get(len(source_bare), ()))
+    return "".join(out)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pairs", type=Path, required=True)

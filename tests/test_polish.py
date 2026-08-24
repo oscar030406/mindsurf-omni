@@ -480,3 +480,37 @@ def test_the_negation_rule_knows_which_characters_are_not_negating() -> None:
     assert negation_positions("非法") == {0}
     assert negation_positions("船沉没了") == set()
     assert negation_positions("没有钱") == {0}
+
+
+def test_the_punctuation_target_keeps_the_transcript_word_for_word() -> None:
+    """Projecting the human's content onto the transcript teaches the wrong thing.
+
+    Wherever the recogniser got a word wrong the projection reads it as content
+    to delete, so the target says "remove what was misheard" -- unlearnable, and
+    at 18% CER it costs the median target 6.4% of its characters. For teaching
+    punctuation none of that is wanted: keep every word the transcript wrote and
+    move only the marks.
+    """
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from build_graded_targets import punctuation_only_target
+
+    # 一个 survives even though the human said 一个 and the recogniser agreed;
+    # the projection dropped it because a neighbouring word differed.
+    source = "还有一个宗教信仰那那那社团了？"
+    human = "还有一个，宗教信仰那那那些社团了"
+    target = punctuation_only_target(source, human)
+    assert "一个" in target
+    marks = set("，。！？；：、")
+    assert "".join(c for c in target if c not in marks) == "还有一个宗教信仰那那那社团了"
+
+    # Numerals: the human writes them in Chinese and the recogniser's ITN in
+    # Arabic. Without cn2an the whole date reads as content to delete.
+    assert "2019年10月25日" in punctuation_only_target(
+        "采集2019年10月25日的音", "采集二零一九年十月二十五日的音"
+    )
+
+    # The interjections named in `drop` are the only content that leaves.
+    assert punctuation_only_target("嗯我们走吧", "嗯，我们走吧", frozenset("嗯")) == "，我们走吧"
