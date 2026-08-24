@@ -460,6 +460,21 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
                 frozen=False,
             )
         )
+        # The second arm, named separately because it is load-bearing and was
+        # invisible. On 230 real long dictations the two arms merged by veto
+        # remove 0.9902 of the unambiguous fillers and 0.8889 of the exact
+        # repetitions; the generator on its own removes 0.7781 and 0.5881. So a
+        # deployment that sets MINDSURF_POLISH and forgets the tagger loses a
+        # quarter of the fillers and a third of the repetitions, and used to
+        # report exactly the same component list as one that did not.
+        if settings.polish_tagger is not None:
+            components.append(
+                ComponentInfo(
+                    name="polish-tagger",
+                    sha256=checkpoint_digest(settings.polish_tagger),
+                    frozen=False,
+                )
+            )
     if settings.path == "cascade" and settings.tts:
         # Named, because CER measures whether the synthesiser said the reply.
         # A report that does not say which one spoke has not measured anything

@@ -480,3 +480,35 @@ def test_dictation_does_not_have_to_mount_the_weights_it_never_opens(tmp_path) -
     # The native path does load the codec, so it still has to be there.
     named, _ = zip(*cascade.paths.missing("native"), strict=True)
     assert named == ("MINDSURF_CODEC",)
+
+
+def test_the_second_polish_arm_is_named_because_it_is_load_bearing(tmp_path) -> None:
+    """Merged by veto the two arms remove 0.9902 of the unambiguous fillers on
+    230 real long dictations; the generator alone removes 0.7781. A deployment
+    that forgot the tagger used to report the same components as one that had
+    it, and ran a quarter worse without saying so."""
+    from mindsurf_omni.service.config import Settings, describe_components
+
+    for name in ("out", "tok", "asr"):
+        (tmp_path / name).mkdir()
+    (tmp_path / "polish.pth").write_bytes(b"x")
+    (tmp_path / "tagger.pt").write_bytes(b"y")
+    base = {
+        "MINDSURF_ENGINE": "cascade",
+        "MINDSURF_WEIGHTS": str(tmp_path / "out"),
+        "MINDSURF_TOKENIZER": str(tmp_path / "tok"),
+        "MINDSURF_ASR": str(tmp_path / "asr"),
+        "MINDSURF_POLISH": str(tmp_path / "polish.pth"),
+    }
+
+    one_arm = Settings.from_environment(base)
+    assert one_arm is not None
+    named = [c.name for c in describe_components(one_arm)]
+    assert "polisher" in named
+    assert "polish-tagger" not in named
+
+    two_arms = Settings.from_environment(
+        {**base, "MINDSURF_POLISH_TAGGER": str(tmp_path / "tagger.pt")}
+    )
+    assert two_arms is not None
+    assert "polish-tagger" in [c.name for c in describe_components(two_arms)]

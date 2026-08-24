@@ -1276,6 +1276,17 @@ class Polisher:
     tagger: Path | None = None
     tagger_backbone: Path | None = None
     tagger_threshold: float = 0.5
+    # How the two arms are combined: "veto", "union" or "intersection".
+    #
+    # veto was chosen when the failure in front of us was over-deletion --
+    # 这个模块和那个模块 coming back as 模块和模块. The reading that named it has
+    # since been replaced: against a detector calibrated on human labels this
+    # stage removes 29.2 unjustified characters per thousand where a human
+    # editor removes 37.99, and it leaves 203 of 915 unambiguous fillers and
+    # 152 of 369 exact repetitions in place. Under-deletion, on both axes at
+    # once, which is the opposite of what veto is for. A knob so the choice
+    # can be re-read on that ruler rather than inherited from the old one.
+    merge_mode: str = "veto"
     # Marks the decode may emit even though the transcript did not. Off by
     # default, which is the copy constraint exactly as it has always been.
     #
@@ -1476,7 +1487,7 @@ class Polisher:
                         {"source": piece, "polished": written},
                         {"source": piece, "polished": tagged[piece]},
                     ],
-                    "veto",
+                    self.merge_mode,
                 )
             else:
                 # `merge` ends with the same rule. Without this branch a
