@@ -412,6 +412,12 @@ def main() -> None:
     parser.add_argument("--minimind-root", type=Path)
     parser.add_argument("--tokenizer", type=Path, default=_ROOT / "assets/tokenizer")
     parser.add_argument("--device", default="cuda")
+    parser.add_argument("--tagger", type=Path)
+    parser.add_argument("--tagger-backbone", type=Path)
+    parser.add_argument("--tagger-threshold", type=float, default=0.4)
+    parser.add_argument(
+        "--merge", default="veto", help="veto / union / intersection，两条臂怎么合"
+    )
     parser.add_argument("--report", type=Path)
     parser.add_argument(
         "--dump", type=Path, help="每档把 source/polished 写一份，供否定词等安全判据读"
@@ -458,6 +464,10 @@ def main() -> None:
             tokenizer_dir=args.tokenizer,
             minimind_root=args.minimind_root,
             device=args.device,
+            tagger=args.tagger,
+            tagger_backbone=args.tagger_backbone,
+            tagger_threshold=args.tagger_threshold,
+            merge_mode=args.merge,
         )
         polisher.load()
         report["arms"] = {}
