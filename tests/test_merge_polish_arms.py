@@ -653,3 +653,35 @@ def test_tidy_does_not_eat_the_space_between_two_pieces() -> None:
     from mindsurf_omni.service.polish import tidy
 
     assert tidy(" I rolled it back.") == " I rolled it back."
+
+
+def test_a_single_character_entry_does_not_reach_inside_a_longer_word() -> None:
+    """血糖上升，反正相对平缓 came back as 血糖上升对平缓.
+
+    The arm ate ，反正相对 and the give-back handed 对 back on its own, out of
+    the middle of 相对. Found when 对 joined the list; 那 inside 刹那 and 就
+    inside 成就 are the same shape and had simply never been hit. jieba's
+    segmentation is already the boundary whole_words uses for deletions, and
+    this is that boundary on the other side of the ledger.
+    """
+    from mindsurf_omni.service.polish import merge
+
+    for source, polished in (
+        ("血糖上升，反正相对平缓", "血糖上升平缓"),
+        ("等了刹那我们就走了", "等了我们就走了"),
+        ("他的成就很大", "他的很大"),
+    ):
+        arm = {"source": source, "polished": polished}
+        assert merge([dict(arm), dict(arm)], "veto") == polished
+
+
+def test_an_entry_the_segmenter_splits_is_still_given_back() -> None:
+    """Boundary alignment, not one-token-exactly.
+
+    jieba cuts 我觉得 into 我 and 觉得, so requiring a single token would refuse
+    the longest entry on the list and quietly turn the give-back off for it.
+    """
+    from mindsurf_omni.service.polish import merge
+
+    arm = {"source": "就是我觉得这样挺好", "polished": "这样挺好"}
+    assert merge([dict(arm), dict(arm)], "veto") == "我觉得这样挺好"

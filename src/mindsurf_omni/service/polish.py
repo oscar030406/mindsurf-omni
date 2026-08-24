@@ -329,6 +329,7 @@ DOUBLE_DUTY = (
     "那些",
     "那",
     "就",
+    "对",
 )
 
 
@@ -838,6 +839,31 @@ def negations_kept(source: str, drop: set[int]) -> set[int]:
     return give_back
 
 
+def _word_edges(source: str) -> set[int]:
+    """Offsets where the segmenter starts a word.
+
+    ``whole_words`` already treats jieba's segmentation as the boundary for
+    deletions; this is the same boundary on the other side of the ledger. Without
+    it a single-character entry reaches inside a longer word: 血糖上升，反正相对
+    平缓 came back as 血糖上升对平缓, because 对 sitting inside 相对 was handed
+    back on its own. 那 in 刹那 and 就 in 成就 are the same shape and had simply
+    never been hit.
+
+    Edges rather than whole tokens, because a list entry is not always one of
+    them: jieba cuts 我觉得 into 我 and 觉得, and requiring a single token would
+    refuse the longest entry on the list. What is being ruled out is a span the
+    segmenter cuts *across* -- the same test the hotword door uses.
+    """
+    import jieba
+
+    edges = {0}
+    cursor = 0
+    for word in jieba.cut(source):
+        cursor += len(word)
+        edges.add(cursor)
+    return edges
+
+
 def content_words(source: str, drop: set[int]) -> set[int]:
     """The part of ``drop`` that spells a double-duty word standing in a content slot.
 
@@ -885,6 +911,7 @@ def content_words(source: str, drop: set[int]) -> set[int]:
     """
     give_back: set[int] = set()
     handled: set[int] = set()
+    edges = _word_edges(source)
     for word in DOUBLE_DUTY:
         width = len(word)
         start = source.find(word)
@@ -904,6 +931,8 @@ def content_words(source: str, drop: set[int]) -> set[int]:
                 and end not in drop
                 and source[end : end + width] != word
                 and source[max(0, start - width) : start] != word
+                and start in edges
+                and end in edges
                 and not _a_fragment_of_it_survives_to_the_left(source, drop, word, start)
                 and _clause_has_other_survivors(source, drop, start, end)
             ):

@@ -1414,5 +1414,130 @@
       "scripts/train_polish.py",
       "scripts/measure_polish_service.py"
     ]
+  },
+  "dictation_english_unmeasured": {
+    "_": [
+      "中文那套覆盖检查搬到英文上。结论不是「英文该训什么」，是「英文到今天仍然没被量过」。"
+    ],
+    "disflqa_dev_composition": {
+      "n_pairs": 1000,
+      "n_spans": 1192,
+      "rows": [
+        {
+          "类别": "改口（说了一半重来）",
+          "n": 964,
+          "share": 0.809,
+          "chance": 0.9
+        },
+        {
+          "类别": "填充音夹着内容",
+          "n": 194,
+          "share": 0.163,
+          "chance": 0.078
+        },
+        {
+          "类别": "填充音",
+          "n": 27,
+          "share": 0.023,
+          "chance": 0.013
+        },
+        {
+          "类别": "重复",
+          "n": 7,
+          "share": 0.006,
+          "chance": 0.009
+        }
+      ],
+      "we_can_touch": 0.029
+    },
+    "two_findings": [
+      "重复在这批英文里等于不存在（0.6%，低于 0.9% 的随机底）——而中文里它是一半的活。",
+      "「改口」那 80.9% 的随机同判率是 90%，说明那一类是「其余全部」的兜底桶，不是一条正面发现。"
+    ],
+    "why_this_cannot_size_english": [
+      "**Disfl-QA 按构造就是改口型语料**：标注员往 SQuAD 问句里专门插改口，不是英文口语的自然分布。",
+      "所以它不能回答「英文侧还有多少可做」，只能回答「这批里我们能碰 2.9%」。",
+      "我们报的英文数（规则 265/300、模型 38/300）是在自己注入的数据上量的，",
+      "而唯一的外部英文集恰好是我们已明确不做的那一类。**英文侧仍然是未测的。**"
+    ],
+    "what_would_close_it": "自然英文口语的不流利标注——Switchboard / Penn Treebank III 那条线。不是许可问题，是 LDC 付费语料拿不到",
+    "source": [
+      "scripts/measure_english_disfluency_shape.py"
+    ]
+  },
+  "dictation_over_deletion_by_word": {
+    "_": [
+      "起服务读真人对话读出来的：嗯，对，因为灯光问题 → 因为灯光问题。说话人在表示同意，同意没了。",
+      "然后按定 那/就 的同一把外部尺子（CS2W 人工标注）把候选词全量过一遍，",
+      "再量我们自己在 400 段真人口述上的删除率，两边并排。"
+    ],
+    "rates": [
+      {
+        "word": "对",
+        "ours": 0.425,
+        "human": 0.156,
+        "ratio": 2.7,
+        "protected_before": false
+      },
+      {
+        "word": "其实",
+        "ours": 0.206,
+        "human": 0.077,
+        "ratio": 2.7,
+        "protected_before": true
+      },
+      {
+        "word": "我觉得",
+        "ours": 0.159,
+        "human": 0.053,
+        "ratio": 3.0,
+        "protected_before": true
+      },
+      {
+        "word": "然后",
+        "ours": 0.218,
+        "human": 0.203,
+        "ratio": 1.1,
+        "protected_before": true
+      },
+      {
+        "word": "那个",
+        "ours": 0.135,
+        "human": 0.357,
+        "ratio": 0.4,
+        "protected_before": true
+      },
+      {
+        "word": "就",
+        "ours": 0.117,
+        "human": 0.239,
+        "ratio": 0.5,
+        "protected_before": true
+      },
+      {
+        "word": "嗯",
+        "ours": 0.994,
+        "human": 0.986,
+        "ratio": 1.0,
+        "protected_before": false
+      }
+    ],
+    "checked_and_left_off": "好 0.011 对 0.074、行 0.000 对 0.034、是吧 0.000 对 0.480——这一级基本不碰它们，保护买不到东西",
+    "action": "对 加进 DOUBLE_DUTY。人删它 0.156，和名单里的 这个 一模一样",
+    "but_it_is_nearly_inert": [
+      "加完删除率只从 0.425 走到 0.399——82 次里还回来 5 次。",
+      "content_words 的第四个条件要求「这个从句里还剩别的东西」，而多删的 对 绝大多数是单独成句的，",
+      "那恰恰是 对 意义最强的位置（表示同意）。"
+    ],
+    "known_gap_no_evidence": [
+      "要不要为 对 豁免那第四个条件，CS2W 回答不了：单独成句不到 10 次，",
+      "后面跟标点也不到 25 次，两个口径都不够。**不靠读几条就改判据。**",
+      "规模是知道的：400 段里 193 个 对，我们删 77，按人的率该删约 30——多删约 47 个，每段 0.12 个。",
+      "要关掉这一条需要口述语域的真人标注，那正是 §32 写下的同一个重开条件。"
+    ],
+    "source": [
+      "scripts/measure_content_words.py",
+      "artifacts/polish_train/pairs_cs2w.jsonl"
+    ]
   }
 }
