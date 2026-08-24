@@ -51,24 +51,33 @@ class Paths:
     codec: Path
     speaker: Path
 
-    def missing(self) -> list[tuple[str, Path]]:
+    def missing(self, path: PathName = "native") -> list[tuple[str, Path]]:
         """The variables whose path is not there, each with the path it pointed at.
 
         Both, because the two halves go to different readers: the operator
         needs the path, and the message that reaches an unauthenticated caller
         must not carry it. See ``Settings.verify``.
+
+        **Scoped to the engine, because it used to demand all five of them.**
+        The dictation product runs the cascade and never opens the codec: grep
+        says ``paths.codec`` is read in exactly one place, ``_build_native``.
+        ``paths.speaker`` is read in none at all. So a deployment that
+        transcribes and polishes had to mount Mimi and CAMPPlus, gigabytes it
+        would never touch, or the service answered 503 at /health with a list
+        of weights it did not need. Found by starting the service and trying to
+        dictate into it.
         """
-        return [
-            (name, value)
-            for name, value in (
-                ("MINDSURF_WEIGHTS", self.weights),
-                ("MINDSURF_TOKENIZER", self.tokenizer),
-                ("MINDSURF_ASR", self.audio_encoder),
-                ("MINDSURF_CODEC", self.codec),
-                ("MINDSURF_SPEAKER", self.speaker),
-            )
-            if not value.exists()
+        wanted = [
+            ("MINDSURF_WEIGHTS", self.weights),
+            ("MINDSURF_TOKENIZER", self.tokenizer),
+            ("MINDSURF_ASR", self.audio_encoder),
         ]
+        if path == "native":
+            # The one reader: load_omni takes codec_dir. Nothing reads speaker,
+            # so nothing asks for it -- the variable stays, because a
+            # deployment that sets it is not wrong, only unread.
+            wanted.append(("MINDSURF_CODEC", self.codec))
+        return [(name, value) for name, value in wanted if not value.exists()]
 
 
 def _spoken_language(value: str) -> str:
@@ -266,7 +275,7 @@ class Settings:
                 f"MINDSURF_ASR_MODEL={self.asr_model!r} names no recogniser this build has; "
                 f"it has {', '.join(self.RECOGNISERS)}"
             )
-        missing = self.paths.missing()
+        missing = self.paths.missing(self.path)
         # A checkpoint that was named and is not there used to pass this check:
         # assembly only asked whether the variable was set. The service then
         # started, reported ready, and raised FileNotFoundError on the first
