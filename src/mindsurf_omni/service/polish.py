@@ -1219,6 +1219,16 @@ class Polisher:
     # So this opens the one door and no other: content still comes from the
     # transcript, and the set below is closed and small.
     punctuation_insertable: bool = False
+    # How much to add to a mark's logit before the argmax. Teacher-forced on
+    # 101 positions where a human put a mark, the model ranks that mark in its
+    # top three every single time and first only 20.8% of the time -- median
+    # rank two, median probability 0.142. It learnt where marks go and greedy
+    # decoding throws that away, because a mark loses to the next transcript
+    # character by a small margin and argmax only keeps the winner. This is the
+    # same knob the streaming-translation work calls a decode bias; it changes
+    # no weights and leaves the copy constraint alone, because content still
+    # comes only from the transcript.
+    punctuation_bias: float = 0.0
     _model: Any = None
     _queue: Any = field(default_factory=list)
     _queue_lock: Any = None
@@ -1570,6 +1580,17 @@ class Polisher:
                     keep = torch.tensor(sorted(ahead), device=logits.device, dtype=torch.long)
                     masked = torch.full_like(logits[row], float("-inf"))
                     masked[keep] = logits[row][keep]
+                    if insertable and self.punctuation_bias:
+                        # Only the marks the transcript did not already offer:
+                        # a mark that is the next character is a copy, and
+                        # tilting the scale for it would be tilting it for
+                        # content that happens to be punctuation.
+                        added = insertable - window
+                        if added:
+                            lift = torch.tensor(
+                                sorted(added), device=logits.device, dtype=torch.long
+                            )
+                            masked[lift] += self.punctuation_bias
                     chosen = int(masked.argmax())
                     if chosen == stop:
                         done[row] = True

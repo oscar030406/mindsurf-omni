@@ -1631,5 +1631,83 @@
     "source": [
       "scripts/measure_polish_service.py"
     ]
+  },
+  "dictation_piece_length": {
+    "_": [
+      "长口述今天就在切：group_sentences 按句边界把连续句子攒到 TRAINED_LENGTH=160 字一片，",
+      "每片只看自己。代码里给这条规则写的理由是「单独一句话同样在分布之外」，所以要攒。",
+      "**去数了一下训练池，这条理由是错的。**"
+    ],
+    "training_pool_shape": {
+      "pairs_v3（造 sft_polish6 的那批）": {
+        "median_chars": 24,
+        "p90_chars": 127,
+        "exactly_one_sentence": 0.61
+      },
+      "pairs_cs2w（占并集 67%）": {
+        "median_chars": 18,
+        "p90_chars": 35,
+        "max_chars": 98,
+        "exactly_one_sentence": 0.996
+      },
+      "并集": {
+        "exactly_one_sentence": 0.869
+      }
+    },
+    "where_160_came_from": "造池子时丢掉了超过 160 字的文本，所以 160 是池子的**上限**，不是它的典型长度。TRAINED_LENGTH 这个名字读起来像后者",
+    "verdict": [
+      "训练样本中位 18–24 字、一句话；单句占并集 86.9%（造部署模型那批也占 61.0%）。",
+      "所以喂 160 字一片本身就远在分布之外，**按句切不是更远离训练分布，是更接近**。",
+      "这同时是一条现存缺陷的假设：长口述被攒成 160 字一片，可能现在就在受损。"
+    ],
+    "still_measuring": "同一批 986 条上按句 vs 现在的分组，输出差多少、判据差多少——跑着"
+  },
+  "dictation_greedy_hid_the_punctuation": {
+    "_": [
+      "分级约束开着、数据换了三轮、只喂标点数据也训了，五条臂全部零插入。",
+      "在宣布「模型不肯插标点」之前，去看最后一层的分布。"
+    ],
+    "teacher_forced_rank_of_the_human_mark": {
+      "positions": 101,
+      "rank_1": 0.208,
+      "in_top_3": 1.0,
+      "median_rank": 1,
+      "median_probability": 0.1418
+    },
+    "verdict": [
+      "**模型学会了标点该在哪——每一次都排进前三——但贪心解码 79% 的时候选了内容字。**",
+      "标点以微弱差距输给下一个字，而 argmax 只要冠军。",
+      "卡住的不是模型、不是数据、不是约束，是解码策略。"
+    ],
+    "fix": [
+      "给「转写没提供的那些标点」的 logit 加一个偏置，就是流式翻译那条线叫 decode bias 的东西",
+      "（Arivazhagan IWSLT 2020 的 β）。一个数，不动权重，复制约束一个字不改——",
+      "内容仍然只能来自转写，偏置只作用在「标点 vs 下一个字」这一个选择上。"
+    ],
+    "careful": "只给转写没提供的标点加。转写里本来就有的标点是复制，给它加权等于给恰好是标点的内容加权"
+  },
+  "dictation_long_holdout": {
+    "_": [
+      "986 条那个留出集里只有 16 条超过 160 字——1.6%。所以「切片会不会丢上下文」这个问题，",
+      "之前每一次都是在几乎不触发切片的数据上量的。",
+      "语料里本来就有长的：RAMC 的同说话人连续发言最长 785 秒，超过 40 秒的中位 237 字。",
+      "把切片上限设成 40 秒是我自己的选择，不是数据的限制。"
+    ],
+    "pairs": 1200,
+    "val": 230,
+    "chars": {
+      "median": 254,
+      "p90": 654,
+      "max": 4277
+    },
+    "over_160_chars": {
+      "count": 1125,
+      "share": 0.938,
+      "old_holdout_share": 0.016
+    },
+    "how_built": "同说话人连续发言 ≥40 秒；转写走产品自己的分段（>90 秒按 VAD 静音口切），目标用「只搬标点」构造",
+    "source": [
+      "scripts/build_graded_targets.py"
+    ]
   }
 }
