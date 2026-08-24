@@ -107,8 +107,10 @@ def main() -> None:
             {
                 **rows[0],
                 "polished": text,
-                "cer_before": character_error_rate(rows[0]["target"], rows[0]["source"]),
-                "cer_after": character_error_rate(rows[0]["target"], text),
+                "cer_before": character_error_rate(
+                    rows[0]["target"], rows[0]["source"], fold_numbers=True
+                ),
+                "cer_after": character_error_rate(rows[0]["target"], text, fold_numbers=True),
                 "content_kept": content_kept(rows[0]["target"], text),
                 "invented": invented(rows[0]["target"], text),
                 "filler_arrived": arrived,

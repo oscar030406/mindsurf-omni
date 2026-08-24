@@ -225,7 +225,10 @@ def punctuation_agreement(rows: list[dict[str, Any]], reference_key: str) -> dic
 
 
 def arm(rows: list[dict[str, Any]], reference_key: str, name: str) -> dict[str, Any]:
-    rates = [character_error_rate(row[reference_key], row["asr_transcript"]) for row in rows]
+    rates = [
+        character_error_rate(row[reference_key], row["asr_transcript"], fold_numbers=False)
+        for row in rows
+    ]
     folded = [
         character_error_rate(row[reference_key], row["asr_transcript"], fold_numbers=True)
         for row in rows

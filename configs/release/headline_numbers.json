@@ -1011,5 +1011,208 @@
       "src/mindsurf_omni/service/polish.py",
       "scripts/measure_content_words.py"
     ]
+  },
+  "dictation_on_cpu": {
+    "_": [
+      "定位里写着「本地、小、快」，但在这之前每一个延迟数都是 4090 上量的。",
+      "本地对一台笔记本意味着 CPU，所以这里量的是 CPU。",
+      "机器：i7-12700K，8 线程，CUDA_VISIBLE_DEVICES 置空。",
+      "**限制**：桌面级 x86。ARM / Apple silicon / 笔记本低功耗 CPU 都没量。"
+    ],
+    "asr": {
+      "corpus": "AISHELL-1 test 40 条，共 173.4 秒，中位 3.98 秒",
+      "n": 39,
+      "p50_ms": 148.9,
+      "p95_ms": 204.6,
+      "rtf": 0.036,
+      "_": "第一条含加载，179 ms，之后稳定"
+    },
+    "polish": {
+      "corpus": "configs/polish_probes_zh_v1.jsonl 40 条，中位 11 字，14 条被改动",
+      "n": 39,
+      "p50_ms": 149.6,
+      "p95_ms": 198.4,
+      "max_ms": 229.6,
+      "_": [
+        "先在 AISHELL 的转写上量，p50 读出 0.0 ms——那批是朗读语音，没有可删的东西，",
+        "worth_polishing 这道便宜的前置判断把模型整个跳过了。这是设计如此，",
+        "但它量的不是解码。改用探针句重量，每条都带东西可删。"
+      ]
+    },
+    "verdict": "识别 RTF 0.036，润色一句约 150 ms。一台桌面 CPU 上整条链是亚秒级，端侧成立",
+    "source": [
+      "scripts/measure_cpu_latency.py",
+      "scripts/measure_cpu_polish_latency.py"
+    ]
+  },
+  "dictation_what_to_train_next": {
+    "_": [
+      "那/就 那一条是手工找到的。这一块是把同一个问题问完整：",
+      "拿 CS2W 的 6501 对真人标注，看人到底在删什么，我们的注入器又在造什么。"
+    ],
+    "what_humans_delete": {
+      "pairs": 6501,
+      "spans": 7283,
+      "重复": 3411,
+      "重复_share": 0.468,
+      "词表够得着": 2596,
+      "词表够得着_share": 0.356,
+      "其他多字": 1137,
+      "其他多字_share": 0.156,
+      "单字非重复": 139,
+      "单字非重复_share": 0.019,
+      "verdict": "词表不是洞。再往词表里加词最多够得着那 1.9%——重复才是一半的活"
+    },
+    "repetition_shape": {
+      "_": "我们注入的重复和真人说的重复不是同一种东西",
+      "ours_pairs_v3": {
+        "n": 553,
+        "one_char": 0.1,
+        "two_char": 0.88,
+        "three_plus": 0.02,
+        "gapped": 0.33,
+        "most_common": [
+          "作为",
+          "然后",
+          "这个",
+          "怎么",
+          "就是"
+        ]
+      },
+      "human_cs2w": {
+        "n": 3807,
+        "one_char": 0.58,
+        "two_char": 0.31,
+        "three_plus": 0.11,
+        "gapped": 0.49,
+        "most_common": [
+          "我",
+          "你",
+          "他",
+          "就",
+          "就是"
+        ]
+      },
+      "verdict": [
+        "真人重复 58% 是单字（我我、你你），我们的训练数据里只占 10%；",
+        "真人 11% 是三字以上的短语（他演的他演的），我们几乎没有（2%）；",
+        "真人一半的重复中间隔着东西（但是最后，但是最后），我们只有三分之一。",
+        "这解释了为什么重复清除卡在 0.603——模型学的是另一种形状。",
+        "和 那/就 是同一个机制：注入器造不出来的，模型没有理由学会。"
+      ]
+    },
+    "recommendation": {
+      "train": "重复。改注入器的形状去对齐 CS2W 的分布（单字 58% / 三字以上 11% / 隔开 49%），然后重训",
+      "do_not_train": "中文口语词精度。九轮九配置，数据量曲线跑满，内容保留四倍数据只动 0.0035",
+      "do_not_rule": "机械删相邻重复：自造集精确 0.985，CS2W 真人 0.136（DECISIONS §27）",
+      "open_question": "英文侧同样的检查还没做（Disfl-QA），日韩粤没有标注语料"
+    },
+    "source": [
+      "scripts/measure_repetition_shape.py",
+      "artifacts/polish_train/pairs_cs2w.jsonl",
+      "artifacts/polish_train/pairs_v3.jsonl"
+    ]
+  },
+  "dictation_asr_protocol": {
+    "_": [
+      "我们报了十二天的「AISHELL-1 test 6.14%，上游自报 2.96%」，那一倍是我们自己造的。",
+      "ITN 把「三零一」写成 301，而 AISHELL 参考是中文数字——每个数字都记成错。",
+      "同一批 400 条，同一个模型，只动这一个开关："
+    ],
+    "aishell1_test_400": [
+      {
+        "arm": "现在部署的（ITN 开，无 VAD，zh）",
+        "cer": 0.0638,
+        "p50_ms": 56.0
+      },
+      {
+        "arm": "关掉 ITN",
+        "cer": 0.0278,
+        "p50_ms": 56.5
+      },
+      {
+        "arm": "关 ITN + 接 FSMN-VAD",
+        "cer": 0.0267,
+        "p50_ms": 67.3
+      },
+      {
+        "arm": "关 ITN + language=auto",
+        "cer": 0.0281,
+        "p50_ms": 56.9
+      }
+    ],
+    "verdict": "同口径下我们是 0.0278，上游 0.0296——一直是持平的。识别器不是瓶颈，是我们量错了",
+    "itn_stays_on_in_production": "ITN 是产品要的（用户要 301 不要三零一）。改的是判据不是产品：对标必须折数字，或者评测臂关 ITN",
+    "real_speech_barely_moved": "真人自发语料上折数字只从 0.1900 到 0.1830——自发语音里数字本来就少。被坑的只有 AISHELL 那个数",
+    "source": [
+      "scripts/measure_asr_protocol.py"
+    ]
+  },
+  "dictation_swap_recogniser": {
+    "_": [
+      "60 段真人单人口述（MagicData-RAMC，18.5 分钟，中位 17.5 秒），4090 fp16，字错率折数字。",
+      "Paraformer 是同一个 FunASR，换过去几乎零集成成本，所以它是这条路上唯一不用先付集成代价就能量的候选。"
+    ],
+    "rows": [
+      {
+        "system": "Whisper small",
+        "params_m": 240.6,
+        "cer": 0.3045,
+        "p50_ms": 398,
+        "peak_mb": 1403
+      },
+      {
+        "system": "SenseVoice-Small（我们的）",
+        "params_m": 234.0,
+        "cer": 0.183,
+        "p50_ms": 55,
+        "peak_mb": 1044
+      },
+      {
+        "system": "Paraformer-large + ct-punc",
+        "params_m": 220.1,
+        "cer": 0.1717,
+        "p50_ms": 566,
+        "peak_mb": 1980
+      }
+    ],
+    "verdict": [
+      "Paraformer 买到 0.011 的字错率，代价是十倍延迟、两倍显存、丢掉 en/yue/ja/ko 四种语言，",
+      "还要外挂 ct-punc（而 ct-punc 上一轮量过会让正常听写变差）。换识别器这条路关掉。"
+    ],
+    "source": [
+      "scripts/measure_recogniser_bench.py"
+    ]
+  },
+  "dictation_punctuation_trust": {
+    "_": [
+      "§18 决定「照抄识别器的标点」，推翻条件写着：输入换成真人之后断句召回明显掉下来，",
+      "照抄就不再是对的默认。那个 0.939 是在 TTS→ASR 合成回环上量的。这里量真人。"
+    ],
+    "clips": 60,
+    "boundary_recall_real": 0.5652,
+    "chance_same_density": 0.3851,
+    "ruler_ceiling_self": 1.0,
+    "marks_per_100_chars": {
+      "human": 7.07,
+      "sensevoice": 10.8
+    },
+    "longest_run_without_a_mark": {
+      "human": 24.1,
+      "sensevoice": 19.4,
+      "sensevoice_worst": 37
+    },
+    "verdict": [
+      "比同密度随机撒点只高 0.18，天花板是 1.0——真人语音上识别器的标点位置只抓到可用信号的 29%，",
+      "而且它打的标点比人还多 60%。§18 的推翻条件成立，「照抄」不再是无争议的默认。"
+    ],
+    "what_this_does_not_say": [
+      "合成上那个 0.939 当年没有随机对照，所以两个数不能直接比，这里只能读绝对值。",
+      "MagicData 的标点是一位标注员的约定，人与人的一致率没量过——密度差 60% 有一部分可能是约定不同。",
+      "但随机对照挡住了最坏的解释：它确实只是勉强跟得上这一位标注员的断句。"
+    ],
+    "source": [
+      "scripts/measure_punctuation_trust.py"
+    ]
   }
 }

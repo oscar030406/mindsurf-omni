@@ -372,3 +372,30 @@ def test_omitting_the_effect_of_interest_changes_nothing() -> None:
     rng = random.Random(3)
     deltas = [rng.gauss(0.02, 0.01) for _ in range(200)]
     assert compare_paired("m", deltas) == compare_paired("m", deltas, effect_of_interest=None)
+
+
+def test_every_measuring_script_states_whether_it_folds_numbers() -> None:
+    """The default is False, so a call site that says nothing silently gets it.
+
+    That is not hypothetical: the recogniser bench and ``measure_asr`` both read
+    0.0638 on AISHELL-1 test where the folded number is 0.0278, because the
+    recogniser writes 301 and the reference says 三零一. Twice now the same
+    defect has been found by reading one call site at a time. The choice is real
+    -- some arms genuinely want the unfolded number -- so this does not force a
+    value, it forces the script to say which one it means.
+    """
+    import re
+    from pathlib import Path
+
+    scripts = Path(__file__).resolve().parent.parent / "scripts"
+    call = re.compile(r"character_error_rate\((?:[^()]|\([^()]*\))*\)", re.S)
+    silent = []
+    for path in sorted(scripts.glob("*.py")):
+        for match in call.finditer(path.read_text(encoding="utf-8")):
+            if "fold_numbers" not in match.group(0):
+                line = path.read_text(encoding="utf-8")[: match.start()].count("\n") + 1
+                silent.append(f"{path.name}:{line}")
+    assert silent == [], (
+        "these call sites take whatever fold_numbers defaults to, and the number "
+        f"they print does not say which ruler it is on: {silent}"
+    )
