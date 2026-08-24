@@ -19,4 +19,20 @@ services:
       # image carries neither package: see the 'tts' and 'tts-local' extras in
       # pyproject.
       MINDSURF_TTS: "${MINDSURF_TTS:-}"
+      # The dictation product: transcribe, then delete spoken filler. Unset,
+      # the service transcribes and stops there. The polisher is built from
+      # MiniMind's own model class, so a checkout has to be reachable too --
+      # mount it and point MINIMIND_O_ROOT at the mount.
+      MINDSURF_POLISH: "${MINDSURF_POLISH:-}"
+      MINDSURF_POLISH_TAGGER: "${MINDSURF_POLISH_TAGGER:-}"
+      MINDSURF_POLISH_TAGGER_BACKBONE: "${MINDSURF_POLISH_TAGGER_BACKBONE:-}"
+      MINDSURF_POLISH_TAGGER_THRESHOLD: "${MINDSURF_POLISH_TAGGER_THRESHOLD:-0.4}"
+      MINIMIND_O_ROOT: "${MINIMIND_O_ROOT:-}"
+      # What this deployment is spoken in. Reaches the recogniser only for
+      # audio too short for its own detector to be worth trusting.
+      MINDSURF_ASR_LANGUAGE: "${MINDSURF_ASR_LANGUAGE:-zh}"
+      # "sensevoice" or "paraformer-streaming". The streaming one writes while
+      # the speaker is still talking, at a higher error rate, so it drives the
+      # display and the final text still comes from the whole-buffer pass.
+      MINDSURF_ASR_MODEL: "${MINDSURF_ASR_MODEL:-sensevoice}"
     restart: unless-stopped
