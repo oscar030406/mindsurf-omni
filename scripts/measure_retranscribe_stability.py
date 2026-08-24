@@ -48,6 +48,15 @@ def read_wav(path: Path) -> tuple[bytes, int]:
         return handle.readframes(handle.getnframes()), handle.getframerate()
 
 
+# A pass that moves only a comma is not the same event as one that changes a
+# word, and a reader does not react to them the same way. Both get counted.
+MARKS = "，。！？；：、,.!?;: " + chr(10)
+
+
+def bare(text: str) -> str:
+    return "".join(c for c in text if c not in MARKS)
+
+
 def common_prefix(before: str, after: str) -> int:
     limit = min(len(before), len(after))
     index = 0
@@ -86,6 +95,9 @@ async def one_clip(recogniser, pcm: bytes, rate: int, step: float, start: float)
                 # Where the rewrite began, counted back from the end of what was
                 # on screen. Small means only the tail moved.
                 "from_end": len(before) - keep,
+                # The same question with punctuation taken out, so a display
+                # that only re-punctuates is not booked as one that rewrites.
+                "rewritten_words": len(bare(before)) - common_prefix(bare(before), bare(after)),
                 "was": len(before),
                 "now": len(after),
             }
@@ -102,8 +114,17 @@ async def one_clip(recogniser, pcm: bytes, rate: int, step: float, start: float)
         # finally showed. 0.0 is append-only.
         "edit_overhead": rewritten / len(final) if final else 0.0,
         "rewrite_depth": [move["from_end"] for move in moves],
+        "rewrite_depth_words": [move["rewritten_words"] for move in moves],
         "pass_ms_median": statistics.median(costs),
         "pass_ms_max": max(costs),
+        # Cost against how much audio the pass had to read. Re-transcribing the
+        # whole buffer gets more expensive the longer somebody talks, and how
+        # fast it grows decides whether the whole buffer can be re-read at all
+        # or only a window of it.
+        "pass_cost": [
+            {"buffer_s": round(mark, 2), "ms": round(cost, 1)}
+            for mark, cost in zip(marks, costs, strict=True)
+        ],
         "final": final,
     }
 
@@ -133,6 +154,7 @@ async def main() -> None:
 
     report = {}
     depths: list[int] = []
+    word_depths: list[int] = []
     print(f"\n{'音频':>22}{'秒':>7}{'趟数':>6}{'最终字':>8}{'改写字':>8}{'EO':>8}{'一趟ms':>9}")
     for clip in clips:
         pcm, rate = read_wav(clip)
@@ -142,6 +164,7 @@ async def main() -> None:
         got = await one_clip(recogniser, pcm, rate, args.step, args.start)
         report[clip.name] = got
         depths.extend(got["rewrite_depth"])
+        word_depths.extend(got["rewrite_depth_words"])
         print(
             f"{clip.name:>22}{got['seconds']:>7.1f}{got['passes']:>6}"
             f"{got['final_chars']:>8}{got['rewritten_chars']:>8}"
@@ -156,12 +179,24 @@ async def main() -> None:
             index = min(int(share * (len(ordered) - 1)), len(ordered) - 1)
             print(f"  p{int(share * 100):<3} {ordered[index]:>4} 字")
         print(f"  一个字都没改的重跑：{sum(1 for d in depths if d == 0)}/{len(depths)}")
+        bare_sorted = sorted(word_depths)
+        print("  只看正文（标点不算）：")
+        for share in (0.5, 0.9, 0.95, 1.0):
+            index = min(int(share * (len(bare_sorted) - 1)), len(bare_sorted) - 1)
+            print(f"    p{int(share * 100):<3} {bare_sorted[index]:>4} 字")
+        no_move = sum(1 for d in word_depths if d == 0)
+        print(f"    正文一个字没动的重跑：{no_move}/{len(word_depths)}")
         report["_depth"] = {
             "n": len(depths),
             "p50": ordered[len(ordered) // 2],
             "p90": ordered[min(int(0.9 * (len(ordered) - 1)), len(ordered) - 1)],
             "max": ordered[-1],
             "unchanged": sum(1 for d in depths if d == 0),
+            "words_p50": sorted(word_depths)[len(word_depths) // 2],
+            "words_p90": sorted(word_depths)[
+                min(int(0.9 * (len(word_depths) - 1)), len(word_depths) - 1)
+            ],
+            "words_unchanged": sum(1 for d in word_depths if d == 0),
         }
 
     if args.report:

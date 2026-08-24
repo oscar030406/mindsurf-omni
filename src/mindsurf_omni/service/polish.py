@@ -1206,16 +1206,28 @@ class Polisher:
     # Off until an arm measures it: the failure it fixes is visible (the first
     # word of a sentence disappearing) but the fix has not been scored yet.
     protect_head: bool = False
-    # A ceiling, not a budget: the budget is the piece itself. Under the copy
-    # constraint the output is a subsequence of the input, so it can never be
-    # longer than the input, and a fixed 256 was silently a length limit on the
-    # whole stage. Measured on 230 real long dictations: 256 tokens is about
-    # 305 characters, and a piece past that can never finish copying, so it
-    # fails the FLOOR test and the whole piece comes back unpolished. At the
-    # trained group length that is one piece in 639; ungrouped it was 55% of
-    # the text, which is what made the first sweep of TRAINED_LENGTH read as
-    # "longer is better" -- the long arm had most of its text never polished,
-    # and the ruler of the day rewarded not deleting.
+    # A ceiling, not a budget: under the copy constraint the output is a
+    # subsequence of the input, so the input's own length is the real bound and
+    # a fixed number is a length limit on the stage wearing a safety cap's
+    # clothes. ``decode_budget`` keeps it as a floor.
+    #
+    # **Straightening it out changed nothing that could be measured**, and that
+    # is the finding rather than the fix. The ungrouped arm of the sweep was run
+    # once on each side of this change, same data, greedy decode: deleted 2111
+    # against 2111, pieces failing FLOOR 108 against 108, over the same 32971
+    # characters, both recalls equal to the last digit. So the 256 was never
+    # what stopped those decodes.
+    #
+    # What stops them is the model ending the sequence on its own, and
+    # thinker.py:73 has that measured on this checkpoint family one message at
+    # a time: 395 tokens empty 0/8, 435 2/8, 472 3/8, 774 6/8, 977 8/8. SFT ran
+    # at --max_seq_len 512. The pieces this stage loses fit that shape and not
+    # the cap's -- ungrouped, the ones that came back empty averaged 1460
+    # characters, about 1226 tokens, three times past where thinker.py's own
+    # guard sits.
+    #
+    # Kept anyway, because ``group_longest`` is a knob now: turn it up and the
+    # fixed number would start to bite for real.
     max_new_tokens: int = 256
     # Longest group the transcript is cut into before the model sees it. A knob
     # rather than a constant because it has never been answered: the one sweep

@@ -544,13 +544,12 @@ def test_insertions_are_counted_where_they_happen() -> None:
 def test_the_decode_gets_room_for_the_piece_it_was_given() -> None:
     """A fixed step count is a length limit on the stage, not a safety cap.
 
-    Measured on 230 real long dictations: 256 tokens is about 305 characters,
-    and a piece past that can never finish copying itself, so it fails the
-    FLOOR test and comes back unpolished. At the trained group length that is
-    one piece in 639. Ungrouped it was 55% of the text -- which is what made
-    the first sweep of TRAINED_LENGTH read as "longer is better", because the
-    long arm had most of its text never polished and the ruler of the day
-    rewarded not deleting.
+    Straightening it out changed nothing measurable -- the ungrouped arm was run
+    on each side of the change and came back identical to the last digit, so the
+    256 was never what stopped those decodes. What stops them is the model
+    ending the sequence itself past roughly 400 tokens in one message
+    (thinker.py:73). This is here because ``group_longest`` is a knob now, and
+    turned up the fixed number would begin to bite for real.
     """
     from mindsurf_omni.service.polish import INSERT_MARGIN, decode_budget
 
