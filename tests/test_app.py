@@ -1609,3 +1609,92 @@ def test_a_streaming_recogniser_writes_while_the_speaker_is_still_talking() -> N
         ws.send_json({"type": "input_audio_buffer.clear"})
         ws.send_json({"type": "session.clear"})
         assert ws.receive_json()["type"] == "session.created"
+
+
+class DictatingEngine(FakeEngine):
+    """A dictation deployment: it polishes, and its realtime turn hands that back.
+
+    ``respond`` answers something the copy constraint could never produce, so a
+    test that reads it has read the conversing path by mistake.
+    """
+
+    realtime = "dictate"
+
+    async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "嗯，那个会议改到下午三点了", "zh"
+
+    async def polish(self, transcript: str) -> str:
+        return "会议改到下午三点了"
+
+    async def respond(  # type: ignore[override]
+        self,
+        pcm: bytes,
+        sample_rate: int,
+        settings: GenerationSettings,
+        history: list[dict[str, str]] | None = None,
+    ) -> AsyncIterator[SpeechChunk]:
+        yield SpeechChunk(pcm=b"\x00\x01" * 8, text="好的，已经帮你记下了。", is_final=True)
+
+
+class BrokenPolishEngine(DictatingEngine):
+    async def polish(self, transcript: str) -> str:
+        raise RuntimeError("the tagger head is not there")
+
+
+def _dictate(socket) -> dict[str, str]:
+    assert socket.receive_json()["type"] == "session.created"
+    socket.send_json(
+        {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00\x01" * 100).decode()}
+    )
+    socket.send_json({"type": "input_audio_buffer.commit"})
+    seen: dict[str, str] = {}
+    for _ in range(6):
+        event = socket.receive_json()
+        if event["type"].endswith("transcription.completed"):
+            seen["transcript"] = event["transcript"]
+        elif event["type"] == "response.text.delta":
+            seen["text"] = event["delta"]
+        elif event["type"] == "response.done":
+            break
+    return seen
+
+
+def test_a_dictation_turn_hands_back_the_transcript_not_an_answer_to_it() -> None:
+    """The realtime path always answered the speaker, and polish was reachable
+    only over POST /v1/audio/transcriptions -- so a deployment could stream a
+    live preview of a dictation and had nowhere to send the finished one.
+
+    Found by dictating into the running service: the preview came back word for
+    word and the socket then replied with a sentence the user had not said.
+    """
+    with TestClient(create_app(DictatingEngine())).websocket_connect("/v1/realtime") as socket:
+        seen = _dictate(socket)
+
+    assert seen["transcript"] == "嗯，那个会议改到下午三点了"
+    assert seen["text"] == "会议改到下午三点了"
+
+
+def test_the_conversing_default_is_untouched(client: TestClient) -> None:
+    """The other half of the switch, driven by an engine that does not set it."""
+    with client.websocket_connect("/v1/realtime") as socket:
+        assert socket.receive_json()["type"] == "session.created"
+        socket.send_json(
+            {
+                "type": "input_audio_buffer.append",
+                "audio": base64.b64encode(b"\x00\x01" * 100).decode(),
+            }
+        )
+        socket.send_json({"type": "input_audio_buffer.commit"})
+        kinds = [socket.receive_json()["type"] for _ in range(3)]
+
+    assert kinds == ["response.created", "response.text.delta", "response.audio.delta"]
+
+
+def test_a_polisher_that_raises_does_not_take_the_dictation_with_it() -> None:
+    """Filler left in is a worse transcript. No transcript is a lost dictation."""
+    engine = BrokenPolishEngine()
+    with TestClient(create_app(engine)).websocket_connect("/v1/realtime") as socket:
+        seen = _dictate(socket)
+
+    assert seen["transcript"] == "嗯，那个会议改到下午三点了"
+    assert seen["text"] == "嗯，那个会议改到下午三点了"

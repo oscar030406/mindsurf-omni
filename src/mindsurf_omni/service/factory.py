@@ -97,6 +97,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     engine = CascadeEngine(
         polisher=_build_polisher(settings),
         recogniser=recogniser,
+        realtime=settings.realtime,
         transcriber=transcribe,
         generator=generate,  # type: ignore[arg-type]
         synthesiser=synthesise,

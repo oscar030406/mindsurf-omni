@@ -268,6 +268,65 @@ def refuse_envelope(request: Request) -> None:
         )
 
 
+async def dictate(
+    websocket: WebSocket,
+    engine: SpeechEngine,
+    pcm: bytes,
+    texts: list[str],
+    heard: list[str],
+) -> None:
+    """A realtime turn that ends in what the speaker said, not in an answer to it.
+
+    The same two events a conversing turn sends, carrying different things:
+    ``...transcription.completed`` is the recogniser's transcript, and
+    ``response.text.delta`` is that transcript with its filler removed. No new
+    event type, because a client that already renders a reply renders this.
+
+    Reachable only under MINDSURF_REALTIME=dictate. Before it, the realtime path
+    always answered the speaker and the polish stage was reachable only over
+    POST /v1/audio/transcriptions -- so a deployment could stream a live preview
+    of somebody dictating and then had nowhere to send the finished dictation.
+    Found by starting the service and dictating into it: the preview came back
+    word for word and then the socket replied "好的，明天的会议将在下午3点开始",
+    which is a sentence the copy constraint cannot produce and the user did not
+    say.
+
+    A polisher that raises does not take the transcript with it. That failure
+    mode is already answered on the HTTP endpoint and for the same reason: the
+    filler staying in is a worse transcript, and losing the transcript is a lost
+    dictation.
+    """
+    transcript, _ = await engine.transcribe(pcm, INPUT_SAMPLE_RATE)
+    if transcript:
+        heard.append(transcript)
+        await websocket.send_json(
+            {
+                "type": "conversation.item.input_audio_transcription.completed",
+                "transcript": transcript,
+            }
+        )
+    if not transcript:
+        return
+
+    written = transcript
+    polish = getattr(engine, "polish", None)
+    if polish is not None:
+        try:
+            polished = await polish(transcript)
+        except Exception as error:  # noqa: BLE001
+            logging.getLogger("mindsurf").warning(
+                json.dumps(
+                    {"event": "polish_failed", "error": type(error).__name__},
+                    ensure_ascii=False,
+                )
+            )
+        else:
+            if polished:
+                written = polished
+    texts.append(written)
+    await websocket.send_json({"type": "response.text.delta", "delta": written})
+
+
 def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     """Build the app, taking the engine from the environment when not given.
 
@@ -987,6 +1046,9 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                     said: list[str] = []
 
                     async def stream(pcm: bytes, texts: list[str], heard: list[str]) -> None:
+                        if getattr(engine, "realtime", "converse") == "dictate":
+                            await dictate(websocket, engine, pcm, texts, heard)
+                            return
                         async for chunk in engine.respond(
                             pcm, INPUT_SAMPLE_RATE, settings, history=conversation.messages()
                         ):
