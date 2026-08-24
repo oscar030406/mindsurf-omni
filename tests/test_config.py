@@ -406,3 +406,35 @@ def test_the_second_arm_defaults_to_the_swept_threshold_not_the_first_one_tried(
 
     assert settings is not None
     assert settings.polish_tagger_threshold == 0.4
+
+
+def test_the_preview_interval_is_refused_now_rather_than_at_the_first_frame() -> None:
+    """A float() that raises inside a websocket handler is a deployment that
+    looked configured and was not."""
+    from mindsurf_omni.service.config import ConfigurationError, Settings
+
+    base = {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": "/w"}
+
+    with pytest.raises(ConfigurationError, match="MINDSURF_PREVIEW_SECONDS"):
+        Settings.from_environment({**base, "MINDSURF_PREVIEW_SECONDS": "一秒"})
+    with pytest.raises(ConfigurationError, match="turns the preview off"):
+        Settings.from_environment({**base, "MINDSURF_PREVIEW_SECONDS": "-1"})
+
+    assert Settings.from_environment(base).preview_seconds == 1.0
+    off = Settings.from_environment({**base, "MINDSURF_PREVIEW_SECONDS": "0"})
+    assert off is not None and off.preview_seconds == 0
+
+
+def test_turning_the_preview_off_means_the_recogniser_offers_none() -> None:
+    """The websocket asks the recogniser to open a turn and takes None as "no
+    preview". A setting that only changed a number would leave the card paying
+    for readings nobody wanted."""
+    from mindsurf_omni.service.asr import SenseVoiceRecogniser
+
+    quiet = SenseVoiceRecogniser(model_dir=Path("x"), preview_seconds=0)
+    assert quiet.open(16_000) is None
+
+    talking = SenseVoiceRecogniser(model_dir=Path("x"), preview_seconds=2.5)
+    live = talking.open(16_000)
+    assert live is not None
+    assert live.every == 2.5

@@ -153,6 +153,134 @@ def said_enough(text: str, seconds: float, language: str = "zh") -> bool:
     return len(spoken_body(text, language)) / seconds >= 0.5
 
 
+# How much new audio the preview waits for before reading the buffer again.
+# One second: driven end to end it is the shortest interval whose display came
+# out equal to the release transcript on all four dictations, and it puts the
+# first word up at 2.5 s for 0.057 of real time. Half a second is not stable at
+# any warmup, and two seconds costs another 1.5 s before anything appears.
+PREVIEW_SECONDS = 1.0
+
+
+def agreed_prefix(before: str, after: str) -> str:
+    """The head two readings of the same audio both wrote.
+
+    LocalAgreement-2, out of Whisper-Streaming (Machacek et al., 2023): a
+    whole-segment recogniser run repeatedly over a growing buffer produces a
+    stable head and an unsettled tail, and the head is exactly what both of the
+    last two runs say. Emitting only that makes "additions only" true by
+    construction instead of true by luck.
+    """
+    limit = min(len(before), len(after))
+    at = 0
+    while at < limit and before[at] == after[at]:
+        at += 1
+    return after[:at]
+
+
+@dataclass(slots=True)
+class Rereading:
+    """What a whole-segment recogniser can show while somebody is still talking.
+
+    The streaming recogniser writes as it goes and never revises, so a chunk it
+    hears wrong stays wrong until release: on real speech it reads 0.2796
+    against SenseVoice's 0.1094 on the same clips. This gets the 0.1094 instead,
+    by reading the whole buffer again every second and showing what settled.
+
+    The reason it works here is a property of the register rather than of the
+    model. Re-read every 1, 2, 3 and 5 seconds over real dictation, **not one
+    body character ever changed** -- 28/28, 51/52, 19/20 and 12/12 passes moved
+    nothing but punctuation. The same test on two-way conversation churns badly
+    (p90 of 50 characters rewritten), which is what a second speaker, overlap
+    and repair do to a transcript. Somebody dictating a note is neither.
+
+    Driven end to end the way the websocket drives it -- 100 ms appends, a
+    one-second interval, the 1.5 s warmup below -- over four real dictations:
+
+    ==========  ==========  =====  ==================================
+    interval    first word  RTF    equal to the release transcript
+    ==========  ==========  =====  ==================================
+    0.5 s       2.0 s       0.107  **0 of 4**, 14 to 42 characters off
+    1.0 s       2.5 s       0.057  4 of 4, exactly
+    1.5 s       3.0 s       0.042  4 of 4, exactly
+    2.0 s       4.0 s       0.030  4 of 4, exactly
+    ==========  ==========  =====  ==================================
+
+    Paraformer-online, the streaming model this replaces, costs 0.323 of real
+    time and puts the first word up at 0.6 s. So the preview is roughly six
+    times cheaper and two seconds slower to start, and what it shows is the
+    transcript the turn will actually keep rather than a second, worse reading
+    of the same audio.
+
+    Two caveats the numbers carry.
+
+    **The half-second interval is broken and stays broken with the warmup.**
+    Two readings a half-second apart agree on an unsettled tail, so agreement
+    stops meaning settled. One second is the shortest interval that held.
+
+    **This is a register, not a guarantee.** The same run over eight
+    conversation turns matched the release transcript 0 times out of 8, 44 to
+    126 characters off. And the dictation recordings run to fourteen seconds,
+    which is all this repository has -- a minute-long dictation puts more text
+    on screen to disturb and has not been read. A preview that drifts is not a
+    correctness problem, because the transcript the turn keeps arrives at
+    commit in ``conversation.item.input_audio_transcription.completed`` and
+    replaces it; it is a flicker problem, and it is the reason this is a
+    setting rather than a constant.
+    """
+
+    recogniser: Any
+    rate: int = RECOGNISER_RATE
+    every: float = PREVIEW_SECONDS
+    # Audio in hand before the first reading. Agreement between two readings
+    # says they are stable, not that they are right, and two readings of half
+    # a second of speech agree on the same wrong words: driven end to end at a
+    # half-second interval, all four dictations showed text the release
+    # transcript did not contain. At the trained-for length none of them did.
+    # SHORT_AUDIO_SECONDS is the same line this file already draws for the
+    # language slot, and for the same reason.
+    warmup: float = SHORT_AUDIO_SECONDS
+    # A bytearray, because this grows by one append message at a time and
+    # rebinding bytes each time is quadratic in the length of the turn.
+    _held: bytearray = field(default_factory=bytearray)
+    _fresh: int = 0
+    _last: str = ""
+    _shown: str = ""
+
+    async def feed(self, pcm: bytes) -> str:
+        """Whatever settled since the last call, or nothing."""
+        self._held.extend(pcm)
+        self._fresh += len(pcm)
+        if len(self._held) < self.warmup * self.rate * 2:
+            return ""
+        if self._fresh < self.every * self.rate * 2:
+            return ""
+        self._fresh = 0
+        return self._advance(await self._read())
+
+    async def finish(self) -> str:
+        """The rest of it, if the last reading still contains what was shown."""
+        if not self._held:
+            return ""
+        text = await self._read()
+        return text[len(self._shown) :] if text.startswith(self._shown) else ""
+
+    async def _read(self) -> str:
+        text, _ = await self.recogniser.transcribe(bytes(self._held), self.rate)
+        return text or ""
+
+    def _advance(self, text: str) -> str:
+        settled = agreed_prefix(self._last, text)
+        self._last = text
+        # Two readings agreeing on something that contradicts what is already on
+        # the reader's screen. There is no way to unsay it under an
+        # additions-only contract, so hold and let them catch up; the transcript
+        # the turn actually keeps comes from the commit branch either way.
+        if not settled.startswith(self._shown):
+            return ""
+        out = settled[len(self._shown) :]
+        self._shown = settled
+        return out
+
 @dataclass(slots=True)
 class SenseVoiceRecogniser:
     """The product's recogniser. Not eligible to score the product."""
@@ -184,6 +312,10 @@ class SenseVoiceRecogniser:
     # lineage with the model under test.
     lineage: str = "sensevoice-small"
     eligible_as_judge: bool = False
+    # Seconds of new audio between preview readings. 0 serves no preview at
+    # all, for a deployment that would rather keep the card: at one second
+    # the preview costs about 0.075 of real time on top of the turn itself.
+    preview_seconds: float = PREVIEW_SECONDS
 
     def __post_init__(self) -> None:
         self._passes = threading.Semaphore(self.in_flight)
@@ -264,6 +396,18 @@ class SenseVoiceRecogniser:
                 error.__traceback__ = None
                 torch.cuda.empty_cache()
             raise
+
+    def open(self, sample_rate: int = RECOGNISER_RATE) -> Rereading | None:
+        """A live preview of this turn, read again as it grows.
+
+        Whole-segment models were taken as having nothing to stream, and that is
+        true of the model and false of the product: reading the buffer again is
+        a preview, and on dictation it is a more accurate and cheaper one than
+        the streaming recogniser this replaced. See ``Rereading``.
+        """
+        if not self.preview_seconds:
+            return None
+        return Rereading(recogniser=self, rate=sample_rate, every=self.preview_seconds)
 
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         # On a thread: funasr is synchronous and holds the GIL for the length

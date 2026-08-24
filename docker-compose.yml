@@ -35,4 +35,7 @@ services:
       # the speaker is still talking, at a higher error rate, so it drives the
       # display and the final text still comes from the whole-buffer pass.
       MINDSURF_ASR_MODEL: "${MINDSURF_ASR_MODEL:-sensevoice}"
+      # Seconds between preview readings while somebody is still talking.
+      # 0 shows nothing until they release the key.
+      MINDSURF_PREVIEW_SECONDS: "${MINDSURF_PREVIEW_SECONDS:-1.0}"
     restart: unless-stopped

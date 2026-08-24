@@ -576,3 +576,111 @@ def test_a_rate_the_streaming_recogniser_was_not_built_for_is_resampled() -> Non
 
     assert sum(seen) == 16_000, f"resampled to {sum(seen)} samples, wanted 16000"
     assert seen[0] == STREAMING_STRIDE
+
+
+class _Reader:
+    """A recogniser that answers with whatever the test queued, in order."""
+
+    def __init__(self, answers: list[str]) -> None:
+        self.answers = list(answers)
+        self.read = 0
+
+    async def transcribe(self, pcm: bytes, rate: int) -> tuple[str, str | None]:
+        self.read += 1
+        return self.answers.pop(0) if self.answers else "", "zh"
+
+
+def _second(rate: int = 16_000) -> bytes:
+    return bytes(rate * 2)
+
+
+async def test_the_preview_shows_only_what_two_readings_agree_on() -> None:
+    """LocalAgreement-2: the head both of the last two readings wrote.
+
+    A whole-segment recogniser run over a growing buffer has a settled head and
+    an unsettled tail, and emitting the tail is what makes a display flicker.
+    """
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(["今天下午", "今天下午开会", "今天下午开会推迟"])
+    live = Rereading(recogniser=reader, every=1.0, warmup=0)
+
+    # Nothing to agree with yet.
+    assert await live.feed(_second()) == ""
+    # 今天下午 is in both readings; 开会 is not settled.
+    assert await live.feed(_second()) == "今天下午"
+    assert await live.feed(_second()) == "开会"
+
+
+async def test_the_preview_holds_rather_than_unsaying_what_it_showed() -> None:
+    """The gate has to be driven by a reading that contradicts the screen.
+
+    Both readings agreeing on something that starts differently is the only case
+    where an additions-only contract has nothing honest to send, and a test that
+    never reaches it is testing the happy path twice.
+    """
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(["今天下午", "今天下午开会", "明天上午开会", "明天上午开会"])
+    live = Rereading(recogniser=reader, every=1.0, warmup=0)
+
+    await live.feed(_second())
+    assert await live.feed(_second()) == "今天下午"
+    # Now the recogniser changes its mind about the head. Two readings agree on
+    # 明天上午开会, which is not an extension of 今天下午.
+    assert await live.feed(_second()) == ""
+    assert await live.feed(_second()) == ""
+
+
+async def test_the_preview_will_not_read_half_a_second_of_speech() -> None:
+    """Two readings agreeing says they are stable, not that they are right.
+
+    Driven end to end at a half-second interval, all four dictation recordings
+    showed text the release transcript did not contain -- two readings of too
+    little audio agree on the same wrong words. At 1.0 s three of four came out
+    exactly equal to the release transcript and at 2.0 s all four did.
+    """
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(["猜的", "猜的", "今天下午", "今天下午开会"])
+    live = Rereading(recogniser=reader, every=0.25, warmup=1.5)
+
+    # Four quarter-seconds is one second: past the interval, short of the warmup.
+    for _ in range(4):
+        assert await live.feed(_second()[: 16_000 // 2]) == ""
+    assert reader.read == 0
+
+    # Past 1.5 s now, and the readings start.
+    await live.feed(_second())
+    assert reader.read == 1
+
+
+async def test_the_preview_waits_for_enough_new_audio() -> None:
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(["一", "一二", "一二三"])
+    live = Rereading(recogniser=reader, every=2.0, warmup=0)
+
+    assert await live.feed(_second()) == ""
+    assert reader.read == 0
+    await live.feed(_second())
+    assert reader.read == 1
+
+
+async def test_the_preview_gives_up_the_rest_at_release() -> None:
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(["今天下午", "今天下午开会", "今天下午开会推迟了"])
+    live = Rereading(recogniser=reader, every=1.0, warmup=0)
+    await live.feed(_second())
+    await live.feed(_second())
+
+    assert await live.finish() == "开会推迟了"
+
+
+def test_agreement_is_the_common_head_and_nothing_else() -> None:
+    from mindsurf_omni.service.asr import agreed_prefix
+
+    assert agreed_prefix("今天下午", "今天下午开会") == "今天下午"
+    assert agreed_prefix("", "今天") == ""
+    assert agreed_prefix("明天", "今天") == ""

@@ -54,6 +54,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
             model_dir=settings.paths.audio_encoder,
             device=settings.device,
             language=settings.asr_language,
+            preview_seconds=settings.preview_seconds,
         )
     # The packages, not the weights. Loading stays deferred to the first request
     # so a container that cannot reach its weights still starts and explains

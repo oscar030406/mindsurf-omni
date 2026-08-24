@@ -129,6 +129,52 @@ async def one_clip(recogniser, pcm: bytes, rate: int, step: float, start: float)
     }
 
 
+APPEND_MS = 100  # what a browser sends per message
+
+
+async def live_clip(recogniser, pcm: bytes, rate: int, every: float) -> dict:
+    """The Rereading preview, fed in append-sized pieces, timed end to end.
+
+    The parts were read separately -- churn on one side, cost per pass on the
+    other -- and what a caller actually sees is the assembly: when the first
+    word lands, and how much of the card a turn spends on the preview.
+    """
+    live = recogniser.open(rate)
+    step = int(rate * APPEND_MS / 1000) * 2
+    shown, first, deltas, spent = "", None, 0, 0.0
+    played = 0.0
+    for at in range(0, len(pcm), step):
+        played += APPEND_MS / 1000
+        began = time.perf_counter()
+        said = await live.feed(pcm[at : at + step])
+        spent += time.perf_counter() - began
+        if said:
+            deltas += 1
+            shown += said
+            if first is None:
+                first = played
+    began = time.perf_counter()
+    tail = await live.finish()
+    spent += time.perf_counter() - began
+    shown += tail
+    whole, _ = await recogniser.transcribe(pcm, rate)
+    seconds = len(pcm) / (rate * 2)
+    return {
+        "seconds": seconds,
+        "first_word_s": first,
+        "deltas": deltas,
+        "preview_seconds_of_gpu": spent,
+        "rtf": spent / seconds if seconds else 0.0,
+        "shown": shown,
+        "whole": whole,
+        # The preview is additions-only by contract. This is the check that
+        # it held: everything shown has to be a prefix of what the same
+        # recogniser says about the whole buffer at release.
+        "shown_is_a_prefix": (whole or "").startswith(shown),
+        "missing_tail": len(whole or "") - len(shown),
+    }
+
+
 async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--audio", required=True, type=Path, help="wav 目录")
@@ -139,6 +185,7 @@ async def main() -> None:
     parser.add_argument("--start", type=float, default=1.0, help="第一次重跑在第几秒")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--live", action="store_true", help="驱动组装好的预览，量首字和实时率")
     args = parser.parse_args()
 
     from mindsurf_omni.service.asr import SenseVoiceRecogniser
@@ -152,6 +199,36 @@ async def main() -> None:
     if not clips:
         raise SystemExit(f"{args.audio} 里没有 wav")
     print(f"{len(clips)} 段，每 {args.step} 秒重跑一次", flush=True)
+
+    if args.live:
+        recogniser.preview_seconds = args.step
+        report = {}
+        print(
+            f"\n{'音频':>22}{'秒':>7}{'首字秒':>9}{'发了几次':>10}"
+            f"{'预览占GPU秒':>13}{'实时率':>9}{'只追加':>8}{'尾巴差':>8}"
+        )
+        for clip in clips:
+            pcm, rate = read_wav(clip)
+            if rate != RATE:
+                pcm, rate = resample(pcm, rate, RATE), RATE
+            got = await live_clip(recogniser, pcm, rate, args.step)
+            report[clip.name] = got
+            first = got["first_word_s"]
+            print(
+                f"{clip.name:>22}{got['seconds']:>7.1f}"
+                f"{(first if first is not None else float('nan')):>9.1f}"
+                f"{got['deltas']:>10}{got['preview_seconds_of_gpu']:>13.2f}"
+                f"{got['rtf']:>9.3f}{str(got['shown_is_a_prefix']):>8}"
+                f"{got['missing_tail']:>8}",
+                flush=True,
+            )
+        if args.report:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(
+                json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8"
+            )
+            print(f"\n写到 {args.report}")
+        return
 
     report = {}
     depths: list[int] = []

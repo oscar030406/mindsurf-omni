@@ -89,6 +89,27 @@ def _spoken_language(value: str) -> str:
     return declared
 
 
+def _preview_seconds(value: str) -> float:
+    """How often the preview reads the buffer again, refused now if it is junk.
+
+    Same rule as the language: a float() that raises at the first websocket
+    frame is a deployment that looked configured and was not. Negative is
+    refused rather than clamped, because somebody who wrote -1 meant something
+    and it was not "every zero seconds".
+    """
+    try:
+        seconds = float(value.strip())
+    except ValueError:
+        raise ConfigurationError(
+            f"MINDSURF_PREVIEW_SECONDS={value!r} is not a number of seconds"
+        ) from None
+    if seconds < 0:
+        raise ConfigurationError(
+            f"MINDSURF_PREVIEW_SECONDS={value!r} is negative; 0 turns the preview off"
+        )
+    return seconds
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     path: PathName
@@ -147,6 +168,16 @@ class Settings:
     # too short for its own detector -- see asr.SHORT_AUDIO_SECONDS. "auto"
     # restores the behaviour this had before 2026-08-22 at every length.
     asr_language: str = "zh"
+    # Seconds of new speech between preview readings, while the speaker is
+    # still talking. 0 shows nothing until release. Only the whole-segment
+    # recogniser reads this -- the streaming one writes as it decodes and has
+    # no interval to set.
+    #
+    # Every value from 1 to 5 was read over real dictation and none of them
+    # moved a body character, so this trades the card against how soon the
+    # first word lands: the preview costs roughly 0.075 of real time at one
+    # second and half that at two, and the first word needs two readings.
+    preview_seconds: float = 1.0
     # Which recogniser this deployment serves. "sensevoice" is the one the
     # polisher was trained against and the one the released numbers describe;
     # "paraformer-streaming" writes while the speaker is still talking, which
@@ -214,6 +245,9 @@ class Settings:
             ),
             polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.4")),
             asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
+            preview_seconds=_preview_seconds(
+                source.get("MINDSURF_PREVIEW_SECONDS", "1.0")
+            ),
             asr_model=source.get("MINDSURF_ASR_MODEL", "sensevoice").strip().lower(),
             hotwords=tuple(
                 word.strip()
