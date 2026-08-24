@@ -44,12 +44,12 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
+from mindsurf_omni.service.polish import build_prompt  # noqa: E402
+from mindsurf_omni.service.thinker import ThinkerGenerator  # noqa: E402
 from scripts.measure_group_length import (  # noqa: E402
     filler_occurrences,
     repetition_occurrences,
 )
-from mindsurf_omni.service.polish import build_prompt  # noqa: E402
-from mindsurf_omni.service.thinker import ThinkerGenerator  # noqa: E402
 
 
 def wanted(source: str) -> list[tuple[int, int, str]]:
