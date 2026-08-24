@@ -111,3 +111,64 @@ def test_the_repetition_share_is_a_knob() -> None:
 
     assert count(0.0) == 0
     assert count(1 / 3) < count(1.0)
+
+
+def test_repeats_are_shaped_the_way_people_make_them() -> None:
+    """The injector used to make one shape, and the model learned one shape.
+
+    Measured against CS2W's 3807 human repetitions, ours were 88% two
+    characters and always adjacent where people are 58% one character and half
+    of them separated by something. And the model is worst at exactly what it
+    saw least: recall by shape is 0.755 adjacent against 0.426 gapped, with
+    single-character repeats the low point of both (0.662 and 0.343).
+
+    So the distribution is the thing under test, not any one draw.
+    """
+    import collections
+    import random
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from inject_fillers import GAP_FILLERS, repeat_of
+
+    rng = random.Random(20260824)
+    # Characters chosen not to collide with the gap vocabulary, or stripping
+    # the gap back off would eat the head and read the shape wrong. That
+    # mistake was made once while writing this.
+    clause = "明天下午开会讨论预算"
+    sizes: collections.Counter[int] = collections.Counter()
+    gapped = 0
+    made = 0
+    for _ in range(4000):
+        out = repeat_of(clause, rng)
+        if not out:
+            continue
+        made += 1
+        core = out
+        for gap in sorted(GAP_FILLERS, key=len, reverse=True):
+            if core.endswith(gap):
+                core = core[: -len(gap)]
+                gapped += 1
+                break
+        sizes[min(len(core), 3)] += 1
+
+    assert made > 3_000
+    assert abs(sizes[1] / made - 0.58) < 0.04, "单字该占 58%"
+    assert abs(sizes[2] / made - 0.31) < 0.04, "双字该占 31%"
+    assert abs(sizes[3] / made - 0.11) < 0.04, "三字以上该占 11%"
+    assert abs(gapped / made - 0.49) < 0.05, "中间隔开的该占 49%"
+
+
+def test_a_repeat_never_comes_back_as_punctuation_alone() -> None:
+    """A clause that is nothing but marks has no head to repeat."""
+    import random
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from inject_fillers import repeat_of
+
+    rng = random.Random(1)
+    assert repeat_of("，。！", rng) == ""
+    assert repeat_of("", rng) == ""

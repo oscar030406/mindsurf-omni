@@ -78,6 +78,48 @@ def word_boundaries(clause: str) -> list[int]:
     return positions
 
 
+# What a repeated span looks like when a person does it, measured against
+# CS2W's human annotation over 3807 real repetitions:
+#
+#            单字   двух字   三字以上   中间隔开
+#   真人      58%     31%      11%       49%
+#   我们      10%     88%       2%       33%
+#
+# The injector produced the second row because it copied the clause's first two
+# characters and pasted them back adjacent -- one shape, always. And the model
+# is worst at exactly the shape it saw least: repetition recall by shape is
+# 0.755 adjacent against 0.426 gapped, and single-character repeats are the low
+# point of both (0.662 and 0.343). Three measurements, one cause.
+REPEAT_LENGTHS = ((1, 0.58), (2, 0.31), (3, 0.07), (4, 0.03), (5, 0.01))
+# Half of what people repeat has something in between -- a breath, a comma, a
+# filler -- and 但是最后，但是最后 is as ordinary as 我我.
+REPEAT_GAPPED = 0.49
+GAP_FILLERS = ("嗯", "呃", "那个", "就是", "，")
+
+
+def repeat_of(clause: str, rng: random.Random) -> str:
+    """A repetition shaped the way a speaker makes one, or nothing.
+
+    Returned as the text to insert *before* the clause, gap included, so the
+    caller stays a one-liner and the shape lives here.
+    """
+    body = clause.rstrip("，。！？；：、")
+    if not body:
+        return ""
+    wanted = rng.choices(
+        [size for size, _ in REPEAT_LENGTHS], [share for _, share in REPEAT_LENGTHS]
+    )[0]
+    size = min(wanted, len(body))
+    if size < 1:
+        return ""
+    head = body[:size]
+    if not head.strip("，。！？；：、"):
+        return ""
+    if rng.random() < REPEAT_GAPPED:
+        return head + rng.choice(GAP_FILLERS)
+    return head
+
+
 def inject(
     text: str,
     rng: random.Random,
@@ -111,10 +153,12 @@ def inject(
             spoken.append(f"{token}，")
             injections.append({"kind": "filler", "token": token, "clause": index})
         if len(injections) < cap and rng.random() < rate * repetition_share:
-            head = clause[: 2 if len(clause) > 3 else 1]
-            if head.strip("，。！？；：、"):
-                spoken.append(head)
-                injections.append({"kind": "repetition", "token": head, "clause": index})
+            said_twice = repeat_of(clause, rng)
+            if said_twice:
+                spoken.append(said_twice)
+                injections.append(
+                    {"kind": "repetition", "token": said_twice, "clause": index}
+                )
         # Inside the clause as well as in front of it. The first round put every
         # filler at a boundary, and the polisher learned the boundary rather
         # than the word: measured on the held-out set, a filler at the front of
