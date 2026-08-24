@@ -163,8 +163,26 @@ def reached_model(source: str, longest: int) -> int:
     return sum(len(p) for p in pieces if p.strip() and worth_polishing(p))
 
 
-def score(source: str, output: str) -> dict[str, int]:
-    """One transcript's counts. Summed across the set, never averaged per row."""
+def is_subsequence(part: str, whole: str) -> bool:
+    walk = iter(whole)
+    return all(character in walk for character in part)
+
+
+def score(source: str, output: str, target: str | None = None) -> dict[str, int]:
+    """One transcript's counts. Summed across the set, never averaged per row.
+
+    ``target`` is scored only where it is a real deletion of the source --
+    injected sets are, and then every deleted position is known rather than
+    detected. That is the only way to answer the question the detector cannot:
+    the double-duty words (那个 / 就是 / 然后) are masked out of the detector's
+    gold because a corpus says they are content most of the time, and the
+    injected sets plant them as filler at a fixed rate. A reading that masks
+    them cannot see a change that lands on them.
+
+    Positional, so a repetition scores against whichever copy difflib aligned.
+    That ambiguity is identical across arms and was present in the reading this
+    is being compared against.
+    """
     gone = dropped(source, output)
     fillers = filler_occurrences(source)
     repeats = repetition_occurrences(source)
@@ -179,7 +197,23 @@ def score(source: str, output: str) -> dict[str, int]:
         "deleted": len(gone),
         "chars": len(source),
         "chars_to_model": 0,
+        "truth_labelled": 0,
+        "truth_total": 0,
+        "truth_hit": 0,
+        "truth_claimed": 0,
     }
+
+
+def with_truth(counts: dict[str, int], source: str, output: str, target: str) -> None:
+    """Fill in the exact-label half, when the set carries exact labels."""
+    if not target or not is_subsequence(target, source):
+        return
+    gold = dropped(source, target)
+    gone = dropped(source, output)
+    counts["truth_labelled"] = 1
+    counts["truth_total"] = len(gold)
+    counts["truth_hit"] = len(gone & gold)
+    counts["truth_claimed"] = len(gone)
 
 
 def totals(rows: list[dict[str, int]]) -> dict[str, float]:
@@ -193,6 +227,15 @@ def totals(rows: list[dict[str, int]]) -> dict[str, float]:
     seen = out["chars_to_model"] or out["chars"]
     out["over_per_1k"] = 1000.0 * out["over_deleted"] / seen if seen else 0.0
     out["deleted_share"] = out["deleted"] / out["chars"] if out["chars"] else 0.0
+    if out["truth_labelled"]:
+        out["truth_recall"] = out["truth_hit"] / out["truth_total"] if out["truth_total"] else 0.0
+        out["truth_precision"] = (
+            out["truth_hit"] / out["truth_claimed"] if out["truth_claimed"] else 0.0
+        )
+        recall, precision = out["truth_recall"], out["truth_precision"]
+        out["truth_f1"] = (
+            2 * recall * precision / (recall + precision) if recall + precision else 0.0
+        )
     return out
 
 
@@ -289,7 +332,10 @@ def shape(sources: list[str], longest: int) -> dict[str, float]:
     }
 
 
-async def run_arm(polisher: Polisher, sources: list[str], longest: int) -> dict:
+async def run_arm(
+    polisher: Polisher, sources: list[str], longest: int, targets: list[str] | None = None
+) -> dict:
+    targets = targets or [""] * len(sources)
     polisher.group_longest = longest if longest else 10**9
     polisher.floored = polisher.floored_chars = 0
     polisher.emptied = polisher.emptied_chars = 0
@@ -299,6 +345,7 @@ async def run_arm(polisher: Polisher, sources: list[str], longest: int) -> dict:
         output = await polisher.polish(text)
         row = score(text, output)
         row["chars_to_model"] = reached_model(text, polisher.group_longest)
+        with_truth(row, text, output, targets[index])
         rows.append(row)
         if (index + 1) % 25 == 0:
             print(f"    {index + 1}/{len(sources)}", flush=True)
@@ -342,8 +389,11 @@ def main() -> None:
         return
 
     rows = [json.loads(x) for x in args.data.read_text(encoding="utf-8").splitlines() if x.strip()]
-    sources = [r["source"] for r in rows if r.get("split", args.split) == args.split]
-    sources = [s for s in sources if s.strip()][: args.limit]
+    kept = [r for r in rows if r.get("split", args.split) == args.split and r["source"].strip()][
+        : args.limit
+    ]
+    sources = [r["source"] for r in kept]
+    targets = [r.get("target", "") for r in kept]
     lengths = [int(x) for x in args.lengths.split(",")]
     total = sum(len(s) for s in sources)
     middle = statistics.median([len(s) for s in sources])
@@ -374,7 +424,7 @@ def main() -> None:
         polisher.load()
         report["arms"] = {}
         print(
-            f"\n{'档位':>6}{'口语词召回':>12}{'重复召回':>10}{'误删/千字':>11}{'删除率':>9}{'退回字占比':>12}{'停住片':>8}{'答空片':>8}{'秒':>8}"
+            f"\n{'档位':>6}{'口语词召回':>12}{'重复召回':>10}{'误删/千字':>11}{'删除率':>9}{'退回字占比':>12}{'停住片':>8}{'答空片':>8}{'秒':>8}{'真标签召回':>12}{'真标签精确':>12}"
         )
 
         async def every_arm() -> None:
@@ -384,14 +434,19 @@ def main() -> None:
             # rather than as a hang. The first version of this script did that.
             for longest in lengths:
                 print(f"  跑 {longest or '不切'} …", flush=True)
-                got = await run_arm(polisher, sources, longest)
+                got = await run_arm(polisher, sources, longest, targets)
                 report["arms"][str(longest)] = got
                 name = "不切" if not longest else str(longest)
                 print(
                     f"{name:>6}{got['filler_recall']:>12.4f}{got['repeat_recall']:>10.4f}"
                     f"{got['over_per_1k']:>11.2f}{got['deleted_share']:>9.4f}"
                     f"{got['unpolished_share']:>12.4f}{got['floored_pieces']:>8}"
-                    f"{got['emptied_pieces']:>8}{got['seconds']:>8.0f}",
+                    f"{got['emptied_pieces']:>8}{got['seconds']:>8.0f}"
+                    + (
+                        f"{got['truth_recall']:>10.4f}{got['truth_precision']:>10.4f}"
+                        if "truth_recall" in got
+                        else ""
+                    ),
                     flush=True,
                 )
                 if args.report:

@@ -256,17 +256,48 @@ def test_a_format_this_service_cannot_decode_says_so() -> None:
     """An MP3 came back as an empty transcript, which reads as silence."""
     from mindsurf_omni.service.audio import UnsupportedAudio, unwrap_wav
 
+    # ff fb 50 c4 is what lame writes for 64 kbps 44.1 kHz layer III, taken off
+    # a file it produced. The frame is 208 bytes and the next one starts there.
+    frame = b"\xff\xfb\x50\xc4" + bytes(204)
     for body, name in (
         (b"ID3\x04\x00" + bytes(200), "MP3"),
         (b"OggS" + bytes(200), "Ogg"),
         (b"fLaC" + bytes(200), "FLAC"),
-        (b"\xff\xfb" + bytes(200), "MPEG"),
+        (frame * 3, "MPEG"),
     ):
         with pytest.raises(UnsupportedAudio, match=name):
             unwrap_wav(body, 16_000)
 
     # Raw PCM has no magic, and silence is a legitimate thing to send.
     assert unwrap_wav(bytes(4000), 16_000) == (bytes(4000), 16_000)
+
+
+def test_quiet_speech_is_not_mistaken_for_an_mp3() -> None:
+    """The sync word is eleven set bits and real PCM writes it all the time.
+
+    A quiet negative sample is a high byte in 0xE0..0xFF, and one sample in 256
+    carries 0xFF underneath it. Cutting 6277 starting points out of real
+    recordings, the two-byte version of this test called **1.18% of them** MPEG
+    and the caller got a 400 telling them to send PCM -- which is what they had
+    sent. Checking the whole header brings that to 0.16%; requiring the next
+    frame to start exactly where this one ends brings it to 0.
+    """
+    from mindsurf_omni.service.audio import unwrap_wav
+
+    # A sample of -3 (fd ff) and one of -257 (ff fe): both open with the sync
+    # word under the old test, neither opens a legal frame header.
+    for pair in (b"\xff\xfb", b"\xff\xfa", b"\xff\xe2", b"\xff\xff"):
+        body = pair + bytes(3998)
+        assert unwrap_wav(body, 16_000) == (body, 16_000)
+
+
+def test_a_bare_mp3_with_no_tag_is_still_caught() -> None:
+    """The magic table only sees ID3, and an ID3-less MP3 is a real file."""
+    from mindsurf_omni.service.audio import UnsupportedAudio, unwrap_wav
+
+    frame = b"\xff\xfb\x50\xc4" + bytes(204)
+    with pytest.raises(UnsupportedAudio, match="MPEG"):
+        unwrap_wav(frame * 4, 16_000)
 
 
 def test_a_container_whose_samples_cannot_be_read_is_refused_not_guessed_at() -> None:
