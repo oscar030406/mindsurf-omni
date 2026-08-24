@@ -1222,11 +1222,24 @@ class Polisher:
     # we ran scored arms on how little they deleted, so it measured which
     # setting deletes less, not which is better.
     group_longest: int = TRAINED_LENGTH
-    # How often the FLOOR fallback threw a decode away and kept the input, and
-    # how many characters that covered. Read by scripts/measure_group_length.py;
-    # a longer group means one early stop discards more text.
+    # The two ways a piece can come back unpolished, counted apart because they
+    # are reached by different roads and only one of them was visible.
+    #
+    # ``floored`` is the decode that stopped partway and failed the FLOOR test.
+    # ``emptied`` is the decode that produced nothing at all -- and that one was
+    # invisible, because ``_polish_batch`` substitutes the input for an empty
+    # answer, after which ``consumed(piece, piece)`` is 1.0 and the FLOOR test
+    # passes. The arm most likely to answer empty was therefore the arm that
+    # reported the fewest fallbacks. It is the third instance tonight of a
+    # counter that could not see the thing it counted.
+    #
+    # Not hypothetical: thinker.py:73 has this checkpoint family measured, one
+    # user message at a time -- 395 tokens empty 0/8, 435 2/8, 472 3/8, 774
+    # 6/8, 977 8/8. SFT ran at --max_seq_len 512.
     floored: int = 0
     floored_chars: int = 0
+    emptied: int = 0
+    emptied_chars: int = 0
     # How many pieces one decode may carry. Wide enough that a step is full,
     # narrow enough that one caller's long dictation does not hold everyone
     # else's: a batch runs until its longest member stops, so the cost of a
@@ -1677,6 +1690,9 @@ class Polisher:
         answers = []
         for piece, tokens in zip(pieces, produced, strict=True):
             text = self._tokeniser.decode(tokens, skip_special_tokens=True).strip()
+            if not text:
+                self.emptied += 1
+                self.emptied_chars += len(piece)
             answers.append(text or piece)
         return answers
 

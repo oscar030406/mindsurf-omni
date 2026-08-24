@@ -117,3 +117,8 @@ artifacts/polish_train/pairs_v3_0.*.jsonl
 # LICENSE 文件，我们照用并署来源，但不转发它的语料。
 artifacts/polish_train/pairs_cs2w.jsonl
 artifacts/polish_train/pairs_union.jsonl
+# RAMC 的长段落转出来的对子，同上：MagicData 的正文，我们读它不转发它。
+# 这一份是 TRAINED_LENGTH 那次实验的评测集，怎么造的写在
+# scripts/measure_group_length.py 的开头，汇总数在 artifacts/group-length-*.json。
+artifacts/polish_train/pairs_long.jsonl
+artifacts/polish_train/pairs_graded.jsonl
