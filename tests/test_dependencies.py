@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 VENDORED = {"model", "dataset", "trainer"}
 
 # Import name to distribution name, where they differ by more than punctuation.
-ALIASES = {"whisper": "openai-whisper", "yaml": "pyyaml"}
+ALIASES = {"whisper": "openai-whisper", "yaml": "pyyaml", "sklearn": "scikit-learn"}
 
 
 def canonical(name: str) -> str:

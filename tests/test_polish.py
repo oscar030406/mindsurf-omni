@@ -435,3 +435,48 @@ def test_the_door_is_shut_unless_it_is_opened() -> None:
     )
     assert polisher.punctuation_insertable is False
     assert polisher._insertable_ids() == frozenset()  # noqa: SLF001
+
+
+def test_a_clause_keeps_its_last_negation() -> None:
+    """对不对 must not come back as 对对.
+
+    Found by driving the service on real conversation, not by any criterion:
+    one character out of a dozen is a rounding error to content retention and
+    the opposite of the sentence to a reader. Measured on 400 real clips the
+    arms take a clause's only negation about twice in 755, so this is rare and
+    it is not small.
+    """
+    from mindsurf_omni.service.polish import negations_kept
+
+    # The clause has one 不 and the arm is taking it: hand it back.
+    assert negations_kept("对不对", {1}) == {1}
+    assert negations_kept("人也没了", {2}) == {2}
+
+    # A stutter has a copy to spare, so removing one is the job working.
+    assert negations_kept("不能不能为自己", {0, 1}) == set()
+    assert negations_kept("不好不好意思", {0, 1}) == set()
+
+    # But a "stutter removal" that runs one character long takes the spare copy
+    # and the original -- 不能不 leaves 能为自己, which says the opposite thing.
+    assert negations_kept("不能不能为自己", {0, 1, 2}) == {0}
+
+    # Clause by clause, not sentence by sentence: 不 surviving over there does
+    # not make it fine to delete the one over here.
+    assert negations_kept("他不来，我不去", {5}) == {5}
+
+    # Nothing being deleted, nothing to give back.
+    assert negations_kept("对不对", set()) == set()
+
+
+def test_the_negation_rule_knows_which_characters_are_not_negating() -> None:
+    """特别 分别 非常 非得 沉没 are words, not negations."""
+    from mindsurf_omni.service.polish import negation_positions
+
+    assert negation_positions("别去") == {0}
+    assert negation_positions("特别好") == set()
+    assert negation_positions("区别很大") == set()
+    assert negation_positions("非常好") == set()
+    assert negation_positions("他非得去") == set()
+    assert negation_positions("非法") == {0}
+    assert negation_positions("船沉没了") == set()
+    assert negation_positions("没有钱") == {0}

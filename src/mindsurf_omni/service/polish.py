@@ -769,6 +769,70 @@ def duplicate_words(source: str, drop: set[int]) -> set[int]:
     return taken
 
 
+# The characters that flip a clause on their own. Kept apart from every other
+# protection here because what a deleted one costs is not a share of the
+# sentence -- it is the opposite of the sentence.
+NEGATIONS = frozenset("不没别无非莫勿甭")
+
+# Where these characters are part of a word instead of a negation. 特别 分别
+# 区别 are not 别; 非常 非得 are not 非; 沉没 淹没 are not 没. Written as the
+# character in front, which is what decides it.
+NOT_A_NEGATION_AFTER = {
+    "没": frozenset("沉淹埋出湮"),
+    "别": frozenset("特分差个区级性告送派类识"),
+    "非": frozenset("除莫并"),
+}
+# And where the character after settles it: 非常 非得 非要 are adverbs.
+NOT_A_NEGATION_BEFORE = {"非": frozenset("常得要凡")}
+
+
+def negation_positions(source: str) -> set[int]:
+    """Indices of ``source`` where a character is genuinely negating."""
+    out = set()
+    for index, char in enumerate(source):
+        if char not in NEGATIONS:
+            continue
+        before = source[index - 1] if index else ""
+        after = source[index + 1] if index + 1 < len(source) else ""
+        if before and before in NOT_A_NEGATION_AFTER.get(char, ()):
+            continue
+        if after and after in NOT_A_NEGATION_BEFORE.get(char, ()):
+            continue
+        out.add(index)
+    return out
+
+
+def negations_kept(source: str, drop: set[int]) -> set[int]:
+    """The part of ``drop`` that would take a clause's last negation with it.
+
+    Driving the service on real conversation returned 对不对？as 对对 and
+    人也没了 as 人也了. Both are one character out of a dozen, which every
+    reading we take scores as a rounding error and a reader scores as the
+    sentence saying the opposite thing.
+
+    A repeated negation is still fair game -- 不能不能 has a copy to spare, and
+    the stage that exists to remove stutters must keep working. So the rule is
+    not "never delete a negation", it is "leave the clause one".
+    """
+    if not drop:
+        return set()
+    negations = negation_positions(source)
+    if not negations & drop:
+        return set()
+    give_back: set[int] = set()
+    start = 0
+    for stop in [i for i, c in enumerate(source) if c in PUNCTUATION] + [len(source)]:
+        here = {i for i in negations if start <= i < stop}
+        start = stop + 1
+        going = here & drop
+        # Something negating still survives here, so the deletion is a stutter's
+        # spare copy and not the clause's meaning.
+        if not going or len(going) < len(here):
+            continue
+        give_back.add(min(going))
+    return give_back
+
+
 def content_words(source: str, drop: set[int]) -> set[int]:
     """The part of ``drop`` that spells a double-duty word standing in a content slot.
 
@@ -894,7 +958,7 @@ def keep_content(source: str, output: str) -> str:
     """
     drop = dropped(source, output)
     latin = english_disfluency(source, set() if not any(_is_cjk(c) for c in source) else drop)
-    give_back = content_words(source, drop)
+    give_back = content_words(source, drop) | negations_kept(source, drop)
     if not give_back and not latin:
         return output
     kept = "".join(char for index, char in enumerate(source) if index not in drop)
@@ -951,6 +1015,10 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     # and the veto reads that agreement as evidence -- there is no stage above
     # this one that can tell the difference.
     combined -= content_words(source, combined)
+    # After the content give-back, not before: content_words can hand a word
+    # back that carries the clause's only negation with it, and asking this
+    # question of a drop set that is still moving answers about the wrong set.
+    combined -= negations_kept(source, combined)
     # A piece with no Chinese in it is the rule's alone. The arms were trained
     # on Chinese and it shows: over 25 English probes they left every filled
     # pause standing and deleted the content word So. Keeping their opinion

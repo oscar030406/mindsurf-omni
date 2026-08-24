@@ -97,6 +97,11 @@ def main() -> None:
     )
     parser.add_argument("--tagger-backbone", type=Path)
     parser.add_argument("--tagger-threshold", type=float, default=0.5)
+    parser.add_argument(
+        "--punctuation-insertable",
+        action="store_true",
+        help="let the decode emit marks the transcript did not; content is still copied",
+    )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
@@ -116,6 +121,7 @@ def main() -> None:
         tagger=args.tagger,
         tagger_backbone=args.tagger_backbone,
         tagger_threshold=args.tagger_threshold,
+        punctuation_insertable=args.punctuation_insertable,
     )
     polisher.load()
 
