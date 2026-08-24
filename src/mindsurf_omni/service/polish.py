@@ -53,6 +53,11 @@ RECOGNISED_FILLERS = ("摁", "鄂", "唉", "哎", "呐")
 # Cased pairs rather than a case fold, because the match is a substring test
 # against the transcript: "Um" starts a sentence and "um" sits inside one, while
 # a fold would also match the "um" inside "number".
+# Interjections that are filler wherever they appear. Measured on CS2W's human
+# annotation: 嗯 is deleted 1.000 of the time and 呃 0.956. The double-duty
+# words live in DOUBLE_DUTY and are not these -- 那个 is 0.250.
+ALWAYS_FILLER = frozenset("嗯呃唔哦喔诶欸呐额啊")
+
 ENGLISH_FILLERS = ("um", "Um", "uh", "Uh", "er", "Er", "erm", "Erm", "uhh", "Uhh")
 
 # Where an English filler needs a boundary to be one. Substring matching finds
@@ -1030,6 +1035,19 @@ def merge(rows: list[dict[str, Any]], mode: str) -> str:
     return tidy("".join(char for index, char in enumerate(source) if index not in combined))
 
 
+def nothing_but_filler(text: str) -> bool:
+    """Whether the whole text is interjections and marks and nothing else.
+
+    Deliberately only the interjections that are always filler -- 嗯 呃 啊 and
+    their kin, which CS2W's annotators delete 95-100% of the time. The
+    double-duty words are not here: 那个 alone is a real answer to "which one",
+    and this decides whether the user gets an empty text box.
+    """
+    return bool(text.strip()) and all(
+        char in ALWAYS_FILLER or char in _ANY_MARK or char.isspace() for char in text
+    )
+
+
 def has_content(text: str) -> bool:
     """Whether anything is left that a person would call words.
 
@@ -1354,6 +1372,15 @@ class Polisher:
         # survived. Whole-result level on purpose -- dropping one all-filler
         # sentence out of a longer dictation is this stage working.
         if transcript.strip() and not has_content(polished):
+            # Two different things reach here and they want opposite answers.
+            # If what was removed is nothing but vocabulary filler, empty is the
+            # right answer and handing the transcript back is the defect: half a
+            # second of fan noise recognises as 嗯。and the product wrote 嗯。
+            # into the user's text box, while the same noise over two seconds
+            # correctly wrote nothing. It also contradicts the rest of the
+            # stage, which deletes 嗯 everywhere it is not the whole utterance.
+            if nothing_but_filler(transcript):
+                return ""
             return transcript
         return polished
 

@@ -30,6 +30,43 @@ SLOWEST_RATE = 4_000
 FASTEST_RATE = 384_000
 
 
+# Container magics this service does not read. Raw PCM has no magic and is
+# accepted, so the only way to tell a format we cannot read from PCM that
+# happens to start with those bytes is to know the magics -- and getting it
+# wrong in the safe direction only means one of these arrives as PCM, which is
+# what happens today anyway.
+OTHER_CONTAINERS = {
+    b"ID3": "MP3",
+    b"OggS": "Ogg",
+    b"fLaC": "FLAC",
+    b"FORM": "AIFF",
+    bytes([0x1A, 0x45, 0xDF, 0xA3]): "Matroska/WebM",
+}
+
+
+def refuse_a_container_we_cannot_read(body: bytes) -> None:
+    """Say so, rather than reading someone's MP3 as silent PCM.
+
+    Measured on the running service: an MP3 header came back HTTP 200 with an
+    empty transcript, which tells the caller they said nothing when what
+    happened is that we cannot open their file. Those are different problems
+    and only one of them is theirs to fix by talking louder.
+    """
+    for magic, name in OTHER_CONTAINERS.items():
+        if body.startswith(magic):
+            raise UnsupportedAudio(
+                f"this looks like {name}, which this service does not decode; "
+                "send 16-bit mono PCM WAV"
+            )
+    # An MPEG frame sync is eleven set bits, and it is the one magic loose
+    # enough to hit real PCM, so it needs the layer bits to be sane as well.
+    if len(body) >= 2 and body[0] == 0xFF and (body[1] & 0xE0) == 0xE0 and (body[1] & 0x06):
+        raise UnsupportedAudio(
+            "this looks like MPEG audio, which this service does not decode; "
+            "send 16-bit mono PCM WAV"
+        )
+
+
 class UnsupportedAudio(ValueError):
     """A container whose header parsed and whose samples this service cannot read.
 
@@ -65,6 +102,16 @@ def unwrap_wav(body: bytes, declared_rate: int) -> tuple[bytes, int]:
     rate the caller declared. A container that *is* one and holds something
     other than 16-bit mono raises: see ``UnsupportedAudio``.
     """
+    refuse_a_container_we_cannot_read(body)
+    if body[:4] == b"RIFF" and (len(body) < 44 or body[8:12] != b"WAVE"):
+        # It says RIFF, so the caller meant to send a container. Passing it on
+        # as raw PCM turns a broken file into silence, and the caller reads that
+        # as "you said nothing" -- measured: RIFF plus a hundred zero bytes came
+        # back HTTP 200 with an empty transcript and a duration of 0.003 s.
+        raise UnsupportedAudio(
+            "this body starts with RIFF but is not a readable WAVE container; "
+            "send 16-bit mono PCM WAV, or raw PCM with no header at all"
+        )
     if len(body) < 44 or body[:4] != b"RIFF" or body[8:12] != b"WAVE":
         return body, declared_rate
 

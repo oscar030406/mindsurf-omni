@@ -5,6 +5,8 @@ from __future__ import annotations
 import array
 import struct
 
+import pytest
+
 from mindsurf_omni.service.audio import (
     clipping_ratio,
     peak_normalise,
@@ -232,7 +234,39 @@ def test_raw_samples_pass_through_untouched() -> None:
     raw = bytes(range(0, 200, 2)) * 20
     assert unwrap_wav(raw, 16_000) == (raw, 16_000)
     assert unwrap_wav(b"", 16_000) == (b"", 16_000)
-    assert unwrap_wav(b"RIFF", 16_000) == (b"RIFF", 16_000)
+
+
+def test_a_body_that_says_riff_and_is_not_a_wave_is_refused() -> None:
+    """Four bytes spelling RIFF used to pass through here as raw PCM.
+
+    It was a boundary case in the test above and not a decision, and on the
+    running service it was the defect: RIFF plus a hundred zero bytes came back
+    HTTP 200, empty transcript, duration 0.003 s. The caller reads that as "you
+    said nothing" when what happened is their file is broken -- the same
+    confusion the container test below already refuses to allow.
+    """
+    from mindsurf_omni.service.audio import UnsupportedAudio, unwrap_wav
+
+    for body in (b"RIFF", b"RIFF" + bytes(100), b"RIFF" + bytes(8) + b"NOPE" + bytes(40)):
+        with pytest.raises(UnsupportedAudio, match="RIFF"):
+            unwrap_wav(body, 16_000)
+
+
+def test_a_format_this_service_cannot_decode_says_so() -> None:
+    """An MP3 came back as an empty transcript, which reads as silence."""
+    from mindsurf_omni.service.audio import UnsupportedAudio, unwrap_wav
+
+    for body, name in (
+        (b"ID3\x04\x00" + bytes(200), "MP3"),
+        (b"OggS" + bytes(200), "Ogg"),
+        (b"fLaC" + bytes(200), "FLAC"),
+        (b"\xff\xfb" + bytes(200), "MPEG"),
+    ):
+        with pytest.raises(UnsupportedAudio, match=name):
+            unwrap_wav(body, 16_000)
+
+    # Raw PCM has no magic, and silence is a legitimate thing to send.
+    assert unwrap_wav(bytes(4000), 16_000) == (bytes(4000), 16_000)
 
 
 def test_a_container_whose_samples_cannot_be_read_is_refused_not_guessed_at() -> None:
