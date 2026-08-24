@@ -62,7 +62,9 @@ def graded_target(source: str, human: str) -> str:
     import difflib
 
     where: dict[int, int] = {}
-    for block in difflib.SequenceMatcher(None, human_bare, kept, autojunk=False).get_matching_blocks():
+    for block in difflib.SequenceMatcher(
+        None, human_bare, kept, autojunk=False
+    ).get_matching_blocks():
         for k in range(block.size):
             where[block.a + k] = block.b + k
 
