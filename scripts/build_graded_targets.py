@@ -47,8 +47,28 @@ def project(source: str, wanted: str) -> str:
     return "".join(source[b.a : b.a + b.size] for b in matcher.get_matching_blocks())
 
 
+def forward_tn(text: str) -> str:
+    """Chinese numerals to Arabic, so a human's 二零一九 can reach an ITN 2019.
+
+    Without this every digit in every clip is destroyed:
+    爱数智慧语音采集2019年10月25日 against a human's 二零一九年十月二十五日
+    shares only 年月日, so the projection reads the whole date as content to
+    delete and the target teaches exactly that. It is the same mismatch that
+    made our AISHELL reading 0.0638 where the protocol-matched number is 0.0295.
+    """
+    try:
+        import cn2an
+    except ImportError:  # the builder still works, it just loses the digits
+        return text
+    try:
+        return str(cn2an.transform(text, "cn2an"))
+    except Exception:  # noqa: BLE001 - a sentence cn2an cannot parse stays as it is
+        return text
+
+
 def graded_target(source: str, human: str) -> str:
     """Content the transcript can reach, punctuated the way the human did."""
+    human = forward_tn(human)
     source_bare, _ = strip_marks(source)
     human_bare, human_marks = strip_marks(human)
 
