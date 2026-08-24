@@ -582,22 +582,16 @@ def main() -> None:
         "filler_removed_rate": removed / arrived if arrived else None,
         "filler_arrived_single": arrived_single,
         "filler_removed_single": removed_single,
-        "filler_removed_rate_single": (
-            removed_single / arrived_single if arrived_single else None
-        ),
+        "filler_removed_rate_single": (removed_single / arrived_single if arrived_single else None),
         "filler_arrived_gated": arrived_gated,
         "filler_removed_gated": removed_gated,
-        "filler_removed_rate_gated": (
-            removed_gated / arrived_gated if arrived_gated else None
-        ),
+        "filler_removed_rate_gated": (removed_gated / arrived_gated if arrived_gated else None),
         "filler_arrived_rest": arrived_rest,
         "filler_removed_rest": removed_rest,
         "filler_removed_rate_rest": removed_rest / arrived_rest if arrived_rest else None,
         "filler_arrived_double": arrived_double,
         "filler_removed_double": removed_double,
-        "filler_removed_rate_double": (
-            removed_double / arrived_double if arrived_double else None
-        ),
+        "filler_removed_rate_double": (removed_double / arrived_double if arrived_double else None),
         "content_kept": kept,
         "invented": made_up,
         "empty": empty,

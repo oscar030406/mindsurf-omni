@@ -178,7 +178,7 @@ def test_the_last_piece_stops_at_the_last_word() -> None:
     from mindsurf_omni.service.vad import segments
 
     pcm = _speech(3) + _quiet(10)
-    (start, end), = segments(pcm)
+    ((start, end),) = segments(pcm)
 
     assert (end - start) / 32_000 < 3.5
 
@@ -267,9 +267,7 @@ def test_the_speaking_rate_denominator_survives_a_room() -> None:
     for room in (0.0008, 0.02):
         for pad in (0.0, 3.0, 8.0):
             tail = rng.standard_normal(int(pad * 16_000)) * room * 32768
-            pcm = np.clip(
-                np.concatenate([said, tail]), -32768, 32767
-            ).astype(np.int16).tobytes()
+            pcm = np.clip(np.concatenate([said, tail]), -32768, 32767).astype(np.int16).tobytes()
 
             # 三个字的短指令，闸线 0.5 字每秒——不许因为尾巴长就掉下去。
             voiced = voiced_seconds(pcm)

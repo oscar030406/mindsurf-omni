@@ -88,9 +88,7 @@ def distribution() -> None:
     """How often a person marks each vocabulary word as something to delete."""
     rows = _cs2w_rows()
     counted = 0
-    stats: dict[str, list[int]] = {
-        word: [0, 0] for word in (*LEADING_FILLERS, *BRIDGING_FILLERS)
-    }
+    stats: dict[str, list[int]] = {word: [0, 0] for word in (*LEADING_FILLERS, *BRIDGING_FILLERS)}
     for row in rows:
         source, colloquial, repeats = (
             row["content"],
@@ -268,15 +266,15 @@ def main() -> None:
             f"{summary['filler_characters']} = {summary['filler_clearance']:.2%}"
         )
         for row in rows:
-            print(f"  {'OK ' if row['got'] == row['wanted'] else 'BAD'} {row['id']}  "
-                  f"{row['source']}  ->  {row['got']}")
+            print(
+                f"  {'OK ' if row['got'] == row['wanted'] else 'BAD'} {row['id']}  "
+                f"{row['source']}  ->  {row['got']}"
+            )
     if not (args.distribution or args.cs2w or args.probes):
         parser.error("pick one of --distribution, --cs2w, --probes")
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(
-            json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8"
-        )
+        args.report.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 if __name__ == "__main__":

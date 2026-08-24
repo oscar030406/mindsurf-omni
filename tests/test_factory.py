@@ -369,7 +369,7 @@ def test_a_polisher_without_transformers_is_refused_by_name(tmp_path: Path) -> N
 
 
 def test_the_refusal_names_the_extra_that_fixes_it(tmp_path: Path) -> None:
-    """"install the train extra" was the old answer and it was wrong: that set's
+    """ "install the train extra" was the old answer and it was wrong: that set's
     own comment says it never runs in a container."""
     from mindsurf_omni.service import factory
 

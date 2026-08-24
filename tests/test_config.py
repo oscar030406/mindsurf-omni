@@ -70,9 +70,10 @@ def test_the_missing_file_message_names_variables_and_not_paths(
     )
     assert settings is not None
 
-    with caplog.at_level("ERROR", logger="mindsurf.config"), pytest.raises(
-        ConfigurationError
-    ) as error:
+    with (
+        caplog.at_level("ERROR", logger="mindsurf.config"),
+        pytest.raises(ConfigurationError) as error,
+    ):
         settings.verify()
 
     assert str(root) not in str(error.value)
@@ -401,9 +402,7 @@ def test_the_whole_pair_verifies_when_it_is_all_there(tmp_path: Path) -> None:
 def test_the_second_arm_defaults_to_the_swept_threshold_not_the_first_one_tried() -> None:
     """0.5 is the value the arm was first measured at; 0.4 is the one the sweep
     chose."""
-    settings = Settings.from_environment(
-        {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": "/w"}
-    )
+    settings = Settings.from_environment({"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": "/w"})
 
     assert settings is not None
     assert settings.polish_tagger_threshold == 0.4

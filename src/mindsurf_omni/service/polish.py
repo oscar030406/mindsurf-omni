@@ -58,7 +58,7 @@ ENGLISH_FILLERS = ("um", "Um", "uh", "Uh", "er", "Er", "erm", "Erm", "uhh", "Uhh
 # Where an English filler needs a boundary to be one. Substring matching finds
 # "um" inside "number" and "uh" inside "though"; these are the characters that
 # may sit beside a real one.
-_LATIN_EDGE = frozenset(' ,.!?;:\n\t\"()[]\'') | {''}
+_LATIN_EDGE = frozenset(" ,.!?;:\n\t\"()[]'") | {""}
 
 
 # Where a sentence ends, for splitting a long dictation into pieces the model
@@ -313,7 +313,17 @@ VOCABULARY = tuple(sorted((*LEADING_FILLERS, *BRIDGING_FILLERS), key=len, revers
 # Longest first: 那个 has to be considered before 那, or a wholly deleted 那个
 # gets its 那 handed back and leaves a bare 个 behind.
 DOUBLE_DUTY = (
-    "我觉得", "那个", "这个", "就是", "然后", "反正", "其实", "那种", "那些", "那", "就",
+    "我觉得",
+    "那个",
+    "这个",
+    "就是",
+    "然后",
+    "反正",
+    "其实",
+    "那种",
+    "那些",
+    "那",
+    "就",
 )
 
 
@@ -488,9 +498,7 @@ def _gap_is_only_space(source: str, left: _Word, right: _Word) -> bool:
 DOUBLES_ON_PURPOSE = frozenset({"had", "that", "very", "so", "no"})
 
 
-def _says_it_twice_on_purpose(
-    raw: list[str], words: list[_Word], index: int, size: int
-) -> bool:
+def _says_it_twice_on_purpose(raw: list[str], words: list[_Word], index: int, size: int) -> bool:
     """Whether this repetition is English rather than a stumble.
 
     Two shapes. A capitalised word away from the start of a sentence is a name,
@@ -617,8 +625,9 @@ def spaces_follow_their_words(source: str, drop: set[int]) -> set[int]:
     # Latin, and taking um out leaves 我们 可能, a gap Chinese never has. Both
     # spaces go, not one.
     for index in gone:
-        left, right = spans[index - 1] if index else None, (
-            spans[index + 1] if index + 1 < len(spans) else None
+        left, right = (
+            spans[index - 1] if index else None,
+            (spans[index + 1] if index + 1 < len(spans) else None),
         )
         if not (left and right) or left[2] != " " or right[2] != " ":
             continue
@@ -851,8 +860,7 @@ def _a_fragment_of_it_survives_to_the_left(
     left stranded and the span comes back as it should.
     """
     return any(
-        source[start - size : start] == word[:size]
-        and not set(range(start - size, start)) & drop
+        source[start - size : start] == word[:size] and not set(range(start - size, start)) & drop
         for size in range(1, len(word))
         if start - size >= 0
     )
@@ -866,11 +874,7 @@ def _clause_has_other_survivors(source: str, drop: set[int], start: int, end: in
     right = end
     while right < len(source) and source[right] not in PUNCTUATION:
         right += 1
-    return any(
-        index not in drop
-        for index in range(left, right)
-        if not start <= index < end
-    )
+    return any(index not in drop for index in range(left, right) if not start <= index < end)
 
 
 def keep_content(source: str, output: str) -> str:

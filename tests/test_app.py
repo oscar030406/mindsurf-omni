@@ -1035,9 +1035,7 @@ def test_a_compressed_body_is_refused_rather_than_read_as_audio(
 
 
 @pytest.mark.parametrize("coding", ["identity", "IDENTITY"])
-def test_an_uncompressed_body_is_not_refused_for_saying_so(
-    client: TestClient, coding: str
-) -> None:
+def test_an_uncompressed_body_is_not_refused_for_saying_so(client: TestClient, coding: str) -> None:
     response = client.post(
         "/v1/audio/transcriptions",
         content=b"\x00\x01" * 16_000,
@@ -1267,7 +1265,7 @@ def test_the_access_line_says_what_happened_without_saying_what_was_said(
 
 
 def test_the_counters_separate_a_refusal_from_a_success(client: TestClient) -> None:
-    """"It is returning errors" and "it is returning errors to one caller" want
+    """ "It is returning errors" and "it is returning errors to one caller" want
     different people woken up, so they are counted apart."""
     before = client.get("/stats").json()["counts"]
     client.post("/v1/audio/transcriptions", content=b"\x00\x01" * 16_000)
@@ -1297,6 +1295,8 @@ def test_the_counters_do_not_grow_a_key_per_path_a_scanner_tries(
 
     assert not [key for key in keys if "/aaa" in key or "/bbb" in key]
     assert keys["requests unmatched 404"] >= 3
+
+
 # --- resource limits: the request body, the realtime buffer, the spoken text ---
 
 

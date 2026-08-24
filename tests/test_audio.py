@@ -257,9 +257,7 @@ def test_a_container_whose_samples_cannot_be_read_is_refused_not_guessed_at() ->
                 b"RIFF",
                 struct.pack("<I", 236),
                 b"WAVEfmt ",
-                struct.pack(
-                    "<IHHIIHH", 16, 1, channels, 16_000, 16_000 * width, width, bits
-                ),
+                struct.pack("<IHHIIHH", 16, 1, channels, 16_000, 16_000 * width, width, bits),
                 b"data",
                 struct.pack("<I", 200),
                 bytes(200),
