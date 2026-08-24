@@ -1240,6 +1240,9 @@ class Polisher:
     _tagger_model: Any = None
     _tagger_spec: Any = None
     _insertable: Any = None
+    #: Marks this decode emitted that the transcript did not offer. A counter
+    #: rather than a flag: the question is how often, and zero is a real answer.
+    inserted: int = 0
 
     def load(self) -> None:
         if self._model is not None:
@@ -1600,6 +1603,16 @@ class Polisher:
                         # that only the insertable set offered consumes
                         # nothing, so the window does not move past content the
                         # model has not written yet.
+                        #
+                        # Counted here rather than inferred from the output,
+                        # because an inserted 。 that also appears later in the
+                        # transcript leaves the output a subsequence of it and
+                        # the after-the-fact check reads zero insertions where
+                        # there were many. Chinese transcripts are full of
+                        # commas and full stops, so that check was never going
+                        # to work.
+                        if chosen not in window:
+                            self.inserted += 1
                         if chosen in window:
                             at = pointer[row]
                             while at < len(piece_source) and piece_source[at] != chosen:

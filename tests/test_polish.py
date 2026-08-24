@@ -514,3 +514,28 @@ def test_the_punctuation_target_keeps_the_transcript_word_for_word() -> None:
 
     # The interjections named in `drop` are the only content that leaves.
     assert punctuation_only_target("嗯我们走吧", "嗯，我们走吧", frozenset("嗯")) == "，我们走吧"
+
+
+def test_insertions_are_counted_where_they_happen() -> None:
+    """Not inferred from the output afterwards, which cannot see them.
+
+    An inserted 。 that also appears later in the transcript leaves the output a
+    subsequence of it, so the after-the-fact subsequence check reads zero
+    insertions where there were many. Chinese transcripts are full of commas
+    and full stops; that check was never going to work, and a whole round of
+    "the model refuses to insert" rested on it.
+    """
+    from mindsurf_omni.service.polish import Polisher
+
+    polisher = Polisher(
+        checkpoint=Path("unused.pth"),
+        tokenizer_dir=Path("unused"),
+        minimind_root=Path("unused"),
+        punctuation_insertable=True,
+    )
+    assert polisher.inserted == 0
+
+    # The counter is on the object the decode writes to, so a caller reads it
+    # after a batch rather than trying to recover it from the text.
+    polisher.inserted += 3
+    assert polisher.inserted == 3
