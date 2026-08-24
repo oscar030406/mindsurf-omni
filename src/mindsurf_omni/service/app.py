@@ -816,6 +816,11 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             }
         )
         buffer = bytearray()
+        # A live transcription of this turn, when the recogniser has one to
+        # give. None on the recogniser this build usually serves: SenseVoice
+        # is a whole-segment model and there is nothing to stream.
+        opener = getattr(getattr(engine, "recogniser", None), "open", None)
+        listening = opener(INPUT_SAMPLE_RATE) if callable(opener) else None
         settings = GenerationSettings()
         # History is trimmed as it grows: audio tokens exhaust a small model's
         # context within a few turns, and the caller is told when turns were
@@ -849,12 +854,34 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                 kind = event.get("type")
 
                 if kind == "input_audio_buffer.append":
+                    before = len(buffer)
                     try:
                         buffer_audio(buffer, event)
                     except (Unreadable, TooLongForModel) as refused:
                         await websocket.send_json(
                             {"type": "error", "error": {"message": str(refused)}}
                         )
+                    else:
+                        # Words while the speaker is still talking, when the
+                        # deployment serves a recogniser that can produce them.
+                        # Additions only -- this model commits as it goes, so a
+                        # client appends and never re-renders what it showed.
+                        #
+                        # The authoritative transcript is still the one the
+                        # commit branch produces: these deltas are what the
+                        # user watches, and the text they keep is what the
+                        # polish stage returns at the end.
+                        if listening is not None:
+                            said = await listening.feed(bytes(buffer[before:]))
+                            if said:
+                                await websocket.send_json(
+                                    {
+                                        "type": (
+                                            "conversation.item.input_audio_transcription.delta"
+                                        ),
+                                        "delta": said,
+                                    }
+                                )
                 elif kind == "input_audio_buffer.clear":
                     buffer.clear()
                 elif kind == "session.update":
@@ -931,6 +958,16 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                     await websocket.send_json({"type": "response.created"})
                     spoken_seconds = len(buffer) / 2 / INPUT_SAMPLE_RATE
                     turn_pcm = bytes(buffer)
+                    if listening is not None:
+                        tail = await listening.finish()
+                        if tail:
+                            await websocket.send_json(
+                                {
+                                    "type": ("conversation.item.input_audio_transcription.delta"),
+                                    "delta": tail,
+                                }
+                            )
+                        listening = opener(INPUT_SAMPLE_RATE)
                     # Cleared before streaming, not after: anything appended
                     # while the reply is playing is the user's interjection,
                     # and it belongs to the next turn rather than to this one.

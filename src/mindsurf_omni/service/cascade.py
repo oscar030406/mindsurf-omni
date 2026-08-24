@@ -173,6 +173,7 @@ class CascadeEngine(SpeechEngine):
         unwired: tuple[str, ...] = (),
         stream_synthesiser: StreamingSynthesiser | None = None,
         polisher: Any = None,
+        recogniser: Any = None,
     ) -> None:
         self._transcribe = transcriber
         self._generate = generator
@@ -184,6 +185,12 @@ class CascadeEngine(SpeechEngine):
         # cascade also serves conversation, where polishing a question would
         # edit the user's words for no reason.
         self._polisher = polisher
+        # The object, not just its transcribe method: a recogniser that can
+        # write while the speaker is still talking exposes that separately, and
+        # a callable cannot carry it. Named rather than reached for with
+        # getattr, because a getattr that misses returns None and a socket that
+        # never streams looks exactly like a recogniser that cannot.
+        self.recogniser = recogniser
         self._components = components
         self._token_spec = token_spec
         # Which of the three stages will refuse if called. Assembly knows this

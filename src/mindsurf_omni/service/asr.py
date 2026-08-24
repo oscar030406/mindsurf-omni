@@ -437,6 +437,57 @@ STREAMING_STRIDE = 9600
 
 
 @dataclass(slots=True)
+class Stream:
+    """One speaker's turn, fed as it arrives.
+
+    Holds the recogniser's cache and whatever audio has not yet filled a step,
+    so a caller can push whatever the socket happened to deliver -- a websocket
+    frame is whatever the client's encoder produced, not a multiple of 600 ms.
+    """
+
+    recogniser: Any
+    rate: int = RECOGNISER_RATE
+    _cache: dict[str, Any] = field(default_factory=dict)
+    _held: bytes = b""
+
+    async def feed(self, pcm: bytes) -> str:
+        """Whatever this audio added, or an empty string if it added nothing."""
+        import asyncio
+
+        self._held += pcm
+        step = STREAMING_STRIDE * 2
+        said: list[str] = []
+        while len(self._held) >= step:
+            piece, self._held = self._held[:step], self._held[step:]
+            got = await asyncio.to_thread(self._one, piece, False)
+            if got:
+                said.append(got)
+        return "".join(said)
+
+    async def finish(self) -> str:
+        """The tail, and the flag that tells the model the turn is over."""
+        import asyncio
+
+        piece, self._held = self._held, b""
+        if not piece:
+            return ""
+        return await asyncio.to_thread(self._one, piece, True)
+
+    def _one(self, piece: bytes, last: bool) -> str:
+        import numpy as np
+
+        from mindsurf_omni.service.audio import resample, whole_samples
+
+        if self.rate != RECOGNISER_RATE:
+            piece = resample(whole_samples(piece), self.rate, RECOGNISER_RATE)
+        audio = np.frombuffer(whole_samples(piece), dtype=np.int16).astype(np.float32) / 32768.0
+        if not audio.size:
+            return ""
+        self.recogniser.load()
+        return self.recogniser._step(audio, self._cache, last)  # noqa: SLF001
+
+
+@dataclass(slots=True)
 class ParaformerStreamingRecogniser:
     """A recogniser that writes while the speaker is still talking.
 
@@ -512,6 +563,10 @@ class ParaformerStreamingRecogniser:
             said = await asyncio.to_thread(self._step, piece, cache, index == steps - 1)
             if said:
                 yield said
+
+    def open(self, sample_rate: int = RECOGNISER_RATE) -> Stream:
+        """A turn this recogniser will write as it goes."""
+        return Stream(recogniser=self, rate=sample_rate)
 
     def _step(self, piece: Any, cache: dict[str, Any], last: bool) -> str:
         out = self._model.generate(

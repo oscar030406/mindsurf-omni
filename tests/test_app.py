@@ -1543,3 +1543,69 @@ def test_a_caller_that_hangs_up_mid_upload_is_not_a_server_error() -> None:
     assert refusal.value.status_code == 499
     # 不许把 ClientDisconnect 的 traceback 带出去。
     assert refusal.value.__cause__ is None
+
+
+def test_a_streaming_recogniser_writes_while_the_speaker_is_still_talking() -> None:
+    """Deltas during append, not only a transcript at commit.
+
+    The first version of this reached for the recogniser with getattr on the
+    engine, and the engine only ever had the transcribe callable -- so the
+    lookup returned None, the socket never streamed, and it looked exactly like
+    a recogniser that could not. This is the test that would have caught it:
+    the same connection with a streaming recogniser and without.
+    """
+    from fastapi.testclient import TestClient
+
+    from mindsurf_omni.service.app import create_app
+
+    class Listening:
+        def __init__(self) -> None:
+            self.fed = 0
+
+        async def feed(self, pcm: bytes) -> str:
+            self.fed += 1
+            return f"第{self.fed}片"
+
+        async def finish(self) -> str:
+            return "收尾"
+
+    class Streaming:
+        def open(self, rate: int) -> Listening:
+            return Listening()
+
+    def app_with(recogniser: object | None) -> object:
+        engine = FakeEngine()
+        engine.recogniser = recogniser  # type: ignore[attr-defined]
+        return create_app(engine)
+
+    audio = base64.b64encode(b"\x01\x02" * 8_000).decode()
+
+    listening = Listening()
+
+    class Streaming:  # noqa: F811 - the one above documents the shape
+        def open(self, rate: int) -> Listening:
+            return listening
+
+    app = app_with(Streaming())
+    with TestClient(app) as client, client.websocket_connect("/v1/realtime") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "input_audio_buffer.append", "audio": audio})
+        # A pause after the append rather than a blocking receive: if the wiring
+        # is gone there is no event coming, and a receive with no timeout would
+        # hang CI instead of failing it. Checked when the socket closes, below.
+        ws.send_json({"type": "session.clear"})
+        seen = [ws.receive_json() for _ in range(2)]
+
+    kinds = [event["type"] for event in seen]
+    assert any(kind.endswith("input_audio_transcription.delta") for kind in kinds), kinds
+    assert listening.fed == 1
+
+    # Without one, the same append says nothing at all -- which is what makes
+    # the assertion above about the streaming recogniser and not about the
+    # socket answering everything.
+    with TestClient(app_with(None)) as client, client.websocket_connect("/v1/realtime") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "input_audio_buffer.append", "audio": audio})
+        ws.send_json({"type": "input_audio_buffer.clear"})
+        ws.send_json({"type": "session.clear"})
+        assert ws.receive_json()["type"] == "session.created"
