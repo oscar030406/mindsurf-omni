@@ -1709,5 +1709,129 @@
     "source": [
       "scripts/build_graded_targets.py"
     ]
+  },
+  "dictation_streaming_asr": {
+    "_": [
+      "组长的要求：ASR 流式吐字直接传客户端做视觉效果，松手后润色整段一次。",
+      "润色不流式——他和我们的测量都指向这一点，所以这一块只是选一个能吃小片的识别器。",
+      "30 段真人口述，FunASR 标准流式配置 chunk_size=[0,10,5]（600 ms 块 + 300 ms 前瞻）。"
+    ],
+    "rows": [
+      {
+        "system": "Paraformer-online（流式）",
+        "cer": 0.2796,
+        "chars": 85
+      },
+      {
+        "system": "SenseVoice（整段，现在用的）",
+        "cer": 0.1094,
+        "chars": 90
+      }
+    ],
+    "timing": {
+      "first_word_seconds": 0.6,
+      "step_ms_per_600ms_chunk": 194,
+      "rtf": 0.323,
+      "sensevoice_whole_ms": 57
+    },
+    "verdict": [
+      "视觉这一格达标：第一个字 0.6 秒出来，之后每 600 ms 一批，RTF 0.323 远快于实时。",
+      "代价是字错率 2.6 倍。但按并行设计（流式只驱动显示，松手后 SenseVoice 覆盖）这个代价不进最终文本。",
+      "「要准确率就不能流式」在二选一的前提下成立，在并行的前提下不成立。"
+    ],
+    "what_was_refuted": [
+      "**用现有 SenseVoice 边说边分段行不通**：按 VAD 停顿切成小片转写，字错率 0.0866 → 0.4546。",
+      "它是整段非自回归模型，1–2 秒的片上下文不够。所以必须换一个真流式模型。",
+      "停顿本身没问题：真人口述里停顿间隔中位 1.4 秒、第一次出字等 1.0 秒，字能持续往外冒。"
+    ],
+    "source": [
+      "scripts/measure_streaming_asr.py"
+    ]
+  },
+  "dictation_vllm": {
+    "_": [
+      "组长在 vLLM 上测到 32 路并发 2.67M TPM，问要不要搬。先把我们自己的基线补上——",
+      "之前落盘的 10.14 请求/秒是**整轮**（含 ASR），拿它去比纯生成是比错了东西。"
+    ],
+    "model_is_the_same": "润色器跑的是 89.86M 的 Thinker（139M 里另外 47M 是 Talker，文本这条路不走）",
+    "export": [
+      "MiniMind 的张量命名是 Llama 的，外加逐头的 q_norm/k_norm——**那正是 Qwen3**。",
+      "所以不用给 vLLM 注册自定义架构，导成 Qwen3ForCausalLM 它原生就认。",
+      "导出后拿同一个 prompt 对 logits：**最大绝对差 0.0000e+00**，top5 完全一致。"
+    ],
+    "ours_in_process": [
+      {
+        "in_flight": 1,
+        "requests_per_second": 2.23,
+        "p50_ms": 472,
+        "total_tok_s": 663
+      },
+      {
+        "in_flight": 8,
+        "requests_per_second": 6.95,
+        "p50_ms": 1208,
+        "total_tok_s": 2064
+      },
+      {
+        "in_flight": 16,
+        "requests_per_second": 10.56,
+        "p50_ms": 1519,
+        "total_tok_s": 3155
+      },
+      {
+        "in_flight": 32,
+        "requests_per_second": 14.23,
+        "p50_ms": 2622,
+        "total_tok_s": 3678
+      }
+    ],
+    "vllm_http": [
+      {
+        "in_flight": 1,
+        "requests_per_second": 2.74,
+        "p50_ms": 368,
+        "total_tok_s": 847
+      },
+      {
+        "in_flight": 8,
+        "requests_per_second": 19.38,
+        "p50_ms": 401,
+        "total_tok_s": 6003
+      },
+      {
+        "in_flight": 16,
+        "requests_per_second": 36.01,
+        "p50_ms": 421,
+        "total_tok_s": 11175
+      },
+      {
+        "in_flight": 32,
+        "requests_per_second": 96.55,
+        "p50_ms": 384,
+        "total_tok_s": 26259
+      }
+    ],
+    "vllm_offline": {
+      "requests_per_second": 149.01,
+      "total_tok_s": 36130,
+      "tpm": "2.17M"
+    },
+    "verdict": [
+      "同一个模型、同一批 prompt、同样并发：吞吐 6.8 倍，而延迟同时降到 1/6.8。",
+      "**最要紧的是延迟的形状**：我们的 P50 随并发线性恶化（472 → 2622 ms），vLLM 几乎是平的（368 → 384 ms）。",
+      "我们的批处理里一个请求要等整批最慢的那个；continuous batching 没有这个问题。",
+      "离线接口 2.17M TPM，和组长报的 2.67M 同量级，对得上。"
+    ],
+    "not_yet_answered": [
+      "**以上全是自由生成。复制约束还没加。**",
+      "约束要求每一步、每一行按各自的解码历史重算 mask，而 vLLM 的 logits processor 必须声明",
+      "is_argmax_invariant()=False，会关掉一部分快路径。带约束还剩多少，是这条路能不能走的真正判据。",
+      "接口已经确认可用（AdapterLogitsProcessor + extra_args），代码写好了，",
+      "**但这张卡上同时有别人的 vLLM 基准在跑，抢卡量吞吐会读出反向结论，所以停在这里等卡空**。"
+    ],
+    "source": [
+      "scripts/export_polisher_to_hf.py",
+      "scripts/measure_polish_throughput.py"
+    ]
   }
 }
