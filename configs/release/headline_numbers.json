@@ -1610,5 +1610,26 @@
       "artifacts/polish_train/pairs_cs2w.jsonl"
     ],
     "guard_cost": "两道新闸在热路径上的代价：_word_edges 每句 0.021 ms、negations_kept 0.002 ms，整条 merge 每句 0.383 ms，对比润色解码 150–300 ms，占比不到万分之一"
+  },
+  "dictation_tonight_no_regression": {
+    "_": [
+      "今晚给 polish.py 加了四道闸（否定词、对进保护名单、归还过词边界、整条只有语气词时返回空），",
+      "主判据一次都没复测过。拿 80b2c0c（今晚第一笔改动之前）的 polish.py 和当前代码，",
+      "同一个 checkpoint、同一批 986 条、同一个阈值，各跑一遍。"
+    ],
+    "result": "六个读数全部逐位相同，差 +0.0000。今晚的改动在注入留出集上是恒等的",
+    "why_that_is_expected": [
+      "对 在注入数据里几乎不出现，否定词在那批上的存活本来就是 1.0000，",
+      "词边界那条只在 相对 这种形状上才触发。四道闸的效果全部在真人语音上，也只在那里量过。"
+    ],
+    "a_false_alarm_worth_recording": [
+      "第一次比对时我拿这批的 filler_removed_rate 0.4316 去对落盘的 0.9722，差点据此宣布产品坏了。",
+      "两个数用的是同一个函数同一个公式，但 **pairs_holdout.jsonl 是 §18 改目标之前的旧留出集**",
+      "（它的 target 是语料原文，带书名号、还把「肖申刻」改成了「肖申克」）。",
+      "同名同式不同数据，照样不可比。真正的检查是 A/B，那个是干净的。"
+    ],
+    "source": [
+      "scripts/measure_polish_service.py"
+    ]
   }
 }
