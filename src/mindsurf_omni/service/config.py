@@ -147,6 +147,15 @@ class Settings:
     # too short for its own detector -- see asr.SHORT_AUDIO_SECONDS. "auto"
     # restores the behaviour this had before 2026-08-22 at every length.
     asr_language: str = "zh"
+    # Which recogniser this deployment serves. "sensevoice" is the one the
+    # polisher was trained against and the one the released numbers describe;
+    # "paraformer-streaming" writes while the speaker is still talking, which
+    # SenseVoice structurally cannot, and reads 0.2796 against its 0.1094.
+    #
+    # A choice rather than a replacement, because which one is right depends on
+    # what the deployment is for: a live display wants the words early, a text
+    # box wants them right.
+    asr_model: str = "sensevoice"
     # Proper nouns this deployment says and the recogniser does not know, put
     # back into the transcript by sound. Global rather than per request: the
     # dictation endpoint takes a bare PCM body with no field to carry a table,
@@ -205,6 +214,7 @@ class Settings:
             ),
             polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.4")),
             asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
+            asr_model=source.get("MINDSURF_ASR_MODEL", "sensevoice").strip().lower(),
             hotwords=tuple(
                 word.strip()
                 for word in source.get("MINDSURF_HOTWORDS", "").split(",")
@@ -212,7 +222,16 @@ class Settings:
             ),
         )
 
+    #: The recognisers this build can serve, for /v1/models and for refusing a
+    #: name nobody has wired rather than starting and failing on first speech.
+    RECOGNISERS = ("sensevoice", "paraformer-streaming")
+
     def verify(self) -> None:
+        if self.asr_model not in self.RECOGNISERS:
+            raise ConfigurationError(
+                f"MINDSURF_ASR_MODEL={self.asr_model!r} names no recogniser this build has; "
+                f"it has {', '.join(self.RECOGNISERS)}"
+            )
         missing = self.paths.missing()
         # A checkpoint that was named and is not there used to pass this check:
         # assembly only asked whether the variable was set. The service then

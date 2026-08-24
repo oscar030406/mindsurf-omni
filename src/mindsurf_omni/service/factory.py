@@ -40,11 +40,21 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     from mindsurf_omni.service.asr import SenseVoiceRecogniser
     from mindsurf_omni.service.cascade import CascadeEngine
 
-    recogniser = SenseVoiceRecogniser(
-        model_dir=settings.paths.audio_encoder,
-        device=settings.device,
-        language=settings.asr_language,
-    )
+    if settings.asr_model == "paraformer-streaming":
+        from mindsurf_omni.service.asr import ParaformerStreamingRecogniser
+
+        # No path of its own: this one is named, not mounted, and FunASR
+        # resolves it against the same cache the others come from.
+        recogniser: Any = ParaformerStreamingRecogniser(
+            device=settings.device,
+            language=settings.asr_language,
+        )
+    else:
+        recogniser = SenseVoiceRecogniser(
+            model_dir=settings.paths.audio_encoder,
+            device=settings.device,
+            language=settings.asr_language,
+        )
     # The packages, not the weights. Loading stays deferred to the first request
     # so a container that cannot reach its weights still starts and explains
     # itself, but a package the image never installed is knowable now -- and

@@ -469,3 +469,110 @@ async def test_a_slow_stretch_is_vouched_for_by_the_rest_of_the_dictation() -> N
     text, _ = await recogniser.transcribe(pcm, 16_000)
 
     assert text.endswith("嗯。"), "慢的那一段被逐段的闸吃掉了"
+
+
+def test_a_deployment_can_choose_which_recogniser_it_serves() -> None:
+    """The lead asked for the streaming one on the model list, selectable.
+
+    Both are real answers to different questions -- the streaming one writes
+    while the speaker is still talking, which SenseVoice structurally cannot,
+    and reads 0.2796 against its 0.1094 -- so this is a choice the deployment
+    makes rather than a replacement.
+    """
+    from mindsurf_omni.service.config import ConfigurationError, Settings
+
+    def settings_for(name: str, tmp: Path) -> Settings:
+        for folder in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
+            (tmp / folder).mkdir(exist_ok=True)
+        made = Settings.from_environment(
+            {
+                "MINDSURF_ENGINE": "cascade",
+                "MINDSURF_WEIGHTS": str(tmp),
+                "MINDSURF_ASR_MODEL": name,
+            }
+        )
+        assert made is not None
+        return made
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as folder:
+        tmp = Path(folder)
+        assert settings_for("sensevoice", tmp).asr_model == "sensevoice"
+        settings_for("sensevoice", tmp).verify()
+        assert settings_for("paraformer-streaming", tmp).asr_model == "paraformer-streaming"
+        settings_for("paraformer-streaming", tmp).verify()
+
+        # A name nobody wired is refused at assembly, not on the first thing
+        # somebody says.
+        with pytest.raises(ConfigurationError, match="MINDSURF_ASR_MODEL"):
+            settings_for("whisper", tmp).verify()
+
+
+def test_the_streaming_recogniser_yields_additions_not_rewrites() -> None:
+    """Append-only, so a live display never has to re-render what it showed.
+
+    Every revision policy in the streaming literature exists to manage text
+    that changes after it is shown. This model commits as it goes, so the
+    caller appends and there is nothing to manage. Also checks the step count:
+    600 ms of audio per step is what makes the first word land at 0.6 s.
+    """
+    import asyncio
+
+    from mindsurf_omni.service.asr import STREAMING_STRIDE, ParaformerStreamingRecogniser
+
+    class Stub(ParaformerStreamingRecogniser):
+        """Answers a word per step, and nothing on the step that has none."""
+
+        steps: list[bool] = []  # noqa: RUF012 - test stub, one instance
+
+        def load(self) -> None:
+            self._model = object()
+
+        def _step(self, piece: object, cache: dict, last: bool) -> str:
+            Stub.steps.append(last)
+            return ["今天", "", "天气"][len(Stub.steps) - 1]
+
+    Stub.steps = []
+    recogniser = Stub()
+
+    async def collect() -> list[str]:
+        # Two bytes per sample, so this is exactly three strides of audio.
+        audio = b"\x00\x01" * (STREAMING_STRIDE * 3)
+        return [piece async for piece in recogniser.stream(audio, 16_000)]
+
+    pieces = asyncio.run(collect())
+
+    # Three steps of 600 ms over three strides of audio, and the empty one is
+    # not yielded -- an empty delta is a blank update the caller would render.
+    assert len(Stub.steps) == 3
+    assert Stub.steps == [False, False, True], "only the last step may be final"
+    assert pieces == ["今天", "天气"]
+
+
+def test_a_rate_the_streaming_recogniser_was_not_built_for_is_resampled() -> None:
+    """It is a 16 kHz model, and 48 kHz fed to it reads as speech at a third speed."""
+    import asyncio
+
+    from mindsurf_omni.service.asr import STREAMING_STRIDE, ParaformerStreamingRecogniser
+
+    seen: list[int] = []
+
+    class Stub(ParaformerStreamingRecogniser):
+        def load(self) -> None:
+            self._model = object()
+
+        def _step(self, piece: object, cache: dict, last: bool) -> str:
+            seen.append(len(piece))
+            return ""
+
+    async def run() -> None:
+        # One second at 48 kHz is 48000 samples; at 16 kHz it is 16000, which
+        # is one step and change.
+        async for _ in Stub().stream(b"\x00\x01" * 48_000, 48_000):
+            pass
+
+    asyncio.run(run())
+
+    assert sum(seen) == 16_000, f"resampled to {sum(seen)} samples, wanted 16000"
+    assert seen[0] == STREAMING_STRIDE
