@@ -133,7 +133,12 @@ APPEND_MS = 100  # what a browser sends per message
 
 
 async def live_clip(
-    recogniser, pcm: bytes, rate: int, every: float, window: float = 0.0
+    recogniser,
+    pcm: bytes,
+    rate: int,
+    every: float,
+    window: float = 0.0,
+    warmup: float | None = None,
 ) -> dict:
     """The Rereading preview, fed in append-sized pieces, timed end to end.
 
@@ -144,6 +149,8 @@ async def live_clip(
     live = recogniser.open(rate)
     if window:
         live.window = window
+    if warmup is not None:
+        live.warmup = warmup
     step = int(rate * APPEND_MS / 1000) * 2
     shown, first, deltas, spent = "", None, 0, 0.0
     played = 0.0
@@ -190,6 +197,8 @@ async def main() -> None:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--report", type=Path)
     parser.add_argument("--live", action="store_true", help="驱动组装好的预览，量首字和实时率")
+    parser.add_argument("--window", type=float, default=0.0, help="一次最多读多少秒，0 用默认")
+    parser.add_argument("--warmup", type=float, help="攒够多少秒音频才开始读。直接决定首字延迟")
     args = parser.parse_args()
 
     from mindsurf_omni.service.asr import SenseVoiceRecogniser
@@ -215,7 +224,7 @@ async def main() -> None:
             pcm, rate = read_wav(clip)
             if rate != RATE:
                 pcm, rate = resample(pcm, rate, RATE), RATE
-            got = await live_clip(recogniser, pcm, rate, args.step, args.window)
+            got = await live_clip(recogniser, pcm, rate, args.step, args.window, args.warmup)
             report[clip.name] = got
             first = got["first_word_s"]
             print(
