@@ -684,3 +684,132 @@ def test_agreement_is_the_common_head_and_nothing_else() -> None:
     assert agreed_prefix("今天下午", "今天下午开会") == "今天下午"
     assert agreed_prefix("", "今天") == ""
     assert agreed_prefix("明天", "今天") == ""
+
+
+async def test_a_comma_turning_into_a_full_stop_does_not_freeze_the_preview() -> None:
+    """Read live over 109 seconds of dictation, at the 33rd character a comma
+    came back as a full stop, the exact-prefix test never held again, and the
+    display stopped at 218 characters of an eventual 483.
+
+    The body-text measurement that said re-reading was safe was right and blind:
+    it only ever compared body characters, and the freeze was triggered by the
+    marks it discarded.
+    """
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(
+        [
+            "今天下午开会",
+            "今天下午开会",  # settles 今天下午开会
+            "今天下午开会。地点",
+            "今天下午开会。地点在三楼",  # the comma-to-full-stop shape
+        ]
+    )
+    live = Rereading(recogniser=reader, every=1.0, warmup=0)
+
+    assert await live.feed(_second()) == ""
+    assert await live.feed(_second()) == "今天下午开会"
+    # The next two readings agree on 今天下午开会。地点, whose body extends what
+    # was shown even though the string does not.
+    await live.feed(_second())
+    assert await live.feed(_second()) == "。地点"
+
+
+async def test_a_real_disagreement_still_holds() -> None:
+    """The gate has to still be a gate. Different words, not a different mark."""
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(["今天下午", "今天下午", "明天上午开会", "明天上午开会"])
+    live = Rereading(recogniser=reader, every=1.0, warmup=0)
+
+    await live.feed(_second())
+    assert await live.feed(_second()) == "今天下午"
+    await live.feed(_second())
+    assert await live.feed(_second()) == ""
+
+
+def _buzz(seconds: float, level: int = 6000, rate: int = 16_000) -> bytes:
+    import array
+    import math
+
+    frames = array.array("h")
+    for n in range(int(rate * seconds)):
+        frames.append(int(level * math.sin(2 * math.pi * 220 * n / rate)))
+    return frames.tobytes()
+
+
+def test_the_cut_lands_in_the_silence_and_not_in_a_word() -> None:
+    """Without timestamps a silence is the only place the text and the audio are
+    known to line up, so a cut anywhere else starts the next reading
+    mid-syllable."""
+    from mindsurf_omni.service.asr import quietest_split
+
+    rate = 16_000
+    pcm = _buzz(2.0) + bytes(int(rate * 0.6) * 2) + _buzz(2.0)
+    at = quietest_split(pcm, rate, keep_back=0.5)
+
+    assert at is not None
+    seconds = at / (rate * 2)
+    assert 2.0 < seconds < 2.6, seconds
+
+    # Speech all the way through has nowhere safe to cut, and saying so beats
+    # cutting a word in half.
+    assert quietest_split(_buzz(4.0), rate, keep_back=0.5) is None
+
+
+async def test_a_long_turn_stops_re_reading_the_whole_thing() -> None:
+    """Every reading re-reads from the last cut, so unbounded the work per turn
+    is quadratic in its length: 0.057 of real time over a fourteen-second
+    dictation against 0.177 over a hundred and nine, and the 3600-second turn
+    the entrance allows would spend more than four cards on its preview."""
+    from mindsurf_omni.service.asr import Rereading
+
+    rate = 16_000
+    seen: list[int] = []
+
+    class _Watching:
+        async def transcribe(self, pcm: bytes, rate: int) -> tuple[str, str | None]:
+            seen.append(len(pcm))
+            return "一二三四", "zh"
+
+    live = Rereading(recogniser=_Watching(), rate=rate, every=1.0, warmup=0, window=3.0)
+    # Loud, quiet, loud, so there is somewhere to cut.
+    for _ in range(3):
+        await live.feed(_buzz(1.0))
+    await live.feed(bytes(rate * 2))
+    for _ in range(4):
+        await live.feed(_buzz(1.0))
+
+    assert len(live._held) < 8 * rate * 2, "缓冲区没有被切短"  # noqa: SLF001
+    assert live._frozen, "切了却没有冻结文本"  # noqa: SLF001
+    assert max(seen) < 8 * rate * 2, "还有一次读了整段"
+
+
+async def test_the_seam_does_not_stack_punctuation() -> None:
+    """Driving the deployed service, 能下载 came back 能下载。，反正 and demo came
+    back demo。。。我们.
+
+    The earlier reading wrote one mark at that position, the later reading wrote
+    a different one, and seeking by body character put the seam in front of
+    both. Visible on the screen and invisible to every measurement of this
+    stage, which normalise marks away or compare bodies.
+    """
+    from mindsurf_omni.service.asr import Rereading
+
+    reader = _Reader(
+        [
+            "能下载，",
+            "能下载，",  # settles 能下载，
+            "能下载。反正就是",
+            "能下载。反正就是月底",
+        ]
+    )
+    live = Rereading(recogniser=reader, every=1.0, warmup=0)
+
+    await live.feed(_second())
+    assert await live.feed(_second()) == "能下载，"
+    await live.feed(_second())
+    said = await live.feed(_second())
+
+    assert said == "反正就是", said
+    assert "。，" not in live._shown  # noqa: SLF001

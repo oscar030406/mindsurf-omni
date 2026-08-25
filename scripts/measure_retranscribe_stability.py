@@ -132,7 +132,9 @@ async def one_clip(recogniser, pcm: bytes, rate: int, step: float, start: float)
 APPEND_MS = 100  # what a browser sends per message
 
 
-async def live_clip(recogniser, pcm: bytes, rate: int, every: float) -> dict:
+async def live_clip(
+    recogniser, pcm: bytes, rate: int, every: float, window: float = 0.0
+) -> dict:
     """The Rereading preview, fed in append-sized pieces, timed end to end.
 
     The parts were read separately -- churn on one side, cost per pass on the
@@ -140,6 +142,8 @@ async def live_clip(recogniser, pcm: bytes, rate: int, every: float) -> dict:
     word lands, and how much of the card a turn spends on the preview.
     """
     live = recogniser.open(rate)
+    if window:
+        live.window = window
     step = int(rate * APPEND_MS / 1000) * 2
     shown, first, deltas, spent = "", None, 0, 0.0
     played = 0.0
@@ -211,7 +215,7 @@ async def main() -> None:
             pcm, rate = read_wav(clip)
             if rate != RATE:
                 pcm, rate = resample(pcm, rate, RATE), RATE
-            got = await live_clip(recogniser, pcm, rate, args.step)
+            got = await live_clip(recogniser, pcm, rate, args.step, args.window)
             report[clip.name] = got
             first = got["first_word_s"]
             print(

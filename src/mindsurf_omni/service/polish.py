@@ -161,11 +161,19 @@ def worth_polishing(piece: str, longest_repeat: int = 5) -> bool:
     # still, all, been. Before this test the trigger fired on ll and missed
     # So um I think, so which English sentences reached the model was decided
     # by their spelling.
+    #
+    # Marks are taken out before the test. A restart the recogniser wrote a full
+    # stop into -- 应该。应该来得及 -- is two copies that are not adjacent, so the
+    # doubling check could not see it and the piece never reached the model.
+    # Found by dictating into the running service: 这边这边 went and 应该。应该
+    # stayed, from one recording. The grouper now keeps such a restart in one
+    # piece; this is the gate behind it, which was answering False anyway.
+    bare = "".join(char for char in piece if char not in PUNCTUATION)
     return any(
-        piece[start : start + size] == piece[start + size : start + 2 * size]
-        and any(_is_cjk(char) for char in piece[start : start + size])
+        bare[start : start + size] == bare[start + size : start + 2 * size]
+        and any(_is_cjk(char) for char in bare[start : start + size])
         for size in range(1, longest_repeat + 1)
-        for start in range(len(piece) - 2 * size + 1)
+        for start in range(len(bare) - 2 * size + 1)
     )
 
 
@@ -250,8 +258,52 @@ def group_sentences(text: str, longest: int = TRAINED_LENGTH) -> list[str]:
     A single sentence longer than ``longest`` is still left whole. A piece that
     starts halfway through a sentence is worse input than a long one, and there
     is no evidence either way on cutting one.
+
+    Two sentences are kept together when the break sits inside a restart:
+    ``应该。应该来得及`` split per sentence leaves one 应该 in each piece and the
+    repetition cannot be seen from either. Found by dictating into the running
+    service -- 这边这边 went and 应该。应该 stayed, from the same recording, and
+    every measurement of this stage was blind to it because the detector that
+    finds repetitions is looking at the same marked-up text the grouper is.
+    Measured after: 11 of 380 repetitions in 230 real long dictations
+    (2.89%) have a sentence mark inside them, all of them plain restarts --
+    国际服。国际服, 一个。一个朝代, 比如。比如, 第二大。第二大, 其实。其实.
+
+    Rejoined rather than deleted here, so the judgement stays with the model. A
+    rule that took out the first copy and its mark would be this file overruling
+    the decode on a shape the decode can handle perfectly well once it can see
+    it.
     """
-    return [text] if len(text) <= longest else split_sentences(text)
+    if len(text) <= longest:
+        return [text]
+    return _rejoin_restarts(split_sentences(text))
+
+
+def _rejoin_restarts(pieces: list[str], longest_repeat: int = 5) -> list[str]:
+    """Pieces, with a break that falls inside a repetition sewn back up."""
+    out: list[str] = []
+    for piece in pieces:
+        if out and _restart_across(out[-1], piece, longest_repeat):
+            out[-1] += piece
+        else:
+            out.append(piece)
+    return out
+
+
+def _restart_across(before: str, after: str, longest_repeat: int) -> bool:
+    """Does ``before`` end with the same run ``after`` begins with?
+
+    The mark is what separates them, so the tail of ``before`` is taken past it.
+    Two characters and up, the same floor the rest of this file uses: one is not
+    a repetition in Chinese.
+    """
+    tail = before.rstrip("".join(PUNCTUATION) + " \n")
+    for size in range(longest_repeat, 1, -1):
+        if len(tail) < size or len(after) < size:
+            continue
+        if tail[-size:] == after[:size]:
+            return True
+    return False
 
 
 def drop_bridging_with_mark(text: str) -> str:
@@ -282,12 +334,63 @@ def drop_bridging_with_mark(text: str) -> str:
     return text
 
 
+def drop_split_restart(text: str, longest_repeat: int = 5) -> str:
+    """Delete one copy of a restart the recogniser put a sentence mark inside.
+
+    应该。应该来得及 is a speaker starting again, and every test in this file that
+    finds a repetition asks whether the two copies are adjacent, so a mark
+    between them hides it from all of them at once. Measured on 230 real long
+    dictations: 11 of 380 repetitions have a mark inside -- 国际服。国际服,
+    一个。一个朝代, 比如。比如, 第二大。第二大, 其实。其实 -- 2.89%.
+
+    Found by dictating into the running service. 这边这边 went and 应该。应该
+    stayed, out of one recording, and no reading of this stage could see the
+    difference: the detector that scores repetitions asks for adjacency too.
+
+    **A rule here rather than a decision by the model, because the model was
+    given the decision first and did not take it.** The grouper now keeps such a
+    restart in one piece and ``worth_polishing`` now sees it, so the decode gets
+    the whole thing; fed that, it still wrote both copies out. So this is the
+    same bargain as the three shapes below: visible to a reader, invisible to
+    every metric, and cheaper to clean up than to retrain for.
+
+    Deleting only, so the copy constraint holds. Two characters and up, and
+    neither copy may spell a filler -- 对。对 is agreement twice, not a stutter,
+    and the vocabulary rules already own that judgement.
+    """
+    marks = "".join(PUNCTUATION)
+    changed = True
+    while changed:
+        changed = False
+        for size in range(longest_repeat, 1, -1):
+            for start in range(len(text) - 2 * size):
+                unit = text[start : start + size]
+                at = start + size
+                while at < len(text) and text[at] in marks:
+                    at += 1
+                if at == start + size or at + size > len(text):
+                    continue
+                if text[at : at + size] != unit:
+                    continue
+                if any(word in unit for word in VOCABULARY):
+                    continue
+                if not any(_is_cjk(character) for character in unit):
+                    continue
+                text = text[:start] + text[at:]
+                changed = True
+                break
+            if changed:
+                break
+    return text
+
+
 def tidy(text: str) -> str:
     """Drop what a deletion left with nothing in front of it.
 
-    Three shapes, read off the output rather than traced back to the filler they
+    Four shapes, read off the output rather than traced back to the filler they
     came from: a mid-sentence mark still attached to its filler
-    (``drop_bridging_with_mark``, first because it can double up punctuation),
+    (``drop_bridging_with_mark``, first because it can double up punctuation), a
+    restart the recogniser wrote a sentence mark into (``drop_split_restart``),
     punctuation stranded by a deleted filler ("彩塑，？特别震撼"), and a particle
     stranded at the start ("吧这个真的挺好的").
 
@@ -295,6 +398,7 @@ def tidy(text: str) -> str:
     punctuation away. They are visible to a reader and not to the metric.
     """
     text = drop_bridging_with_mark(text)
+    text = drop_split_restart(text)
     out: list[str] = []
     for char in text:
         # ASCII marks count too, and only since English joined: Um, then I …

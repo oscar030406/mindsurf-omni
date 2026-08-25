@@ -614,3 +614,99 @@ async def test_the_fallback_is_counted_where_it_happens() -> None:
 
     assert polisher.floored == 1
     assert polisher.floored_chars == len(piece)
+
+
+def test_a_restart_split_by_a_full_stop_is_kept_in_one_piece() -> None:
+    """应该。应该来得及 split per sentence leaves one 应该 in each piece and the
+    repetition cannot be seen from either.
+
+    Found by dictating into the running service: 这边这边 went and 应该。应该
+    stayed, from the same recording. 11 of 380 repetitions across 230 real long
+    dictations have a sentence mark inside them.
+    """
+    from mindsurf_omni.service.polish import group_sentences
+
+    text = "我们这边进度完成了60%吧。应该。应该来得及。" + "".join(
+        f"第{n}件事情说完了以后再讲下一件。" for n in range(14)
+    )
+    pieces = group_sentences(text)
+
+    assert any("应该。应该" in piece for piece in pieces), pieces
+    # And the rest still goes one sentence at a time.
+    assert len(pieces) > 3
+
+
+def test_two_sentences_that_merely_touch_are_not_glued() -> None:
+    """The rule has to be a repetition, not a shared character."""
+    from mindsurf_omni.service.polish import group_sentences
+
+    text = "今天天气很好。好久没有出门了。" + "".join(
+        f"第{n}件事情说完了以后再讲下一件。" for n in range(14)
+    )
+    pieces = group_sentences(text)
+
+    assert "今天天气很好。" in pieces
+    assert "好久没有出门了。" in pieces
+
+
+def test_the_gate_sees_a_restart_a_full_stop_was_written_into() -> None:
+    """应该。应该来得及 is two copies that are not adjacent, so the doubling test
+    could not see them and the piece never reached the model.
+
+    The grouper keeps such a restart in one piece now; this is the gate behind
+    it, which was answering False anyway. Found by dictating into the running
+    service, where 这边这边 went and 应该。应该 stayed from one recording.
+    """
+    from mindsurf_omni.service.polish import worth_polishing
+
+    assert worth_polishing("应该。应该来得及。")
+    assert worth_polishing("国际服。国际服就可以和外国人聊天")
+    assert worth_polishing("我们这边这边进度完成了60%吧。")
+    # And it still says no to text with nothing in it to remove.
+    assert not worth_polishing("今天下午三点开会，地点在B203。")
+
+
+def test_a_restart_the_recogniser_split_is_cleaned_up() -> None:
+    """应该。应该来得及 is a speaker starting again, and every repetition test in
+    this file asks for adjacency, so a mark between the copies hides it from all
+    of them at once. 11 of 380 repetitions across 230 real long dictations.
+    """
+    from mindsurf_omni.service.polish import drop_split_restart
+
+    assert drop_split_restart("应该。应该来得及。") == "应该来得及。"
+    assert drop_split_restart("国际服。国际服就可以聊天") == "国际服就可以聊天"
+    assert drop_split_restart("第二大。第二大的语言") == "第二大的语言"
+
+    # 其实 is in the vocabulary, so the vocabulary rules own it and this leaves
+    # it alone -- the same guard keep_content applies to an adjacent repeat of a
+    # filler. CS2W marks 其实 as filler 20 times in 260, so deleting a copy of
+    # it on sight is a call this rule is not entitled to make.
+    assert drop_split_restart("其实。其实我认为") == "其实。其实我认为"
+
+
+def test_the_cleanup_only_ever_deletes() -> None:
+    """The copy constraint is what makes invention structurally impossible, and
+    a tidy rule that added a character would be outside it."""
+    from mindsurf_omni.service.polish import drop_split_restart
+
+    for text in ("应该。应该来得及。", "今天天气很好。好久没出门", "对。对，就这样"):
+        assert _is_subsequence(drop_split_restart(text), text), text
+
+
+def _is_subsequence(part: str, whole: str) -> bool:
+    walk = iter(whole)
+    return all(character in walk for character in part)
+
+
+def test_the_cleanup_leaves_alone_what_is_not_a_restart() -> None:
+    """One character is not a repetition in Chinese, a filler is the vocabulary
+    rules' business, and two sentences that merely share a word are two
+    sentences."""
+    from mindsurf_omni.service.polish import drop_split_restart
+
+    # 对 is in the vocabulary; 对。对 is agreement twice.
+    assert drop_split_restart("对。对，就这样办。") == "对。对，就这样办。"
+    # A shared character is not a copy.
+    assert drop_split_restart("今天天气很好。好久没有出门了。") == "今天天气很好。好久没有出门了。"
+    # Nothing between the copies means the ordinary repetition rules own it.
+    assert drop_split_restart("我们这边这边进度") == "我们这边这边进度"

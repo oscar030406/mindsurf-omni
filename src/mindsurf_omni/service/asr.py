@@ -161,6 +161,49 @@ def said_enough(text: str, seconds: float, language: str = "zh") -> bool:
 PREVIEW_SECONDS = 1.0
 
 
+# What the preview compares on when it asks whether a new reading still
+# contains what is already on the reader's screen. Marks are left out: over
+# four dictations read again every 1, 2, 3 and 5 seconds not one body
+# character ever changed, and the only thing that did was punctuation.
+PREVIEW_MARKS = set("，。！？；：、,.!?;: \n\u3000")
+
+
+def quietest_split(pcm: bytes, rate: int, keep_back: float) -> int | None:
+    """Byte offset of the quietest short stretch, or None if nothing is quiet.
+
+    Where to cut the buffer so a reading can start again without carrying the
+    whole turn. A cut anywhere else splits a word and the next reading begins
+    mid-syllable; without timestamps a silence is the only place the text and
+    the audio are known to line up.
+
+    Searched over everything except the last ``keep_back`` seconds, so the cut
+    lands in text that has already settled rather than in what is still being
+    said.
+    """
+    import numpy as np
+
+    samples = np.frombuffer(pcm, dtype=np.int16)
+    frame = int(rate * 0.02)
+    usable = len(samples) - int(rate * keep_back)
+    if usable < frame * 10:
+        return None
+    frames = samples[: usable - usable % frame].reshape(-1, frame).astype(np.float32)
+    loudness = np.sqrt((frames**2).mean(axis=1))
+    # Ten frames is 200 ms, about the shortest pause between clauses.
+    run = np.convolve(loudness, np.ones(10) / 10, mode="valid")
+    at = int(run.argmin())
+    # A "silence" as loud as ordinary speech is not one. The threshold is a
+    # share of this turn's own median, so it travels between microphones.
+    if run[at] > 0.25 * float(np.median(loudness)):
+        return None
+    return (at + 5) * frame * 2
+
+
+def body(text: str) -> str:
+    """The text without the marks, which are the only part that moves."""
+    return "".join(character for character in text if character not in PREVIEW_MARKS)
+
+
 def agreed_prefix(before: str, after: str) -> str:
     """The head two readings of the same audio both wrote.
 
@@ -239,12 +282,27 @@ class Rereading:
     # SHORT_AUDIO_SECONDS is the same line this file already draws for the
     # language slot, and for the same reason.
     warmup: float = SHORT_AUDIO_SECONDS
+    # How much audio one reading may cover. Every reading re-reads the buffer
+    # from the last cut, so without a bound the work per turn is quadratic in
+    # its length: a pass costs 52 ms at a five-second buffer and 80 ms at forty,
+    # and the whole preview came to 0.057 of real time over a fourteen-second
+    # dictation against 0.177 over a hundred and nine. Fitted, roughly
+    # 0.04 + 0.0013 a second -- so the 3600-second turn the entrance allows
+    # would spend more than four cards on its own preview.
+    #
+    # Past this the text so far is frozen and reading starts again from a
+    # silence. 45 seconds because the cost is still low there and a cut costs
+    # one extra reading plus a round with nothing to agree with.
+    window: float = 45.0
     # A bytearray, because this grows by one append message at a time and
     # rebinding bytes each time is quadratic in the length of the turn.
     _held: bytearray = field(default_factory=bytearray)
     _fresh: int = 0
     _last: str = ""
     _shown: str = ""
+    # Text for audio that has been cut away. No later reading covers it, so
+    # it can never be revised, and every reading is this plus the tail.
+    _frozen: str = ""
 
     async def feed(self, pcm: bytes) -> str:
         """Whatever settled since the last call, or nothing."""
@@ -255,30 +313,91 @@ class Rereading:
         if self._fresh < self.every * self.rate * 2:
             return ""
         self._fresh = 0
-        return self._advance(await self._read())
+        said = self._advance(await self._read())
+        if len(self._held) > self.window * self.rate * 2:
+            await self._cut()
+        return said
 
     async def finish(self) -> str:
-        """The rest of it, if the last reading still contains what was shown."""
+        """Everything the last reading has past what is already on screen.
+
+        Compared without marks, for the reason ``_advance`` is: with them, the
+        109-second dictation lost its last five characters -- the preview had
+        439 of the release transcript's 444 and they were a perfect prefix, and
+        this returned nothing because a comma earlier in the text had turned
+        into a full stop.
+        """
         if not self._held:
             return ""
-        text = await self._read()
-        return text[len(self._shown) :] if text.startswith(self._shown) else ""
+        return self._past(await self._read())
 
     async def _read(self) -> str:
         text, _ = await self.recogniser.transcribe(bytes(self._held), self.rate)
-        return text or ""
+        return self._frozen + (text or "")
+
+    async def _cut(self) -> None:
+        """Freeze the text so far and start reading again from a silence.
+
+        The head is transcribed once, on its own, and kept. Which is the only
+        way to know what text belongs to the audio being dropped: this
+        recogniser returns no timestamps, so the alignment cannot be inferred
+        from a reading of the whole buffer.
+        """
+        at = quietest_split(bytes(self._held), self.rate, keep_back=self.every * 3)
+        if at is None:
+            # Nothing quiet enough to cut at. Paying for a longer reading beats
+            # cutting a word in half; the next call tries again with more audio.
+            return
+        head, _ = await self.recogniser.transcribe(bytes(self._held[:at]), self.rate)
+        self._frozen += head or ""
+        self._held = bytearray(self._held[at:])
+        # Nothing to agree with across the cut. One round holds, then it resumes.
+        self._last = ""
+
+    def _past(self, text: str) -> str:
+        """The part of ``text`` beyond what the reader has already been sent."""
+        shown = body(self._shown)
+        if not body(text).startswith(shown):
+            return ""
+        seen, at = 0, 0
+        for at, character in enumerate(text):  # noqa: B007
+            if seen == len(shown):
+                break
+            if character not in PREVIEW_MARKS:
+                seen += 1
+        else:
+            at = len(text)
+        out = text[at:]
+        # The mark at the seam belongs to a position the reader already has.
+        # Without this the display stacks them: driving the deployed service,
+        # 能下载 came back 能下载。，反正, 方案 came back 方案。。比如说 and demo
+        # came back demo。。。我们 -- the earlier reading had written one mark
+        # there, the later reading wrote a different one, and counting body
+        # characters put the seam in front of both. Visible on the screen and
+        # invisible to every measurement of this stage, which normalise marks
+        # away or compare bodies.
+        if self._shown and self._shown[-1] in PREVIEW_MARKS:
+            out = out.lstrip("".join(PREVIEW_MARKS))
+        return out
 
     def _advance(self, text: str) -> str:
         settled = agreed_prefix(self._last, text)
         self._last = text
-        # Two readings agreeing on something that contradicts what is already on
-        # the reader's screen. There is no way to unsay it under an
-        # additions-only contract, so hold and let them catch up; the transcript
-        # the turn actually keeps comes from the commit branch either way.
-        if not settled.startswith(self._shown):
+        # Compared without marks, because a mark is the one thing that does
+        # move, and comparing with them froze the preview for good. Read live
+        # over 109 seconds of dictation: at the 33rd character a comma came back
+        # as a full stop, the exact-prefix test never held again, and the
+        # display stopped at 218 characters of an eventual 483. The body-text
+        # measurement that said re-reading was safe was right and blind -- it
+        # only ever compared bodies, and the freeze came from what it discarded.
+        #
+        # A disagreement about the words themselves still holds: there is
+        # nothing honest to send under an additions-only contract, and the
+        # transcript the turn keeps comes from the commit branch either way.
+        out = self._past(settled)
+        if not out:
             return ""
-        out = settled[len(self._shown) :]
-        self._shown = settled
+        self._shown += out
         return out
 
 @dataclass(slots=True)
