@@ -173,6 +173,14 @@ class Settings:
     # What this deployment is spoken in. Reaches the recogniser only for audio
     # too short for its own detector -- see asr.SHORT_AUDIO_SECONDS. "auto"
     # restores the behaviour this had before 2026-08-22 at every length.
+    # Reads the finished text back when somebody asks for it. Empty is off,
+    # and off is the default: this is a button in the client, not a stage of
+    # the turn. The only value is "edge" -- the hosted synthesiser. The local
+    # one went with the assistant line, and it was the worse reader anyway:
+    # on four real dictation notes edge holds 4.71 to 5.01 characters a
+    # second (6% spread) where VoxCPM ran 4.64 to 6.12 (32%). Not just
+    # faster, unevenly faster.
+    tts: str = ""
     asr_language: str = "zh"
     # Seconds of new speech between preview readings, while the speaker is
     # still talking. 0 shows nothing until release. Only the whole-segment
@@ -253,6 +261,7 @@ class Settings:
                 else None
             ),
             polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.4")),
+            tts=source.get("MINDSURF_TTS", "").strip().lower(),
             asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
             preview_seconds=_preview_seconds(source.get("MINDSURF_PREVIEW_SECONDS", "1.0")),
             asr_model=source.get("MINDSURF_ASR_MODEL", "sensevoice").strip().lower(),
@@ -270,6 +279,11 @@ class Settings:
     REALTIME_MODES = ("converse", "dictate")
 
     def verify(self) -> None:
+        if self.tts and self.tts != "edge":
+            raise ConfigurationError(
+                f"MINDSURF_TTS={self.tts!r} names no synthesiser this build has; "
+                "only 'edge' is wired. The local one went with the assistant line"
+            )
         if self.realtime not in self.REALTIME_MODES:
             raise ConfigurationError(
                 f"MINDSURF_REALTIME={self.realtime!r} names no turn this build "
@@ -450,4 +464,8 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
                     frozen=False,
                 )
             )
+    if settings.path == "cascade" and settings.tts:
+        # Named because the audio in any read-aloud report came from it, and a
+        # report that does not say who spoke cannot be compared with the next.
+        components.append(ComponentInfo(name=f"tts-{settings.tts}", frozen=True))
     return components

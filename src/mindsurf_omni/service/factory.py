@@ -82,6 +82,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         return repair(text), language
 
     generate = _build_generator(settings)
+    synthesise = _build_synthesiser(settings)
 
     # Named here because assembly is the only place that knows which stages
     # will refuse.
@@ -97,7 +98,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         realtime=settings.realtime,
         transcriber=transcribe,
         generator=generate,  # type: ignore[arg-type]
-        synthesiser=None,
+        synthesiser=synthesise,
         components=describe_components(settings),
         token_spec=token_spec(),
         unwired=tuple(unwired),
@@ -279,6 +280,59 @@ def _importable(module: str) -> bool:
         return importlib.util.find_spec(module) is not None
     except (ImportError, ValueError):
         return False
+
+
+def _build_synthesiser(settings: Settings) -> Any:
+    """What reads the finished text back, or a callable that says why it cannot.
+
+    Off unless an operator asks for it. Read-aloud is a button in the client --
+    somebody taps the speaker on a note they already have -- so nothing about a
+    dictation turn depends on this being wired, and a deployment that never
+    reaches the network is the default rather than a special case.
+
+    Hosted only. The local synthesiser went with the assistant line, and on the
+    material that matters it was the worse reader: over four real dictation
+    notes edge holds 4.71 to 5.01 characters a second, a 6% spread, against
+    4.64 to 6.12 for VoxCPM, which is 32%. On a 40-sentence benchmark the two
+    differed by 2.6%, and that benchmark was long enumerations and written
+    sentences -- the wrong material, again.
+
+    The voice is chosen rather than inherited: `zh-CN-XiaoxiaoNeural`, picked by
+    ear from six candidates on the same dictated note. Two of the rejected ones
+    read 下载 with the wrong tone on 载, which no ruler here can catch -- read
+    zǎi or zài it is the same character, so character error rate is exactly
+    zero. See DECISIONS §29.
+    """
+    from mindsurf_omni.data.synthesis import EdgeSynthesiser, Utterance
+    from mindsurf_omni.service.engine import GenerationSettings
+
+    if not settings.tts:
+
+        async def unwired(text: str, _: Any) -> bytes:
+            raise ConfigurationError(
+                "this deployment does not read text back; set MINDSURF_TTS=edge to turn "
+                "it on. It reaches the network, and it is named in /v1/models when it is on"
+            )
+
+        return unwired
+
+    # Checked here rather than at the first request. The base image carries the
+    # runtime set only, so a 503 naming the extra beats an ImportError raised
+    # halfway through a request, which /health cannot see.
+    if not _importable("edge_tts"):
+        raise ConfigurationError(
+            "MINDSURF_TTS=edge needs the edge_tts package, which the container does not "
+            "carry: install the 'tts' extra, or leave MINDSURF_TTS unset"
+        )
+
+    synthesiser = EdgeSynthesiser()
+
+    async def speak(text: str, generation: GenerationSettings) -> bytes:
+        return await synthesiser.synthesise(
+            Utterance(text=text, voice=generation.voice, emotion=generation.emotion)
+        )
+
+    return speak
 
 
 def _build_native(settings: Settings) -> SpeechEngine:

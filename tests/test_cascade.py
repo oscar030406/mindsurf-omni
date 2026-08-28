@@ -15,7 +15,6 @@ import pytest
 
 from mindsurf_omni.contract import TokenSpec
 from mindsurf_omni.service.cascade import CascadeEngine
-from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, TooLongForModel
 
 SPEC = TokenSpec(
@@ -221,13 +220,10 @@ async def test_history_reaches_the_prompt_and_this_turn_is_appended_to_it() -> N
     assert [chunk.transcript for chunk in chunks if chunk.transcript is not None] == ["那它多少钱"]
 
 
-async def test_the_cascade_does_not_speak() -> None:
-    """The product is dictation: audio in, text out, nothing read back.
-
-    The synthesiser this used to call lives in mindsurf_omni.data.synthesis now,
-    where the polish training pairs are built with it. It is a tool for making
-    data, not a stage of the service.
-    """
+async def test_read_aloud_happens_on_request_and_not_on_its_own() -> None:
+    """Nothing in a dictation turn calls speak(). It exists so a client can put
+    a speaker button next to a note somebody already has."""
+    said = []
 
     async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         return "你好", "zh"
@@ -235,17 +231,25 @@ async def test_the_cascade_does_not_speak() -> None:
     async def generate(messages: list[dict[str, str]], settings: object) -> AsyncIterator[str]:
         yield "好"
 
+    async def synthesise(text: str, settings: object) -> bytes:
+        said.append(text)
+        return b"\x00\x01" * 8
+
     engine = CascadeEngine(
         transcribe,  # type: ignore[arg-type]
         generate,  # type: ignore[arg-type]
-        None,
+        synthesise,  # type: ignore[arg-type]
         [],
         SPEC,
     )
 
-    with pytest.raises(ConfigurationError, match="does not synthesise"):
-        async for _ in engine.speak("你好", GenerationSettings()):
-            pass
+    # A whole dictation turn, and the synthesiser is never reached.
+    await engine.transcribe(b"\x00\x01" * 100, 16_000)
+    assert said == []
+
+    chunks = [chunk async for chunk in engine.speak("你好", GenerationSettings())]
+    assert said == ["你好"]
+    assert chunks[-1].is_final
 
 
 async def test_text_reaches_the_caller_before_any_audio_does() -> None:

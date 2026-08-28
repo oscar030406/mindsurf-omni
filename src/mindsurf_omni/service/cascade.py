@@ -247,22 +247,15 @@ class CascadeEngine(SpeechEngine):
     async def speak(  # type: ignore[override]
         self, text: str, settings: GenerationSettings
     ) -> AsyncIterator[SpeechChunk]:
-        """This path does not speak.
+        """Read the given text back, when a deployment turned that on.
 
-        The product is dictation: audio in, text out, nothing read back. The
-        synthesiser this used to call lives in ``mindsurf_omni.data.synthesis``
-        now, where the polish training pairs are built with it -- injected
-        filler is spoken, heard back by the recogniser, and the pair is what the
-        model learns from. It is a tool for making data, not a stage of the
-        service.
+        On request, never on its own. Nothing in a dictation turn calls this --
+        it exists so a client can put a speaker button next to a finished note.
+        Unwired, the callable assembly handed us refuses and says how to turn it
+        on, which is the ordinary case.
         """
-        from mindsurf_omni.service.config import ConfigurationError
-
-        raise ConfigurationError(
-            "the cascade path transcribes and polishes; it does not synthesise. "
-            "Use MINDSURF_ENGINE=native for a path that speaks"
-        )
-        yield  # pragma: no cover - unreachable, keeps this an async generator
+        pcm = await self._synthesise(text, settings)
+        yield SpeechChunk(pcm=pcm, text=text, is_final=True)
 
     async def respond(  # type: ignore[override]
         self,

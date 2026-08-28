@@ -122,3 +122,15 @@ artifacts/polish_train/pairs_union.jsonl
 # scripts/measure_group_length.py 的开头，汇总数在 artifacts/group-length-*.json。
 artifacts/polish_train/pairs_long.jsonl
 artifacts/polish_train/pairs_graded.jsonl
+
+# 语音助手那条线：验证过、按数据选择不投产，产品收敛成听写之后不再上传。
+# 文件留在本地，历史在 git 里（2026-08-28 之前的提交完整保留）。仓库只装
+# 听写产品要的东西，接手的人少读一万五千行。
+scripts/speak_texts.py
+scripts/measure_voice_consistency.py
+scripts/measure_voxcpm_cost.py
+scripts/run_voxcpm_arms.sh
+scripts/score_voxcpm_arms.sh
+tests/test_speak_texts.py
+tests/test_measure_voice_consistency.py
+tests/test_measure_voxcpm_cost.py

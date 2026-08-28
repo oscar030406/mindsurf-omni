@@ -18,11 +18,7 @@ from pathlib import Path
 
 import torch
 
-SRC = (
-    Path(sys.argv[1])
-    if len(sys.argv) > 1
-    else Path("out/sft_polish6_768.pth")
-)  # noqa: E501
+SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("out/sft_polish6_768.pth")  # noqa: E501
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("<导出目录>")
 TOK = Path("assets/tokenizer")
 

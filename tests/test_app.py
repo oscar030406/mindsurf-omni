@@ -1520,7 +1520,7 @@ def test_a_configuration_failure_does_not_name_the_directory_it_failed_in(
     monkeypatch.setattr(config.Settings, "from_environment", staticmethod(lambda: object()))
 
     with TestClient(create_app(), raise_server_exceptions=False) as started:
-        for path in ("/health"):
+        for path in "/health":
             assert secret not in started.get(path).text, path
 
 

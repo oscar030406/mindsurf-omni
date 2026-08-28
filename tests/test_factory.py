@@ -49,14 +49,13 @@ def test_a_built_engine_still_reports_the_licence(tmp_path: Path) -> None:
     assert description.licence == "CC-BY-NC-4.0"
 
 
-def test_the_cascade_says_it_does_not_speak(tmp_path: Path) -> None:
-    """The product is dictation. The synthesiser that used to sit here lives in
-    mindsurf_omni.data.synthesis now, where the polish training pairs are built
-    with it, and the served path has no speech stage at all."""
+def test_read_aloud_is_off_until_it_is_asked_for(tmp_path: Path) -> None:
+    """Off is the default: read-aloud is a button in the client, and a
+    deployment that never reaches the network should not have to opt out."""
     engine = build(_ready(tmp_path))
     assert engine is not None
 
-    with pytest.raises(ConfigurationError, match="does not synthesise"):
+    with pytest.raises(ConfigurationError, match="does not read text back"):
         import asyncio
 
         asyncio.run(_first_chunk(engine))

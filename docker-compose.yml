@@ -28,6 +28,9 @@ services:
       # the speaker is still talking, at a higher error rate, so it drives the
       # display and the final text still comes from the whole-buffer pass.
       MINDSURF_ASR_MODEL: "${MINDSURF_ASR_MODEL:-sensevoice}"
+      # 朗读：客户端点小喇叭才念，不自动。空=关掉，唯一的值是 edge（托管，
+      # 文本会离开本机）。默认关着，不想联网的部署不用特意去关。
+      MINDSURF_TTS: "${MINDSURF_TTS:-}"
       # Seconds between preview readings while somebody is still talking.
       # 0 shows nothing until they release the key.
       MINDSURF_PREVIEW_SECONDS: "${MINDSURF_PREVIEW_SECONDS:-1.0}"
