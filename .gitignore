@@ -134,3 +134,5 @@ scripts/score_voxcpm_arms.sh
 tests/test_speak_texts.py
 tests/test_measure_voice_consistency.py
 tests/test_measure_voxcpm_cost.py
+src/mindsurf_omni/service/native.py
+tests/test_native.py

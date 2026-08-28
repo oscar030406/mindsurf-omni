@@ -33,7 +33,7 @@ def build(settings: Settings | None) -> SpeechEngine | None:
 
     if settings.path == "cascade":
         return _build_cascade(settings)
-    return _build_native(settings)
+    return _build_cascade(settings)
 
 
 def _build_cascade(settings: Settings) -> SpeechEngine:
@@ -333,44 +333,3 @@ def _build_synthesiser(settings: Settings) -> Any:
         )
 
     return speak
-
-
-def _build_native(settings: Settings) -> SpeechEngine:
-    """Thinker and Talker in one model, with the codec that turns codes to sound."""
-    if settings.thinker is None or settings.minimind_root is None:
-        raise ConfigurationError(
-            "the native path needs MINDSURF_THINKER pointing at an omni checkpoint and "
-            "MINIMIND_O_ROOT at a MiniMind-O checkout; the Talker lives in the same file "
-            "as the Thinker, so one checkpoint supplies both"
-        )
-    _require_minimind_packages("MINDSURF_ENGINE=native", "the native path")
-
-    from mindsurf_omni.service.native import NativeConfig, NativeEngine, load_omni
-
-    model, tokenizer, codec = load_omni(
-        checkpoint=settings.thinker,
-        minimind_root=settings.minimind_root,
-        tokenizer_dir=settings.paths.tokenizer,
-        audio_encoder=settings.paths.audio_encoder,
-        codec_dir=settings.paths.codec,
-        device=settings.device,
-    )
-    recogniser = None
-    if _importable("funasr"):
-        from mindsurf_omni.service.asr import SenseVoiceRecogniser
-
-        recogniser = SenseVoiceRecogniser(
-            model_dir=settings.paths.audio_encoder,
-            device=settings.device,
-            language=settings.asr_language,
-        )
-    return NativeEngine(
-        model=model,
-        codec=codec,
-        tokenizer=tokenizer,
-        token_spec=token_spec(),
-        components=describe_components(settings),
-        config=NativeConfig(chunk_frames=settings.chunk_frames),
-        device=settings.device,
-        recogniser=recogniser,
-    )

@@ -31,8 +31,8 @@ def test_an_unrecognised_engine_names_what_was_given() -> None:
         Settings.from_environment({"MINDSURF_ENGINE": "nativ"})
 
 
-@pytest.mark.parametrize("requested", ["native", "cascade", "NATIVE", " Cascade "])
-def test_both_paths_are_accepted_case_and_space_insensitively(requested: str) -> None:
+@pytest.mark.parametrize("requested", ["cascade", "CASCADE", " Cascade "])
+def test_the_path_is_accepted_case_and_space_insensitively(requested: str) -> None:
     settings = Settings.from_environment({"MINDSURF_ENGINE": requested})
 
     assert settings is not None
@@ -42,10 +42,10 @@ def test_both_paths_are_accepted_case_and_space_insensitively(requested: str) ->
 def test_missing_files_are_listed_individually_not_summarised(tmp_path: Path) -> None:
     """ "Engine unavailable" tells an operator nothing.
 
-    The codec moved to the native half of this test. It used to be asserted on
-    the cascade, which is how the requirement got there in the first place: the
-    dictation path never opens Mimi, and demanding it kept a transcribe-and-
-    polish deployment at 503 until somebody mounted gigabytes it would not read.
+    The codec used to be asserted here, which is how the requirement to mount
+    it got in: the dictation path never opened Mimi, and demanding it kept a
+    transcribe-and-polish deployment at 503 until somebody mounted gigabytes it
+    would not read. Both went with the assistant line.
     """
     settings = Settings.from_environment(
         {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": str(tmp_path / "absent")}
@@ -57,16 +57,7 @@ def test_missing_files_are_listed_individually_not_summarised(tmp_path: Path) ->
 
     message = str(error.value)
     assert "MINDSURF_TOKENIZER" in message
-    assert "MINDSURF_CODEC" not in message
     assert "mount the weights directory" in message
-
-    native = Settings.from_environment(
-        {"MINDSURF_ENGINE": "native", "MINDSURF_WEIGHTS": str(tmp_path / "absent")}
-    )
-    assert native is not None
-    with pytest.raises(ConfigurationError) as error:
-        native.verify()
-    assert "MINDSURF_CODEC" in str(error.value)
 
 
 def test_the_missing_file_message_names_variables_and_not_paths(
@@ -99,7 +90,7 @@ def test_verification_passes_once_everything_is_present(tmp_path: Path) -> None:
     for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
         (tmp_path / name).mkdir()
     settings = Settings.from_environment(
-        {"MINDSURF_ENGINE": "native", "MINDSURF_WEIGHTS": str(tmp_path)}
+        {"MINDSURF_ENGINE": "cascade", "MINDSURF_WEIGHTS": str(tmp_path)}
     )
     assert settings is not None
 
@@ -113,12 +104,11 @@ def test_individual_paths_can_be_overridden(tmp_path: Path) -> None:
         {
             "MINDSURF_ENGINE": "cascade",
             "MINDSURF_WEIGHTS": str(tmp_path),
-            "MINDSURF_CODEC": str(elsewhere),
+            "MINDSURF_TOKENIZER": str(elsewhere),
         }
     )
 
     assert settings is not None
-    assert settings.paths.codec == elsewhere
 
 
 def test_the_token_spec_matches_the_ids_the_tokenizer_reserves() -> None:
@@ -141,14 +131,13 @@ def test_components_mark_what_is_frozen(tmp_path: Path) -> None:
     checkpoint = tmp_path / "thinker.pth"
     checkpoint.write_bytes(b"weights")
     settings = Settings.from_environment(
-        {"MINDSURF_ENGINE": "native", "MINDSURF_THINKER": str(checkpoint)}
+        {"MINDSURF_ENGINE": "cascade", "MINDSURF_THINKER": str(checkpoint)}
     )
     assert settings is not None
 
     components = {c.name: c for c in describe_components(settings)}
 
     assert components["thinker"].frozen is False
-    assert components["mimi-codec"].frozen is True
     assert components["sensevoice-small"].frozen is True
 
 
@@ -236,28 +225,6 @@ def test_a_checkpoint_that_is_not_on_disk_is_refused_at_startup(tmp_path: Path) 
 
     (tmp_path / "typo.pth").write_bytes(b"")
     settings.verify()
-
-
-def test_a_polisher_on_the_native_path_is_refused_rather_than_ignored(tmp_path: Path) -> None:
-    """It did nothing, and it did nothing loudly: /health answered
-    "polisher: ready" and /v1/models carried its sha256, while every
-    /v1/audio/transcriptions came back polished=null. Only the cascade builds
-    one."""
-    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
-        (tmp_path / name).mkdir()
-    checkpoint = tmp_path / "sft_polish.pth"
-    checkpoint.write_bytes(b"weights")
-    settings = Settings.from_environment(
-        {
-            "MINDSURF_ENGINE": "native",
-            "MINDSURF_WEIGHTS": str(tmp_path),
-            "MINDSURF_POLISH": str(checkpoint),
-        }
-    )
-    assert settings is not None
-
-    with pytest.raises(ConfigurationError, match="native path has no polish stage"):
-        settings.verify()
 
 
 def test_the_same_polisher_is_fine_on_the_cascade(tmp_path: Path) -> None:
@@ -378,34 +345,6 @@ def test_turning_the_preview_off_means_the_recogniser_offers_none() -> None:
     live = talking.open(16_000)
     assert live is not None
     assert live.every == 2.5
-
-
-def test_dictation_does_not_have_to_mount_the_weights_it_never_opens(tmp_path) -> None:
-    """paths.codec is read in one place, _build_native. paths.speaker in none.
-
-    Before this, a cascade deployment that transcribes and polishes answered 503
-    at /health with a list naming Mimi and CAMPPlus -- gigabytes it would never
-    load. Found by starting the service and trying to dictate into it.
-    """
-    from mindsurf_omni.service.config import Settings
-
-    for name in ("out", "tok", "asr"):
-        (tmp_path / name).mkdir()
-    base = {
-        "MINDSURF_WEIGHTS": str(tmp_path / "out"),
-        "MINDSURF_TOKENIZER": str(tmp_path / "tok"),
-        "MINDSURF_ASR": str(tmp_path / "asr"),
-        "MINDSURF_CODEC": str(tmp_path / "no-mimi"),
-        "MINDSURF_SPEAKER": str(tmp_path / "no-campplus"),
-    }
-
-    cascade = Settings.from_environment({**base, "MINDSURF_ENGINE": "cascade"})
-    assert cascade is not None
-    assert cascade.paths.missing("cascade") == []
-
-    # The native path does load the codec, so it still has to be there.
-    named, _ = zip(*cascade.paths.missing("native"), strict=True)
-    assert named == ("MINDSURF_CODEC",)
 
 
 def test_the_second_polish_arm_is_named_because_it_is_load_bearing(tmp_path) -> None:

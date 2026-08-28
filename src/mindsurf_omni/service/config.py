@@ -1,7 +1,7 @@
 """Build the configured engine, or say precisely why it cannot be built.
 
 The container starts with an environment and a mounted weights directory, and
-one of three things is true: the native path is ready, the cascade path is
+one of two things is true: the dictation path is ready, or it is not and the
 ready, or neither is. The first two must work; the third must produce a message
 someone can act on without reading this file.
 
@@ -22,7 +22,7 @@ from mindsurf_omni.contract import ComponentInfo, TokenSpec
 
 _log = logging.getLogger("mindsurf.config")
 
-PathName = Literal["native", "cascade"]
+PathName = Literal["cascade"]
 
 # Ids the tokenizer already reserves, so the client never has to be told them
 # separately and they cannot drift from the weights.
@@ -48,35 +48,25 @@ class Paths:
     weights: Path
     tokenizer: Path
     audio_encoder: Path
-    codec: Path
-    speaker: Path
 
-    def missing(self, path: PathName = "native") -> list[tuple[str, Path]]:
+    def missing(self, path: PathName = "cascade") -> list[tuple[str, Path]]:
         """The variables whose path is not there, each with the path it pointed at.
 
         Both, because the two halves go to different readers: the operator
         needs the path, and the message that reaches an unauthenticated caller
         must not carry it. See ``Settings.verify``.
 
-        **Scoped to the engine, because it used to demand all five of them.**
-        The dictation product runs the cascade and never opens the codec: grep
-        says ``paths.codec`` is read in exactly one place, ``_build_native``.
-        ``paths.speaker`` is read in none at all. So a deployment that
-        transcribes and polishes had to mount Mimi and CAMPPlus, gigabytes it
-        would never touch, or the service answered 503 at /health with a list
-        of weights it did not need. Found by starting the service and trying to
-        dictate into it.
+        Three, not the five this used to demand. A deployment that
+        transcribes and polishes had to mount Mimi and CAMPPlus as well,
+        gigabytes it would never touch, or /health answered 503 with a list of
+        weights it did not need. Found by starting the service and trying to
+        dictate into it; the two that went unread left with the assistant.
         """
         wanted = [
             ("MINDSURF_WEIGHTS", self.weights),
             ("MINDSURF_TOKENIZER", self.tokenizer),
             ("MINDSURF_ASR", self.audio_encoder),
         ]
-        if path == "native":
-            # The one reader: load_omni takes codec_dir. Nothing reads speaker,
-            # so nothing asks for it -- the variable stays, because a
-            # deployment that sets it is not wrong, only unread.
-            wanted.append(("MINDSURF_CODEC", self.codec))
         return [(name, value) for name, value in wanted if not value.exists()]
 
 
@@ -230,8 +220,11 @@ class Settings:
         requested = source.get("MINDSURF_ENGINE", "").strip().lower()
         if not requested:
             return None
-        if requested not in {"native", "cascade"}:
-            raise ConfigurationError(f"MINDSURF_ENGINE={requested!r} is not 'native' or 'cascade'")
+        if requested != "cascade":
+            raise ConfigurationError(
+                f"MINDSURF_ENGINE={requested!r} names no path this build has; "
+                "the product is dictation and 'cascade' is the only one"
+            )
 
         root = Path(source.get("MINDSURF_WEIGHTS", "/app/weights"))
         return cls(
@@ -240,8 +233,6 @@ class Settings:
                 weights=root,
                 tokenizer=Path(source.get("MINDSURF_TOKENIZER", root / "tokenizer")),
                 audio_encoder=Path(source.get("MINDSURF_ASR", root / "SenseVoiceSmall")),
-                codec=Path(source.get("MINDSURF_CODEC", root / "mimi")),
-                speaker=Path(source.get("MINDSURF_SPEAKER", root / "campplus")),
             ),
             device=source.get("MINDSURF_DEVICE", "cpu"),
             chunk_frames=int(source.get("MINDSURF_CHUNK_FRAMES", "4")),
@@ -305,10 +296,8 @@ class Settings:
         # the field that says which weights a measurement was taken on.
         if self.thinker is not None and not self.thinker.is_file():
             missing = [*missing, ("MINDSURF_THINKER", self.thinker)]
-        # The cascade's Thinker loads lazily, so a mistyped checkout used to
-        # surface as the connection dropping on the first thing a caller said.
-        # The native path already refuses this at assembly, with a message
-        # about the checkout specifically -- leave that one to it.
+        # The polisher loads lazily, so a mistyped checkout used to surface as
+        # the connection dropping on the first thing a caller said.
         if self.path == "cascade" and self.minimind_root is not None:
             definition = self.minimind_root / "model" / "model_minimind.py"
             if not definition.is_file():
@@ -338,27 +327,6 @@ class Settings:
         ):
             if value is not None and not value.is_file():
                 missing = [*missing, (name, value)]
-        # Only the cascade builds one. Set on the native path it did nothing at
-        # all, and worse, it did nothing loudly: /health answered
-        # "polisher: ready" and /v1/models carried its sha256, while
-        # /v1/audio/transcriptions returned polished=null on every request. An
-        # operator reading the health check had no way to see that the stage
-        # they configured was not there.
-        # Only the cascade transcribes through a stage that can be wrapped.
-        # Same failure as the polisher's below: set on the native path it would
-        # be configured, reported, and inert.
-        if self.path == "native" and self.hotwords:
-            raise ConfigurationError(
-                "MINDSURF_HOTWORDS is set but MINDSURF_ENGINE=native, and the native path "
-                "transcribes inside the model rather than through a stage this can correct; "
-                "run the dictation product on MINDSURF_ENGINE=cascade"
-            )
-        if self.path == "native" and self.polish is not None:
-            raise ConfigurationError(
-                "MINDSURF_POLISH is set but MINDSURF_ENGINE=native, and the native path has "
-                "no polish stage; run the dictation product on MINDSURF_ENGINE=cascade, or "
-                "unset MINDSURF_POLISH to serve conversation from this checkpoint"
-            )
         if missing:
             # The variables, not the paths they hold. This message is the body
             # of a 503 and the detail on /health, and neither endpoint asks for
@@ -432,11 +400,6 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
                 frozen=False,
             )
         )
-    if settings.path == "native":
-        components += [
-            ComponentInfo(name="talker", frozen=False),
-            ComponentInfo(name="mimi-codec", frozen=True),
-        ]
     components.append(ComponentInfo(name="sensevoice-small", parameters=234_000_000, frozen=True))
     if settings.polish is not None:
         # Named and hashed like the Thinker: the polish stage rewrites what the
