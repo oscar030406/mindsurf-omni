@@ -15,6 +15,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from mindsurf_omni.contract import ComponentInfo, TokenSpec
+from mindsurf_omni.data.synthesis import SynthesiserUnavailable
 from mindsurf_omni.service.app import create_app
 from mindsurf_omni.service.engine import (
     EngineDescription,
@@ -23,7 +24,6 @@ from mindsurf_omni.service.engine import (
     SpeechEngine,
     TooLongForModel,
 )
-from mindsurf_omni.service.tts import SynthesiserUnavailable
 
 SPEC = TokenSpec(
     text_vocab_size=6400,

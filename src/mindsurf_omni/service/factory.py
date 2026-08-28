@@ -12,7 +12,7 @@ tries to read the log.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -82,15 +82,12 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         return repair(text), language
 
     generate = _build_generator(settings)
-    synthesise = _build_synthesiser(settings)
 
     # Named here because assembly is the only place that knows which stages
     # will refuse.
     unwired = []
     if settings.thinker is None:
         unwired.append("generator")
-    if not settings.tts:
-        unwired.append("synthesiser")
     if missing:
         unwired.append("transcriber")
 
@@ -100,8 +97,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         realtime=settings.realtime,
         transcriber=transcribe,
         generator=generate,  # type: ignore[arg-type]
-        synthesiser=synthesise,
-        stream_synthesiser=getattr(synthesise, "streaming", None),
+        synthesiser=None,
         components=describe_components(settings),
         token_spec=token_spec(),
         unwired=tuple(unwired),
@@ -283,89 +279,6 @@ def _importable(module: str) -> bool:
         return importlib.util.find_spec(module) is not None
     except (ImportError, ValueError):
         return False
-
-
-def _build_synthesiser(settings: Settings) -> Any:
-    """The callable the cascade speaks with, or one that says why it cannot.
-
-    Nothing is chosen by default. A synthesiser decides what the audio in every
-    evaluation report actually is, so it is named by an operator rather than
-    picked here -- and an unconfigured path that refuses is safer than one that
-    silently reaches a hosted endpoint.
-    """
-    from mindsurf_omni.service.engine import GenerationSettings
-    from mindsurf_omni.service.tts import (
-        EdgeSynthesiser,
-        Synthesiser,
-        Utterance,
-        VoxCPMSynthesiser,
-        stream_utterance,
-    )
-
-    if not settings.tts:
-
-        async def unwired(text: str, _: Any) -> bytes:
-            raise ConfigurationError(
-                "the cascade path has no synthesiser wired; set MINDSURF_TTS=voxcpm for the "
-                "local one, or MINDSURF_TTS=edge for the hosted one, which reaches the "
-                "network -- either way it is named in /v1/models"
-            )
-
-        return unwired
-
-    if settings.tts not in {"edge", "voxcpm"}:
-        raise ConfigurationError(
-            f"MINDSURF_TTS={settings.tts!r} names no synthesiser this build has; "
-            "'edge' (hosted) and 'voxcpm' (local) are wired"
-        )
-
-    # Checked here rather than on the first request. The container installs the
-    # runtime set only, so this is the expected outcome inside one -- and a 503
-    # naming the extra is a better answer than an ImportError raised halfway
-    # through a turn, which /health cannot see.
-    package, extra = ("edge_tts", "tts") if settings.tts == "edge" else ("voxcpm", "tts-local")
-    if not _importable(package):
-        raise ConfigurationError(
-            f"MINDSURF_TTS={settings.tts} needs the {package} package, which the container "
-            f"does not carry: install the '{extra}' extra, or leave MINDSURF_TTS unset"
-        )
-
-    if settings.tts == "voxcpm" and settings.tts_prompt_wav is not None:
-        _require_audio_loader(settings.tts_prompt_wav)
-
-    synthesiser: Synthesiser = (
-        EdgeSynthesiser()
-        if settings.tts == "edge"
-        # Weights load on the first request, not here: the card may be busy at
-        # process start, and a 503 that says so beats a container that will not
-        # boot.
-        else VoxCPMSynthesiser(
-            device=settings.device,
-            prompt_wav=str(settings.tts_prompt_wav) if settings.tts_prompt_wav else None,
-            prompt_text=settings.tts_prompt_text,
-        )
-    )
-
-    async def speak(text: str, generation: GenerationSettings) -> bytes:
-        return await synthesiser.synthesise(
-            Utterance(text=text, voice=generation.voice, emotion=generation.emotion)
-        )
-
-    # Carried on the callable rather than returned separately: assembly hands
-    # the cascade one thing, and the streaming half is an attribute of the same
-    # synthesiser rather than a second wiring decision an operator could get
-    # half right.
-    if hasattr(synthesiser, "stream"):
-
-        def speak_streaming(text: str, generation: GenerationSettings) -> AsyncIterator[bytes]:
-            return stream_utterance(
-                synthesiser,
-                Utterance(text=text, voice=generation.voice, emotion=generation.emotion),
-            )
-
-        speak.streaming = speak_streaming  # type: ignore[attr-defined]
-
-    return speak
 
 
 def _build_native(settings: Settings) -> SpeechEngine:

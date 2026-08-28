@@ -128,7 +128,6 @@ class Settings:
     # Which synthesiser the cascade speaks with. Empty is the honest default:
     # the path answers with the reason it cannot speak rather than quietly
     # reaching a hosted endpoint nobody asked it to reach.
-    tts: str = ""
     # The Thinker checkpoint the cascade answers from, and the MiniMind-O
     # checkout its model class is built from. Both unset until a checkpoint
     # exists, at which point the text stage stops being the unwired one.
@@ -138,8 +137,6 @@ class Settings:
     # draws a speaker per call, so a reply changes voice between clauses -- the
     # "怪声" the fourth meeting raised. The knob exists in the synthesiser
     # already; what was missing was a way for an operator to reach it.
-    tts_prompt_wav: Path | None = None
-    tts_prompt_text: str | None = None
     # The dictation path's polish stage: a Thinker fine-tuned to delete spoken
     # filler. Unset means the service transcribes and stops there, which is what
     # the conversation product wants.
@@ -240,17 +237,10 @@ class Settings:
             ),
             device=source.get("MINDSURF_DEVICE", "cpu"),
             chunk_frames=int(source.get("MINDSURF_CHUNK_FRAMES", "4")),
-            tts=source.get("MINDSURF_TTS", "").strip().lower(),
             thinker=Path(source["MINDSURF_THINKER"]) if source.get("MINDSURF_THINKER") else None,
             minimind_root=(
                 Path(source["MINIMIND_O_ROOT"]) if source.get("MINIMIND_O_ROOT") else None
             ),
-            tts_prompt_wav=(
-                Path(source["MINDSURF_TTS_PROMPT_WAV"])
-                if source.get("MINDSURF_TTS_PROMPT_WAV")
-                else None
-            ),
-            tts_prompt_text=(source.get("MINDSURF_TTS_PROMPT_TEXT") or "").strip() or None,
             polish=Path(source["MINDSURF_POLISH"]) if source.get("MINDSURF_POLISH") else None,
             polish_tagger=(
                 Path(source["MINDSURF_POLISH_TAGGER"])
@@ -264,9 +254,7 @@ class Settings:
             ),
             polish_tagger_threshold=float(source.get("MINDSURF_POLISH_TAGGER_THRESHOLD", "0.4")),
             asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
-            preview_seconds=_preview_seconds(
-                source.get("MINDSURF_PREVIEW_SECONDS", "1.0")
-            ),
+            preview_seconds=_preview_seconds(source.get("MINDSURF_PREVIEW_SECONDS", "1.0")),
             asr_model=source.get("MINDSURF_ASR_MODEL", "sensevoice").strip().lower(),
             realtime=source.get("MINDSURF_REALTIME", "converse").strip().lower(),
             hotwords=tuple(
@@ -311,19 +299,6 @@ class Settings:
             definition = self.minimind_root / "model" / "model_minimind.py"
             if not definition.is_file():
                 missing = [*missing, (f"MINIMIND_O_ROOT (no {definition.name})", definition)]
-        # Both or neither. VoxCPM rejects a clip without its text, and it is
-        # right to -- the text is what tells it which sounds belong to which
-        # characters. Refused here rather than at the first request, because
-        # half a reference is silently ignored by the model that receives it
-        # and the service would then run the very failure this fixes.
-        if (self.tts_prompt_wav is None) != (self.tts_prompt_text is None):
-            raise ConfigurationError(
-                "MINDSURF_TTS_PROMPT_WAV and MINDSURF_TTS_PROMPT_TEXT go together; "
-                f"only {'the clip' if self.tts_prompt_wav else 'the text'} was set, and a "
-                "clip without its text clones nothing"
-            )
-        if self.tts_prompt_wav is not None and not self.tts_prompt_wav.is_file():
-            missing = [*missing, ("MINDSURF_TTS_PROMPT_WAV", self.tts_prompt_wav)]
         # Same reason as the Thinker's: a mistyped path would otherwise surface
         # as the first dictation coming back unpolished, which reads as the
         # model doing nothing rather than as a path that is not there.
@@ -475,19 +450,4 @@ def describe_components(settings: Settings) -> list[ComponentInfo]:
                     frozen=False,
                 )
             )
-    if settings.path == "cascade" and settings.tts:
-        # Named, because CER measures whether the synthesiser said the reply.
-        # A report that does not say which one spoke has not measured anything
-        # that can be compared to the next report. The digest is the reference
-        # clip when there is one: with a clone prompt the voice in every sample
-        # comes from that file, so swapping it changes the audio a report is
-        # about as surely as swapping the synthesiser does. Null means no
-        # prompt, which for VoxCPM means a different speaker each call.
-        components.append(
-            ComponentInfo(
-                name=f"tts-{settings.tts}",
-                sha256=checkpoint_digest(settings.tts_prompt_wav),
-                frozen=True,
-            )
-        )
     return components

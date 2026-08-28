@@ -167,7 +167,11 @@ class CascadeEngine(SpeechEngine):
         self,
         transcriber: Transcriber,
         generator: TextGenerator,
-        synthesiser: Synthesiser,
+        # None since the product stopped speaking. The dictation path never
+        # reaches it; the conversation path refuses without it, which is what a
+        # deployment that wired no synthesiser already got. Kept in position so
+        # the callers that pass this positionally keep working.
+        synthesiser: Synthesiser | None,
         components: list[ComponentInfo],
         token_spec: TokenSpec,
         unwired: tuple[str, ...] = (),
@@ -179,9 +183,9 @@ class CascadeEngine(SpeechEngine):
         self._transcribe = transcriber
         self._generate = generator
         self._synthesise = synthesiser
+        self._stream_synthesise = stream_synthesiser
         # Absent is the ordinary case, not a degraded one: assembly passes this
         # only when the wired synthesiser produces audio incrementally.
-        self._stream_synthesise = stream_synthesiser
         # The dictation path's second stage. None is the ordinary case -- the
         # cascade also serves conversation, where polishing a question would
         # edit the user's words for no reason.
@@ -243,21 +247,22 @@ class CascadeEngine(SpeechEngine):
     async def speak(  # type: ignore[override]
         self, text: str, settings: GenerationSettings
     ) -> AsyncIterator[SpeechChunk]:
-        # Streamed when the synthesiser can: waiting for the whole clause is
-        # 2133.9 ms on the deployment card against 93 ms for the first piece,
-        # and every caller of this method is playing the audio as it arrives.
-        if self._stream_synthesise is None:
-            pcm = await self._synthesise(text, settings)
-            yield SpeechChunk(pcm=pcm, text=text, is_final=True)
-            return
+        """This path does not speak.
 
-        said = False
-        async for piece in self._stream_synthesise(text, settings):
-            yield SpeechChunk(pcm=piece, text=None if said else text)
-            said = True
-        # The final marker is a separate empty chunk rather than a flag on the
-        # last piece: the loop cannot know which piece is last until it ends.
-        yield SpeechChunk(pcm=b"", text=None if said else text, is_final=True)
+        The product is dictation: audio in, text out, nothing read back. The
+        synthesiser this used to call lives in ``mindsurf_omni.data.synthesis``
+        now, where the polish training pairs are built with it -- injected
+        filler is spoken, heard back by the recogniser, and the pair is what the
+        model learns from. It is a tool for making data, not a stage of the
+        service.
+        """
+        from mindsurf_omni.service.config import ConfigurationError
+
+        raise ConfigurationError(
+            "the cascade path transcribes and polishes; it does not synthesise. "
+            "Use MINDSURF_ENGINE=native for a path that speaks"
+        )
+        yield  # pragma: no cover - unreachable, keeps this an async generator
 
     async def respond(  # type: ignore[override]
         self,

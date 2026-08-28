@@ -400,6 +400,7 @@ class Rereading:
         self._shown += out
         return out
 
+
 @dataclass(slots=True)
 class SenseVoiceRecogniser:
     """The product's recogniser. Not eligible to score the product."""

@@ -15,6 +15,7 @@ import pytest
 
 from mindsurf_omni.contract import TokenSpec
 from mindsurf_omni.service.cascade import CascadeEngine
+from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, TooLongForModel
 
 SPEC = TokenSpec(
@@ -220,21 +221,13 @@ async def test_history_reaches_the_prompt_and_this_turn_is_appended_to_it() -> N
     assert [chunk.transcript for chunk in chunks if chunk.transcript is not None] == ["那它多少钱"]
 
 
-@pytest.mark.asyncio
-async def test_a_streaming_synthesiser_is_used_by_speak_too() -> None:
-    """speak() served the HTTP path and the backend's per-clause loop.
+async def test_the_cascade_does_not_speak() -> None:
+    """The product is dictation: audio in, text out, nothing read back.
 
-    It waited for the whole clause while respond() streamed, so the same
-    synthesiser was fast on one entry point and slow on the other.
+    The synthesiser this used to call lives in mindsurf_omni.data.synthesis now,
+    where the polish training pairs are built with it. It is a tool for making
+    data, not a stage of the service.
     """
-    pieces = [b"one", b"two"]
-
-    async def stream(text: str, settings: object) -> AsyncIterator[bytes]:
-        for piece in pieces:
-            yield piece
-
-    async def synthesise(text: str, settings: object) -> bytes:
-        raise AssertionError("the streaming synthesiser was available and unused")
 
     async def transcribe(pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         return "你好", "zh"
@@ -245,20 +238,16 @@ async def test_a_streaming_synthesiser_is_used_by_speak_too() -> None:
     engine = CascadeEngine(
         transcribe,  # type: ignore[arg-type]
         generate,  # type: ignore[arg-type]
-        synthesise,  # type: ignore[arg-type]
+        None,
         [],
         SPEC,
-        stream_synthesiser=stream,  # type: ignore[arg-type]
     )
 
-    chunks = [chunk async for chunk in engine.speak("今天天气很好。", GenerationSettings())]
-
-    assert [chunk.pcm for chunk in chunks if chunk.pcm] == pieces
-    assert chunks[0].text == "今天天气很好。"
-    assert chunks[-1].is_final
+    with pytest.raises(ConfigurationError, match="does not synthesise"):
+        async for _ in engine.speak("你好", GenerationSettings()):
+            pass
 
 
-@pytest.mark.asyncio
 async def test_text_reaches_the_caller_before_any_audio_does() -> None:
     """The reason the text is no longer bound to its audio.
 

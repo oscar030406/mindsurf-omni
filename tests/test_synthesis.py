@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from mindsurf_omni.service.tts import (
+from mindsurf_omni.data.synthesis import (
     EDGE_PROSODY,
     EMOTION_INSTRUCTIONS,
     EdgeSynthesiser,
@@ -328,7 +328,7 @@ async def test_local_audio_arrives_as_pcm16_at_the_contract_rate(
 ) -> None:
     """The model speaks at 16 kHz and the contract is 24; unresampled it is a chipmunk."""
     from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     pcm = await VoxCPMSynthesiser().synthesise(Utterance(text="今天天气真好"))
 
@@ -339,7 +339,7 @@ async def test_the_weights_are_loaded_once_not_per_utterance(
     voxcpm: type[_FakeVoxCPM],
 ) -> None:
     """Half a billion parameters per turn would be slower than the endpoint it replaces."""
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     synthesiser = VoxCPMSynthesiser()
     await synthesiser.synthesise(Utterance(text="第一句"))
@@ -352,7 +352,7 @@ async def test_the_delivery_instruction_is_not_prepended_locally_either(
     voxcpm: type[_FakeVoxCPM],
 ) -> None:
     """This model has no instruct mode, so a prefix would be read aloud every time."""
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     await VoxCPMSynthesiser().synthesise(Utterance(text="今天天气真好", emotion="happy"))
 
@@ -362,7 +362,7 @@ async def test_the_delivery_instruction_is_not_prepended_locally_either(
 async def test_local_synthesis_of_nothing_costs_no_forward_pass(
     voxcpm: type[_FakeVoxCPM],
 ) -> None:
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     assert await VoxCPMSynthesiser().synthesise(Utterance(text="\n\n")) == b""
     assert voxcpm.calls == []
@@ -372,7 +372,7 @@ async def test_local_silence_raises_rather_than_being_scored_as_speech(
     voxcpm: type[_FakeVoxCPM],
 ) -> None:
     """An empty waveform would be charged to the model as having said nothing."""
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     voxcpm.seconds = 0.0
 
@@ -383,7 +383,7 @@ async def test_local_silence_raises_rather_than_being_scored_as_speech(
 async def test_the_text_is_cleaned_before_the_local_model_sees_it(
     voxcpm: type[_FakeVoxCPM],
 ) -> None:
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     await VoxCPMSynthesiser().synthesise(Utterance(text="**灵山大佛**通高 `88` 米"))
 
@@ -391,7 +391,7 @@ async def test_the_text_is_cleaned_before_the_local_model_sees_it(
 
 
 def test_the_local_synthesiser_is_not_eligible_to_judge_either() -> None:
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     assert VoxCPMSynthesiser().eligible_as_judge is False
 
@@ -425,7 +425,7 @@ async def test_the_reference_clip_reaches_the_model(voxcpm: type[_FakeVoxCPM]) -
     The fields were always here; nothing set them, so every utterance the
     service produced was a fresh stranger.
     """
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser
 
     await VoxCPMSynthesiser(prompt_wav="reference.wav", prompt_text="参考音频说的话").synthesise(
         Utterance(text="今天天气真好")
@@ -459,7 +459,7 @@ def test_the_stop_is_held_for_the_configured_number_of_patches() -> None:
     listener over both the current behaviour and holding four."""
     import torch
 
-    from mindsurf_omni.service.tts import delay_stop
+    from mindsurf_omni.data.synthesis import delay_stop
 
     model = _FakeVoxCPM()
     state = delay_stop(model, 2)
@@ -477,7 +477,7 @@ def test_each_utterance_gets_its_own_budget() -> None:
     first sentence and every later one ends short again."""
     import torch
 
-    from mindsurf_omni.service.tts import VoxCPMSynthesiser, delay_stop
+    from mindsurf_omni.data.synthesis import VoxCPMSynthesiser, delay_stop
 
     model = _FakeVoxCPM()
     synthesiser = VoxCPMSynthesiser(stop_delay=2)
@@ -497,7 +497,7 @@ def test_each_utterance_gets_its_own_budget() -> None:
 def test_a_build_without_the_stop_head_refuses_rather_than_going_quiet() -> None:
     """A silently skipped patch here brings back a defect no number on this
     project can see. Upstream renaming it has to be an error, not a shrug."""
-    from mindsurf_omni.service.tts import SynthesiserUnavailable, delay_stop
+    from mindsurf_omni.data.synthesis import SynthesiserUnavailable, delay_stop
 
     class _Bare:
         pass

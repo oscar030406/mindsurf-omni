@@ -42,12 +42,12 @@ from mindsurf_omni.contract import (
     VoiceInfo,
     VoiceList,
 )
+from mindsurf_omni.data.synthesis import SynthesiserUnavailable
 from mindsurf_omni.service.asr import LONGEST_SECONDS
 from mindsurf_omni.service.audio import UnsupportedAudio, frames, to_wav, unwrap_wav, whole_samples
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine, TooLongForModel
 from mindsurf_omni.service.health import count, counters
-from mindsurf_omni.service.tts import SynthesiserUnavailable
 
 # One JSON object per request, on its own line. Not a metrics stack: everything
 # an operator needs for the question "which requests went wrong and what did

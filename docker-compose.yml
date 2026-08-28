@@ -12,13 +12,6 @@ services:
       # rather than pretending to work.
       MINDSURF_ENGINE: "${MINDSURF_ENGINE:-}"
       MINDSURF_WEIGHTS: /app/weights
-      # Which synthesiser the cascade speaks with: 'edge' reaches a hosted
-      # endpoint, 'voxcpm' runs locally on a card. Unset by default and
-      # deliberately so -- one sends replies off the machine and the other
-      # wants a GPU, so a deployment opts in rather than inherits either. The
-      # image carries neither package: see the 'tts' and 'tts-local' extras in
-      # pyproject.
-      MINDSURF_TTS: "${MINDSURF_TTS:-}"
       # The dictation product: transcribe, then delete spoken filler. Unset,
       # the service transcribes and stops there. The polisher is built from
       # MiniMind's own model class, so a checkout has to be reachable too --

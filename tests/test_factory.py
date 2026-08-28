@@ -49,12 +49,14 @@ def test_a_built_engine_still_reports_the_licence(tmp_path: Path) -> None:
     assert description.licence == "CC-BY-NC-4.0"
 
 
-def test_an_unwired_stage_says_which_stage_and_why(tmp_path: Path) -> None:
-    """ "Not implemented" would send the reader to the source; this does not."""
+def test_the_cascade_says_it_does_not_speak(tmp_path: Path) -> None:
+    """The product is dictation. The synthesiser that used to sit here lives in
+    mindsurf_omni.data.synthesis now, where the polish training pairs are built
+    with it, and the served path has no speech stage at all."""
     engine = build(_ready(tmp_path))
     assert engine is not None
 
-    with pytest.raises(ConfigurationError, match="synthesiser"):
+    with pytest.raises(ConfigurationError, match="does not synthesise"):
         import asyncio
 
         asyncio.run(_first_chunk(engine))
@@ -113,92 +115,6 @@ def test_health_does_not_call_a_half_built_cascade_ready(tmp_path: Path) -> None
     assert "generator" in [component.name for component in report.components if not component.ready]
 
 
-def test_no_synthesiser_is_chosen_without_being_asked_for(tmp_path: Path) -> None:
-    """Defaulting to the hosted one would send replies off the machine unasked."""
-    settings = _ready(tmp_path)
-
-    assert settings.tts == ""
-    assert not any("tts" in component.name for component in build(settings).describe().components)  # type: ignore[union-attr]
-
-
-def test_an_unknown_synthesiser_is_refused_rather_than_ignored(tmp_path: Path) -> None:
-    """Falling back silently would report audio produced by something else."""
-    settings = Settings.from_environment(
-        {
-            "MINDSURF_ENGINE": "cascade",
-            "MINDSURF_WEIGHTS": str(tmp_path),
-            "MINDSURF_TTS": "cosyvoice",
-        }
-    )
-    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
-        (tmp_path / name).mkdir(exist_ok=True)
-
-    with pytest.raises(ConfigurationError, match="cosyvoice"):
-        build(settings)
-
-
-def test_the_wired_synthesiser_is_named_in_the_component_list(tmp_path: Path) -> None:
-    """CER measures what the synthesiser said, so a report that omits it compares nothing."""
-    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
-        (tmp_path / name).mkdir(exist_ok=True)
-    settings = Settings.from_environment(
-        {
-            "MINDSURF_ENGINE": "cascade",
-            "MINDSURF_WEIGHTS": str(tmp_path),
-            "MINDSURF_TTS": "edge",
-        }
-    )
-
-    names = [component.name for component in build(settings).describe().components]  # type: ignore[union-attr]
-
-    assert "tts-edge" in names
-
-
-def test_the_local_synthesiser_is_named_too(tmp_path: Path) -> None:
-    """Two synthesisers make the same audio into two different measurements."""
-    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
-        (tmp_path / name).mkdir(exist_ok=True)
-    settings = Settings.from_environment(
-        {
-            "MINDSURF_ENGINE": "cascade",
-            "MINDSURF_WEIGHTS": str(tmp_path),
-            "MINDSURF_TTS": "voxcpm",
-        }
-    )
-    from mindsurf_omni.service import factory
-
-    real = factory._importable
-    factory._importable = lambda module: module == "voxcpm" or real(module)
-    try:
-        names = [component.name for component in build(settings).describe().components]  # type: ignore[union-attr]
-    finally:
-        factory._importable = real
-
-    assert "tts-voxcpm" in names
-
-
-def test_the_local_synthesiser_names_its_own_extra_when_absent(tmp_path: Path) -> None:
-    """ "install the tts extra" would install the hosted one, which is the opposite choice."""
-    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
-        (tmp_path / name).mkdir(exist_ok=True)
-    settings = Settings.from_environment(
-        {
-            "MINDSURF_ENGINE": "cascade",
-            "MINDSURF_WEIGHTS": str(tmp_path),
-            "MINDSURF_TTS": "voxcpm",
-        }
-    )
-    from mindsurf_omni.service import factory
-
-    real = factory._importable
-    factory._importable = lambda module: module != "voxcpm" and real(module)
-    try:
-        with pytest.raises(ConfigurationError, match="tts-local"):
-            build(settings)
-    finally:
-        factory._importable = real
-
-
 async def _first_chunk(engine: object) -> None:
     from mindsurf_omni.service.engine import GenerationSettings
 
@@ -251,68 +167,6 @@ def test_the_engine_carries_the_token_spec_clients_need(tmp_path: Path) -> None:
     assert spec.audio_codebooks == 8
     assert spec.input_sample_rate == 16_000
     assert spec.output_sample_rate == 24_000
-
-
-def test_the_configured_reference_reaches_the_local_synthesiser(tmp_path: Path) -> None:
-    """The variables are only worth having if assembly passes them on."""
-    for name in ("tokenizer", "SenseVoiceSmall", "mimi", "campplus"):
-        (tmp_path / name).mkdir(exist_ok=True)
-    clip = tmp_path / "reference.wav"
-    clip.write_bytes(b"RIFF")
-    settings = Settings.from_environment(
-        {
-            "MINDSURF_ENGINE": "cascade",
-            "MINDSURF_WEIGHTS": str(tmp_path),
-            "MINDSURF_TTS": "voxcpm",
-            "MINDSURF_TTS_PROMPT_WAV": str(clip),
-            "MINDSURF_TTS_PROMPT_TEXT": "参考音频说的话",
-        }
-    )
-    from mindsurf_omni.service import factory, tts
-
-    built: list[dict[str, object]] = []
-
-    class _Recorder:
-        def __init__(self, **options: object) -> None:
-            built.append(options)
-
-        async def synthesise(self, utterance: object) -> bytes:
-            return b""
-
-    real_import, real_class = factory._importable, tts.VoxCPMSynthesiser
-    real_loader = factory._require_audio_loader
-    factory._importable = lambda module: module == "voxcpm" or real_import(module)
-    tts.VoxCPMSynthesiser = _Recorder  # type: ignore[misc]
-    # Stubbed like the two above, and for the same reason: this test is about
-    # whether the variables reach the synthesiser, and the clip is four bytes of
-    # "RIFF". Whether a real clip can be read is a machine question -- it needs
-    # FFmpeg's shared libraries -- and it has its own test below.
-    factory._require_audio_loader = lambda prompt_wav: None  # type: ignore[assignment]
-    try:
-        build(settings)
-    finally:
-        factory._importable, tts.VoxCPMSynthesiser = real_import, real_class  # type: ignore[misc]
-        factory._require_audio_loader = real_loader  # type: ignore[assignment]
-
-    assert built == [{"device": "cpu", "prompt_wav": str(clip), "prompt_text": "参考音频说的话"}]
-
-
-def test_a_clone_clip_that_cannot_be_read_names_ffmpeg(tmp_path: Path) -> None:
-    """VoxCPM opens the prompt through torchaudio, which in 2.x delegates to
-    torchcodec, which needs FFmpeg's shared libraries. On a machine with a
-    static ffmpeg build that failed 40 utterances out of 40, inside the request,
-    with a hundred lines of library paths and nothing naming FFmpeg."""
-    from mindsurf_omni.service.factory import _require_audio_loader
-
-    not_audio = tmp_path / "clip.wav"
-    not_audio.write_bytes(b"this is not a wav file")
-
-    with pytest.raises(ConfigurationError) as error:
-        _require_audio_loader(not_audio)
-
-    message = str(error.value)
-    assert "FFmpeg" in message
-    assert "MINDSURF_TTS_PROMPT_WAV" in message
 
 
 def test_the_message_also_names_the_installed_but_unloadable_case(tmp_path: Path) -> None:
