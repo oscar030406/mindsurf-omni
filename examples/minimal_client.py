@@ -1,11 +1,13 @@
-"""A working client, short enough to read in one sitting.
+"""Dictate a wav file two ways, and read the finished note aloud.
 
-Copy it, point it at the service, delete what you do not need. It uses only
-httpx and websockets, so it drops into a backend without pulling in this
-project.
+Both entry points on the same recording, so the output can be compared. There is
+no client here in the product sense -- no hotkey, no text box, no clipboard.
+This is the smallest thing that proves the service works from outside.
 
-Every call is an OpenAI-shaped one, which is the point: a client already
-written against that API needs almost none of this file.
+    python examples/minimal_client.py turn.wav
+
+The file has to be a real recording. Digital silence demonstrates nothing: the
+service answers "nothing was heard", which is correct and uninteresting.
 """
 
 from __future__ import annotations
@@ -14,76 +16,71 @@ import base64
 import json
 import sys
 import wave
-from typing import Any
+from pathlib import Path
 
 import httpx
+from websockets.sync.client import connect
 
 BASE = "http://localhost:8000"
+APPEND_MS = 100
 
 
-def check_what_is_serving() -> dict[str, Any]:
-    """Always do this first.
-
-    It reports which path is answering and whether the output may be used
-    commercially -- both change what you may do with the result.
-    """
-    models = httpx.get(f"{BASE}/v1/models", timeout=10).json()["data"]
-    if not models:
-        raise SystemExit("no engine configured; the service will answer 503")
-    model: dict[str, Any] = models[0]
-    print(f"path={model['path']}  commercial={model['commercial_use_permitted']}")
-    return model
+def read(path: Path) -> tuple[bytes, int]:
+    """The samples, refusing a file the service would only transcribe badly."""
+    with wave.open(str(path), "rb") as handle:
+        if handle.getnchannels() != 1 or handle.getsampwidth() != 2:
+            raise SystemExit(
+                f"{path} 要是单声道 16 位，收到的是 "
+                f"{handle.getnchannels()} 声道 {handle.getsampwidth() * 8} 位"
+            )
+        return handle.readframes(handle.getnframes()), handle.getframerate()
 
 
-def ask_streaming(prompt: str) -> str:
-    """Prefer streaming. The first token arrives long before the last."""
-    text = ""
-    with httpx.stream(
-        "POST",
-        f"{BASE}/v1/chat/completions",
-        json={"messages": [{"role": "user", "content": prompt}], "stream": True},
-        timeout=60,
-    ) as response:
-        for line in response.iter_lines():
-            if not line.startswith("data: ") or line.endswith("[DONE]"):
-                continue
-            piece = json.loads(line[6:])["choices"][0].get("delta", {}).get("content", "")
-            text += piece
-            print(piece, end="", flush=True)
-    print()
-    return text
-
-
-def speak(text: str, emotion: str = "neutral") -> bytes:
-    """Emotion is its own field. Putting it in the text gets it read aloud."""
-    response = httpx.post(
-        f"{BASE}/v1/audio/speech",
-        json={"input": text, "emotion": emotion},
-        timeout=60,
+def whole_file(pcm: bytes, rate: int) -> str:
+    """Record first, send afterwards. Nothing appears while the user talks."""
+    print("\n--- 整段送 POST /v1/audio/transcriptions")
+    answer = httpx.post(
+        f"{BASE}/v1/audio/transcriptions",
+        content=wav(pcm, rate),
+        headers={"content-type": "audio/wav"},
+        timeout=180,
     )
-    response.raise_for_status()
-    # Read the rate from the header rather than assuming it: playing 24 kHz
-    # audio at 16 kHz does not fail, it changes the pitch.
-    rate = int(response.headers.get("x-sample-rate", 24_000))
-    print(f"{len(response.content)} bytes at {rate} Hz")
-    return response.content
+    answer.raise_for_status()
+    got = answer.json()
+    print(f"    转写 {got['text']}")
+    print(f"    润色 {got.get('polished')}")
+    return got.get("polished") or got["text"]
 
 
-def converse(pcm: bytes) -> None:
-    """One realtime turn: speech in, text and speech out, both streamed."""
-    from websockets.sync.client import connect
+def wav(pcm: bytes, rate: int) -> bytes:
+    import io
 
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(rate)
+        handle.writeframes(pcm)
+    return buffer.getvalue()
+
+
+def while_speaking(pcm: bytes, rate: int) -> None:
+    """Send as it is recorded. Preview appears while the user is still talking."""
+    print("\n--- 边录边送 WS /v1/realtime")
     with connect(BASE.replace("http", "ws") + "/v1/realtime") as socket:
-        session = json.loads(socket.recv())
-        print(f"session up, input {session['input_sample_rate']} Hz")
+        opened = json.loads(socket.recv())
+        assert opened["type"] == "session.created"
+        # The rate the service declares, not one written into this file.
+        rate = opened.get("input_sample_rate", rate)
+        step = int(rate * APPEND_MS / 1000) * 2
 
-        # Send in chunks, the way a microphone produces them.
-        for start in range(0, len(pcm), 3200):  # 100 ms at 16 kHz
+        preview = ""
+        for at in range(0, len(pcm), step):
             socket.send(
                 json.dumps(
                     {
                         "type": "input_audio_buffer.append",
-                        "audio": base64.b64encode(pcm[start : start + 3200]).decode(),
+                        "audio": base64.b64encode(pcm[at : at + step]).decode(),
                     }
                 )
             )
@@ -92,55 +89,56 @@ def converse(pcm: bytes) -> None:
         while True:
             event = json.loads(socket.recv())
             kind = event["type"]
-            if kind == "response.text.delta":
-                print(event["delta"], end="", flush=True)
-            elif kind == "response.audio.delta":
-                # Play this immediately. Buffering until the end throws away
-                # the reason the audio is streamed at all.
-                base64.b64decode(event["audio"])
+            if kind.endswith("transcription.delta"):
+                # Additions only. Append; never re-render what was already shown.
+                preview += event["delta"]
+            elif kind.endswith("transcription.completed"):
+                print(f"    转写 {event['transcript']}")
+            elif kind == "response.text.delta":
+                print(f"    润色 {event['delta']}")
             elif kind == "error":
-                print("error:", event["error"]["message"])
+                print(f"    错误 {event['error']['message']}")
                 break
             elif kind == "response.done":
-                # dropped_turns > 0 means history was shortened to fit.
-                print("\ncontext:", event.get("context"))
                 break
+        print(f"    预览 {preview}")
 
 
-def read_recording(path: str) -> bytes:
-    """A wav file as the PCM the realtime path takes, or say what is wrong with it.
+def read_aloud(text: str) -> None:
+    """The speaker button. Off unless the deployment set MINDSURF_TTS=edge."""
+    print("\n--- 朗读 POST /v1/audio/speech")
+    answer = httpx.post(
+        f"{BASE}/v1/audio/speech", json={"input": text, "response_format": "wav"}, timeout=180
+    )
+    if answer.status_code != 200:
+        print(f"    {answer.status_code} {answer.text[:160]}")
+        return
+    # The rate the service declares, not one written into this file. Assuming it
+    # is how a client ends up playing 24 kHz audio at 16 kHz.
+    rate = answer.headers.get("x-sample-rate", "?")
+    Path("read_aloud.wav").write_bytes(answer.content)
+    print(f"    写到 read_aloud.wav（{len(answer.content)} 字节 @ {rate} Hz）")
 
-    Checked rather than assumed. Sending 24 kHz audio to a 16 kHz endpoint does
-    not fail, it transcribes badly -- and "the model misheard me" is a much
-    harder thing to debug than a message naming the rate.
-    """
-    with wave.open(path, "rb") as recording:
-        channels, width, rate = (
-            recording.getnchannels(),
-            recording.getsampwidth(),
-            recording.getframerate(),
-        )
-        if (channels, width, rate) != (1, 2, 16_000):
-            raise SystemExit(
-                f"{path} is {channels} channel(s), {width * 8}-bit, {rate} Hz; "
-                "this endpoint takes mono 16-bit 16 kHz"
-            )
-        return recording.readframes(recording.getnframes())
+
+def main() -> None:
+    if len(sys.argv) != 2:
+        raise SystemExit("用法: python examples/minimal_client.py turn.wav")
+
+    models = httpx.get(f"{BASE}/v1/models", timeout=10).json()["data"]
+    # First thing a backend author should see: the weights are not commercial.
+    if not models[0].get("commercial_use_permitted", False):
+        print("许可：当前权重不可商用（GET /v1/licence 有完整链条）")
+    named = [c["name"] for c in models[0]["components"]]
+    print(f"组件 {', '.join(named)}")
+    if "polish-tagger" not in named:
+        print("  注意：第二条臂没接，口语词清除会明显变差")
+
+    pcm, rate = read(Path(sys.argv[1]))
+    kept = whole_file(pcm, rate)
+    while_speaking(pcm, rate)
+    if kept:
+        read_aloud(kept)
 
 
 if __name__ == "__main__":
-    check_what_is_serving()
-    reply = ask_streaming("今天天气怎么样")
-    speak(reply, emotion="happy")
-    # A recording, not silence. This used to send a second of digital zeros,
-    # which demonstrated nothing: the recogniser hears no speech in silence, so
-    # the turn had no content to answer. It looked like it worked only because
-    # the model would answer the empty transcript anyway -- with, measured,
-    # "Sure, what's your question?" in English. The service now says "no speech
-    # was heard" instead, which is the correct answer to what this was sending.
-    if len(sys.argv) < 2:
-        raise SystemExit(
-            "pass a recording to see a realtime turn: "
-            "python minimal_client.py turn.wav  (mono 16-bit 16 kHz)"
-        )
-    converse(read_recording(sys.argv[1]))
+    main()

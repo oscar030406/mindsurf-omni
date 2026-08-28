@@ -182,16 +182,6 @@ class Settings:
     # first word lands: the preview costs roughly 0.075 of real time at one
     # second and half that at two, and the first word needs two readings.
     preview_seconds: float = 1.0
-    # What a websocket turn ends in. "converse" answers the speaker, which
-    # is the voice assistant; "dictate" hands back the transcript with its
-    # filler removed, which is the product.
-    #
-    # It needs saying because the two were not separable before: the
-    # realtime path always answered, and the polish stage was reachable only
-    # over POST /v1/audio/transcriptions. So a deployment could stream a
-    # live preview of a dictation and then had nowhere to send the finished
-    # one -- the preview was decoration on a path that did something else.
-    realtime: str = "converse"
     # Which recogniser this deployment serves. "sensevoice" is the one the
     # polisher was trained against and the one the released numbers describe;
     # "paraformer-streaming" writes while the speaker is still talking, which
@@ -268,7 +258,6 @@ class Settings:
                 if source.get("MINDSURF_ASR_STREAMING")
                 else None
             ),
-            realtime=source.get("MINDSURF_REALTIME", "converse").strip().lower(),
             hotwords=tuple(
                 word.strip()
                 for word in source.get("MINDSURF_HOTWORDS", "").split(",")
@@ -279,7 +268,6 @@ class Settings:
     #: The recognisers this build can serve, for /v1/models and for refusing a
     #: name nobody has wired rather than starting and failing on first speech.
     RECOGNISERS = ("sensevoice", "paraformer-streaming")
-    REALTIME_MODES = ("converse", "dictate")
 
     def verify(self) -> None:
         if self.asr_streaming is not None and not self.asr_streaming.exists():
@@ -290,11 +278,6 @@ class Settings:
             raise ConfigurationError(
                 f"MINDSURF_TTS={self.tts!r} names no synthesiser this build has; "
                 "only 'edge' is wired. The local one went with the assistant line"
-            )
-        if self.realtime not in self.REALTIME_MODES:
-            raise ConfigurationError(
-                f"MINDSURF_REALTIME={self.realtime!r} names no turn this build "
-                f"serves; it has {', '.join(self.REALTIME_MODES)}"
             )
         if self.asr_model not in self.RECOGNISERS:
             raise ConfigurationError(

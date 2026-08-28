@@ -75,11 +75,18 @@ def test_the_realtime_events_a_client_may_send_have_not_shrunk() -> None:
 
 
 def test_the_realtime_events_a_client_waits_for_have_not_shrunk() -> None:
-    """A client blocked on an event that no longer arrives hangs forever."""
+    """A client blocked on an event that no longer arrives hangs forever.
+
+    The two audio events came off this list on 2026-08-28, deliberately: a
+    websocket turn ends in the dictation now and nothing on that path produces
+    audio. Read-aloud is a separate request the client makes when somebody taps
+    the speaker, and it answers over POST /v1/audio/speech with a whole clip.
+
+    Taking something off this list is a contract break and needs a reason
+    written here. That is what the list is for.
+    """
     assert {
         "response.text.delta",
-        "response.audio.delta",
-        "response.audio.done",
         "response.done",
         "error",
     } <= SERVER_EVENTS

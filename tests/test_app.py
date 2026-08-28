@@ -91,30 +91,6 @@ def test_models_reports_the_path_and_the_licence(client: TestClient) -> None:
     assert body["licence"] == "CC-BY-NC-4.0"
 
 
-def test_a_stage_that_is_not_wired_answers_503_rather_than_a_traceback() -> None:
-    """A 500 sends the caller to a log the caller cannot read.
-
-    The service already answers 503-with-a-reason when no engine exists; a
-    stage that is present but unwired must fail the same way, so an integration
-    handles one failure shape instead of two.
-    """
-    from mindsurf_omni.service.config import ConfigurationError
-
-    class HalfBuilt(FakeEngine):
-        async def complete(  # type: ignore[override]
-            self, messages: list[dict[str, str]], settings: GenerationSettings
-        ) -> AsyncIterator[str]:
-            raise ConfigurationError("the widget stage is not wired; set MINDSURF_WIDGET")
-            yield ""  # pragma: no cover - makes this an async generator
-
-    response = TestClient(create_app(HalfBuilt())).post(
-        "/v1/chat/completions", json={"messages": [{"role": "user", "content": "你好"}]}
-    )
-
-    assert response.status_code == 503
-    assert "MINDSURF_WIDGET" in response.json()["detail"]
-
-
 def test_an_unconfigured_service_says_so_instead_of_faking_success(bare: TestClient) -> None:
     """An integration that passes against stubs fails on the day the model lands."""
     assert bare.get("/v1/models").json()["data"] == []
@@ -122,31 +98,6 @@ def test_an_unconfigured_service_says_so_instead_of_faking_success(bare: TestCli
         response = bare.get(path)
         assert response.status_code == 503
         assert "engine" in response.json()["detail"]
-
-
-def test_chat_completion_matches_the_openai_shape(client: TestClient) -> None:
-    response = client.post(
-        "/v1/chat/completions",
-        json={"messages": [{"role": "user", "content": "你好"}]},
-    )
-    body = response.json()
-
-    assert response.status_code == 200
-    assert body["object"] == "chat.completion"
-    assert body["choices"][0]["message"]["content"] == "今天天气很好。"
-    assert body["choices"][0]["finish_reason"] == "stop"
-
-
-def test_streaming_chat_emits_sse_deltas_then_done(client: TestClient) -> None:
-    with client.stream(
-        "POST",
-        "/v1/chat/completions",
-        json={"messages": [{"role": "user", "content": "你好"}], "stream": True},
-    ) as response:
-        lines = [line for line in response.iter_lines() if line.startswith("data: ")]
-
-    assert lines[-1] == "data: [DONE]"
-    assert '"content": "今天"' in lines[0]
 
 
 def test_transcription_reports_the_detected_language(client: TestClient) -> None:
@@ -215,28 +166,6 @@ def test_speech_asked_for_pcm_carries_no_container(client: TestClient) -> None:
     assert response.headers["content-type"].startswith("application/octet-stream")
 
 
-def test_realtime_turn_produces_text_then_audio(client: TestClient) -> None:
-    with client.websocket_connect("/v1/realtime") as socket:
-        assert socket.receive_json()["type"] == "session.created"
-        socket.send_json(
-            {
-                "type": "input_audio_buffer.append",
-                "audio": base64.b64encode(b"\x00\x01" * 100).decode(),
-            }
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-
-        kinds = [socket.receive_json()["type"] for _ in range(5)]
-
-    assert kinds == [
-        "response.created",
-        "response.text.delta",
-        "response.audio.delta",
-        "response.audio.done",
-        "response.done",
-    ]
-
-
 def test_committing_an_empty_buffer_errors_rather_than_hanging(client: TestClient) -> None:
     with client.websocket_connect("/v1/realtime") as socket:
         socket.receive_json()
@@ -285,17 +214,6 @@ def test_token_spec_carries_what_a_client_needs_to_build_prompts(client: TestCli
     assert body["input_sample_rate"] == 16_000
     assert body["output_sample_rate"] == 24_000
     assert body["special_tokens"]["audio_start"] == 14
-
-
-def test_the_factory_entrypoint_works_with_no_arguments() -> None:
-    """The container runs `uvicorn --factory create_app`, which passes nothing.
-
-    A signature change that broke this would only show up at deploy time.
-    """
-    app = create_app()
-    paths = {route.path for route in app.routes if hasattr(route, "path")}
-
-    assert {"/v1/models", "/v1/realtime", "/v1/chat/completions"} <= paths
 
 
 def test_the_integration_guide_documents_exactly_what_exists() -> None:
@@ -375,40 +293,6 @@ def test_the_licence_endpoint_is_available_without_an_engine(bare: TestClient) -
     assert bare.get("/v1/licence").status_code == 200
 
 
-def test_a_turn_reports_the_context_state_so_forgetting_is_visible(
-    client: TestClient,
-) -> None:
-    """History that shortens silently reads as the model forgetting for no reason."""
-    with client.websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json(
-            {
-                "type": "input_audio_buffer.append",
-                "audio": base64.b64encode(b"\x00" * 32000).decode(),
-            }
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-
-        events = [socket.receive_json() for _ in range(5)]
-
-    done = events[-1]
-    assert done["type"] == "response.done"
-    assert done["context"]["turns"] == 2  # the user's and the assistant's
-    assert "dropped_turns" in done["context"]
-
-
-def test_a_session_can_be_cleared_between_conversations(client: TestClient) -> None:
-    """Carrying one caller's history into the next is worse than losing it."""
-    with client.websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json({"type": "session.clear"})
-
-        event = socket.receive_json()
-
-    assert event["type"] == "session.created"
-    assert event["context"]["turns"] == 0
-
-
 def test_an_engine_that_cannot_speak_arbitrary_text_answers_503() -> None:
     """The native model says its own words; reading someone else's is not a wire it lacks.
 
@@ -459,78 +343,6 @@ class SlowEngine(FakeEngine):
             self.closed = True
 
 
-def test_cancel_lands_mid_stream_not_after_the_turn() -> None:
-    """The old loop drove generation inline, so cancel waited out the whole turn."""
-    engine = SlowEngine()
-    with TestClient(create_app(engine)).websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        assert socket.receive_json()["type"] == "response.created"
-        # One delta proves streaming started; fifty more would prove it ended.
-        first = socket.receive_json()
-        assert first["type"] in ("response.text.delta", "response.audio.delta")
-
-        socket.send_json({"type": "response.cancel"})
-        while True:
-            event = socket.receive_json()
-            if event["type"] == "response.done":
-                break
-        assert event["cancelled"] is True
-        # 沒有 audio.done：被打断的回合没有说完，装作说完就是谎报。
-        assert engine.closed, "取消没有传到引擎——真机上这就是 GPU 泄漏"
-
-
-def test_barge_in_audio_appended_during_the_reply_survives_the_cancel() -> None:
-    """The interjection that caused the cancel must not be eaten by it."""
-    engine = SlowEngine()
-    with TestClient(create_app(engine)).websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        assert socket.receive_json()["type"] == "response.created"
-        socket.receive_json()
-
-        # The user starts talking over the reply, then the client cancels.
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x01" * 8).decode()}
-        )
-        socket.send_json({"type": "response.cancel"})
-        while True:
-            event = socket.receive_json()
-            if event["type"] == "response.done":
-                break
-        assert event["cancelled"] is True
-
-        # Committing now must answer from the interjection, not error on an
-        # empty buffer -- which is what the idle-cancel semantics would give.
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        assert socket.receive_json()["type"] == "response.created"
-
-
-def test_the_partial_reply_enters_history_as_what_was_said() -> None:
-    engine = SlowEngine()
-    with TestClient(create_app(engine)).websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        socket.receive_json()
-        socket.receive_json()
-        socket.send_json({"type": "response.cancel"})
-        while True:
-            event = socket.receive_json()
-            if event["type"] == "response.done":
-                break
-
-    assert event["context"]["turns"] >= 2
-
-
 class RecordingEngine(FakeEngine):
     """Reports what the session handed it, and what it heard."""
 
@@ -547,56 +359,6 @@ class RecordingEngine(FakeEngine):
         self.histories.append(list(history or []))
         yield SpeechChunk(pcm=b"", transcript="那它多少钱")
         yield SpeechChunk(pcm=b"\x00\x01" * 8, text="两百块。", is_final=True)
-
-
-def test_the_second_turn_carries_the_first_one_into_the_prompt() -> None:
-    """The session counted turns it never sent, so every turn was the first one.
-
-    A caller asking "那它多少钱" after "这个杯子好看吗" gets an answer about
-    nothing unless the history reaches the prompt. The context figures in
-    response.done described a history that was bookkeeping only.
-    """
-    engine = RecordingEngine()
-    client = TestClient(create_app(engine))
-
-    with client.websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()  # session.created
-        for _ in range(2):
-            socket.send_json(
-                {
-                    "type": "input_audio_buffer.append",
-                    "audio": base64.b64encode(b"\x00" * 8).decode(),
-                }
-            )
-            socket.send_json({"type": "input_audio_buffer.commit"})
-            while socket.receive_json()["type"] != "response.done":
-                pass
-
-    assert engine.histories[0] == []
-    assert engine.histories[1] == [
-        {"role": "user", "content": "那它多少钱"},
-        {"role": "assistant", "content": "两百块。"},
-    ]
-
-
-def test_the_transcript_is_reported_so_a_client_can_show_what_it_heard() -> None:
-    """Declared in SERVER_EVENTS from the start and never sent until 2026-08-10."""
-    client = TestClient(create_app(RecordingEngine()))
-
-    with client.websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        events = []
-        while (event := socket.receive_json())["type"] != "response.done":
-            events.append(event)
-
-    heard = [
-        event for event in events if event["type"].endswith("input_audio_transcription.completed")
-    ]
-    assert [event["transcript"] for event in heard] == ["那它多少钱"]
 
 
 def test_clearing_a_session_repeats_the_sample_rates() -> None:
@@ -616,85 +378,6 @@ def test_clearing_a_session_repeats_the_sample_rates() -> None:
     for field in ("input_sample_rate", "output_sample_rate", "encoding"):
         assert cleared[field] == opening[field]
     assert cleared["context"]["turns"] == 0
-
-
-def test_clearing_a_session_stops_the_history_reaching_the_next_caller() -> None:
-    """The reason session.clear exists, and the one thing the wiring must not lose.
-
-    Before history reached the prompt this line cost nothing to break. Now a
-    clear that does not clear puts one caller's words in the next caller's
-    prompt.
-    """
-    engine = RecordingEngine()
-    client = TestClient(create_app(engine))
-
-    with client.websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        while socket.receive_json()["type"] != "response.done":
-            pass
-        socket.send_json({"type": "session.clear"})
-        socket.receive_json()
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        while socket.receive_json()["type"] != "response.done":
-            pass
-
-    assert engine.histories[1] == []
-
-
-def test_a_cancelled_turn_still_remembers_what_the_caller_said() -> None:
-    """Barge-in is the main path, so the turn it interrupts has to enter history.
-
-    The transcript is yielded before any audio for exactly this reason: a turn
-    cut off halfway still happened, and the next one has to know what it was
-    about.
-    """
-
-    class SlowAfterTranscript(FakeEngine):
-        def __init__(self) -> None:
-            self.histories: list[list[dict[str, str]]] = []
-
-        async def respond(  # type: ignore[override]
-            self,
-            pcm: bytes,
-            sample_rate: int,
-            settings: GenerationSettings,
-            history: list[dict[str, str]] | None = None,
-        ) -> AsyncIterator[SpeechChunk]:
-            self.histories.append(list(history or []))
-            yield SpeechChunk(pcm=b"", transcript="那它多少钱")
-            for _ in range(50):
-                yield SpeechChunk(pcm=b"\x00\x01" * 8, text="两")
-                await asyncio.sleep(0.05)
-
-    engine = SlowAfterTranscript()
-    client = TestClient(create_app(engine))
-
-    with client.websocket_connect("/v1/realtime") as socket:
-        socket.receive_json()
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        while socket.receive_json()["type"] != "response.text.delta":
-            pass
-        socket.send_json({"type": "response.cancel"})
-        while socket.receive_json()["type"] != "response.done":
-            pass
-        socket.send_json(
-            {"type": "input_audio_buffer.append", "audio": base64.b64encode(b"\x00" * 8).decode()}
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        while socket.receive_json()["type"] != "response.done":
-            pass
-
-    assert engine.histories[1][0] == {"role": "user", "content": "那它多少钱"}
 
 
 def test_transcription_carries_the_polished_text_when_a_polisher_is_wired() -> None:
@@ -776,13 +459,6 @@ async def test_the_item_taken_for_the_check_is_put_back() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_no_messages_is_a_field_error_not_a_500(client: TestClient) -> None:
-    """It reached the chat template as an empty list and raised IndexError."""
-    response = client.post("/v1/chat/completions", json={"messages": []})
-
-    assert response.status_code == 422
-
-
 class TooLongEngine(FakeEngine):
     """A model that refuses input longer than it was trained to answer."""
 
@@ -791,30 +467,6 @@ class TooLongEngine(FakeEngine):
     ) -> AsyncIterator[str]:
         raise TooLongForModel("one user message is 2005 tokens; this checkpoint answers up to 400")
         yield ""  # pragma: no cover - makes this an async generator
-
-
-def test_a_message_the_model_cannot_answer_is_413_not_an_empty_200() -> None:
-    """Measured: 977 tokens in one message came back as "" on a 200, eight times of eight."""
-    client = TestClient(create_app(TooLongEngine()))
-
-    response = client.post(
-        "/v1/chat/completions", json={"messages": [{"role": "user", "content": "长"}]}
-    )
-
-    assert response.status_code == 413
-    assert "400" in response.json()["detail"]
-
-
-def test_the_same_refusal_reaches_a_streaming_caller() -> None:
-    """Raised inside the generator it would land after the headers, as a truncated 200."""
-    streaming = TestClient(create_app(TooLongEngine()))
-
-    response = streaming.post(
-        "/v1/chat/completions",
-        json={"messages": [{"role": "user", "content": "长"}], "stream": True},
-    )
-
-    assert response.status_code == 413
 
 
 def test_a_speed_that_is_not_applied_here_says_where_it_belongs(client: TestClient) -> None:
@@ -892,16 +544,10 @@ def test_an_audio_field_that_is_not_a_string_is_answered(client: TestClient) -> 
 
 
 class SilentEngine(FakeEngine):
-    """What the cascade produces when the recogniser heard no speech."""
+    """What the recogniser returns when it heard no speech: an empty string."""
 
-    async def respond(  # type: ignore[override]
-        self,
-        pcm: bytes,
-        sample_rate: int,
-        settings: GenerationSettings,
-        history: list[dict[str, str]] | None = None,
-    ) -> AsyncIterator[SpeechChunk]:
-        yield SpeechChunk(pcm=b"", transcript="")
+    async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "", "zh"
 
 
 def test_committed_audio_with_no_speech_in_it_says_so() -> None:
@@ -1192,15 +838,8 @@ def test_a_session_survives_audio_it_cannot_read_instead_of_dropping() -> None:
     from mindsurf_omni.service.audio import UnsupportedAudio
 
     class _Refuses(FakeEngine):
-        async def respond(  # type: ignore[override]
-            self,
-            pcm: bytes,
-            sample_rate: int,
-            settings: GenerationSettings,
-            history: list[dict[str, str]] | None = None,
-        ) -> AsyncIterator[SpeechChunk]:
+        async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
             raise UnsupportedAudio("this wav holds 2-channel 16-bit samples")
-            yield  # pragma: no cover - makes this an async generator
 
     with TestClient(create_app(_Refuses())).websocket_connect("/v1/realtime") as socket:
         socket.receive_json()
@@ -1211,7 +850,14 @@ def test_a_session_survives_audio_it_cannot_read_instead_of_dropping() -> None:
             }
         )
         socket.send_json({"type": "input_audio_buffer.commit"})
-        events = [socket.receive_json() for _ in range(3)]
+        # Counted by what arrives rather than by a fixed number: the fixed
+        # number was 3, and it broke the moment a turn stopped carrying audio
+        # events. Read until the turn ends, then clear and read one more.
+        events = []
+        while True:
+            events.append(socket.receive_json())
+            if events[-1]["type"] == "response.done":
+                break
         # Still open: the caller sends a different file rather than reconnecting.
         socket.send_json({"type": "session.clear"})
         events.append(socket.receive_json())
@@ -1676,22 +1322,6 @@ def test_a_dictation_turn_hands_back_the_transcript_not_an_answer_to_it() -> Non
 
     assert seen["transcript"] == "嗯，那个会议改到下午三点了"
     assert seen["text"] == "会议改到下午三点了"
-
-
-def test_the_conversing_default_is_untouched(client: TestClient) -> None:
-    """The other half of the switch, driven by an engine that does not set it."""
-    with client.websocket_connect("/v1/realtime") as socket:
-        assert socket.receive_json()["type"] == "session.created"
-        socket.send_json(
-            {
-                "type": "input_audio_buffer.append",
-                "audio": base64.b64encode(b"\x00\x01" * 100).decode(),
-            }
-        )
-        socket.send_json({"type": "input_audio_buffer.commit"})
-        kinds = [socket.receive_json()["type"] for _ in range(3)]
-
-    assert kinds == ["response.created", "response.text.delta", "response.audio.delta"]
 
 
 def test_a_polisher_that_raises_does_not_take_the_dictation_with_it() -> None:

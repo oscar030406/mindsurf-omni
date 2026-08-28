@@ -209,9 +209,7 @@ SERVER_EVENTS = {
     "session.updated",
     "conversation.item.input_audio_transcription.completed",  # cascade only
     "response.created",
-    "response.text.delta",
-    "response.audio.delta",  # {"audio": base64 PCM16 24 kHz mono}
-    "response.audio.done",
+    "response.text.delta",  # {"audio": base64 PCM16 24 kHz mono}
     "response.done",
     "error",
 }

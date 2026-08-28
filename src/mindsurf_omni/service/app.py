@@ -32,9 +32,6 @@ from mindsurf_omni.contract import (
     INPUT_SAMPLE_RATE,
     LONGEST_SPOKEN_CHARACTERS,
     OUTPUT_SAMPLE_RATE,
-    ChatChoice,
-    ChatCompletionRequest,
-    ChatCompletionResponse,
     ModelInfo,
     ModelList,
     SpeechRequest,
@@ -42,7 +39,7 @@ from mindsurf_omni.contract import (
 )
 from mindsurf_omni.data.synthesis import SynthesiserUnavailable
 from mindsurf_omni.service.asr import LONGEST_SECONDS
-from mindsurf_omni.service.audio import UnsupportedAudio, frames, to_wav, unwrap_wav, whole_samples
+from mindsurf_omni.service.audio import UnsupportedAudio, to_wav, unwrap_wav, whole_samples
 from mindsurf_omni.service.config import ConfigurationError
 from mindsurf_omni.service.engine import GenerationSettings, SpeechEngine, TooLongForModel
 from mindsurf_omni.service.health import count, counters
@@ -273,21 +270,10 @@ async def dictate(
     texts: list[str],
     heard: list[str],
 ) -> None:
-    """A realtime turn that ends in what the speaker said, not in an answer to it.
+    """What a websocket turn ends in: the dictation, not an answer to it.
 
-    The same two events a conversing turn sends, carrying different things:
-    ``...transcription.completed`` is the recogniser's transcript, and
-    ``response.text.delta`` is that transcript with its filler removed. No new
-    event type, because a client that already renders a reply renders this.
-
-    Reachable only under MINDSURF_REALTIME=dictate. Before it, the realtime path
-    always answered the speaker and the polish stage was reachable only over
-    POST /v1/audio/transcriptions -- so a deployment could stream a live preview
-    of somebody dictating and then had nowhere to send the finished dictation.
-    Found by starting the service and dictating into it: the preview came back
-    word for word and then the socket replied "好的，明天的会议将在下午3点开始",
-    which is a sentence the copy constraint cannot produce and the user did not
-    say.
+    Two events. ``...transcription.completed`` is the recogniser's transcript,
+    and ``response.text.delta`` is that transcript with its filler removed.
 
     A polisher that raises does not take the transcript with it. That failure
     mode is already answered on the HTTP endpoint and for the same reason: the
@@ -700,64 +686,6 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
             duration_seconds=seconds,
         )
 
-    @app.post("/v1/chat/completions")
-    async def chat(request: Request, body: ChatCompletionRequest) -> Any:
-        engine = require_engine(request)
-        settings = GenerationSettings(
-            temperature=body.temperature, top_p=body.top_p, max_tokens=body.max_tokens
-        )
-        messages = [message.model_dump() for message in body.messages]
-        completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
-        created = int(time.time())
-
-        if not body.stream:
-            text = "".join([chunk async for chunk in engine.complete(messages, settings)])
-            return ChatCompletionResponse(
-                id=completion_id,
-                created=created,
-                model=body.model,
-                choices=[
-                    ChatChoice(
-                        message={"role": "assistant", "content": text},  # type: ignore[arg-type]
-                        finish_reason="stop",
-                    )
-                ],
-            )
-
-        # Before the headers, so a stage that refuses still answers 503 rather
-        # than an empty 200 the caller reads as IncompleteRead.
-        head, rest = await first_and_rest(engine.complete(messages, settings))
-
-        async def stream() -> Any:
-            async def deltas() -> Any:
-                # The first item was taken before the headers so a refusal
-                # could still become a 503; it has to be put back in front.
-                if head is not None:
-                    yield head
-                async for item in rest:
-                    yield item
-
-            async for delta in deltas():
-                payload = {
-                    "id": completion_id,
-                    "object": "chat.completion.chunk",
-                    "created": created,
-                    "model": body.model,
-                    "choices": [{"index": 0, "delta": {"content": delta}}],
-                }
-                yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
-            final = {
-                "id": completion_id,
-                "object": "chat.completion.chunk",
-                "created": created,
-                "model": body.model,
-                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
-            }
-            yield f"data: {json.dumps(final, ensure_ascii=False)}\n\n"
-            yield "data: [DONE]\n\n"
-
-        return StreamingResponse(stream(), media_type="text/event-stream")
-
     @app.post("/v1/audio/speech")
     async def speech(request: Request, body: SpeechRequest) -> StreamingResponse:
         # Here rather than on the field: see contract.SpeechRequest.input. The
@@ -1031,45 +959,7 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                     said: list[str] = []
 
                     async def stream(pcm: bytes, texts: list[str], heard: list[str]) -> None:
-                        if getattr(engine, "realtime", "converse") == "dictate":
-                            await dictate(websocket, engine, pcm, texts, heard)
-                            return
-                        async for chunk in engine.respond(
-                            pcm, INPUT_SAMPLE_RATE, settings, history=conversation.messages()
-                        ):
-                            # Truthy, not "is not None": silence recognises as
-                            # an empty string, and an empty transcript event is
-                            # a blank bubble in the caller's transcript view.
-                            if chunk.transcript:
-                                heard.append(chunk.transcript)
-                                # Spelled out rather than named: the contract
-                                # test looks for the literal where it is sent,
-                                # and a constant would answer for a branch that
-                                # had been deleted. Too long for the line limit
-                                # at this depth, and moving it is the bug.
-                                await websocket.send_json(
-                                    {
-                                        "type": "conversation.item.input_audio_transcription.completed",  # noqa: E501
-                                        "transcript": chunk.transcript,
-                                    }
-                                )
-                            if chunk.text:
-                                texts.append(chunk.text)
-                                await websocket.send_json(
-                                    {"type": "response.text.delta", "delta": chunk.text}
-                                )
-                            # Split rather than sent whole: a clause of speech
-                            # can exceed the peer's frame limit, and the peer's
-                            # answer to that is to close the connection, which
-                            # the caller sees as the reply stopping rather than
-                            # as a fault.
-                            for frame in frames(chunk.pcm):
-                                await websocket.send_json(
-                                    {
-                                        "type": "response.audio.delta",
-                                        "audio": base64.b64encode(frame).decode("ascii"),
-                                    }
-                                )
+                        await dictate(websocket, engine, pcm, texts, heard)
 
                     # Generation runs as a task so this loop can keep hearing
                     # the socket. The previous version drove the async-for
@@ -1206,7 +1096,6 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
                             }
                         )
                     else:
-                        await websocket.send_json({"type": "response.audio.done"})
                         await websocket.send_json(
                             {"type": "response.done", "context": conversation.summary()}
                         )

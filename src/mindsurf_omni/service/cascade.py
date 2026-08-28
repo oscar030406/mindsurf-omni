@@ -177,7 +177,6 @@ class CascadeEngine(SpeechEngine):
         unwired: tuple[str, ...] = (),
         stream_synthesiser: StreamingSynthesiser | None = None,
         polisher: Any = None,
-        realtime: str = "converse",
         recogniser: Any = None,
     ) -> None:
         self._transcribe = transcriber
@@ -190,9 +189,6 @@ class CascadeEngine(SpeechEngine):
         # cascade also serves conversation, where polishing a question would
         # edit the user's words for no reason.
         self._polisher = polisher
-        # Read by the websocket handler, which cannot see Settings: it is
-        # handed an engine and nothing else. Same road ``recogniser`` took.
-        self.realtime = realtime
         # The object, not just its transcribe method: a recogniser that can
         # write while the speaker is still talking exposes that separately, and
         # a callable cannot carry it. Named rather than reached for with

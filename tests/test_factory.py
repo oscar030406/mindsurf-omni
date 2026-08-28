@@ -61,22 +61,6 @@ def test_read_aloud_is_off_until_it_is_asked_for(tmp_path: Path) -> None:
         asyncio.run(_first_chunk(engine))
 
 
-def test_the_unwired_generator_reaches_the_caller_as_503(tmp_path: Path) -> None:
-    """Assembled for real, not with a fake: this is the stage that is actually unwired."""
-    from fastapi.testclient import TestClient
-
-    from mindsurf_omni.service.app import create_app
-
-    client = TestClient(create_app(build(_ready(tmp_path))))
-
-    response = client.post(
-        "/v1/chat/completions", json={"messages": [{"role": "user", "content": "你好"}]}
-    )
-
-    assert response.status_code == 503
-    assert "text generator" in response.json()["detail"]
-
-
 def test_a_missing_recogniser_package_is_503_not_500(tmp_path: Path) -> None:
     """The image installs the runtime set only, so this is the normal case inside one.
 
