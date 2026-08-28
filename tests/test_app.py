@@ -334,7 +334,11 @@ def test_a_configuration_error_reaches_the_caller_instead_of_crashing_startup(
     monkeypatch.setenv("MINDSURF_WEIGHTS", str(tmp_path / "absent"))
 
     app = create_app()  # must not raise
-    response = TestClient(app).get("/v1/voices")
+    # /v1/token-spec rather than /v1/voices: the voice list went with the
+    # assistant line. This check is about the 503 body reaching an operator, so
+    # it needs an endpoint that requires the engine -- /v1/models answers 200
+    # without one and would have passed this test while proving nothing.
+    response = TestClient(app).get("/v1/token-spec")
 
     assert response.status_code == 503
     assert "MINDSURF_TOKENIZER" in response.json()["detail"]
