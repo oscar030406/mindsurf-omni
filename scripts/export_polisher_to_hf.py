@@ -21,10 +21,10 @@ import torch
 SRC = (
     Path(sys.argv[1])
     if len(sys.argv) > 1
-    else Path("/home/oscar/omni/minimind-o/out/sft_polish6_768.pth")
+    else Path("out/sft_polish6_768.pth")
 )  # noqa: E501
-OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("/home/oscar/omni/hf/polish6")
-TOK = Path("/home/oscar/omni/mindsurf-omni/assets/tokenizer")
+OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("<导出目录>")
+TOK = Path("assets/tokenizer")
 
 sd = torch.load(str(SRC), map_location="cpu", weights_only=True)
 keep = {

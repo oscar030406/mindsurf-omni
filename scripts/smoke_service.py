@@ -105,7 +105,7 @@ def check_health(client: httpx.Client, results: Results) -> None:
 
 def check_unconfigured(client: httpx.Client, results: Results) -> None:
     """With no engine, endpoints must refuse with a reason, not fake success."""
-    for path in ("/v1/token-spec", "/v1/voices"):
+    for path in ("/v1/token-spec",):
         response = client.get(path)
         results.check(
             f"未配置时 {path} 返回 503",

@@ -20,8 +20,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-ROOT = Path("/home/oscar/omni/segcheck")
-CORP = Path("/home/oscar/omni/corpora/MagicData-RAMC/MDT2021S003")
+ROOT = Path("<工作目录>/segcheck")
+CORP = Path("<工作目录>/corpora/MagicData-RAMC/MDT2021S003")
 sys.path.insert(0, str(ROOT / "src"))
 
 from mindsurf_omni.evaluation.metrics import character_error_rate  # noqa: E402
@@ -86,7 +86,7 @@ def main() -> None:
     import whisper
 
     torch.cuda.reset_peak_memory_stats()
-    model = whisper.load_model("small", download_root="/home/oscar/omni/whisper", device="cuda")
+    model = whisper.load_model("small", download_root="<工作目录>/whisper", device="cuda")
     params = sum(p.numel() for p in model.parameters()) / 1e6
     got, spent = [], []
     for pcm, want in clips:
@@ -105,7 +105,7 @@ def main() -> None:
 
     torch.cuda.reset_peak_memory_stats()
     sense = AutoModel(
-        model="/home/oscar/omni/minimind-o/model/SenseVoiceSmall",
+        model="<权重目录>/SenseVoiceSmall",
         device="cuda:0",
         disable_update=True,
         disable_pbar=True,

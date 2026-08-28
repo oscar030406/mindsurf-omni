@@ -356,7 +356,7 @@
       "why_capped": "全程有声、一处停顿都没有的录音，分位数会落在语音本身上，不封顶会把整段听聋",
       "why_nonzero_only": "恰好为零的帧是文件的静音，不是房间的"
     },
-    "source_note": "服务器 /home/oscar/omni/segcheck/{segcheck.json,sweep2.json}",
+    "source_note": "部署卡上的 segcheck/{segcheck.json,sweep2.json}",
     "source": "src/mindsurf_omni/service/vad.py",
     "real_human_audio": {
       "_": [
@@ -508,7 +508,7 @@
         "不写标点不做 ITN，而润色靠标点分句；补 ct-punc 已在上一轮被证伪（会让正常听写变差）。",
         "SenseVoice 的多语种和情绪标签会一起没了。"
       ],
-      "source": "服务器 /home/oscar/omni/segcheck/seaco.json"
+      "source": "部署卡上的 segcheck/seaco.json"
     },
     "the_door_was_briefly_opened_four_times_too_wide": {
       "_": [
@@ -524,7 +524,7 @@
       "cost_of_reverting": "句首的 通一千问 不再修回，端到端修回 4/6 回到 3/6，陷阱改坏仍是 1/10"
     },
     "_note_repaired": "b3497d2 期间是 4，那一版把放行面开到 23%，已退回；见 the_door_was_briefly_opened_four_times_too_wide",
-    "source_note": "服务器 /home/oscar/omni/segcheck/hotlive.json",
+    "source_note": "部署卡上的 segcheck/hotlive.json",
     "source": "src/mindsurf_omni/service/hotwords.py",
     "on_real_read_speech": {
       "_": [
@@ -622,7 +622,7 @@
       },
       "out_of_reach": "信噪比低到 14 dB 左右能量就分不开语音和房间，这道闸会误杀。真短指令的最大帧 RMS 中位 0.226，对 0.02 的房间是 21 dB，够得着。"
     },
-    "source_note": "服务器 /home/oscar/omni/segcheck/padshort.py，缺陷编号 R1/N1 见复查表",
+    "source_note": "部署卡上的 segcheck/padshort.py，缺陷编号 R1/N1 见复查表",
     "source": "src/mindsurf_omni/service/asr.py",
     "real_human_speech": {
       "_": [

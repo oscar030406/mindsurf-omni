@@ -16,11 +16,11 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, "/home/oscar/omni/mindsurf-omni/src")
+sys.path.insert(0, "<仓库>/src")
 from mindsurf_omni.service.polish import Polisher, build_prompt  # noqa: E402
 
-ROOT = Path("/home/oscar/omni/minimind-o")
-POOL = Path("/home/oscar/omni/mindsurf-omni/artifacts/polish_train")
+ROOT = Path("<minimind 检出>")
+POOL = Path("<仓库>/artifacts/polish_train")
 rows = [
     json.loads(x)
     for x in (POOL / "pairs_holdout.jsonl").read_text(encoding="utf-8").splitlines()
@@ -31,7 +31,7 @@ CONCURRENCY = [1, 4, 8, 16, 32]
 
 pol = Polisher(
     checkpoint=ROOT / "out/sft_polish6_768.pth",
-    tokenizer_dir=Path("/home/oscar/omni/mindsurf-omni/assets/tokenizer"),
+    tokenizer_dir=Path("assets/tokenizer"),
     minimind_root=ROOT,
     device="cuda",
     tagger=ROOT / "out/polish_tagger_unionchar.pt",
@@ -101,4 +101,4 @@ print(
     f"{best['total_tokens_per_second'] * 60 / 1000:.0f}K TPM，在飞 {best['in_flight']}"
 )
 print(f"纯输出口径 {best['output_tokens_per_second'] * 60 / 1000:.0f}K TPM")
-json.dump(rows_out, open("/home/oscar/omni/polishthrough.json", "w"), ensure_ascii=False, indent=1)  # noqa: SIM115
+json.dump(rows_out, open("<工作目录>/polishthrough.json", "w"), ensure_ascii=False, indent=1)  # noqa: SIM115

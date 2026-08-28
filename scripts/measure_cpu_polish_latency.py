@@ -30,7 +30,7 @@ print(f"{len(texts)} probes, median {statistics.median(len(t) for t in texts)} c
 root = Path(os.path.expanduser("~/omni/minimind-o"))
 pol = Polisher(
     checkpoint=root / "out/sft_polish6_768.pth",
-    tokenizer_dir=Path("/home/oscar/omni/mindsurf-omni/assets/tokenizer"),
+    tokenizer_dir=Path("assets/tokenizer"),
     minimind_root=root,
     device="cpu",
     tagger=root / "out/polish_tagger_unionchar.pt",

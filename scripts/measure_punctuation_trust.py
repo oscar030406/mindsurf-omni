@@ -21,7 +21,7 @@ from pathlib import Path
 
 import numpy as np
 
-CORP = Path("/home/oscar/omni/corpora/MagicData-RAMC/MDT2021S003")
+CORP = Path("<工作目录>/corpora/MagicData-RAMC/MDT2021S003")
 RATE = 16_000
 MARK = re.compile(r"\[[^\]]*\]|<[^>]*>")
 TAG = re.compile(r"<\|[^|]*\|>")
@@ -92,7 +92,7 @@ def main():
     from funasr import AutoModel
 
     sense = AutoModel(
-        model="/home/oscar/omni/minimind-o/model/SenseVoiceSmall",
+        model="<权重目录>/SenseVoiceSmall",
         device="cuda:0",
         disable_update=True,
         disable_pbar=True,
@@ -170,7 +170,7 @@ def main():
         },
     }
     print(json.dumps(row, ensure_ascii=False, indent=1), flush=True)
-    Path("/home/oscar/omni/punc.json").write_text(json.dumps(row, ensure_ascii=False, indent=1))
+    Path("<工作目录>/punc.json").write_text(json.dumps(row, ensure_ascii=False, indent=1))
 
 
 if __name__ == "__main__":

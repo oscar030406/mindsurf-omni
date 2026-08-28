@@ -69,7 +69,7 @@ from mindsurf_omni.service.polish import Polisher  # noqa: E402
 root = Path(os.path.expanduser("~/omni/minimind-o"))
 pol = Polisher(
     checkpoint=root / "out/sft_polish6_768.pth",
-    tokenizer_dir=Path("/home/oscar/omni/mindsurf-omni/assets/tokenizer"),
+    tokenizer_dir=Path("assets/tokenizer"),
     minimind_root=root,
     device="cpu",
     tagger=root / "out/polish_tagger_unionchar.pt",

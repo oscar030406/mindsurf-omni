@@ -21,7 +21,7 @@
 这批音频没有人工转写，也不需要——问的是「它自己稳不稳」，不是「它对不对」。
 
     python scripts/measure_retranscribe_stability.py \\
-        --audio /home/oscar/omni/dictation_test --step 2.0 \\
+        --audio <听写录音目录> --step 2.0 \\
         --model-dir ~/omni/minimind-o/model/SenseVoiceSmall \\
         --report artifacts/retranscribe-stability.json
 """

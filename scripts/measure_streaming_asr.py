@@ -20,13 +20,13 @@ import wave
 
 import numpy as np
 
-CORP = "/home/oscar/omni/corpora/MagicData-RAMC/MDT2021S003"
+CORP = "<工作目录>/corpora/MagicData-RAMC/MDT2021S003"
 RATE = 16_000
 MARK = re.compile(r"\[[^\]]*\]|<[^>]*>")
 TAG = re.compile(r"<\|[^|]*\|>")
 CLIPS = int(sys.argv[1]) if len(sys.argv) > 1 else 30
 
-sys.path.insert(0, "/home/oscar/omni/mindsurf-omni/src")
+sys.path.insert(0, "<仓库>/src")
 from mindsurf_omni.evaluation.metrics import character_error_rate  # noqa: E402
 
 
@@ -88,7 +88,7 @@ STRIDE = CHUNK[1] * 960  # 10 * 960 samples = 600 ms
 BACK, AHEAD = CHUNK[0], CHUNK[2]
 
 offline = AutoModel(
-    model="/home/oscar/omni/minimind-o/model/SenseVoiceSmall",
+    model="<权重目录>/SenseVoiceSmall",
     device="cuda:0",
     disable_update=True,
     disable_pbar=True,
@@ -165,4 +165,4 @@ print(
     f"RTF {med('step_ms_median') / 600:.3f}"
 )
 
-json.dump(rows, open("/home/oscar/omni/streamasr.json", "w"), ensure_ascii=False, indent=1)  # noqa: SIM115
+json.dump(rows, open("<工作目录>/streamasr.json", "w"), ensure_ascii=False, indent=1)  # noqa: SIM115
