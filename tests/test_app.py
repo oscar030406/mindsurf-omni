@@ -118,7 +118,7 @@ def test_a_stage_that_is_not_wired_answers_503_rather_than_a_traceback() -> None
 def test_an_unconfigured_service_says_so_instead_of_faking_success(bare: TestClient) -> None:
     """An integration that passes against stubs fails on the day the model lands."""
     assert bare.get("/v1/models").json()["data"] == []
-    for path in ["/v1/token-spec", "/v1/voices"]:
+    for path in ["/v1/token-spec"]:
         response = bare.get(path)
         assert response.status_code == 503
         assert "engine" in response.json()["detail"]
@@ -1516,7 +1516,7 @@ def test_a_configuration_failure_does_not_name_the_directory_it_failed_in(
     monkeypatch.setattr(config.Settings, "from_environment", staticmethod(lambda: object()))
 
     with TestClient(create_app(), raise_server_exceptions=False) as started:
-        for path in ("/health", "/v1/voices"):
+        for path in ("/health"):
             assert secret not in started.get(path).text, path
 
 

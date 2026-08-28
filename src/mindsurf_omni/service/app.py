@@ -39,8 +39,6 @@ from mindsurf_omni.contract import (
     ModelList,
     SpeechRequest,
     TranscriptionResponse,
-    VoiceInfo,
-    VoiceList,
 )
 from mindsurf_omni.data.synthesis import SynthesiserUnavailable
 from mindsurf_omni.service.asr import LONGEST_SECONDS
@@ -600,19 +598,6 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
     async def token_spec(request: Request) -> dict[str, Any]:
         """Served from the running model so it cannot drift from the weights."""
         return require_engine(request).token_spec().model_dump()
-
-    @app.get("/v1/voices", response_model=VoiceList)
-    async def list_voices(request: Request) -> VoiceList:
-        require_engine(request)
-        return VoiceList(
-            data=[
-                VoiceInfo(
-                    id="default",
-                    description="发布权重的默认音色",
-                    speaker_embedding_dim=192,
-                )
-            ]
-        )
 
     @app.post("/v1/audio/transcriptions", response_model=TranscriptionResponse)
     async def transcribe(request: Request) -> TranscriptionResponse:
