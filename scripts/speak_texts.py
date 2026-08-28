@@ -33,13 +33,13 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE  # noqa: E402
-from mindsurf_omni.service.audio import to_wav  # noqa: E402
-from mindsurf_omni.service.tts import (  # noqa: E402
+from mindsurf_omni.data.synthesis import (  # noqa: E402
     EdgeSynthesiser,
     Utterance,
     VoxCPMSynthesiser,
     stream_utterance,
 )
+from mindsurf_omni.service.audio import to_wav  # noqa: E402
 
 
 def build_synthesiser(

@@ -43,8 +43,8 @@ sys.path.insert(0, str(_ROOT / "src"))
 sys.path.insert(0, str(_ROOT))
 
 from mindsurf_omni.contract import OUTPUT_SAMPLE_RATE  # noqa: E402
+from mindsurf_omni.data.synthesis import EdgeSynthesiser, Utterance  # noqa: E402
 from mindsurf_omni.evaluation.metrics import character_error_rate  # noqa: E402
-from mindsurf_omni.service.tts import EdgeSynthesiser, Utterance  # noqa: E402
 from scripts.inject_fillers import inject  # noqa: E402
 
 # Above this against the sentence that was read aloud, the audio is broken

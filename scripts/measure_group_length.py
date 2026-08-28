@@ -415,9 +415,7 @@ def main() -> None:
     parser.add_argument("--tagger", type=Path)
     parser.add_argument("--tagger-backbone", type=Path)
     parser.add_argument("--tagger-threshold", type=float, default=0.4)
-    parser.add_argument(
-        "--merge", default="veto", help="veto / union / intersection，两条臂怎么合"
-    )
+    parser.add_argument("--merge", default="veto", help="veto / union / intersection，两条臂怎么合")
     parser.add_argument("--report", type=Path)
     parser.add_argument(
         "--dump", type=Path, help="每档把 source/polished 写一份，供否定词等安全判据读"
