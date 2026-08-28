@@ -43,11 +43,19 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
     if settings.asr_model == "paraformer-streaming":
         from mindsurf_omni.service.asr import ParaformerStreamingRecogniser
 
-        # No path of its own: this one is named, not mounted, and FunASR
-        # resolves it against the same cache the others come from.
+        # Mounted when a deployment says where, named when it does not. Named
+        # is what this used to be with no way to change it, and it means
+        # FunASR downloads the weights during assembly -- a service reaching
+        # the network because of a recogniser choice, and on a machine with no
+        # network a hang with nothing in the log to explain it.
         recogniser: Any = ParaformerStreamingRecogniser(
             device=settings.device,
             language=settings.asr_language,
+            **(
+                {"model_dir": settings.asr_streaming}
+                if settings.asr_streaming is not None
+                else {}
+            ),
         )
     else:
         recogniser = SenseVoiceRecogniser(

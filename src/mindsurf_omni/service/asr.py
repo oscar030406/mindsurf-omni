@@ -771,6 +771,9 @@ class ParaformerStreamingRecogniser:
     picks this as its only recogniser, it does.
     """
 
+    # A name rather than a path, and FunASR turns a name into a download.
+    # Set MINDSURF_ASR_STREAMING to a directory to mount it instead, which is
+    # how the whole-segment recogniser has always been given its weights.
     model_dir: Path | str = "paraformer-zh-streaming"
     device: str = "cpu"
     language: str = "zh"

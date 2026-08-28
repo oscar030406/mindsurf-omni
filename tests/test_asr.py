@@ -813,3 +813,35 @@ async def test_the_seam_does_not_stack_punctuation() -> None:
 
     assert said == "反正就是", said
     assert "。，" not in live._shown  # noqa: SLF001
+
+
+def test_the_streaming_weights_can_be_mounted_instead_of_downloaded(tmp_path) -> None:
+    """Named, FunASR turns the name into a download during assembly.
+
+    That is a service reaching the network because of a recogniser choice, and
+    on a machine with no network it is a hang with nothing in the log. The
+    whole-segment recogniser has been mounted by path since the beginning; this
+    is the other one catching up.
+    """
+    from mindsurf_omni.service.config import ConfigurationError, Settings
+
+    base = {
+        "MINDSURF_ENGINE": "cascade",
+        "MINDSURF_WEIGHTS": "/w",
+        "MINDSURF_ASR_MODEL": "paraformer-streaming",
+    }
+
+    assert Settings.from_environment(base).asr_streaming is None
+
+    weights = tmp_path / "paraformer"
+    weights.mkdir()
+    mounted = Settings.from_environment({**base, "MINDSURF_ASR_STREAMING": str(weights)})
+    assert mounted is not None and mounted.asr_streaming == weights
+
+    # A path that is not there is refused at assembly, not at the first word.
+    absent = Settings.from_environment(
+        {**base, "MINDSURF_ASR_STREAMING": str(tmp_path / "nowhere")}
+    )
+    assert absent is not None
+    with pytest.raises(ConfigurationError, match="MINDSURF_ASR_STREAMING"):
+        absent.verify()

@@ -201,6 +201,13 @@ class Settings:
     # what the deployment is for: a live display wants the words early, a text
     # box wants them right.
     asr_model: str = "sensevoice"
+    # Where the streaming recogniser's weights are, when that one is chosen.
+    # Unset, FunASR resolves the name against its own cache and downloads it
+    # if it is not there -- which is a deployment reaching the network during
+    # assembly without anybody asking it to, and on an offline machine it is a
+    # hang with no explanation. The other recogniser has been mounted by path
+    # since the beginning; this makes the two agree.
+    asr_streaming: Path | None = None
     # Proper nouns this deployment says and the recogniser does not know, put
     # back into the transcript by sound. Global rather than per request: the
     # dictation endpoint takes a bare PCM body with no field to carry a table,
@@ -256,6 +263,11 @@ class Settings:
             asr_language=_spoken_language(source.get("MINDSURF_ASR_LANGUAGE", "zh")),
             preview_seconds=_preview_seconds(source.get("MINDSURF_PREVIEW_SECONDS", "1.0")),
             asr_model=source.get("MINDSURF_ASR_MODEL", "sensevoice").strip().lower(),
+            asr_streaming=(
+                Path(source["MINDSURF_ASR_STREAMING"])
+                if source.get("MINDSURF_ASR_STREAMING")
+                else None
+            ),
             realtime=source.get("MINDSURF_REALTIME", "converse").strip().lower(),
             hotwords=tuple(
                 word.strip()
@@ -270,6 +282,10 @@ class Settings:
     REALTIME_MODES = ("converse", "dictate")
 
     def verify(self) -> None:
+        if self.asr_streaming is not None and not self.asr_streaming.exists():
+            raise ConfigurationError(
+                f"MINDSURF_ASR_STREAMING={self.asr_streaming} is not on disk"
+            )
         if self.tts and self.tts != "edge":
             raise ConfigurationError(
                 f"MINDSURF_TTS={self.tts!r} names no synthesiser this build has; "
