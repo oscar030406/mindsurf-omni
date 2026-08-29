@@ -40,6 +40,7 @@ from mindsurf_omni.service.polish import (  # noqa: E402
     group_sentences,
 )
 from scripts.measure_polish import (  # noqa: E402
+    DOUBLE_DUTY,
     content_kept,
     filler_removed,
     invented,
@@ -154,6 +155,18 @@ def main() -> None:
 
     def _record(row: dict[str, Any], text: str, index: int) -> None:
         arrived, removed = filler_removed(row, text)
+        # Split as well as combined, because the combined figure answers two
+        # different questions at once and the answers moved apart. The injector
+        # plants nine leading fillers uniformly and seven of them are
+        # double-duty: the 这个 it planted is labelled "delete this" while the
+        # 这个 in 这个模块 is not, same spelling, same slot. Every fix that
+        # stopped the stage deleting a double-duty word in a content position
+        # -- and a run of them came out of driving the service -- pushes the
+        # combined number down while making the product better. Only the gated
+        # figure, which leaves those words out, is a number to hold a line
+        # against.
+        gated_arrived, gated_removed = filler_removed(row, text, exclude=DOUBLE_DUTY)
+        double_arrived, double_removed = filler_removed(row, text, DOUBLE_DUTY)
         written.append(
             {
                 **row,
@@ -164,6 +177,18 @@ def main() -> None:
                 "invented": invented(row["target"], text),
                 "filler_arrived": arrived,
                 "filler_removed": removed,
+                "gated_arrived": gated_arrived,
+                "gated_removed": gated_removed,
+                "double_arrived": double_arrived,
+                "double_removed": double_removed,
+                # CER, invented and filler_removed are three views of one
+                # question -- did the injected characters go away -- and this
+                # row's target is the text with all nine words taken out. So a
+                # 这个 correctly left in a content position is charged three
+                # times, and on the rows that got one the three numbers move
+                # together and against the fix. Split on it so the half where
+                # the target is trustworthy can be read on its own.
+                "got_double_duty": double_arrived > 0,
                 "elapsed_ms": latencies[-1],
             }
         )
@@ -175,6 +200,28 @@ def main() -> None:
     asyncio.run(run())
 
     arrived = sum(row["filler_arrived"] for row in written)
+
+    def _rate(removed_key: str, arrived_key: str) -> float | None:
+        """None rather than 0.0 when nothing of that kind arrived.
+
+        Zero would read as "removed none of it" and go into a table next to
+        numbers that mean that.
+        """
+        seen = sum(row[arrived_key] for row in written)
+        return sum(row[removed_key] for row in written) / seen if seen else None
+
+    def _half(got_double: bool) -> dict[str, Any]:
+        here = [row for row in written if row["got_double_duty"] is got_double]
+        if not here:
+            return {"rows": 0}
+        return {
+            "rows": len(here),
+            "cer_after": statistics.fmean(row["cer_after"] for row in here),
+            "cer_before": statistics.fmean(row["cer_before"] for row in here),
+            "content_kept": statistics.fmean(row["content_kept"] for row in here),
+            "invented": statistics.fmean(row["invented"] for row in here),
+        }
+
     summary = {
         "n": len(written),
         # Always true now: the skip lives inside Polisher.polish, so a run
@@ -191,6 +238,18 @@ def main() -> None:
         "filler_removed_rate": (
             sum(row["filler_removed"] for row in written) / arrived if arrived else 0.0
         ),
+        # 嗯 呃 你知道吧 怎么说呢 对吧 -- the words whose label and whose
+        # judgement agree. This is the one to read.
+        "filler_removed_rate_gated": _rate("gated_removed", "gated_arrived"),
+        # 我觉得 那个 这个 就是 然后 反正 其实 那种 那些 那 就 对 -- obedience to
+        # the injector, not correctness. Reported so the combined figure can be
+        # taken apart rather than argued about.
+        "filler_removed_rate_double_duty": _rate("double_removed", "double_arrived"),
+        # The same split applied to the other two. Named by what the target is
+        # worth on that half rather than by the injection, because that is what
+        # the reader has to decide about.
+        "rows_with_a_trustworthy_target": _half(False),
+        "rows_whose_target_wants_a_content_word_gone": _half(True),
         "content_kept": statistics.fmean(row["content_kept"] for row in written),
         "invented": statistics.fmean(row["invented"] for row in written),
         "empty": sum(1 for row in written if not row["polished"].strip()),

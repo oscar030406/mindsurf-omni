@@ -1,0 +1,81 @@
+{
+  "rows": "artifacts\\polish-rows-4090-2026-08-29.jsonl",
+  "draws": 4000,
+  "seed": 20260829,
+  "_": [
+    "两半分开报。986 行里有 609 行的 target 要求删掉一个内容词——",
+    "这一级现在故意不删，所以那一半量的是对注入器的服从，不是正确性。"
+  ],
+  "halves": {
+    "all_986": {
+      "n": 986,
+      "cer_after": {
+        "value": 0.06980216737322492,
+        "line": 0.02,
+        "side": "at_most",
+        "point_inside": false,
+        "resamples_inside": 0.0,
+        "draws": 4000
+      },
+      "content_kept": {
+        "value": 0.9834969778325781,
+        "line": 0.98,
+        "side": "at_least",
+        "point_inside": true,
+        "resamples_inside": 1.0,
+        "draws": 4000
+      },
+      "invented": {
+        "value": 0.06639780886833628,
+        "line": 0.02,
+        "side": "at_most",
+        "point_inside": false,
+        "resamples_inside": 0.0,
+        "draws": 4000
+      },
+      "filler_removed_rate_gated": {
+        "value": 0.938953488372093,
+        "line": 0.9,
+        "side": "at_least",
+        "point_inside": true,
+        "resamples_inside": 1.0,
+        "draws": 4000
+      }
+    },
+    "rows_with_a_trustworthy_target": {
+      "n": 377,
+      "cer_after": {
+        "value": 0.01976244103350392,
+        "line": 0.02,
+        "side": "at_most",
+        "point_inside": true,
+        "resamples_inside": 0.5595,
+        "draws": 4000
+      },
+      "content_kept": {
+        "value": 0.9873041928851236,
+        "line": 0.98,
+        "side": "at_least",
+        "point_inside": true,
+        "resamples_inside": 1.0,
+        "draws": 4000
+      },
+      "invented": {
+        "value": 0.017524713075979723,
+        "line": 0.02,
+        "side": "at_most",
+        "point_inside": true,
+        "resamples_inside": 0.93825,
+        "draws": 4000
+      },
+      "filler_removed_rate_gated": {
+        "value": 0.9605911330049262,
+        "line": 0.9,
+        "side": "at_least",
+        "point_inside": true,
+        "resamples_inside": 1.0,
+        "draws": 4000
+      }
+    }
+  }
+}

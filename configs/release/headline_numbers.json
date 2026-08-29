@@ -171,24 +171,30 @@
       "下面的判据是算法侧自拟的工作标尺，不是小组 OKR 的验收线；写在这里是为了",
       "让引用的人知道 0.02 这条线是谁定的。",
       "读数全部来自部署卡（RTX 4090）上的服务真路径，986 条留出集，标注器阈值 0.4。",
-      "「过线」按配对自助 4000 次重抽里落在线内侧的比例报，不按点估计——",
-      "点估计越过线而重抽只有一半在内侧，那不叫过了，叫和线分不清。"
+      "「过线」按 4000 次重抽里落在线内侧的比例报，不按点估计——",
+      "点估计越过线而重抽只有一半在内侧，那不叫过了，叫和线分不清。",
+      "",
+      "986 行分两半报，因为它们的 target 值不一样钱：",
+      "609 行被注入了双职词（那个/这个/就是/然后/反正/其实/我觉得），它们的 target",
+      "要求把那个词删掉，而这一级现在故意不删——那一半量的是对注入器的服从。",
+      "377 行的 target 可信，四条判据在那一半上读才有意义。",
+      "口语词清除同理：报排除双职词之后的 gated，合计值只作说明用。"
     ],
-    "holdout_sentences": 986,
+    "holdout_sentences": "986（判据可信的 377 行 + 目标要求删内容词的 609 行）",
     "card": "RTX 4090",
     "tagger_threshold": 0.4,
-    "cer_to_reference": 0.0269,
+    "cer_to_reference": 0.0198,
     "cer_line": 0.02,
-    "cer_resamples_inside": 0.0,
-    "filler_removed": 0.9722,
+    "cer_resamples_inside": 0.56,
+    "filler_removed": 0.9606,
     "filler_removed_line": 0.9,
     "filler_removed_resamples_inside": 1.0,
-    "content_kept": 0.9803,
+    "content_kept": 0.9873,
     "content_kept_line": 0.98,
-    "content_kept_resamples_inside": 0.62,
-    "invented": 0.0199,
+    "content_kept_resamples_inside": 1.0,
+    "invented": 0.0175,
     "invented_line": 0.02,
-    "invented_resamples_inside": 0.54,
+    "invented_resamples_inside": 0.94,
     "empty_outputs": 0,
     "word_cuts": "0/986",
     "baseline_no_polish_cer": 0.106,
@@ -207,10 +213,47 @@
     "peak_p95_ms": 2201,
     "failures": "0/24 每一档",
     "source": [
-      "artifacts/polish-eval-4090-dup.json",
+      "artifacts/polish-eval-4090-split-2026-08-29.json",
+      "artifacts/polish-resamples-2026-08-29.json",
+      "artifacts/polish-rows-4090-2026-08-29.jsonl",
       "artifacts/capacity-4090-dictation.json",
       "artifacts/polish-cer-split-2026-08-16.json"
-    ]
+    ],
+    "superseded_2026_08_29": {
+      "_": [
+        "下面四个数是 2026-08-16 的读数，在今天的代码上复现不出来：",
+        "filler_removed 0.9722 -> 合计 0.4333，cer 0.0269 -> 0.0698，invented 0.0199 -> 0.0664。",
+        "不是退化。161a9a4 教会这一级不删「那个模块」里的「那个」（20 段普通听写",
+        "0/20 被改坏变成 18/20 正常），而 986 的 target 是把九个注入词全部拿掉的",
+        "干净文本，所以每保住一个内容词，三个判据一起记一次错。",
+        "注入到达 1761 处，其中双职词 1073 处——合计值被它们主导。",
+        "那次修复把分桶数字写进了 dictation_criterion，唯独没换掉这里的点估计，",
+        "三份对外文档一路抄的都是旧数。"
+      ],
+      "filler_removed": 0.9722,
+      "cer_to_reference": 0.0269,
+      "invented": 0.0199,
+      "content_kept": 0.9803,
+      "source": "artifacts/polish-eval-4090-dup.json"
+    },
+    "cer_verdict": "和线分不清：点估计在内，4000 次重抽只有 56% 在内侧",
+    "filler_removed_is": "gated：排除双职词，即 嗯 呃 你知道吧 怎么说呢 对吧 加上重复内容词",
+    "trustworthy_rows": 377,
+    "all_986_combined": {
+      "_": "两半合在一起的读数，留作对照：它被 609 行拉着走，不该当质量数字用",
+      "cer_after": 0.0698,
+      "content_kept": 0.9835,
+      "invented": 0.0664,
+      "filler_removed_rate_gated": 0.939,
+      "filler_removed_rate_combined": 0.4333,
+      "filler_removed_rate_double_duty": 0.109,
+      "resamples_inside": {
+        "cer": 0.0,
+        "content_kept": 1.0,
+        "invented": 0.0,
+        "filler_removed_gated": 1.0
+      }
+    }
   },
   "dictation_long": {
     "_": [

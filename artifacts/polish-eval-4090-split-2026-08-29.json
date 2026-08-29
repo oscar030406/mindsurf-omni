@@ -1,0 +1,32 @@
+{
+ "calls_per_sentence": 0.7621359223300971,
+ "cer_after": 0.06980216737322492,
+ "content_kept": 0.9834969778325781,
+ "empty": 0,
+ "filler_removed_rate": 0.4332765474162408,
+ "filler_removed_rate_double_duty": 0.10904007455731593,
+ "filler_removed_rate_gated": 0.938953488372093,
+ "invented": 0.06639780886833628,
+ "latency_ms_median": 119.867485598661,
+ "latency_ms_p95": 465.3738329652697,
+ "model_calls": 785,
+ "n": 986,
+ "rows_whose_target_wants_a_content_word_gone": {
+  "cer_after": 0.10077914082162363,
+  "cer_before": 0.14310463115213554,
+  "content_kept": 0.9811401304190976,
+  "invented": 0.0966525824540808,
+  "rows": 609
+ },
+ "rows_with_a_trustworthy_target": {
+  "cer_after": 0.01976244103350392,
+  "cer_before": 0.04604411926528948,
+  "content_kept": 0.9873041928851236,
+  "invented": 0.017524713075979723,
+  "rows": 377
+ },
+ "sentences": 1030,
+ "skip_clean": true,
+ "tagger": "/home/oscar/omni/minimind-o/out/polish_tagger_unionchar.pt",
+ "tagger_threshold": 0.4
+}
