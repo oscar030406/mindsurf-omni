@@ -142,8 +142,7 @@ async def first_and_rest(source: Any) -> tuple[Any, Any]:
 
 
 UNAVAILABLE = (
-    "no speech engine is configured; set MINDSURF_ENGINE=cascade "
-    "and point it at the weights"
+    "no speech engine is configured; set MINDSURF_ENGINE=cascade and point it at the weights"
 )
 
 # The most audio one realtime turn may buffer before it is committed. Raw

@@ -51,11 +51,7 @@ def _build_cascade(settings: Settings) -> SpeechEngine:
         recogniser: Any = ParaformerStreamingRecogniser(
             device=settings.device,
             language=settings.asr_language,
-            **(
-                {"model_dir": settings.asr_streaming}
-                if settings.asr_streaming is not None
-                else {}
-            ),
+            **({"model_dir": settings.asr_streaming} if settings.asr_streaming is not None else {}),
         )
     else:
         recogniser = SenseVoiceRecogniser(

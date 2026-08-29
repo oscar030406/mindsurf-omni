@@ -39,12 +39,62 @@ from mindsurf_omni.service.polish import (  # noqa: E402
     project_onto,
 )
 from mindsurf_omni.service.thinker import thinker_weights  # noqa: E402
-from scripts.measure_chat_loss import reply_span  # noqa: E402
-from scripts.train_dpo import (  # noqa: E402
-    MINIMUM_ULPS,
-    load_thinker,
-    storage_resolution,
-)
+
+# The four helpers below moved here from train_dpo.py and measure_chat_loss.py
+# when those files left with the assistant line; the polish trainers are their
+# only remaining callers.
+
+# A saved update has to clear the fp16 grid by a margin, or the save rounds it
+# away entirely. Four ULPs is arbitrary but the order of magnitude is not.
+MINIMUM_ULPS = 4.0
+
+
+def storage_resolution(scale: float) -> float:
+    """The fp16 spacing at a given weight magnitude.
+
+    Every checkpoint in this project is stored at fp16, so an update smaller
+    than this is not merely small -- it is unrepresentable in the format the
+    comparison will be made in, and reads downstream as no effect at all.
+    """
+    import torch
+
+    step = torch.tensor(scale, dtype=torch.float16)
+    above = torch.nextafter(step, torch.tensor(float("inf"), dtype=torch.float16))
+    return float(above - step)
+
+
+def load_thinker(checkpoint: Path, args: argparse.Namespace, trainable: bool) -> Any:
+    from mindsurf_omni.service.thinker import ThinkerGenerator
+
+    generator = ThinkerGenerator(
+        checkpoint=checkpoint,
+        tokenizer_dir=args.tokenizer,
+        minimind_root=args.minimind_root,
+        device=args.device,
+        variant=args.variant,
+    )
+    generator.load()
+    model = generator._model  # noqa: SLF001
+    if not trainable:
+        model.eval()
+        for parameter in model.parameters():
+            parameter.requires_grad = False
+    return model, generator._tokenizer  # noqa: SLF001
+
+
+def reply_span(prefix_ids: list[int], full_ids: list[int]) -> slice | None:
+    """Where the assistant's reply sits in the full sequence, or None.
+
+    Tokenisers are free to merge across the boundary between the template and
+    the reply, and when they do, `len(prefix)` is the wrong offset -- scoring
+    there charges the model for a token it was given. Returning None on any
+    disagreement makes that a dropped sample instead of a quiet error.
+    """
+    if len(full_ids) <= len(prefix_ids):
+        return None
+    if full_ids[: len(prefix_ids)] != prefix_ids:
+        return None
+    return slice(len(prefix_ids), len(full_ids))
 
 
 def encode(tokeniser: Any, source: str, target: str) -> tuple[list[int], slice] | None:

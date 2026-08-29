@@ -60,16 +60,11 @@ size_categories:
 现在每个包的根目录下都有：`listening_models/key.json`、
 `listening_synthesiser/key.json`、`listening_emotion/key.json`。
 
-评分原件和算分脚本在代码仓库（`artifacts/listening_returned/`、
-`scripts/listening_test.py`）。三样凑齐可以自己把 MOS 重算一遍：
-
-```bash
-python scripts/listening_test.py score \
-  --pack artifacts/listening_returned/listening_models \
-  --key artifacts/listening_models/key.json
-```
-
-`score` 只适用于两个打分的包（听合成器那包把命令里的 models 换成 synthesiser）。
+评分原件在代码仓库的 `artifacts/listening_returned/`。当年的算分脚本
+`listening_test.py` 随语音助手线移出了仓库（产品收敛成听写），要重算 MOS
+的话从 git 历史 2026-08-28 之前的版本取它，`score` 子命令配 `--pack` 和
+`--key` 两个参数就能跑（只适用于两个打分的包；听合成器那包把 models 换成
+synthesiser）。
 情绪包填的是情绪选项不是 1–5 分，拿它跑这条命令会以「the mos_1_to_5 column is empty」
 退出；那 31–42% / 41–65% 要自己拿 `listening_returned/listening_emotion/` 的选项
 对 `listening_emotion/key.json` 比，目前没有现成的子命令。

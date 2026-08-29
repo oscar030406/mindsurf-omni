@@ -86,13 +86,9 @@ Talker 只通过 `talker.embed_proj` 读 Thinker 的隐状态。接口窄到可�
 是「2021 念成二零二一」这种正确行为被判官罚——而级联那条也被同样罚，
 两个数在这一项上不可比。把数字折叠成中文读法之后，全部是 **0.0730**。
 
-这几行可以自己重算，仓库里有逐句读数：
-
-```bash
-python scripts/evaluate_speech.py \
-  --candidate artifacts/merge/speech-sft_merge-mos.jsonl \
-  --reference artifacts/merge/speech-parent-mos.jsonl
-```
+逐句读数在仓库的 `artifacts/merge/speech-sft_merge-mos.jsonl` 和
+`speech-parent-mos.jsonl`。当年算这些数的 `evaluate_speech.py` 随语音助手线
+移出了仓库（产品收敛成听写），git 历史 2026-08-28 之前的版本里完整保留。
 
 ### 人耳
 

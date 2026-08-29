@@ -53,7 +53,7 @@ def check_deliverables(findings: Findings) -> None:
         ("许可记录", "configs/release/licence.json"),
         ("探针集", "configs/speech_probes_zh_v1.jsonl"),
         ("冒烟脚本", "scripts/smoke_service.py"),
-        ("延迟脚本", "scripts/measure_latency.py"),
+        ("容量与延迟脚本", "scripts/measure_capacity.py"),
     ]:
         findings.check(name, (ROOT / path).exists(), f"{path} 不存在")
 

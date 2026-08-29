@@ -271,9 +271,7 @@ class Settings:
 
     def verify(self) -> None:
         if self.asr_streaming is not None and not self.asr_streaming.exists():
-            raise ConfigurationError(
-                f"MINDSURF_ASR_STREAMING={self.asr_streaming} is not on disk"
-            )
+            raise ConfigurationError(f"MINDSURF_ASR_STREAMING={self.asr_streaming} is not on disk")
         if self.tts and self.tts != "edge":
             raise ConfigurationError(
                 f"MINDSURF_TTS={self.tts!r} names no synthesiser this build has; "

@@ -25,6 +25,7 @@ import argparse
 import asyncio
 import json
 import statistics
+import struct
 import sys
 import time
 from pathlib import Path
@@ -38,7 +39,20 @@ sys.path.insert(0, str(_ROOT / "src"))
 # the working directory, so the sibling module is not importable by package name.
 sys.path.insert(0, str(_ROOT))
 
-from scripts.measure_latency import speech_like  # noqa: E402
+
+def speech_like(seconds: float, rate: int = 16_000) -> bytes:
+    """Not silence: a VAD would never mark silence as the end of a turn.
+
+    Moved here from measure_latency.py when that file left with the assistant
+    line; this is its only remaining caller.
+    """
+    import math
+
+    samples = [
+        int(0.3 * 32767 * math.sin(2 * math.pi * 220 * index / rate))
+        for index in range(int(rate * seconds))
+    ]
+    return struct.pack(f"<{len(samples)}h", *samples)
 
 
 def nearest_rank(values: list[float], quantile: float) -> float:

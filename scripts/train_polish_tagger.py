@@ -54,7 +54,7 @@ from mindsurf_omni.service.tagger import (  # noqa: E402
     features,
     token_spans,
 )
-from scripts.train_dpo import load_thinker  # noqa: E402
+from scripts.train_polish import load_thinker  # noqa: E402
 
 # The inference half lives in the service: the product runs the tagger now, and
 # a script may import from the service while the service may not import from a
