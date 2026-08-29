@@ -34,8 +34,4 @@ services:
       # Seconds between preview readings while somebody is still talking.
       # 0 shows nothing until they release the key.
       MINDSURF_PREVIEW_SECONDS: "${MINDSURF_PREVIEW_SECONDS:-1.0}"
-      # What a websocket turn ends in. "dictate" hands back the transcript with
-      # its filler removed, which is the product; "converse" answers the
-      # speaker, which is the voice assistant.
-      MINDSURF_REALTIME: "${MINDSURF_REALTIME:-converse}"
     restart: unless-stopped
