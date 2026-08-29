@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from scripts.train_polish_tagger import label_tokens
 
 
@@ -53,6 +54,7 @@ def test_repetition_columns_mark_both_copies() -> None:
     """The head reads one position at a time, so 时间时间 looks like two
     ordinary words. It clears 0.437 of the injected repetition against the
     generative arm's 0.603, and this is the column that difference lives in."""
+    pytest.importorskip("torch")
     import torch
 
     from mindsurf_omni.service.tagger import repetition_features
@@ -74,6 +76,7 @@ def test_a_repetition_the_tokenizer_cuts_through_is_still_seen() -> None:
     notes -- 应该应该 and 这边这边 tokenise cleanly and were removed, this one
     did not and survived every arm.
     """
+    pytest.importorskip("torch")
     import torch
 
     from mindsurf_omni.service.tagger import repetition_features
@@ -92,6 +95,7 @@ def test_a_repetition_the_tokenizer_cuts_through_is_still_seen() -> None:
 
 
 def test_a_sequence_with_no_repetition_is_all_zero() -> None:
+    pytest.importorskip("torch")
     import torch
 
     from mindsurf_omni.service.tagger import repetition_features
@@ -102,6 +106,7 @@ def test_a_sequence_with_no_repetition_is_all_zero() -> None:
 
 def test_the_old_width_is_unchanged_when_the_flag_is_off() -> None:
     """A head trained before these columns existed still has to load."""
+    pytest.importorskip("torch")
     import torch
 
     from mindsurf_omni.service.tagger import repetition_features
@@ -118,6 +123,7 @@ def test_the_head_width_matches_the_columns_that_arrive() -> None:
     `repetition: 3` into the checkpoint, and inference then handed a 2310-wide
     row to a 2304-wide head. Every threshold in the sweep died on the shape.
     """
+    pytest.importorskip("torch")
     import torch
 
     from mindsurf_omni.service.tagger import assemble, feature_width
@@ -135,6 +141,7 @@ def test_the_head_width_matches_the_columns_that_arrive() -> None:
 
 def test_the_repetition_columns_actually_reach_the_row() -> None:
     """Not just that the width grew -- that the marks are in it."""
+    pytest.importorskip("torch")
     import torch
     from scripts.train_polish_tagger import assemble
 

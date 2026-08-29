@@ -160,7 +160,9 @@ def test_the_generator_stops_being_unwired_once_a_checkpoint_is_named(tmp_path: 
 
     real = factory._importable
     real_load = ThinkerGenerator.load
-    factory._importable = lambda module: module == "torch" or real(module)  # type: ignore[assignment]
+    factory._importable = (  # type: ignore[assignment]
+        lambda module: module in ("torch", "transformers") or real(module)
+    )
     ThinkerGenerator.load = lambda self: None  # type: ignore[assignment, method-assign]
     try:
         with_thinker = factory.build(

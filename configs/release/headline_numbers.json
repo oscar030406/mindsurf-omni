@@ -1110,7 +1110,7 @@
     },
     "source": [
       "scripts/measure_repetition_shape.py",
-      "artifacts/polish_train/pairs_cs2w.jsonl",
+      "对子不入库（CS2W 语料不转发），scripts/cs2w_to_pairs.py 秒级重建出 pairs_cs2w.jsonl",
       "artifacts/polish_train/pairs_v3.jsonl"
     ],
     "chance_control": {
@@ -1654,7 +1654,7 @@
     ],
     "source": [
       "scripts/measure_content_words.py",
-      "artifacts/polish_train/pairs_cs2w.jsonl"
+      "对子不入库（CS2W 语料不转发），scripts/cs2w_to_pairs.py 秒级重建出 pairs_cs2w.jsonl"
     ],
     "guard_cost": "两道新闸在热路径上的代价：_word_edges 每句 0.021 ms、negations_kept 0.002 ms，整条 merge 每句 0.383 ms，对比润色解码 150–300 ms，占比不到万分之一"
   },

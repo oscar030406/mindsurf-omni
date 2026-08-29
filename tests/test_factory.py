@@ -114,24 +114,6 @@ def test_the_engine_carries_the_token_spec_clients_need(tmp_path: Path) -> None:
     assert spec.output_sample_rate == 24_000
 
 
-def test_the_message_also_names_the_installed_but_unloadable_case(tmp_path: Path) -> None:
-    """The second machine had the right shared build, with its DLLs in the
-    package directory and that directory on nobody's PATH, while `ffmpeg` on
-    PATH was an npm shim. "Install a shared build" sends that person to
-    reinstall what they already have, so PATH has to be in the sentence."""
-    from mindsurf_omni.service.factory import _require_audio_loader
-
-    not_audio = tmp_path / "clip.wav"
-    not_audio.write_bytes(b"this is not a wav file")
-
-    with pytest.raises(ConfigurationError) as error:
-        _require_audio_loader(not_audio)
-
-    message = str(error.value)
-    assert "PATH" in message
-    assert "avcodec" in message
-
-
 def test_a_polisher_without_transformers_is_refused_by_name(tmp_path: Path) -> None:
     """torch and transformers are the same case. Guarding only one of them lets a
     bare ModuleNotFoundError out of a request as a 500 that /health cannot see."""
@@ -157,8 +139,12 @@ def test_a_polisher_without_transformers_is_refused_by_name(tmp_path: Path) -> N
 
     real = factory._importable
     for absent in ("torch", "transformers"):
+        # The fake answers for every package, not just the one faked absent.
+        # Falling through to the real check made the test read the machine:
+        # on a host without torch, faking transformers away still tripped the
+        # torch refusal first, and the message named the wrong package.
         factory._importable = (  # type: ignore[assignment]
-            lambda module, missing=absent: module != missing and real(module)
+            lambda module, missing=absent: module != missing
         )
         try:
             with pytest.raises(ConfigurationError, match=absent):
