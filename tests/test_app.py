@@ -384,7 +384,7 @@ def test_transcription_carries_the_polished_text_when_a_polisher_is_wired() -> N
     """The dictation product reads this field; null means the stage is absent."""
 
     class _Polishing(FakeEngine):
-        async def polish(self, transcript: str) -> str:
+        async def polish(self, transcript: str, language: str | None = None) -> str:
             return transcript.replace("那个", "")
 
     body = (
@@ -795,7 +795,7 @@ def test_a_polisher_that_raises_does_not_take_the_transcript_with_it() -> None:
     """
 
     class _Breaks(FakeEngine):
-        async def polish(self, transcript: str) -> str:
+        async def polish(self, transcript: str, language: str | None = None) -> str:
             raise RuntimeError("polish checkpoint returned NaN")
 
     response = TestClient(create_app(_Breaks()), raise_server_exceptions=False).post(
@@ -1107,7 +1107,7 @@ def test_the_polish_failure_log_does_not_carry_what_was_said(
         async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
             return said, "zh"
 
-        async def polish(self, transcript: str) -> str:
+        async def polish(self, transcript: str, language: str | None = None) -> str:
             raise ValueError(f"cannot tokenise {transcript!r}: 0x4e2d out of vocabulary")
 
     client = TestClient(create_app(_Blabs()), raise_server_exceptions=False)
@@ -1273,7 +1273,7 @@ class DictatingEngine(FakeEngine):
     async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
         return "嗯，那个会议改到下午三点了", "zh"
 
-    async def polish(self, transcript: str) -> str:
+    async def polish(self, transcript: str, language: str | None = None) -> str:
         return "会议改到下午三点了"
 
     async def respond(  # type: ignore[override]
@@ -1287,7 +1287,7 @@ class DictatingEngine(FakeEngine):
 
 
 class BrokenPolishEngine(DictatingEngine):
-    async def polish(self, transcript: str) -> str:
+    async def polish(self, transcript: str, language: str | None = None) -> str:
         raise RuntimeError("the tagger head is not there")
 
 

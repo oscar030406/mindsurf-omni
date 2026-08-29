@@ -100,6 +100,27 @@ STRANDED_PARTICLES = set("吧呢嘛")
 # sentence is also out of distribution.
 TRAINED_LENGTH = 160
 
+# The languages this stage has any business editing. Chinese is what the
+# weights were fine-tuned on; English reaches a rule that removes filled pauses
+# and adjacent repeats and never consults the model.
+#
+# Everything else is passed through, and the reason is measured rather than
+# cautious. The guide used to say Cantonese, Japanese and Korean already passed
+# through untouched, on the grounds that `worth_polishing` was constantly false
+# for them. It is false for Korean, whose Hangul the repetition test cannot
+# see -- but Cantonese is written in Chinese characters and Japanese uses them
+# alongside kana, so 我哋我哋 and 会議会議 walked straight into a model that had
+# never been trained on either. Fifty-one native-speaker probes through the
+# real stage: 12 came back broken. It cut through words (これ、部長部長に ->
+# れ、部長に and もう一度もう一度説明 -> もう一度明), took apart reduplication
+# that is the word (一人一人 -> 一人, 三三兩兩 -> 三三兩, 我我啱啱 -> 我, eating
+# the Cantonese "just now" along with the stutter), and inverted a sentence by
+# deleting a negation (唔好唔好意思 -> 唔好意思, "don't mention it" into "sorry").
+# Guarding those would mean a Cantonese and a Japanese vocabulary this project
+# has no data to build. Not running a Chinese model on them is the smaller and
+# the honest fix. artifacts/multilingual-repeats-2026-08-29.json
+POLISHED_LANGUAGES = frozenset({"zh", "en"})
+
 # Spellings that mean the model might have work to do here. Wider than the
 # decoder's door on purpose: the door decides whether a span may be deleted, so
 # a wrong entry costs content, while this only decides whether the model is
@@ -1367,6 +1388,11 @@ class Polisher:
     floored_chars: int = 0
     emptied: int = 0
     emptied_chars: int = 0
+    # Turns handed back untouched because the recogniser reported a language
+    # this stage does not edit. Counted rather than inferred: a skipped turn is
+    # character-for-character identical to one the model chose not to change,
+    # which is the shape of counter this file has been burned by three times.
+    skipped_language: int = 0
     # How many pieces one decode may carry. Wide enough that a step is full,
     # narrow enough that one caller's long dictation does not hold everyone
     # else's: a batch runs until its longest member stops, so the cost of a
@@ -1526,7 +1552,7 @@ class Polisher:
         }
         return "".join(char for index, char in enumerate(piece) if index not in drop)
 
-    async def polish(self, transcript: str) -> str:
+    async def polish(self, transcript: str, language: str | None = None) -> str:
         """The transcript with its filler removed, or the transcript unchanged.
 
         Grouped to what the model was trained on, and never returning less text
@@ -1545,6 +1571,14 @@ class Polisher:
         over-deletion.
         """
         if not transcript.strip():
+            return transcript
+        # A language the weights never saw is returned as it came. None is
+        # taken as Chinese rather than as "skip": a caller that does not report
+        # a language is every caller written before this argument existed, and
+        # reading their silence as "do not polish" would turn the product off
+        # instead of protecting it.
+        if language is not None and language not in POLISHED_LANGUAGES:
+            self.skipped_language += 1
             return transcript
         pieces = group_sentences(transcript, self.group_longest)
         wanted = [piece for piece in pieces if piece.strip() and worth_polishing(piece)]

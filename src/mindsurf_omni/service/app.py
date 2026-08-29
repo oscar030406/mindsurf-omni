@@ -279,7 +279,7 @@ async def dictate(
     filler staying in is a worse transcript, and losing the transcript is a lost
     dictation.
     """
-    transcript, _ = await engine.transcribe(pcm, INPUT_SAMPLE_RATE)
+    transcript, language = await engine.transcribe(pcm, INPUT_SAMPLE_RATE)
     if transcript:
         heard.append(transcript)
         await websocket.send_json(
@@ -295,7 +295,7 @@ async def dictate(
     polish = getattr(engine, "polish", None)
     if polish is not None:
         try:
-            polished = await polish(transcript)
+            polished = await polish(transcript, language)
         except Exception as error:  # noqa: BLE001
             logging.getLogger("mindsurf").warning(
                 json.dumps(
@@ -621,7 +621,7 @@ def create_app(engine: SpeechEngine | None = None) -> FastAPI:
         if polish is not None:
             started = time.perf_counter()
             try:
-                polished = await polish(text)
+                polished = await polish(text, language)
             except Exception as error:  # noqa: BLE001 - transcript is worth more than the reason
                 # Dictation's second stage is optional; its first is not. This
                 # used to be evaluated inside the response object, so a

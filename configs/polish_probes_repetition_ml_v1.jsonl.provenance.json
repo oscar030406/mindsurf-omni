@@ -1,0 +1,17 @@
+{
+  "author": "claude-opus-5, five prompts each writing from one angle",
+  "purpose": "measure what the polish stage does to Cantonese and Japanese that hold a repetition -- the branch the 44-probe multilingual set never reached",
+  "why_a_new_set": "configs/polish_probes_multilingual_v1.jsonl has five yue/ja sentences and every one of them opens with a filler and repeats nothing, so all five took the pass-through branch. The reading built on them said nothing about the branch that runs.",
+  "angles": [
+    "yue legitimate reduplication -- 日日 次次 個個 通通 齊齊 慢慢 密密 分分鐘 婆婆 麻麻哋",
+    "yue stutter -- single characters, two-character words, and copies with a filler between them",
+    "ja legitimate -- compound boundaries where two kanji meet by coincidence: 学生生活 会議議事録 同窓会会長 研究所所長 都立立川 日本本土 中国国内 毎日日記 工事事務所 本社社員",
+    "ja stutter -- kanji-bearing words said twice, some with a particle between the copies",
+    "adversarial -- the cases most likely to break a Mandarin-trained deletion model: negation-adjacent repeats, numeral idioms, classifier reduplication, names built from doubled characters"
+  ],
+  "review": "every probe was judged by a separate agent asked to refute it: is this really that language, is the kind labelled right, does wanted follow from kind. 52 drafted, 51 kept, 1 refused.",
+  "trigger_check_is_mechanical": "whether a probe reaches the model is computed by calling worth_polishing, not by asking a model to predict it. The judges' guesses were wrong on four of them -- 我哋不如，我哋不如 and 資料資料 were called non-triggering when the gate strips punctuation before testing and both trigger.",
+  "no_native_speaker_signed_off": "The sentences were written and reviewed by a language model. A native speaker has not read them. Treat the Cantonese and Japanese as plausible rather than certified, and the finding they support -- that a Mandarin-trained deletion model damages both -- as resting on the shapes of the failures (a word cut mid-character, a negation removed) rather than on fine judgements of usage.",
+  "measured_by": "scripts/measure_multilingual_repeats.py",
+  "reading": "artifacts/multilingual-repeats-2026-08-29.json"
+}

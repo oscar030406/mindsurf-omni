@@ -224,16 +224,20 @@ class CascadeEngine(SpeechEngine):
         if loader is not None:
             loader()
 
-    async def polish(self, transcript: str) -> str | None:
+    async def polish(self, transcript: str, language: str | None = None) -> str | None:
         """The transcript tidied, or None when no polisher is wired.
 
         None rather than the transcript unchanged: a caller has to be able to
         tell "this service does not polish" from "this text needed no polish",
         and the dictation product routes on that difference.
+
+        ``language`` is what the recogniser reported for this turn. The stage
+        edits Chinese and English and hands everything else back untouched; see
+        POLISHED_LANGUAGES for what a Chinese-trained model did to Cantonese.
         """
         if self._polisher is None:
             return None
-        return await self._polisher.polish(transcript)
+        return await self._polisher.polish(transcript, language)
 
     def complete(
         self, messages: list[dict[str, str]], settings: GenerationSettings

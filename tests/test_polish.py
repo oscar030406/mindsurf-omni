@@ -38,7 +38,7 @@ def test_no_polisher_answers_none_rather_than_the_transcript() -> None:
 
 def test_a_wired_polisher_is_used() -> None:
     class _Fake:
-        async def polish(self, transcript: str) -> str:
+        async def polish(self, transcript: str, language: str | None = None) -> str:
             return transcript.replace("那个", "")
 
     assert asyncio.run(_cascade(_Fake()).polish("那个今天天气怎么样")) == "今天天气怎么样"
@@ -710,3 +710,53 @@ def test_the_cleanup_leaves_alone_what_is_not_a_restart() -> None:
     assert drop_split_restart("今天天气很好。好久没有出门了。") == "今天天气很好。好久没有出门了。"
     # Nothing between the copies means the ordinary repetition rules own it.
     assert drop_split_restart("我们这边这边进度") == "我们这边这边进度"
+
+
+async def test_a_language_the_weights_never_saw_comes_back_untouched() -> None:
+    """Cantonese and Japanese reach the model unless something stops them.
+
+    The gate in front of the model counts a repetition wherever both halves
+    hold a CJK character, and Cantonese is written in them. 51 native-speaker
+    probes through the real stage came back with 12 broken: それ cut mid-word
+    (これ、部長部長に -> れ、部長に), reduplication that is the word taken apart
+    (一人一人 -> 一人), and one sentence inverted by losing a negation
+    (唔好唔好意思 -> 唔好意思). The stub here deletes greedily, the way the real
+    model did.
+    """
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    polisher.answers = {"我哋我哋聽日開會": "我哋開會"}  # type: ignore[attr-defined]
+
+    assert await polisher.polish("我哋我哋聽日開會", "yue") == "我哋我哋聽日開會"
+    assert polisher.skipped_language == 1
+
+
+async def test_chinese_still_goes_through_when_the_language_is_reported() -> None:
+    """The guard must not turn the product off. zh is what the weights were
+    trained on and reporting it changes nothing about the path taken."""
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    polisher.answers = {"嗯，今天天气怎么样？": "今天天气怎么样？"}  # type: ignore[attr-defined]
+
+    assert await polisher.polish("嗯，今天天气怎么样？", "zh") == "今天天气怎么样？"
+    assert polisher.skipped_language == 0
+
+
+async def test_a_caller_that_reports_no_language_is_polished_as_before() -> None:
+    """None is every caller written before the argument existed. Reading their
+    silence as "do not polish" would turn the stage off rather than guard it."""
+    polisher = _Stub(checkpoint=Path("x"), tokenizer_dir=Path("y"), minimind_root=Path("z"))
+    polisher.answers = {"嗯，今天天气怎么样？": "今天天气怎么样？"}  # type: ignore[attr-defined]
+
+    assert await polisher.polish("嗯，今天天气怎么样？") == "今天天气怎么样？"
+    assert polisher.skipped_language == 0
+
+
+def test_the_websocket_turn_hands_the_recognised_language_to_the_polisher() -> None:
+    """Declared is not wired. The language was sitting in the transcribe result
+    and being dropped into `_` one line before the polish call, on both paths.
+    """
+    from mindsurf_omni.service import app
+
+    source = Path(app.__file__).read_text(encoding="utf-8")
+    assert "transcript, language = await engine.transcribe" in source
+    assert "await polish(transcript, language)" in source
+    assert "await polish(text, language)" in source

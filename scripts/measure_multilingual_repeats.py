@@ -72,17 +72,24 @@ def verdict(probe: dict[str, Any], got: str) -> str:
     return "missed" if got == source else "damaged"
 
 
-async def run(polisher: Polisher, probes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+async def run(
+    polisher: Polisher, probes: list[dict[str, Any]], tell_language: bool
+) -> list[dict[str, Any]]:
     """Every probe through the real stage, on one event loop.
 
     One loop for all of them: a fresh asyncio.run per probe leaves the polisher's
     worker bound to a closed loop and the next call hangs with the card idle,
     which reads as slowness rather than as a hang.
+
+    ``tell_language`` is the arm switch. Withholding the language reproduces
+    what the service did before it carried one -- the transcribe result had it
+    and dropped it into `_` a line above the polish call -- so both arms come
+    out of one run and the difference is attributable.
     """
     rows = []
     for index, probe in enumerate(probes, 1):
         started = time.perf_counter()
-        got = await polisher.polish(probe["source"])
+        got = await polisher.polish(probe["source"], probe["lang"] if tell_language else None)
         elapsed = (time.perf_counter() - started) * 1000
         rows.append(
             {
@@ -180,24 +187,35 @@ def main() -> None:
         merge_mode=args.merge,
     )
     polisher.load()
-    rows = asyncio.run(run(polisher, probes))
+
+    async def both_arms() -> dict[str, list[dict[str, Any]]]:
+        # One loop for both arms, same reason it is one loop within an arm.
+        out = {}
+        for arm, tell in (("语种没传（旧行为）", False), ("语种传了（现在）", True)):
+            print(f"\n跑 {arm}")
+            polisher.skipped_language = 0
+            out[arm] = await run(polisher, probes, tell)
+        return out
+
+    arms = asyncio.run(both_arms())
     report = {
         "probes": str(args.probes),
         "checkpoint": str(args.checkpoint),
         "tagger": str(args.tagger) if args.tagger else None,
         "merge": args.merge,
-        "by_language": summarise(rows),
-        "rows": rows,
+        "arms": {arm: {"by_language": summarise(rows), "rows": rows} for arm, rows in arms.items()},
     }
 
     print()
-    for language, got in report["by_language"].items():
-        print(
-            f"{language}: {got['probes']} 条，{got['gate_opened']} 条进模型 | "
-            f"口吃 修好 {got['stutter']['repaired']}/{got['stutter']['n']} | "
-            f"合法叠词 保住 {got['legit_or_control']['held']}/{got['legit_or_control']['n']}"
-            f"，弄坏 {got['legit_or_control']['damaged']}"
-        )
+    for arm, rows in arms.items():
+        broken = sum(1 for row in rows if row["verdict"] == "damaged")
+        print(f"{arm}: {len(rows)} 条，弄坏 {broken} 条")
+        for language, got in summarise(rows).items():
+            print(
+                f"    {language}: 口吃 修好 {got['stutter']['repaired']}/{got['stutter']['n']}"
+                f" | 合法叠词 保住 {got['legit_or_control']['held']}/{got['legit_or_control']['n']}"
+                f"，弄坏 {got['legit_or_control']['damaged']}"
+            )
 
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
