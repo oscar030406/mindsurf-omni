@@ -1,0 +1,32 @@
+{
+ "calls_per_sentence": 0.7621359223300971,
+ "cer_after": 0.07755810318002192,
+ "content_kept": 0.9777880630212348,
+ "empty": 0,
+ "filler_removed_rate": 0.4082907438955139,
+ "filler_removed_rate_double_duty": 0.1369990680335508,
+ "filler_removed_rate_gated": 0.8313953488372093,
+ "invented": 0.06871687526877335,
+ "latency_ms_median": 118.67355403956026,
+ "latency_ms_p95": 467.2808409668505,
+ "model_calls": 785,
+ "n": 986,
+ "rows_whose_target_wants_a_content_word_gone": {
+  "cer_after": 0.11026824335748155,
+  "cer_before": 0.14310463115213554,
+  "content_kept": 0.9736248117780485,
+  "invented": 0.0992133377973023,
+  "rows": 609
+ },
+ "rows_with_a_trustworthy_target": {
+  "cer_after": 0.024718645970279434,
+  "cer_before": 0.04604411926528948,
+  "content_kept": 0.9845133150294587,
+  "invented": 0.019453358876534252,
+  "rows": 377
+ },
+ "sentences": 1030,
+ "skip_clean": true,
+ "tagger": null,
+ "tagger_threshold": null
+}

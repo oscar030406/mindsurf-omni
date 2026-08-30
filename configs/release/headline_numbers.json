@@ -197,9 +197,9 @@
     "invented_resamples_inside": 0.94,
     "empty_outputs": 0,
     "word_cuts": "0/986",
-    "baseline_no_polish_cer": 0.106,
+    "baseline_no_polish_cer": 0.046,
     "ceiling_deletion_only_cer": 0.0156,
-    "generative_arm_only_cer": 0.0435,
+    "generative_arm_only_cer": 0.0247,
     "polish_stage_ms_median": 120.6,
     "polish_stage_ms_p95": 473.9,
     "whole_turn_ms_p50": 198,
@@ -217,7 +217,9 @@
       "artifacts/polish-resamples-2026-08-29.json",
       "artifacts/polish-rows-4090-2026-08-29.jsonl",
       "artifacts/capacity-4090-dictation.json",
-      "artifacts/polish-cer-split-2026-08-16.json"
+      "artifacts/polish-cer-split-2026-08-16.json",
+      "artifacts/polish-rows-generative-4090-2026-08-29.jsonl",
+      "artifacts/polish-eval-4090-generative-2026-08-29.json"
     ],
     "superseded_2026_08_29": {
       "_": [
@@ -253,7 +255,9 @@
         "invented": 0.0,
         "filler_removed_gated": 1.0
       }
-    }
+    },
+    "generative_arm_only_filler_removed": 0.8621,
+    "comparison_columns_population": "与产品同一批 377 行、同一口径。天花板 0.0156 仍是全 986 行的旧口径，没重算"
   },
   "dictation_long": {
     "_": [
