@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -128,6 +129,26 @@ def check_headline_numbers_are_traceable(findings: Findings) -> None:
         (ROOT / "configs" / "release" / "headline_numbers.json").read_text(encoding="utf-8")
     )
 
+    # Tracked, not merely present. A file sitting on this disk and a file the
+    # clone will have are different things, and the gap is exactly where this
+    # check is blind: .gitignore holds *.log, so an evidence file saved with
+    # that suffix passed here on every machine that produced it and failed in
+    # CI on the first clone that did not. `git add -A` had skipped it without
+    # a word.
+    tracked = set(
+        subprocess.run(
+            ["git", "ls-files"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        ).stdout.split()
+    )
+    # Outside a checkout -- an unpacked handover, a test's temporary root --
+    # there is no index to ask, and every path would read as untracked. Fall
+    # back to the disk there rather than reporting the whole file as missing.
+    on_disk_only = not tracked
+
     missing: list[str] = []
 
     def visit(node: object, where: str) -> None:
@@ -145,7 +166,16 @@ def check_headline_numbers_are_traceable(findings: Findings) -> None:
                     path = candidate.strip().split(" ")[0].rstrip("/")
                     if not path or "/" not in path:
                         continue
-                    if not (ROOT / path).exists():
+                    if on_disk_only:
+                        here = (ROOT / path).exists()
+                    else:
+                        # A directory counts when anything under it is tracked:
+                        # several sources point at a folder of readings rather
+                        # than at one file, and `git ls-files` lists only files.
+                        here = path in tracked or any(
+                            held.startswith(f"{path}/") for held in tracked
+                        )
+                    if not here:
                         missing.append(f"{where}: {path}")
 
     visit(record, "headline_numbers")

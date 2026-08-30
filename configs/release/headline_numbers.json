@@ -2216,7 +2216,7 @@
     "the_trap_in_the_last_row": "「不切」那行口语词召回最高 0.9945、误删最低 5.80，看着最好——但 73.6% 的字压根没被润色，另有 16 片直接答空。少删的切法在只看删除质量的判据下天生得分高。",
     "source": [
       "scripts/measure_group_length.py",
-      "artifacts/group-gate-sweep-2026-08-30.log"
+      "artifacts/group-gate-sweep-2026-08-30.json"
     ]
   }
 }
