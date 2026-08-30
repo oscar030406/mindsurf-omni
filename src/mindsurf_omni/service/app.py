@@ -304,7 +304,11 @@ async def dictate(
                 )
             )
         else:
-            if polished:
+            # `is not None`, not truthiness. None means no polisher is wired and
+            # the transcript is the answer; the empty string is an answer too --
+            # the turn held no word anybody meant to type -- and reading it as
+            # failure would put the noise back that the stage just removed.
+            if polished is not None:
                 written = polished
     texts.append(written)
     await websocket.send_json({"type": "response.text.delta", "delta": written})

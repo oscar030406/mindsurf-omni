@@ -1309,6 +1309,40 @@ def _dictate(socket) -> dict[str, str]:
     return seen
 
 
+class NoiseOnlyEngine(DictatingEngine):
+    """A turn that was noise: the recogniser wrote an interjection, polish emptied it.
+
+    Half a second of fan noise recognises as 嗯。 and the stage answers with the
+    empty string on purpose -- there is no sentence in which a lone 嗯 is what
+    somebody meant to type.
+    """
+
+    async def transcribe(self, pcm: bytes, sample_rate: int) -> tuple[str, str | None]:
+        return "嗯。", "zh"
+
+    async def polish(self, transcript: str, language: str | None = None) -> str:
+        return ""
+
+
+def test_a_turn_polished_down_to_nothing_types_nothing() -> None:
+    """The empty string is an answer, and truthiness cannot tell it from a failure.
+
+    polish() has returned "" for an all-filler turn since the day fan noise was
+    found writing 嗯。 into a text box, and the websocket turn undid it: the
+    caller tested `if polished:` and fell back to the transcript, so the noise
+    the stage had just removed went out anyway. The HTTP endpoint kept the empty
+    string and the socket did not, from one recogniser reading.
+    """
+    client = TestClient(create_app(NoiseOnlyEngine()))
+    with client.websocket_connect("/v1/realtime") as socket:
+        seen = _dictate(socket)
+
+    # The transcript still goes out: a client that wants to show what was heard
+    # can, and this is the event that says the turn was processed at all.
+    assert seen["transcript"] == "嗯。"
+    assert seen["text"] == ""
+
+
 def test_a_dictation_turn_hands_back_the_transcript_not_an_answer_to_it() -> None:
     """The realtime path always answered the speaker, and polish was reachable
     only over POST /v1/audio/transcriptions -- so a deployment could stream a
