@@ -2084,5 +2084,51 @@
     "source": [
       "scripts/measure_punctuation_placement.py"
     ]
+  },
+  "dictation_against_human_labels": {
+    "_": [
+      "723 句 CS2W 真人转写，逐字人工标注。唯一一把不是我们造的尺子——",
+      "留出集的口语词是我们按九个词等概率注进去的，这份不是，所以没有那个洞。",
+      "两列同一批句子、同一套分桶，只有产出输出的模型版本不同。"
+    ],
+    "sentences": 723,
+    "characters": 11205,
+    "now": {
+      "recall_against_human_marks": 0.297,
+      "deleted_unmarked": 357,
+      "deleted_unmarked_per_thousand": 31.86,
+      "by_kind": {
+        "repetition": 167,
+        "double_duty": 125,
+        "unexplained": 32,
+        "punctuation": 29,
+        "interjection": 2,
+        "vocabulary": 2
+      }
+    },
+    "stored_2026_08_16": {
+      "recall_against_human_marks": 0.3218,
+      "deleted_unmarked": 782,
+      "deleted_unmarked_per_thousand": 69.79,
+      "by_kind": {
+        "double_duty": 453,
+        "repetition": 161,
+        "unexplained": 130,
+        "punctuation": 36,
+        "interjection": 2
+      }
+    },
+    "what_the_buckets_mean": {
+      "repetition": "说话人重说了一遍，删对了，只是人没标；包括中间隔开的改口",
+      "double_duty": "那个/这个/就 这类，该不该删本来就有分歧",
+      "unexplained": "真误删。删除跨过边界把旁边的字带走，这是唯一该继续压的一格"
+    },
+    "replaces": "README 原来那条 60 段真人口述的 5252/354/61.9%。它量的是 80b2c0c 之前的行为（那 就 那种 那些 进保护名单之前），而做那次分解的脚本没入过版本控制，逐行数据取不回来",
+    "source": [
+      "scripts/measure_against_human_labels.py",
+      "artifacts/cs2w-human-labels-2026-08-30.json",
+      "artifacts/cs2w-human-labels-2026-08-16-stored.json",
+      "artifacts/polish_train/val_cs2w_polish6.jsonl"
+    ]
   }
 }
