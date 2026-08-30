@@ -2130,5 +2130,93 @@
       "artifacts/cs2w-human-labels-2026-08-16-stored.json",
       "artifacts/polish_train/val_cs2w_polish6.jsonl"
     ]
+  },
+  "dictation_group_gate": {
+    "_": [
+      "TRAINED_LENGTH 那道闸第一次被量。闸之下整条送、闸之上逐句切。",
+      "以前说「没有样本落在线附近」，那是只看了留出集（最长 170 字，只有 16 条过闸）；",
+      "pairs_long 的 val 有 143 条落在 160-300 字，一直可以量，只是没人拿这份数据量过。",
+      "名字名不副实：160 来自 build_polish_holdout_pool.py 的 LONGEST，是造数据时的截断线，",
+      "不是模型能力的边界。"
+    ],
+    "corpus": "artifacts/polish_train/pairs_long.jsonl split=val，230 条真人长口述",
+    "arms": {
+      "80": {
+        "filler_recall": 0.9902,
+        "repeat_recall": 0.897,
+        "over_deleted_per_thousand": 13.67,
+        "deletion_rate": 0.0563,
+        "returned_unpolished_share": 0.0082,
+        "stalled_pieces": 2,
+        "empty_pieces": 0,
+        "seconds": 87
+      },
+      "120": {
+        "filler_recall": 0.9902,
+        "repeat_recall": 0.897,
+        "over_deleted_per_thousand": 13.66,
+        "deletion_rate": 0.0562,
+        "returned_unpolished_share": 0.0082,
+        "stalled_pieces": 2,
+        "empty_pieces": 0,
+        "seconds": 87
+      },
+      "160": {
+        "filler_recall": 0.9891,
+        "repeat_recall": 0.897,
+        "over_deleted_per_thousand": 13.64,
+        "deletion_rate": 0.0561,
+        "returned_unpolished_share": 0.0104,
+        "stalled_pieces": 3,
+        "empty_pieces": 0,
+        "seconds": 89
+      },
+      "200": {
+        "filler_recall": 0.9869,
+        "repeat_recall": 0.8943,
+        "over_deleted_per_thousand": 13.63,
+        "deletion_rate": 0.056,
+        "returned_unpolished_share": 0.0209,
+        "stalled_pieces": 7,
+        "empty_pieces": 0,
+        "seconds": 97
+      },
+      "240": {
+        "filler_recall": 0.9869,
+        "repeat_recall": 0.8916,
+        "over_deleted_per_thousand": 13.74,
+        "deletion_rate": 0.0559,
+        "returned_unpolished_share": 0.0685,
+        "stalled_pieces": 22,
+        "empty_pieces": 0,
+        "seconds": 109
+      },
+      "320": {
+        "filler_recall": 0.9869,
+        "repeat_recall": 0.8889,
+        "over_deleted_per_thousand": 11.4,
+        "deletion_rate": 0.052,
+        "returned_unpolished_share": 0.2771,
+        "stalled_pieces": 76,
+        "empty_pieces": 0,
+        "seconds": 120
+      },
+      "不切": {
+        "filler_recall": 0.9945,
+        "repeat_recall": 0.8591,
+        "over_deleted_per_thousand": 5.8,
+        "deletion_rate": 0.0427,
+        "returned_unpolished_share": 0.7364,
+        "stalled_pieces": 108,
+        "empty_pieces": 16,
+        "seconds": 106
+      }
+    },
+    "verdict": "80 到 160 三个判据全部分不出差别（召回差 0.0011、重复完全相同、误删差 0.03/千字）。160 往上开始塌：200 有 7 片停住、2.1% 的字退回没润色，320 是 27.7%。160 站得住，但它在安全区的上边缘不是中间，没有余量。",
+    "the_trap_in_the_last_row": "「不切」那行口语词召回最高 0.9945、误删最低 5.80，看着最好——但 73.6% 的字压根没被润色，另有 16 片直接答空。少删的切法在只看删除质量的判据下天生得分高。",
+    "source": [
+      "scripts/measure_group_length.py",
+      "artifacts/group-gate-sweep-2026-08-30.log"
+    ]
   }
 }

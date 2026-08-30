@@ -94,10 +94,19 @@ _ANY_MARK = PUNCTUATION | set(",;:.!?")
 # here -- "啊，太好了" is ordinary, and deleting that 啊 would be deleting content.
 STRANDED_PARTICLES = set("吧呢嘛")
 
-# The longest text the model was trained on: the pool that built the pairs
-# dropped anything past 160 characters. Above it, consecutive sentences are
-# grouped up to this length rather than sent one per call, because a lone
-# sentence is also out of distribution.
+# Where this stage stops sending a dictation whole and starts sending it a
+# sentence at a time.
+#
+# The number is inherited rather than measured, and the name oversells it: 160
+# is the cap the pair builder used when it dropped long texts
+# (build_polish_holdout_pool.py LONGEST), so it says what the training pairs
+# were shorter than, not what the model handles. Above the gate the text used
+# to be packed back up to 160 a piece; that is gone, and above it now means one
+# sentence per call.
+#
+# What the two sides are worth was measured, and the gate itself was not: the
+# holdout that supports "whole below it" tops out at 170 characters, so 16 of
+# its 986 rows are even on the far side. See docs/TRAINING.md.
 TRAINED_LENGTH = 160
 
 # The languages this stage has any business editing. Chinese is what the
