@@ -1,6 +1,6 @@
 {
   "rows": "artifacts/polish_train/val_cs2w_polish6.jsonl",
-  "outputs_from": "/home/oscar/omni/minimind-o/out/sft_polish6_768.pth",
+  "outputs_from": "sft_polish6_768.pth（跑在 4090 上；权重身份见 headline_numbers 的 polisher sha256）",
   "outputs": [
     "你们这个汉服由来是怎么由来的",
     "外国人吃饭是用两只手",

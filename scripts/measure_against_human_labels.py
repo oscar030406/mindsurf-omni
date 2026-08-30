@@ -40,6 +40,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import collections
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -233,7 +234,12 @@ def main() -> None:
         )
         polisher.load()
         outputs = asyncio.run(run(polisher, rows))
-        produced = str(args.checkpoint)
+        # The file name and its hash, not the path it was read from. These
+        # runs happen on a shared box and the path carries somebody's username
+        # into a committed artifact, which the publication gate refuses -- and
+        # the name plus the hash is what identifies the weights anyway.
+        digest = hashlib.sha256(args.checkpoint.read_bytes()).hexdigest()[:16]
+        produced = f"{args.checkpoint.name} sha256:{digest}"
 
     report = {
         "rows": str(args.rows),
